@@ -1,4 +1,7 @@
-# Notes de version — SCOLARIS V2 / EduNova
+# Notes de version — SCOLARIS V2.0.0 / EduNova
+
+**Version officielle : 2.0.0** — publiée Phase 16.0 (tag Git `v2.0.0`). Voir
+`SCOLARIS_V2_FINAL_RELEASE_REPORT.md` pour le rapport de release complet.
 
 ## Vue d'ensemble
 

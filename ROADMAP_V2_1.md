@@ -1,5 +1,10 @@
 # Roadmap V2.1 — Stabilisation et achèvement
 
+> **Superseded par `ROADMAP_V2.1.md`** (Phase 16.0) — version canonique tenue à
+> jour depuis la release officielle SCOLARIS V2.0.0. Ce fichier (Phase 15.2) est
+> conservé pour l'historique ; le contenu ci-dessous reste globalement exact mais
+> n'est plus mis à jour.
+
 Objectif de cette version mineure : lever les conditions identifiées dans
 `RELEASE_CANDIDATE_RC1_REPORT.md` pour passer d'un **GO WITH FIXES** à un **GO**
 sans réserve, et combler la dette technique documentée sans introduire de

@@ -1,8 +1,26 @@
 # Changelog — SCOLARIS V2 / EduNova
 
-Format libre, organisé par phase de développement (ce projet ne suit pas de
-schéma SemVer strict ni de tags Git — voir `RELEASE_CANDIDATE_RC1_REPORT.md` §6).
-Ordre chronologique croissant.
+Format libre, organisé par phase de développement. Depuis la Phase 16.0, le
+projet est versionné dans Git (tag `v2.0.0`) — voir
+`SCOLARIS_V2_FINAL_RELEASE_REPORT.md`. Ordre chronologique croissant.
+
+## [2.0.0] — Official Release (2026-07-10)
+
+Clôture officielle du cycle de développement V2. Architecture figée (Core,
+Scolarité, Académique, Finance, Vie scolaire, RH, Documents, Communication,
+Bibliothèque, Inventaire, Rapports & BI, Portails, API Platform, Multi-Tenant).
+Premier commit Git et tag `v2.0.0`. Voir `SCOLARIS_V2_FINAL_RELEASE_REPORT.md`
+pour l'état détaillé et les limitations connues de cette version.
+
+## Phase 16 — Release officielle (2026-07-10)
+
+- **16.0 — SCOLARIS V2.0.0 Official Release** : gel de l'architecture, version
+  officielle définie (`config/app.php['version']`, fichier `VERSION`),
+  initialisation du dépôt Git (`.gitignore`, commit initial, tag `v2.0.0`),
+  documentation de release complétée (`ARCHITECTURE.md`, `INSTALLATION.md`,
+  `DEPLOYMENT.md`, `API_DOCUMENTATION.md`, `ADMIN_GUIDE.md`, `USER_GUIDE.md`),
+  roadmaps `ROADMAP_V2.1.md`/`ROADMAP_V3.0.md`, rapport final
+  `SCOLARIS_V2_FINAL_RELEASE_REPORT.md`.
 
 ## Phase 15 — Release Candidate & Documentation (2026-07-09)
 

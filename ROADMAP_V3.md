@@ -1,5 +1,9 @@
 # Roadmap V3 — Évolutions majeures
 
+> **Superseded par `ROADMAP_V3.0.md`** (Phase 16.0) — version canonique tenue à
+> jour depuis la release officielle SCOLARIS V2.0.0. Ce fichier (Phase 15.2) est
+> conservé pour l'historique.
+
 Ces items dépassent la stabilisation (voir `ROADMAP_V2_1.md`) et représentent des
 évolutions architecturales ou fonctionnelles significatives, déjà anticipées par
 la conception actuelle (adaptateurs remplaçables, stubs documentés) mais non
