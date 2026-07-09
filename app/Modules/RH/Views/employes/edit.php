@@ -1,0 +1,381 @@
+<?php
+/** @var array $employe */
+/** @var array $contacts */
+/** @var array $departements */
+/** @var array $postes */
+/** @var array $users */
+/** @var array $types */
+/** @var array $statuts */
+/** @var array $genres */
+
+$old    = \Core\Session::getFlash('old')    ?? $employe;
+$errors = \Core\Session::getFlash('errors') ?? [];
+
+function hEdit(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8'); }
+function oldEdit(string $key, array $old, string $default = ''): string {
+    return hEdit((string)($old[$key] ?? $default));
+}
+function errEdit(string $key, array $errors): string {
+    if (!isset($errors[$key])) return '';
+    $msgs = (array)$errors[$key];
+    return '<p class="mt-1 text-xs text-red-600">' . hEdit(implode(' ', $msgs)) . '</p>';
+}
+function hasErrEdit(string $key, array $errors): bool { return isset($errors[$key]); }
+$f    = fn(string $k) => oldEdit($k, $old);
+$e    = fn(string $k) => errEdit($k, $errors);
+$hasE = fn(string $k) => hasErrEdit($k, $errors);
+$ringErr = 'ring-2 ring-red-300 border-red-300';
+$ringOk  = 'border-slate-200 focus:ring-2 focus:ring-violet-300';
+?>
+
+<div class="flex items-center gap-3 mb-6">
+    <a href="<?= BASE_URL ?>/v2/rh/employes/<?= (int)$employe['id'] ?>" class="text-slate-400 hover:text-slate-600 transition-colors">
+        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+    </a>
+    <div>
+        <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+            <i data-lucide="pencil" class="w-5 h-5 text-violet-600"></i>
+            Modifier — <?= hEdit($employe['prenom'] . ' ' . $employe['nom']) ?>
+        </h2>
+        <p class="text-sm text-slate-500 font-mono mt-0.5"><?= hEdit($employe['matricule']) ?></p>
+    </div>
+</div>
+
+<?php if ($flash = \Core\Session::getFlash('error')): ?>
+<div class="flex items-center gap-2 p-3 mb-4 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm" role="alert">
+    <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
+    <span><?= hEdit($flash) ?></span>
+    <button class="ml-auto" onclick="this.closest('[role=alert]').remove()"><i data-lucide="x" class="w-4 h-4"></i></button>
+</div>
+<?php endif; ?>
+
+<form method="POST" action="<?= BASE_URL ?>/v2/rh/employes/<?= (int)$employe['id'] ?>" class="space-y-6">
+    <input type="hidden" name="csrf_token" value="<?= hEdit($_SESSION['csrf_token'] ?? '') ?>">
+    <input type="hidden" name="_method" value="PUT">
+
+    <!-- Informations personnelles -->
+    <div class="bg-white border border-slate-200 rounded-xl shadow-sm">
+        <div class="px-5 py-4 border-b border-slate-100 flex items-center gap-2">
+            <i data-lucide="user" class="w-4 h-4 text-violet-600"></i>
+            <h3 class="font-semibold text-slate-900 text-sm">Informations personnelles</h3>
+        </div>
+        <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Nom <span class="text-red-500">*</span></label>
+                <input type="text" name="nom" value="<?= $f('nom') ?>" required
+                       class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none <?= $hasE('nom') ? $ringErr : $ringOk ?>">
+                <?= $e('nom') ?>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Prénom <span class="text-red-500">*</span></label>
+                <input type="text" name="prenom" value="<?= $f('prenom') ?>" required
+                       class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none <?= $hasE('prenom') ? $ringErr : $ringOk ?>">
+                <?= $e('prenom') ?>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Genre <span class="text-red-500">*</span></label>
+                <select name="genre" class="w-full rounded-lg border text-sm px-3 py-2 bg-white focus:outline-none <?= $hasE('genre') ? $ringErr : $ringOk ?>">
+                    <?php foreach ($genres as $g): ?>
+                    <option value="<?= hEdit($g) ?>" <?= $f('genre') === $g ? 'selected' : '' ?>>
+                        <?= $g === 'M' ? 'Masculin' : ($g === 'F' ? 'Féminin' : 'Autre') ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+                <?= $e('genre') ?>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Date de naissance</label>
+                <input type="date" name="date_naissance" value="<?= $f('date_naissance') ?>"
+                       class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none <?= $hasE('date_naissance') ? $ringErr : $ringOk ?>">
+                <?= $e('date_naissance') ?>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Lieu de naissance</label>
+                <input type="text" name="lieu_naissance" value="<?= $f('lieu_naissance') ?>"
+                       class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none <?= $ringOk ?>">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Nationalité</label>
+                <input type="text" name="nationalite" value="<?= $f('nationalite') ?>"
+                       class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none <?= $ringOk ?>">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">N° CNI</label>
+                <input type="text" name="cni_numero" value="<?= $f('cni_numero') ?>"
+                       class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none <?= $ringOk ?>">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Expiration CNI</label>
+                <input type="date" name="cni_expiration" value="<?= $f('cni_expiration') ?>"
+                       class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none <?= $ringOk ?>">
+            </div>
+            <div class="sm:col-span-2">
+                <label class="block text-xs font-medium text-slate-600 mb-1">Adresse</label>
+                <textarea name="adresse" rows="2"
+                          class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none resize-none <?= $ringOk ?>"><?= $f('adresse') ?></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Coordonnées -->
+    <div class="bg-white border border-slate-200 rounded-xl shadow-sm">
+        <div class="px-5 py-4 border-b border-slate-100 flex items-center gap-2">
+            <i data-lucide="contact" class="w-4 h-4 text-violet-600"></i>
+            <h3 class="font-semibold text-slate-900 text-sm">Coordonnées</h3>
+        </div>
+        <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Téléphone</label>
+                <input type="tel" name="telephone" value="<?= $f('telephone') ?>"
+                       class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none <?= $ringOk ?>">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">E-mail professionnel</label>
+                <input type="email" name="email_pro" value="<?= $f('email_pro') ?>"
+                       class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none <?= $hasE('email_pro') ? $ringErr : $ringOk ?>">
+                <?= $e('email_pro') ?>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">E-mail personnel</label>
+                <input type="email" name="email_perso" value="<?= $f('email_perso') ?>"
+                       class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none <?= $hasE('email_perso') ? $ringErr : $ringOk ?>">
+                <?= $e('email_perso') ?>
+            </div>
+        </div>
+    </div>
+
+    <!-- Informations professionnelles -->
+    <div class="bg-white border border-slate-200 rounded-xl shadow-sm">
+        <div class="px-5 py-4 border-b border-slate-100 flex items-center gap-2">
+            <i data-lucide="briefcase" class="w-4 h-4 text-violet-600"></i>
+            <h3 class="font-semibold text-slate-900 text-sm">Informations professionnelles</h3>
+        </div>
+        <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Type de personnel <span class="text-red-500">*</span></label>
+                <select name="type_personnel" class="w-full rounded-lg border text-sm px-3 py-2 bg-white focus:outline-none <?= $hasE('type_personnel') ? $ringErr : $ringOk ?>">
+                    <option value="">— Choisir —</option>
+                    <?php foreach ($types as $val => $lbl): ?>
+                    <option value="<?= hEdit($val) ?>" <?= $f('type_personnel') === $val ? 'selected' : '' ?>>
+                        <?= hEdit($lbl) ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+                <?= $e('type_personnel') ?>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Statut <span class="text-red-500">*</span></label>
+                <select name="statut" class="w-full rounded-lg border text-sm px-3 py-2 bg-white focus:outline-none <?= $hasE('statut') ? $ringErr : $ringOk ?>">
+                    <?php foreach ($statuts as $val => $lbl): ?>
+                    <option value="<?= hEdit($val) ?>" <?= $f('statut') === $val ? 'selected' : '' ?>>
+                        <?= hEdit($lbl) ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+                <?= $e('statut') ?>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Département</label>
+                <select name="departement_id" class="w-full rounded-lg border text-sm px-3 py-2 bg-white focus:outline-none <?= $ringOk ?>">
+                    <option value="">— Aucun —</option>
+                    <?php foreach ($departements as $d): ?>
+                    <option value="<?= (int)$d['id'] ?>" <?= $f('departement_id') == $d['id'] ? 'selected' : '' ?>>
+                        <?= hEdit($d['nom']) ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Poste</label>
+                <select name="poste_id" class="w-full rounded-lg border text-sm px-3 py-2 bg-white focus:outline-none <?= $ringOk ?>">
+                    <option value="">— Aucun —</option>
+                    <?php foreach ($postes as $p): ?>
+                    <option value="<?= (int)$p['id'] ?>" <?= $f('poste_id') == $p['id'] ? 'selected' : '' ?>>
+                        <?= hEdit($p['intitule']) ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Date d'entrée <span class="text-red-500">*</span></label>
+                <input type="date" name="date_entree" value="<?= $f('date_entree') ?>" required
+                       class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none <?= $hasE('date_entree') ? $ringErr : $ringOk ?>">
+                <?= $e('date_entree') ?>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Date de sortie</label>
+                <input type="date" name="date_sortie" value="<?= $f('date_sortie') ?>"
+                       class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none <?= $ringOk ?>">
+            </div>
+            <div class="sm:col-span-2">
+                <label class="block text-xs font-medium text-slate-600 mb-1">Motif de sortie</label>
+                <input type="text" name="motif_sortie" value="<?= $f('motif_sortie') ?>"
+                       placeholder="Requis si statut inactif, retraité ou démissionnaire"
+                       class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none <?= $hasE('motif_sortie') ? $ringErr : $ringOk ?>">
+                <?= $e('motif_sortie') ?>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Compte utilisateur lié</label>
+                <select name="user_id" class="w-full rounded-lg border text-sm px-3 py-2 bg-white focus:outline-none <?= $ringOk ?>">
+                    <option value="">— Aucun —</option>
+                    <?php foreach ($users as $u): ?>
+                    <option value="<?= (int)$u['id'] ?>" <?= $f('user_id') == $u['id'] ? 'selected' : '' ?>>
+                        <?= hEdit($u['label']) ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Diplôme</label>
+                <input type="text" name="diplome" value="<?= $f('diplome') ?>"
+                       class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none <?= $ringOk ?>">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Spécialité</label>
+                <input type="text" name="specialite" value="<?= $f('specialite') ?>"
+                       class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none <?= $ringOk ?>">
+            </div>
+            <div class="sm:col-span-2">
+                <label class="block text-xs font-medium text-slate-600 mb-1">Notes internes</label>
+                <textarea name="notes" rows="2"
+                          class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none resize-none <?= $ringOk ?>"><?= $f('notes') ?></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contacts d'urgence -->
+    <div class="bg-white border border-slate-200 rounded-xl shadow-sm">
+        <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i data-lucide="phone-call" class="w-4 h-4 text-violet-600"></i>
+                <h3 class="font-semibold text-slate-900 text-sm">Contacts d'urgence</h3>
+            </div>
+            <button type="button" id="addContact"
+                    class="inline-flex items-center gap-1 text-xs text-violet-600 hover:text-violet-800 font-medium">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>Ajouter
+            </button>
+        </div>
+        <div class="p-5 space-y-4" id="contactsContainer">
+            <?php if (empty($contacts)): ?>
+            <!-- Contact vide par défaut -->
+            <div class="contact-block border border-slate-100 rounded-lg p-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Nom complet</label>
+                        <input type="text" name="contacts[0][nom_complet]"
+                               class="w-full rounded-lg border border-slate-200 text-sm px-3 py-1.5 focus:ring-2 focus:ring-violet-300 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Lien</label>
+                        <input type="text" name="contacts[0][lien]"
+                               class="w-full rounded-lg border border-slate-200 text-sm px-3 py-1.5 focus:ring-2 focus:ring-violet-300 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Téléphone</label>
+                        <input type="tel" name="contacts[0][telephone]"
+                               class="w-full rounded-lg border border-slate-200 text-sm px-3 py-1.5 focus:ring-2 focus:ring-violet-300 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Téléphone 2</label>
+                        <input type="tel" name="contacts[0][telephone2]"
+                               class="w-full rounded-lg border border-slate-200 text-sm px-3 py-1.5 focus:ring-2 focus:ring-violet-300 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1">E-mail</label>
+                        <input type="email" name="contacts[0][email]"
+                               class="w-full rounded-lg border border-slate-200 text-sm px-3 py-1.5 focus:ring-2 focus:ring-violet-300 focus:outline-none">
+                    </div>
+                </div>
+            </div>
+            <?php else: ?>
+            <?php foreach ($contacts as $i => $c): ?>
+            <div class="contact-block border border-slate-100 rounded-lg p-4 relative">
+                <?php if ($i > 0): ?>
+                <button type="button" onclick="this.closest('.contact-block').remove()"
+                        class="absolute top-2 right-2 text-slate-300 hover:text-red-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+                <?php endif; ?>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Nom complet</label>
+                        <input type="text" name="contacts[<?= $i ?>][nom_complet]" value="<?= hEdit($c['nom_complet'] ?? '') ?>"
+                               class="w-full rounded-lg border border-slate-200 text-sm px-3 py-1.5 focus:ring-2 focus:ring-violet-300 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Lien</label>
+                        <input type="text" name="contacts[<?= $i ?>][lien]" value="<?= hEdit($c['lien'] ?? '') ?>"
+                               class="w-full rounded-lg border border-slate-200 text-sm px-3 py-1.5 focus:ring-2 focus:ring-violet-300 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Téléphone</label>
+                        <input type="tel" name="contacts[<?= $i ?>][telephone]" value="<?= hEdit($c['telephone'] ?? '') ?>"
+                               class="w-full rounded-lg border border-slate-200 text-sm px-3 py-1.5 focus:ring-2 focus:ring-violet-300 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Téléphone 2</label>
+                        <input type="tel" name="contacts[<?= $i ?>][telephone2]" value="<?= hEdit($c['telephone2'] ?? '') ?>"
+                               class="w-full rounded-lg border border-slate-200 text-sm px-3 py-1.5 focus:ring-2 focus:ring-violet-300 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1">E-mail</label>
+                        <input type="email" name="contacts[<?= $i ?>][email]" value="<?= hEdit($c['email'] ?? '') ?>"
+                               class="w-full rounded-lg border border-slate-200 text-sm px-3 py-1.5 focus:ring-2 focus:ring-violet-300 focus:outline-none">
+                    </div>
+                </div>
+            </div>
+            <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- Boutons -->
+    <div class="flex items-center justify-end gap-3">
+        <a href="<?= BASE_URL ?>/v2/rh/employes/<?= (int)$employe['id'] ?>"
+           class="px-4 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+            Annuler
+        </a>
+        <button type="submit"
+                class="inline-flex items-center gap-1.5 px-5 py-2 rounded-lg bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition-colors">
+            <i data-lucide="save" class="w-4 h-4"></i>Enregistrer les modifications
+        </button>
+    </div>
+</form>
+
+<script>
+(function() {
+    let idx = <?= max(count($contacts), 1) ?>;
+    document.getElementById('addContact').addEventListener('click', function() {
+        const tpl = `<div class="contact-block border border-slate-100 rounded-lg p-4 relative">
+            <button type="button" onclick="this.closest('.contact-block').remove()"
+                    class="absolute top-2 right-2 text-slate-300 hover:text-red-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div class="sm:col-span-2">
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Nom complet</label>
+                    <input type="text" name="contacts[${idx}][nom_complet]" class="w-full rounded-lg border border-slate-200 text-sm px-3 py-1.5 focus:ring-2 focus:ring-violet-300 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Lien</label>
+                    <input type="text" name="contacts[${idx}][lien]" class="w-full rounded-lg border border-slate-200 text-sm px-3 py-1.5 focus:ring-2 focus:ring-violet-300 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Téléphone</label>
+                    <input type="tel" name="contacts[${idx}][telephone]" class="w-full rounded-lg border border-slate-200 text-sm px-3 py-1.5 focus:ring-2 focus:ring-violet-300 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Téléphone 2</label>
+                    <input type="tel" name="contacts[${idx}][telephone2]" class="w-full rounded-lg border border-slate-200 text-sm px-3 py-1.5 focus:ring-2 focus:ring-violet-300 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">E-mail</label>
+                    <input type="email" name="contacts[${idx}][email]" class="w-full rounded-lg border border-slate-200 text-sm px-3 py-1.5 focus:ring-2 focus:ring-violet-300 focus:outline-none">
+                </div>
+            </div>
+        </div>`;
+        document.getElementById('contactsContainer').insertAdjacentHTML('beforeend', tpl);
+        idx++;
+    });
+})();
+</script>

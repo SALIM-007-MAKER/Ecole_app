@@ -1,0 +1,4 @@
+# Rediriger tout le trafic vers public/
+RewriteEngine On
+RewriteCond %{REQUEST_URI} !^/ecole_app/public/
+RewriteRule ^(.*)$ public/$1 [L,QSA]

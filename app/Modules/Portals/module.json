@@ -1,0 +1,30 @@
+{
+    "name": "Portals",
+    "version": "1.0.0",
+    "description": "Portal Framework SCOLARIS V2 — 7 portails contextuels avec moteurs communs",
+    "namespace": "App\\Modules\\Portals",
+    "enabled": false,
+    "routes": "routes.php",
+    "events": [],
+    "permissions": [
+        "portal.admin.access",
+        "portal.direction.access",
+        "portal.enseignant.access",
+        "portal.eleve.access",
+        "portal.parent.access",
+        "portal.comptabilite.access",
+        "portal.rh.access"
+    ],
+    "tables": [
+        "portal_preferences",
+        "portal_widget_cache",
+        "portal_access_logs",
+        "portal_api_tokens"
+    ],
+    "migrations": [
+        "database/migrations/portals_001_tables.sql"
+    ],
+    "dependencies": [],
+    "phase": "12.1",
+    "author": "SCOLARIS V2"
+}

@@ -1,0 +1,119 @@
+{
+  "name": "Documents",
+  "slug": "documents",
+  "version": "2.0.0",
+  "description": "Module Documents V2 — plateforme documentaire transversale : upload sécurisé, versioning, arborescence, tags, partages, corbeille, recherche plein texte, signatures (stub)",
+  "namespace": "App\\Modules\\Documents",
+  "enabled": false,
+  "routes": "app/Modules/Documents/routes.php",
+  "phase": "7.4",
+  "status": "FROZEN v2.0.0 — GO — activation requiert migration SQL doc_001_documents.sql",
+  "depends": [],
+  "migrations_done": [],
+  "migrations_pending": [
+    "Phase 7.2 — doc_001_documents.sql (11 tables : doc_categories, doc_folders, doc_documents, doc_versions, doc_tags, doc_document_tags, doc_partages, doc_historique, doc_corbeille, doc_quotas, doc_signatures)"
+  ],
+  "controllers": [
+    "Controllers/DocumentController.php",
+    "Controllers/FolderController.php",
+    "Controllers/TrashController.php",
+    "Controllers/ShareController.php",
+    "Controllers/SearchController.php",
+    "Controllers/TagController.php",
+    "Controllers/PreviewController.php",
+    "Controllers/SignatureController.php",
+    "Controllers/AdminController.php"
+  ],
+  "models": [
+    "Models/DocumentModel.php",
+    "Models/FolderModel.php",
+    "Models/ShareModel.php",
+    "Models/StorageResult.php"
+  ],
+  "services": [
+    "Services/DocumentService.php",
+    "Services/FolderService.php",
+    "Services/StorageService.php",
+    "Services/VersioningService.php",
+    "Services/ShareService.php",
+    "Services/TagService.php",
+    "Services/QuotaService.php",
+    "Services/SearchService.php",
+    "Services/PreviewService.php",
+    "Services/SignatureService.php"
+  ],
+  "repositories": [
+    "Repositories/DocumentRepository.php",
+    "Repositories/FolderRepository.php",
+    "Repositories/VersionRepository.php",
+    "Repositories/ShareRepository.php",
+    "Repositories/TagRepository.php",
+    "Repositories/TrashRepository.php",
+    "Repositories/HistoriqueRepository.php",
+    "Repositories/QuotaRepository.php"
+  ],
+  "dto": [
+    "DTO/DocumentDTO.php",
+    "DTO/DocumentFiltersDTO.php",
+    "DTO/FolderDTO.php",
+    "DTO/ShareDTO.php",
+    "DTO/TagDTO.php",
+    "DTO/SearchDTO.php",
+    "DTO/QuotaDTO.php"
+  ],
+  "policies": [
+    "Policies/DocumentPolicy.php",
+    "Policies/FolderPolicy.php",
+    "Policies/SharePolicy.php"
+  ],
+  "events": [
+    "Events/DocumentUploaded.php",
+    "Events/DocumentVersioned.php",
+    "Events/DocumentArchived.php",
+    "Events/DocumentRestored.php",
+    "Events/DocumentTrashed.php",
+    "Events/DocumentPurged.php",
+    "Events/DocumentShared.php",
+    "Events/DocumentShareRevoked.php",
+    "Events/DocumentTagged.php",
+    "Events/DocumentMoved.php",
+    "Events/DocumentExpired.php",
+    "Events/DocumentSignatureRequested.php",
+    "Events/DocumentSigned.php",
+    "Events/FolderCreated.php",
+    "Events/FolderDeleted.php",
+    "Events/QuotaExceeded.php"
+  ],
+  "listeners": [
+    "Listeners/AuditListener.php",
+    "Listeners/NotificationListener.php",
+    "Listeners/QuotaListener.php",
+    "Listeners/SearchIndexListener.php"
+  ],
+  "permissions": [
+    "document.view", "document.view_all", "document.view_secret",
+    "document.create", "document.update", "document.version",
+    "document.archive", "document.delete", "document.restore",
+    "document.share", "document.export", "document.admin", "document.sign",
+    "folder.create", "folder.delete"
+  ],
+  "sql_tables": [
+    "doc_categories", "doc_folders", "doc_documents", "doc_versions",
+    "doc_tags", "doc_document_tags", "doc_partages", "doc_historique",
+    "doc_corbeille", "doc_quotas", "doc_signatures"
+  ],
+  "sql_migrations": [
+    "database/migrations/doc_001_documents.sql"
+  ],
+  "modules_gelés_modifiés": [
+    "config/modules.php — ajout clé 'documents' (enabled: false)",
+    "config/events.php — ajout 16 mappings events Documents",
+    "config/permissions.php — ajout 15 permissions document.* + folder.* par rôle"
+  ],
+  "author": "SCOLARIS V2",
+  "created_at": "2026-07-02",
+  "updated_at": "2026-07-02",
+  "frozen_at": "2026-07-02",
+  "frozen_phase": "7.4",
+  "freeze_document": "DOCUMENTS_MODULE_FREEZE.md"
+}

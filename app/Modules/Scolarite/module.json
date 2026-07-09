@@ -1,0 +1,155 @@
+{
+  "name": "Scolarite",
+  "slug": "scolarite",
+  "version": "2.5.0",
+  "description": "Gestion de la scolarité — élèves, classes, inscriptions, familles, matières",
+  "namespace": "App\\Modules\\Scolarite",
+  "enabled": false,
+  "routes": "app/Modules/Scolarite/routes.php",
+  "phase": "1.6",
+  "status": "matieres-implemented",
+  "depends": [],
+  "migrations_pending": [
+    "Phase 1.4 — migration_inscriptions.sql (CREATE TABLE inscriptions) — À EXÉCUTER AVANT ACTIVATION",
+    "Phase 1.5 — migration_familles.sql (CREATE TABLE familles + familles_eleves) — À EXÉCUTER AVANT ACTIVATION",
+    "Phase 1.6 — migration_matieres.sql (ALTER TABLE matieres ADD filiere/niveaux/actif/couleur) — MySQL 8.0+"
+  ],
+  "migrations_done": [
+    "Phase 1.1 — Module structure (config/modules.php, autoloader App\\Modules\\)"
+  ],
+  "controllers": [
+    "Controllers/EleveController.php",
+    "Controllers/ClasseController.php",
+    "Controllers/InscriptionController.php",
+    "Controllers/FamilleController.php",
+    "Controllers/MatiereController.php"
+  ],
+  "models": [
+    "Models/EleveModel.php",
+    "Models/ClasseModel.php",
+    "Models/InscriptionModel.php",
+    "Models/FamilleModel.php",
+    "Models/MatiereModel.php"
+  ],
+  "services": [
+    "Services/EleveService.php",
+    "Services/ClasseService.php",
+    "Services/AffectationService.php",
+    "Services/InscriptionService.php",
+    "Services/FamilleService.php",
+    "Services/MatiereService.php"
+  ],
+  "repositories": [
+    "Repositories/EleveRepository.php",
+    "Repositories/ClasseRepository.php",
+    "Repositories/InscriptionRepository.php",
+    "Repositories/FamilleRepository.php",
+    "Repositories/MatiereRepository.php"
+  ],
+  "dto": [
+    "DTO/EleveDTO.php",
+    "DTO/EleveFiltersDTO.php",
+    "DTO/ClasseDTO.php",
+    "DTO/ClasseFiltersDTO.php",
+    "DTO/InscriptionDTO.php",
+    "DTO/InscriptionFiltersDTO.php",
+    "DTO/FamilleDTO.php",
+    "DTO/FamilleFiltersDTO.php",
+    "DTO/MatiereDTO.php",
+    "DTO/MatiereFiltersDTO.php"
+  ],
+  "policies": [
+    "Policies/ElevePolicy.php",
+    "Policies/ClassePolicy.php",
+    "Policies/InscriptionPolicy.php",
+    "Policies/FamillePolicy.php",
+    "Policies/MatierePolicy.php"
+  ],
+  "events": [
+    "Events/EleveInscrit.php",
+    "Events/EleveUpdated.php",
+    "Events/EleveArchived.php",
+    "Events/InscriptionValidee.php",
+    "Events/ClasseAffectee.php",
+    "Events/ClasseCreated.php",
+    "Events/ClasseUpdated.php",
+    "Events/ClasseDeleted.php",
+    "Events/EleveAssignedToClasse.php",
+    "Events/EleveRemovedFromClasse.php",
+    "Events/InscriptionCreated.php",
+    "Events/InscriptionUpdated.php",
+    "Events/InscriptionCancelled.php",
+    "Events/ReinscriptionCreated.php",
+    "Events/ClasseChanged.php",
+    "Events/SchoolYearChanged.php",
+    "Events/ParentCreated.php",
+    "Events/ParentUpdated.php",
+    "Events/ParentLinkedToStudent.php",
+    "Events/ParentUnlinkedFromStudent.php",
+    "Events/EmergencyContactUpdated.php",
+    "Events/MatiereCreated.php",
+    "Events/MatiereUpdated.php",
+    "Events/MatiereArchived.php",
+    "Events/MatiereAssignedToClasse.php",
+    "Events/MatiereRemovedFromClasse.php"
+  ],
+  "listeners": [
+    "Listeners/EleveHandler.php",
+    "Listeners/ClasseHandler.php",
+    "Listeners/InscriptionHandler.php",
+    "Listeners/FamilleHandler.php",
+    "Listeners/MatiereHandler.php"
+  ],
+  "permissions": [
+    "eleves.view", "eleves.view.own",
+    "eleves.create", "eleves.update", "eleves.delete",
+    "classes.view", "classes.view.own",
+    "classes.create", "classes.update", "classes.delete",
+    "matieres.view", "matieres.create", "matieres.update", "matieres.delete",
+    "inscriptions.view", "inscriptions.create", "inscriptions.update",
+    "familles.view", "familles.manage"
+  ],
+  "views_eleves": {
+    "index":      "Views/eleves/index.php",
+    "show":       "Views/eleves/show.php",
+    "form":       "Views/eleves/form.php",
+    "import":     "Views/eleves/import.php",
+    "export_pdf": "Views/eleves/export_pdf.php"
+  },
+  "views_classes": {
+    "index": "Views/classes/index.php",
+    "show":  "Views/classes/show.php",
+    "form":  "Views/classes/form.php"
+  },
+  "views_inscriptions": {
+    "index": "Views/inscriptions/index.php",
+    "show":  "Views/inscriptions/show.php",
+    "form":  "Views/inscriptions/form.php"
+  },
+  "views_familles": {
+    "index": "Views/familles/index.php",
+    "show":  "Views/familles/show.php",
+    "form":  "Views/familles/form.php"
+  },
+  "views_matieres": {
+    "index": "Views/matieres/index.php",
+    "show":  "Views/matieres/show.php",
+    "form":  "Views/matieres/form.php"
+  },
+  "sql_migrations": [
+    "migration_inscriptions.sql",
+    "migration_familles.sql",
+    "migration_matieres.sql"
+  ],
+  "author": "SCOLARIS V2",
+  "created_at": "2026-06-30",
+  "updated_at": "2026-06-30",
+  "phase_history": {
+    "1.1": "Module structure + autoloader",
+    "1.2": "Domaine Élèves",
+    "1.3": "Domaine Classes",
+    "1.4": "Domaine Inscriptions",
+    "1.5": "Domaine Familles/Parents",
+    "1.6": "Référentiel Pédagogique (Matières)"
+  }
+}

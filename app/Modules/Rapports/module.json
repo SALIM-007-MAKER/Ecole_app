@@ -1,0 +1,39 @@
+{
+    "name": "rapports",
+    "label": "Rapports & Business Intelligence",
+    "version": "2.0.0",
+    "description": "Plateforme décisionnelle — tableaux de bord, KPIs, exports PDF/Excel/CSV, rapports planifiés",
+    "namespace": "App\\Modules\\Rapports",
+    "routes_prefix": "/v2/rapports",
+    "enabled": false,
+    "dependencies": [
+        "core"
+    ],
+    "permissions_prefix": "rapports",
+    "migrations": [
+        "bi_001_rapports.sql"
+    ],
+    "tables": [
+        "bi_tableaux_config",
+        "bi_rapports_planifies",
+        "bi_rapport_executions",
+        "bi_kpi_snapshots",
+        "bi_exports"
+    ],
+    "data_sources": [
+        "eleves", "classes", "inscriptions",
+        "notes_v2", "evaluations", "periodes_scolaires",
+        "finance_factures", "finance_paiements", "finance_mouvements_caisse",
+        "vs_absences", "vs_retards", "vs_incidents_discipline",
+        "rh_employes", "rh_presences", "rh_conges", "rh_contrats",
+        "biblio_ouvrages", "biblio_emprunts", "biblio_exemplaires",
+        "inv_articles", "inv_stocks", "inv_commandes", "inv_maintenances"
+    ],
+    "phase": "11.2",
+    "freeze_date": null,
+    "notes": [
+        "Module read-only sur toutes les tables sources",
+        "enabled=false — activer après Phase 11.3 Integration Review",
+        "V3: DataWarehouseInterface, ETLInterface, PredictionInterface (stubs)"
+    ]
+}

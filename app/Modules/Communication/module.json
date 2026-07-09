@@ -1,0 +1,125 @@
+{
+  "name": "Communication",
+  "slug": "communication",
+  "version": "2.0.0",
+  "description": "Module Communication V2 — plateforme centralisée des échanges : notifications, email, SMS, push, messagerie interne, diffusion, campagnes, templates, préférences, journal",
+  "namespace": "App\\Modules\\Communication",
+  "enabled": false,
+  "routes": "app/Modules/Communication/routes.php",
+  "phase": "8.2",
+  "status": "IMPLEMENTED — enabled: false — activation requiert migration SQL com_001_communication.sql",
+  "depends": [],
+  "migrations_done": [],
+  "migrations_pending": [
+    "Phase 8.2 — com_001_communication.sql (13 tables : com_notifications, com_threads, com_thread_messages, com_thread_participants, com_templates, com_queue, com_logs, com_groupes, com_groupe_membres, com_preferences, com_push_tokens, com_campagnes, com_campagne_destinataires)"
+  ],
+  "controllers": [
+    "Controllers/NotificationController.php",
+    "Controllers/ThreadController.php",
+    "Controllers/TemplateController.php",
+    "Controllers/DiffusionController.php",
+    "Controllers/PreferenceController.php",
+    "Controllers/CampagneController.php",
+    "Controllers/AdminController.php"
+  ],
+  "models": [
+    "Models/NotificationModel.php",
+    "Models/MessageModel.php",
+    "Models/ThreadModel.php",
+    "Models/TemplateModel.php",
+    "Models/CampagneModel.php"
+  ],
+  "channels": [
+    "Channels/ChannelInterface.php",
+    "Channels/EmailChannel.php",
+    "Channels/SmsChannel.php",
+    "Channels/PushChannel.php",
+    "Channels/InternalChannel.php"
+  ],
+  "services": [
+    "Services/NotificationService.php",
+    "Services/ThreadService.php",
+    "Services/TemplateService.php",
+    "Services/QueueService.php",
+    "Services/EmailService.php",
+    "Services/SmsService.php",
+    "Services/PushService.php",
+    "Services/DiffusionService.php",
+    "Services/PreferenceService.php",
+    "Services/CampagneService.php",
+    "Services/RoutageService.php"
+  ],
+  "repositories": [
+    "Repositories/NotificationRepository.php",
+    "Repositories/ThreadRepository.php",
+    "Repositories/ThreadMessageRepository.php",
+    "Repositories/ThreadParticipantRepository.php",
+    "Repositories/TemplateRepository.php",
+    "Repositories/QueueRepository.php",
+    "Repositories/LogRepository.php",
+    "Repositories/GroupeRepository.php",
+    "Repositories/PreferenceRepository.php",
+    "Repositories/PushTokenRepository.php",
+    "Repositories/CampagneRepository.php"
+  ],
+  "dto": [
+    "DTO/NotificationDTO.php",
+    "DTO/ThreadDTO.php",
+    "DTO/ThreadMessageDTO.php",
+    "DTO/TemplateDTO.php",
+    "DTO/DiffusionDTO.php",
+    "DTO/GroupeDTO.php",
+    "DTO/PreferenceDTO.php",
+    "DTO/CampagneDTO.php",
+    "DTO/QueueJobDTO.php"
+  ],
+  "policies": [
+    "Policies/CommunicationPolicy.php",
+    "Policies/ThreadPolicy.php"
+  ],
+  "events": [
+    "Events/NotificationCreated.php",
+    "Events/NotificationRead.php",
+    "Events/NotificationsBulkRead.php",
+    "Events/ThreadCreated.php",
+    "Events/ThreadMessageSent.php",
+    "Events/MessageQueued.php",
+    "Events/MessageSent.php",
+    "Events/MessageFailed.php",
+    "Events/DiffusionEnvoyee.php",
+    "Events/CampagneLancee.php",
+    "Events/CampagneTerminee.php",
+    "Events/PreferencesUpdated.php"
+  ],
+  "listeners": [
+    "Listeners/AuditListener.php",
+    "Listeners/CrossModuleListener.php",
+    "Listeners/RealTimeListener.php"
+  ],
+  "permissions": [
+    "communication.view",
+    "communication.send",
+    "communication.broadcast",
+    "communication.manage_templates",
+    "communication.manage_groups",
+    "communication.campaign",
+    "communication.admin",
+    "communication.view_all"
+  ],
+  "sql_tables": [
+    "com_notifications", "com_threads", "com_thread_messages", "com_thread_participants",
+    "com_templates", "com_queue", "com_logs", "com_groupes", "com_groupe_membres",
+    "com_preferences", "com_push_tokens", "com_campagnes", "com_campagne_destinataires"
+  ],
+  "sql_migrations": [
+    "database/migrations/com_001_communication.sql"
+  ],
+  "modules_modifies": [
+    "config/modules.php — ajout clé 'communication' (enabled: false)",
+    "config/events.php — ajout 12 events propres + CrossModuleListener sur ~28 events",
+    "config/permissions.php — ajout 8 permissions communication.* par rôle"
+  ],
+  "author": "SCOLARIS V2",
+  "created_at": "2026-07-03",
+  "updated_at": "2026-07-03"
+}

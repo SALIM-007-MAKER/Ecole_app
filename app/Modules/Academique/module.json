@@ -1,0 +1,65 @@
+{
+  "name": "Academique",
+  "slug": "academique",
+  "version": "2.1.0",
+  "description": "Gestion académique — périodes, évaluations, notes, moyennes, bulletins",
+  "namespace": "App\\Modules\\Academique",
+  "enabled": false,
+  "routes": "app/Modules/Academique/routes.php",
+  "phase": "2.1",
+  "status": "periodes-implemented",
+  "depends": ["scolarite"],
+  "migrations_pending": [
+    "Phase 2.1 — migration_periodes_scolaires.sql (CREATE TABLE periodes_scolaires) — À EXÉCUTER AVANT ACTIVATION"
+  ],
+  "migrations_done": [],
+  "controllers": [
+    "Controllers/PeriodeController.php"
+  ],
+  "models": [
+    "Models/PeriodeScolaireModel.php"
+  ],
+  "services": [
+    "Services/PeriodeScolaireService.php"
+  ],
+  "repositories": [
+    "Repositories/PeriodeScolaireRepository.php"
+  ],
+  "dto": [
+    "DTO/PeriodeScolaireDTO.php",
+    "DTO/PeriodeScolaireFiltersDTO.php"
+  ],
+  "policies": [
+    "Policies/PeriodePolicy.php"
+  ],
+  "events": [
+    "Events/PeriodeCreated.php",
+    "Events/PeriodeUpdated.php",
+    "Events/PeriodeActivated.php",
+    "Events/PeriodeLocked.php",
+    "Events/PeriodeUnlocked.php",
+    "Events/PeriodeArchived.php"
+  ],
+  "listeners": [
+    "Listeners/PeriodeHandler.php"
+  ],
+  "permissions": [
+    "academique.periodes.view",
+    "academique.periodes.manage",
+    "academique.periodes.admin"
+  ],
+  "views_periodes": {
+    "index": "Views/periodes/index.php",
+    "show":  "Views/periodes/show.php",
+    "form":  "Views/periodes/form.php"
+  },
+  "sql_migrations": [
+    "migration_periodes_scolaires.sql"
+  ],
+  "author": "SCOLARIS V2",
+  "created_at": "2026-06-30",
+  "updated_at": "2026-06-30",
+  "phase_history": {
+    "2.1": "Domaine Périodes Scolaires"
+  }
+}

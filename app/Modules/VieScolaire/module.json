@@ -1,0 +1,59 @@
+{
+    "name": "VieScolaire",
+    "version": "2.6.0",
+    "description": "Module Vie Scolaire V2 — Absences, Présences, Retards, Discipline, Récompenses, EmploisDuTemps, Activités",
+    "author": "ecole_app",
+    "domains": [
+        "Absences",
+        "Presences",
+        "Retards",
+        "Discipline",
+        "Recompenses",
+        "EmploisDuTemps",
+        "Activites"
+    ],
+    "dependencies": [
+        "Scolarite",
+        "Academique"
+    ],
+    "requires_tables": [
+        "vs_motifs_absence",
+        "vs_absences",
+        "vs_justifications_absences",
+        "vs_appels",
+        "vs_presences",
+        "vs_presences_historique",
+        "vs_retards",
+        "vs_justifications_retards",
+        "vs_discipline_categories",
+        "vs_dossiers_discipline",
+        "vs_incidents_discipline",
+        "vs_sanctions_discipline",
+        "vs_sanctions_historique",
+        "vs_appels_discipline",
+        "vs_recompense_categories",
+        "vs_recompenses",
+        "vs_recompenses_historique",
+        "vs_edt_plages_horaires",
+        "vs_edt_salles",
+        "vs_emplois_du_temps",
+        "vs_edt_creneaux",
+        "vs_edt_versions",
+        "vs_edt_remplacements",
+        "vs_activite_categories",
+        "vs_activites",
+        "vs_activite_classes",
+        "vs_activite_responsables",
+        "vs_activite_inscriptions",
+        "vs_activite_historique"
+    ],
+    "permissions_prefix": [
+        "attendance",
+        "attendance.session",
+        "late",
+        "discipline",
+        "reward",
+        "timetable",
+        "activity"
+    ]
+}

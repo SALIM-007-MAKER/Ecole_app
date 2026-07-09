@@ -1,0 +1,51 @@
+{
+  "name": "Bibliotheque",
+  "version": "2.0.0",
+  "description": "Module de gestion de la bibliothèque scolaire : catalogue, emprunts, réservations, pénalités, inventaire, analytics",
+  "namespace": "App\\Modules\\Bibliotheque",
+  "enabled": false,
+  "author": "EcoleApp V2",
+  "created_at": "2026-07-03",
+  "routes_prefix": "/v2/bibliotheque",
+  "permissions_prefix": "biblio",
+  "dependencies": [],
+  "optional_dependencies": ["Finance", "Communication"],
+  "features": [
+    "catalogue",
+    "exemplaires",
+    "emprunts",
+    "retours",
+    "reservations",
+    "penalites",
+    "inventaire",
+    "analytics",
+    "referentiels",
+    "barcode",
+    "qrcode"
+  ],
+  "tables": [
+    "biblio_ouvrages",
+    "biblio_auteurs",
+    "biblio_ouvrage_auteurs",
+    "biblio_editeurs",
+    "biblio_categories",
+    "biblio_ouvrage_categories",
+    "biblio_tags",
+    "biblio_ouvrage_tags",
+    "biblio_exemplaires",
+    "biblio_emprunts",
+    "biblio_reservations",
+    "biblio_penalites",
+    "biblio_inventaires",
+    "biblio_inventaire_lignes"
+  ],
+  "events": 18,
+  "routes": 57,
+  "permissions": 11,
+  "debt": [
+    "DT-B-001: BarcodeInterface stub — remplacer par une lib réelle en V3 (zxing-php ou picqer/php-barcode-generator)",
+    "DT-B-002: QrCodeInterface stub — remplacer par endroid/qr-code en V3",
+    "DT-B-003: RechercheService.ouvragesSimilaires — similarité basée sur la catégorie uniquement, améliorer avec full-text search",
+    "DT-B-004: PenaliteService — pas d'intégration InvoiceService Finance auto (pénalité créée mais facture non émise automatiquement)"
+  ]
+}

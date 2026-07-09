@@ -1,0 +1,41 @@
+{
+    "name": "Inventaire",
+    "version": "2.0.0",
+    "description": "Gestion complète de l'inventaire scolaire — articles, stocks, commandes, affectations, maintenances, inventaires physiques",
+    "namespace": "App\\Modules\\Inventaire",
+    "routes": "routes.php",
+    "enabled": false,
+    "priority": 80,
+    "dependencies": [],
+    "permissions_prefix": "inventaire",
+    "tables": [
+        "inv_categories",
+        "inv_fournisseurs",
+        "inv_emplacements",
+        "inv_articles",
+        "inv_stocks",
+        "inv_commandes",
+        "inv_commande_lignes",
+        "inv_receptions",
+        "inv_reception_lignes",
+        "inv_mouvements",
+        "inv_affectations",
+        "inv_maintenances",
+        "inv_amortissements",
+        "inv_inventaires",
+        "inv_inventaire_lignes",
+        "inv_alertes"
+    ],
+    "events": [
+        "ArticleAjoute", "ArticleModifie", "ArticleArchive",
+        "FournisseurAjoute", "FournisseurBloque",
+        "CommandeCreee", "CommandeValidee", "CommandeRecue",
+        "StockEntree", "StockSortie", "StockTransfert", "StockAjustement", "StockAlerte",
+        "AffectationCreee", "AffectationRetournee", "AffectationPerdue",
+        "MaintenanceCreee", "MaintenanceTerminee",
+        "InventaireTermine",
+        "AmortissementCalcule"
+    ],
+    "author": "SCOLARIS V2",
+    "migration": "database/migrations/inv_001_inventaire.sql"
+}

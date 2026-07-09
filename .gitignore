@@ -1,0 +1,23 @@
+# Secrets et configuration locale — ne jamais versionner
+.env
+
+# Cache, files d'attente, sauvegardes et stockage tenant générés à l'exécution
+storage/cache/*
+!storage/cache/.gitkeep
+storage/tenants/*
+!storage/tenants/.gitkeep
+
+# Fichiers uploadés par les utilisateurs
+public/uploads/*
+!public/uploads/.gitkeep
+
+# Logs
+*.log
+
+# Fichiers système
+Thumbs.db
+.DS_Store
+
+# IDE
+.vscode/
+.idea/

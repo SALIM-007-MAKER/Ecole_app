@@ -1,0 +1,129 @@
+{
+    "name": "EduNova — Gestion Scolaire",
+    "short_name": "EduNova",
+    "description": "Application complète de gestion scolaire : élèves, notes, absences, paiements et emplois du temps.",
+    "start_url": "/ecole_app/",
+    "scope": "/ecole_app/",
+    "id": "/ecole_app/",
+    "display": "standalone",
+    "display_override": ["window-controls-overlay", "standalone", "minimal-ui", "browser"],
+    "background_color": "#ffffff",
+    "theme_color": "#0d6efd",
+    "orientation": "any",
+    "lang": "fr",
+    "dir": "ltr",
+    "categories": ["education", "productivity", "utilities"],
+    "icons": [
+        {
+            "src": "/ecole_app/assets/images/icon-72.png",
+            "sizes": "72x72",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/ecole_app/assets/images/icon-96.png",
+            "sizes": "96x96",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/ecole_app/assets/images/icon-128.png",
+            "sizes": "128x128",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/ecole_app/assets/images/icon-144.png",
+            "sizes": "144x144",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/ecole_app/assets/images/icon-152.png",
+            "sizes": "152x152",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/ecole_app/assets/images/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/ecole_app/assets/images/icon-384.png",
+            "sizes": "384x384",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/ecole_app/assets/images/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/ecole_app/assets/images/icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "/ecole_app/assets/images/icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Tableau de bord",
+            "short_name": "Accueil",
+            "description": "Vue d'ensemble de l'application",
+            "url": "/ecole_app/dashboard",
+            "icons": [{ "src": "/ecole_app/assets/images/icon-96.png", "sizes": "96x96", "type": "image/png" }]
+        },
+        {
+            "name": "Gestion des élèves",
+            "short_name": "Élèves",
+            "description": "Liste et gestion des élèves",
+            "url": "/ecole_app/eleves",
+            "icons": [{ "src": "/ecole_app/assets/images/icon-96.png", "sizes": "96x96", "type": "image/png" }]
+        },
+        {
+            "name": "Absences du jour",
+            "short_name": "Absences",
+            "description": "Pointage et suivi des absences",
+            "url": "/ecole_app/absences",
+            "icons": [{ "src": "/ecole_app/assets/images/icon-96.png", "sizes": "96x96", "type": "image/png" }]
+        },
+        {
+            "name": "Notes & Évaluations",
+            "short_name": "Notes",
+            "description": "Saisie et consultation des notes",
+            "url": "/ecole_app/notes",
+            "icons": [{ "src": "/ecole_app/assets/images/icon-96.png", "sizes": "96x96", "type": "image/png" }]
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "/ecole_app/assets/images/screenshot-mobile.png",
+            "sizes": "390x844",
+            "type": "image/png",
+            "form_factor": "narrow",
+            "label": "Tableau de bord sur mobile"
+        },
+        {
+            "src": "/ecole_app/assets/images/screenshot-desktop.png",
+            "sizes": "1280x800",
+            "type": "image/png",
+            "form_factor": "wide",
+            "label": "Tableau de bord sur bureau"
+        }
+    ],
+    "prefer_related_applications": false,
+    "handle_links": "preferred",
+    "edge_side_panel": {
+        "preferred_width": 400
+    }
+}
