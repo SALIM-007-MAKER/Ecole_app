@@ -12,17 +12,17 @@
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-3">
-            <a href="/v2/rapports/exports/form" class="text-slate-400 hover:text-violet-600">
+            <a href="<?= BASE_URL ?>/v2/rapports/exports/form" class="text-slate-400 hover:text-violet-600">
                 <i data-lucide="arrow-left" class="w-5 h-5"></i>
             </a>
             <h1 class="text-xl font-bold text-slate-800"><?= htmlspecialchars($rapport['titre'] ?? 'Rapport') ?></h1>
         </div>
         <div class="flex gap-2">
-            <a href="/v2/rapports/exports/csv?<?= http_build_query($filters?->toArray() ?? []) ?>"
+            <a href="<?= BASE_URL ?>/v2/rapports/exports/csv?<?= http_build_query($filters?->toArray() ?? []) ?>"
                class="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg text-sm hover:bg-slate-50">
                 <i data-lucide="download" class="w-4 h-4"></i> CSV
             </a>
-            <a href="/v2/rapports/exports/excel?<?= http_build_query($filters?->toArray() ?? []) ?>"
+            <a href="<?= BASE_URL ?>/v2/rapports/exports/excel?<?= http_build_query($filters?->toArray() ?? []) ?>"
                class="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg text-sm hover:bg-slate-50">
                 <i data-lucide="table" class="w-4 h-4"></i> Excel
             </a>

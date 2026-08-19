@@ -34,13 +34,15 @@ $typeLabels = [
 function h(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8'); }
 ?>
 
-<div class="flex flex-wrap items-center justify-between gap-4 mb-6">
-    <div>
-        <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+<div class="flex flex-wrap items-start justify-between gap-4 mb-6">
+    <div class="flex items-start gap-4">
+        <div class="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
             <i data-lucide="users" class="w-5 h-5 text-violet-600"></i>
-            Employés
-        </h2>
-        <p class="text-sm text-slate-500 mt-0.5">Gestion du personnel — Module RH V2</p>
+        </div>
+        <div>
+            <h2 class="text-xl font-bold text-slate-900">Employés</h2>
+            <p class="text-sm text-slate-500 mt-0.5">Gestion du personnel</p>
+        </div>
     </div>
     <div class="flex items-center gap-2 flex-wrap">
         <?php if ($canExport): ?>
@@ -84,21 +86,41 @@ $totalArchives = (int)($stats['archives'] ?? 0);
 $totalSuspendus = (int)($stats['par_statut']['suspendu'] ?? 0);
 ?>
 <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-    <div class="bg-white border border-slate-200 rounded-xl p-4">
-        <div class="text-2xl font-bold text-emerald-600"><?= $totalActifs ?></div>
-        <div class="text-xs text-slate-500 mt-0.5">Employés actifs</div>
+    <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-4">
+        <div class="flex items-center gap-2 mb-1">
+            <div class="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-600"></i>
+            </div>
+            <div class="text-2xl font-bold text-emerald-600"><?= $totalActifs ?></div>
+        </div>
+        <div class="text-xs text-slate-500">Employés actifs</div>
     </div>
-    <div class="bg-white border border-slate-200 rounded-xl p-4">
-        <div class="text-2xl font-bold text-slate-700"><?= array_sum($stats['par_type'] ?? []) ?></div>
-        <div class="text-xs text-slate-500 mt-0.5">Total personnel</div>
+    <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-4">
+        <div class="flex items-center gap-2 mb-1">
+            <div class="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="users" class="w-3.5 h-3.5 text-slate-600"></i>
+            </div>
+            <div class="text-2xl font-bold text-slate-700"><?= array_sum($stats['par_type'] ?? []) ?></div>
+        </div>
+        <div class="text-xs text-slate-500">Total personnel</div>
     </div>
-    <div class="bg-white border border-slate-200 rounded-xl p-4">
-        <div class="text-2xl font-bold text-orange-500"><?= $totalSuspendus ?></div>
-        <div class="text-xs text-slate-500 mt-0.5">Suspendus</div>
+    <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-4">
+        <div class="flex items-center gap-2 mb-1">
+            <div class="w-7 h-7 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="pause-circle" class="w-3.5 h-3.5 text-orange-600"></i>
+            </div>
+            <div class="text-2xl font-bold text-orange-500"><?= $totalSuspendus ?></div>
+        </div>
+        <div class="text-xs text-slate-500">Suspendus</div>
     </div>
-    <div class="bg-white border border-slate-200 rounded-xl p-4">
-        <div class="text-2xl font-bold text-slate-400"><?= $totalArchives ?></div>
-        <div class="text-xs text-slate-500 mt-0.5">Archivés</div>
+    <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-4">
+        <div class="flex items-center gap-2 mb-1">
+            <div class="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="archive" class="w-3.5 h-3.5 text-slate-400"></i>
+            </div>
+            <div class="text-2xl font-bold text-slate-400"><?= $totalArchives ?></div>
+        </div>
+        <div class="text-xs text-slate-500">Archivés</div>
     </div>
 </div>
 
@@ -112,7 +134,7 @@ $totalSuspendus = (int)($stats['par_statut']['suspendu'] ?? 0);
         </div>
         <div>
             <label class="block text-xs font-medium text-slate-600 mb-1">Statut</label>
-            <select name="statut" class="rounded-lg border border-slate-200 text-sm px-3 py-1.5 bg-white focus:ring-2 focus:ring-violet-300 focus:outline-none">
+            <select name="statut" class="form-select">
                 <option value="">Tous les statuts</option>
                 <?php foreach ($statutLabels as $val => $lbl): ?>
                 <option value="<?= h($val) ?>" <?= $filters->statut === $val ? 'selected' : '' ?>><?= h($lbl) ?></option>
@@ -121,7 +143,7 @@ $totalSuspendus = (int)($stats['par_statut']['suspendu'] ?? 0);
         </div>
         <div>
             <label class="block text-xs font-medium text-slate-600 mb-1">Type</label>
-            <select name="type" class="rounded-lg border border-slate-200 text-sm px-3 py-1.5 bg-white focus:ring-2 focus:ring-violet-300 focus:outline-none">
+            <select name="type" class="form-select">
                 <option value="">Tous les types</option>
                 <?php foreach ($typeLabels as $val => $lbl): ?>
                 <option value="<?= h($val) ?>" <?= $filters->type === $val ? 'selected' : '' ?>><?= h($lbl) ?></option>
@@ -130,7 +152,7 @@ $totalSuspendus = (int)($stats['par_statut']['suspendu'] ?? 0);
         </div>
         <div>
             <label class="block text-xs font-medium text-slate-600 mb-1">Département</label>
-            <select name="depart_id" class="rounded-lg border border-slate-200 text-sm px-3 py-1.5 bg-white focus:ring-2 focus:ring-violet-300 focus:outline-none">
+            <select name="depart_id" class="form-select">
                 <option value="">Tous les départements</option>
                 <?php foreach ($departements as $d): ?>
                 <option value="<?= (int)$d['id'] ?>" <?= $filters->departId === (int)$d['id'] ? 'selected' : '' ?>>
@@ -146,7 +168,7 @@ $totalSuspendus = (int)($stats['par_statut']['suspendu'] ?? 0);
                 Inclure archivés
             </label>
         </div>
-        <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-white text-sm font-medium hover:bg-slate-700 transition-colors">
+        <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition-colors">
             <i data-lucide="search" class="w-4 h-4"></i>Filtrer
         </button>
         <a href="<?= BASE_URL ?>/v2/rh/employes" class="text-sm text-slate-500 hover:text-slate-700 self-end py-1.5">Réinitialiser</a>

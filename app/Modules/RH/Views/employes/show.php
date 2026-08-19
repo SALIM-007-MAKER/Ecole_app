@@ -38,10 +38,14 @@ $isArchived = !empty($employe['deleted_at']);
 
 <!-- En-tête -->
 <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
-    <div class="flex items-center gap-3">
-        <a href="<?= BASE_URL ?>/v2/rh/employes" class="text-slate-400 hover:text-slate-600 transition-colors">
-            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+    <div class="flex items-start gap-4">
+        <a href="<?= BASE_URL ?>/v2/rh/employes"
+           class="w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 flex-shrink-0 transition-colors">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
         </a>
+        <div class="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="user" class="w-5 h-5 text-violet-600"></i>
+        </div>
         <div>
             <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
                 <?= hShow($employe['prenom'] . ' ' . $employe['nom']) ?>
@@ -62,7 +66,7 @@ $isArchived = !empty($employe['deleted_at']);
         <?php if (!$isArchived && $canArchive): ?>
         <form method="POST" action="<?= BASE_URL ?>/v2/rh/employes/<?= (int)$employe['id'] ?>/archive"
               onsubmit="return confirm('Archiver cet employé ?')">
-            <input type="hidden" name="csrf_token" value="<?= hShow($_SESSION['csrf_token'] ?? '') ?>">
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
             <button type="submit"
                     class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 bg-white text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
                 <i data-lucide="archive" class="w-4 h-4"></i>Archiver
@@ -71,7 +75,7 @@ $isArchived = !empty($employe['deleted_at']);
         <?php endif; ?>
         <?php if ($isArchived && $canRestore): ?>
         <form method="POST" action="<?= BASE_URL ?>/v2/rh/employes/<?= (int)$employe['id'] ?>/restore">
-            <input type="hidden" name="csrf_token" value="<?= hShow($_SESSION['csrf_token'] ?? '') ?>">
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
             <button type="submit"
                     class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-colors">
                 <i data-lucide="rotate-ccw" class="w-4 h-4"></i>Restaurer
@@ -328,9 +332,9 @@ $isArchived = !empty($employe['deleted_at']);
             </div>
             <div class="p-5">
                 <form method="POST" action="<?= BASE_URL ?>/v2/rh/employes/<?= (int)$employe['id'] ?>/statut">
-                    <input type="hidden" name="csrf_token" value="<?= hShow($_SESSION['csrf_token'] ?? '') ?>">
+                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                     <select name="statut"
-                            class="w-full rounded-lg border border-slate-200 text-sm px-3 py-2 bg-white focus:ring-2 focus:ring-violet-300 focus:outline-none mb-3">
+                            class="form-select mb-3">
                         <?php
                         $statutLabels = ['actif'=>'Actif','inactif'=>'Inactif','suspendu'=>'Suspendu','conge'=>'En congé','retraite'=>'Retraité','demissionnaire'=>'Démissionnaire'];
                         foreach ($statutLabels as $val => $lbl): ?>
@@ -338,7 +342,7 @@ $isArchived = !empty($employe['deleted_at']);
                         <?php endforeach; ?>
                     </select>
                     <button type="submit"
-                            class="w-full py-2 rounded-lg bg-slate-800 text-white text-sm font-medium hover:bg-slate-700 transition-colors">
+                            class="w-full py-2 rounded-lg bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition-colors">
                         Appliquer
                     </button>
                 </form>

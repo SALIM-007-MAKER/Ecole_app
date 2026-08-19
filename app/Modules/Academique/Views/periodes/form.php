@@ -1,9 +1,13 @@
 <?php
 $periode = $periode ?? null;
 $types   = $types   ?? [];
+$statuts = $statuts ?? [];
 $errors  = $errors  ?? [];
 $old     = $old     ?? [];
+$user    = $user    ?? [];
+$policy  = $policy  ?? null;
 $isEdit  = $periode !== null;
+$canEditStatut = $isEdit && $policy && $policy->canEditStatutDirectement($user);
 
 $v = fn(string $k, mixed $fallback = '') =>
     htmlspecialchars($old[$k] ?? ($periode ? ($periode->$k ?? $fallback) : $fallback), ENT_QUOTES);
@@ -152,6 +156,29 @@ $v = fn(string $k, mixed $fallback = '') =>
             <p class="text-red-500 text-xs mt-1"><?= htmlspecialchars($errors['ordre'][0], ENT_QUOTES) ?></p>
             <?php endif; ?>
         </div>
+
+        <?php if ($canEditStatut): ?>
+        <!-- Statut (édition directe, réservée aux administrateurs) -->
+        <div>
+            <label for="statut" class="block text-sm font-medium text-slate-700 mb-1">
+                Statut <span class="text-xs text-slate-400 font-normal">(modification directe — admin)</span>
+            </label>
+            <select id="statut" name="statut"
+                    class="form-input w-full <?= !empty($errors['statut']) ? 'border-red-400' : '' ?>">
+                <?php foreach ($statuts as $val => $label): ?>
+                <option value="<?= $val ?>" <?= $v('statut', $periode->statut ?? 'preparation') === $val ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($label, ENT_QUOTES) ?>
+                </option>
+                <?php endforeach; ?>
+            </select>
+            <?php if (!empty($errors['statut'])): ?>
+            <p class="text-red-500 text-xs mt-1"><?= htmlspecialchars($errors['statut'][0], ENT_QUOTES) ?></p>
+            <?php endif; ?>
+            <p class="text-xs text-slate-400 mt-1">
+                Modification libre du statut. Pour un suivi guidé du cycle de vie, préférez les actions dédiées sur la fiche de la période.
+            </p>
+        </div>
+        <?php endif; ?>
 
     </div>
 

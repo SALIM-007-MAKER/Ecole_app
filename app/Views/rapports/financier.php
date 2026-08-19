@@ -18,10 +18,13 @@ $taux = (float)($kpiFinance['taux_recouvrement'] ?? 0);
 ?>
 
 <!-- Header -->
-<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
-    <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-        <i data-lucide="banknote" class="w-6 h-6 text-emerald-600"></i>Statistiques financières
-    </h2>
+<div class="flex flex-wrap items-start justify-between gap-3 mb-6">
+    <div class="flex items-start gap-4">
+        <div class="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="banknote" class="w-5 h-5 text-violet-600"></i>
+        </div>
+        <h2 class="text-xl font-bold text-slate-800 pt-2">Statistiques financières</h2>
+    </div>
     <div class="flex items-center gap-2 flex-wrap">
         <form class="flex gap-2" method="GET">
             <select name="annee" class="form-select" onchange="this.form.submit()">
@@ -152,7 +155,6 @@ $taux = (float)($kpiFinance['taux_recouvrement'] ?? 0);
             <thead class="bg-slate-800 text-slate-100">
                 <tr>
                     <th class="px-4 py-3 text-left font-semibold">Type de frais</th>
-                    <th class="px-4 py-3 text-left font-semibold">Catégorie</th>
                     <th class="px-4 py-3 text-right font-semibold">Élèves</th>
                     <th class="px-4 py-3 text-right font-semibold">À collecter</th>
                     <th class="px-4 py-3 text-right font-semibold">Collecté</th>
@@ -169,11 +171,6 @@ $taux = (float)($kpiFinance['taux_recouvrement'] ?? 0);
             ?>
             <tr class="hover:bg-slate-50">
                 <td class="px-4 py-3 font-semibold text-slate-800"><?= htmlspecialchars($r->nom, ENT_QUOTES) ?></td>
-                <td class="px-4 py-3">
-                    <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-slate-100 text-slate-700">
-                        <?= htmlspecialchars($r->categorie ?? '', ENT_QUOTES) ?>
-                    </span>
-                </td>
                 <td class="px-4 py-3 text-right text-slate-600"><?= (int)$r->nb_eleves ?></td>
                 <td class="px-4 py-3 text-right text-slate-600"><?= $fc($mtotal) ?></td>
                 <td class="px-4 py-3 text-right font-semibold <?= $t2 < 100 ? 'text-amber-600' : 'text-emerald-600' ?>"><?= $fc($mpaye) ?></td>
@@ -190,7 +187,7 @@ $taux = (float)($kpiFinance['taux_recouvrement'] ?? 0);
             </tbody>
             <tfoot class="bg-slate-50 border-t border-slate-200 font-semibold text-sm">
                 <tr>
-                    <td class="px-4 py-3 text-slate-600" colspan="3">Total</td>
+                    <td class="px-4 py-3 text-slate-600" colspan="2">Total</td>
                     <td class="px-4 py-3 text-right text-slate-700"><?= $fc(array_sum(array_column((array)$recouvrement,'montant_total'))) ?></td>
                     <td class="px-4 py-3 text-right text-slate-700"><?= $fc(array_sum(array_column((array)$recouvrement,'montant_paye'))) ?></td>
                     <td class="px-4 py-3">

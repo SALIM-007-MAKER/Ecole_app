@@ -6,12 +6,9 @@ use Core\Event;
 use Core\Listener;
 use App\Services\AuditService;
 use App\Events\EleveCreated;
-use App\Events\PaiementValide;
-use App\Events\NoteAjoutee;
 use App\Events\AbsenceCreee;
 use App\Events\DocumentGenere;
 use App\Events\ImportCsvCompleted;
-use App\Events\ControleUpdated;
 
 class AuditHandler implements Listener
 {
@@ -30,24 +27,6 @@ class AuditHandler implements Listener
                 'eleves',
                 'eleves',
                 $event->eleveId,
-                $event->toArray()
-            ),
-
-            $event instanceof PaiementValide => $this->audit->logCreate(
-                $event->encaisseParId,
-                'comptabilite',
-                'paiements',
-                $event->paiementId,
-                $event->toArray()
-            ),
-
-            $event instanceof NoteAjoutee    => $this->audit->log(
-                $event->saisieParId,
-                $event->isBatch() ? 'import' : 'create',
-                'notes',
-                'controles',
-                $event->controleId,
-                null,
                 $event->toArray()
             ),
 
@@ -76,15 +55,6 @@ class AuditHandler implements Listener
                 'eleves',
                 null,
                 null,
-                $event->toArray()
-            ),
-
-            $event instanceof ControleUpdated => $this->audit->logUpdate(
-                $event->updatedById,
-                'notes',
-                'controles',
-                $event->controleId,
-                [],
                 $event->toArray()
             ),
 

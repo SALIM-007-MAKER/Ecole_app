@@ -14,7 +14,19 @@ class AbsenceFiltersDTO
         public readonly ?string $statut       = null,  // non_justifiee|en_attente|justifiee|refusee
         public readonly int     $page         = 1,
         public readonly int     $perPage      = 25,
+        /** @var int[]|null Restriction serveur (jamais depuis la requête) — cf. EleveScopeTrait */
+        public readonly ?array  $eleveIds     = null,
     ) {}
+
+    /** Retourne une copie restreinte au périmètre autorisé (parent/eleve). */
+    public function withEleveIds(array $ids): self
+    {
+        return new self(
+            $this->eleveId, $this->classeId, $this->anneeScolaire,
+            $this->dateDebut, $this->dateFin, $this->type, $this->statut,
+            $this->page, $this->perPage, $ids
+        );
+    }
 
     public static function fromRequest(array $data): self
     {

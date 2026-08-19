@@ -21,11 +21,16 @@ use Core\Router;
 $router->get('/v2/academique/periodes',                         'Academique\Controllers\PeriodeController@index');
 $router->get('/v2/academique/periodes/create',                  'Academique\Controllers\PeriodeController@create');
 $router->post('/v2/academique/periodes',                        'Academique\Controllers\PeriodeController@store');
+$router->post('/v2/academique/periodes/generer',                'Academique\Controllers\PeriodeController@generer');
+$router->get('/v2/academique/periodes/config',                  'Academique\Controllers\PeriodeController@configIndex');
+$router->post('/v2/academique/periodes/config',                 'Academique\Controllers\PeriodeController@configUpdate');
 $router->get('/v2/academique/periodes/{id}',                    'Academique\Controllers\PeriodeController@show');
-$router->get('/v2/academique/periodes/{id}/edit',               'Academique\Controllers\PeriodeController@edit');
+$router->get('/v2/academique/periodes/{id}/edit',                'Academique\Controllers\PeriodeController@edit');
 $router->post('/v2/academique/periodes/{id}',                   'Academique\Controllers\PeriodeController@update');
 $router->post('/v2/academique/periodes/{id}/activer',           'Academique\Controllers\PeriodeController@activer');
-$router->post('/v2/academique/periodes/{id}/fermer',            'Academique\Controllers\PeriodeController@fermer');
+$router->post('/v2/academique/periodes/{id}/ouvrir',            'Academique\Controllers\PeriodeController@ouvrir');
+$router->post('/v2/academique/periodes/{id}/cloturer',          'Academique\Controllers\PeriodeController@cloturer');
+$router->post('/v2/academique/periodes/{id}/reouvrir',          'Academique\Controllers\PeriodeController@reouvrir');
 $router->post('/v2/academique/periodes/{id}/verrouiller',       'Academique\Controllers\PeriodeController@verrouiller');
 $router->post('/v2/academique/periodes/{id}/deverrouiller',     'Academique\Controllers\PeriodeController@deverrouiller');
 $router->post('/v2/academique/periodes/{id}/archiver',          'Academique\Controllers\PeriodeController@archiver');
@@ -53,6 +58,11 @@ $router->post('/v2/academique/evaluations/{id}/verrouiller',        'Academique\
 $router->post('/v2/academique/evaluations/{id}/deverrouiller',      'Academique\Controllers\EvaluationController@deverrouiller');
 $router->post('/v2/academique/evaluations/{id}/archiver',           'Academique\Controllers\EvaluationController@archiver');
 
+// ─── Résultats V2 (équivalents /bulletins/classe, /bulletins/classement, /notes/moyennes) ─
+$router->get('/v2/academique/resultats/classe',                     'Academique\Controllers\ResultatsController@classe');
+$router->get('/v2/academique/resultats/classement',                 'Academique\Controllers\ResultatsController@classement');
+$router->get('/v2/academique/resultats/moyennes',                   'Academique\Controllers\ResultatsController@moyennes');
+
 // ─── Notes V2 ────────────────────────────────────────────────────────────────
 $router->get('/v2/academique/evaluations/{id}/notes',               'Academique\Controllers\NoteController@index');
 $router->get('/v2/academique/evaluations/{id}/notes/saisie',        'Academique\Controllers\NoteController@saisie');
@@ -63,3 +73,6 @@ $router->get('/v2/academique/evaluations/{id}/notes/importer',      'Academique\
 $router->post('/v2/academique/evaluations/{id}/notes/importer',     'Academique\Controllers\NoteController@importerCsv');
 $router->get('/v2/academique/notes/{id}',                           'Academique\Controllers\NoteController@show');
 $router->post('/v2/academique/notes/{id}',                          'Academique\Controllers\NoteController@update');
+
+// Compatibility: listing notes by filters (eleve_id, classe_id, etc.)
+$router->get('/v2/academique/notes',                                 'Academique\Controllers\NoteController@listForEleve');

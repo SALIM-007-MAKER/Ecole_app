@@ -1,12 +1,4 @@
 <?php /** @var array $sessions @var string $titre */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title><?= htmlspecialchars($titre ?? 'Inventaire') ?></title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-4xl mx-auto py-8 px-4">
 
   <div class="flex items-center justify-between mb-6">
@@ -66,7 +58,7 @@
               <?php if (!empty($s['date_fin_prevue'])): ?> au <?= date('d/m/Y', strtotime($s['date_fin_prevue'])) ?><?php endif ?>
             </p>
           </div>
-          <a href="/v2/bibliotheque/inventaire/<?= $s['id'] ?>" class="text-sm text-violet-600 hover:underline">
+          <a href="<?= BASE_URL ?>/v2/bibliotheque/inventaire/<?= $s['id'] ?>" class="text-sm text-violet-600 hover:underline">
             <?= $en_cours ? 'Scanner →' : 'Voir rapport' ?>
           </a>
         </div>
@@ -87,13 +79,11 @@ function lancerSession() {
     date_fin_prevue: document.getElementById('inv_fin').value,
     csrf_token: '',
   });
-  fetch('/v2/bibliotheque/inventaire', {method:'POST', body:data})
+  fetch('<?= BASE_URL ?>/v2/bibliotheque/inventaire', {method:'POST', body:data})
     .then(r=>r.json())
     .then(d => {
-      if (d.success) window.location.href = '/v2/bibliotheque/inventaire/' + d.id;
+      if (d.success) window.location.href = '<?= BASE_URL ?>/v2/bibliotheque/inventaire/' + d.id;
       else { document.getElementById('sessionError').textContent = d.error; document.getElementById('sessionError').classList.remove('hidden'); }
     });
 }
 </script>
-</body>
-</html>

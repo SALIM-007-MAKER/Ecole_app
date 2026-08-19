@@ -7,14 +7,18 @@ use App\Models\NotificationModel;
 use App\Models\NotificationLogModel;
 use App\Models\NotificationPreferenceModel;
 use App\Models\UserModel;
+use Core\Tenant\BrandingService;
 
 class NotificationService
 {
     public const TRIGGERS = [
-        'note'     => ['label' => 'Nouvelle note',   'icon' => 'journal-check', 'color' => 'primary'],
-        'absence'  => ['label' => 'Absence',          'icon' => 'person-x',     'color' => 'warning'],
-        'paiement' => ['label' => 'Paiement',         'icon' => 'cash-coin',    'color' => 'success'],
-        'annonce'  => ['label' => 'Annonce',           'icon' => 'megaphone',   'color' => 'info'],
+        'note'       => ['label' => 'Nouvelle note',  'icon' => 'journal-check', 'color' => 'primary'],
+        'absence'    => ['label' => 'Absence',        'icon' => 'person-x',      'color' => 'warning'],
+        'paiement'   => ['label' => 'Paiement',       'icon' => 'cash-coin',     'color' => 'success'],
+        'annonce'    => ['label' => 'Annonce',        'icon' => 'megaphone',     'color' => 'info'],
+        'retard'     => ['label' => 'Retard',         'icon' => 'clock-history', 'color' => 'warning'],
+        'discipline' => ['label' => 'Discipline',     'icon' => 'exclamation-triangle', 'color' => 'danger'],
+        'recompense' => ['label' => 'Récompense',     'icon' => 'award',         'color' => 'success'],
     ];
 
     private NotificationModel           $notifModel;
@@ -137,23 +141,8 @@ class NotificationService
         }
     }
 
-    /**
-     * Déclenché quand un paiement est enregistré.
-     */
-    public function onPaiement(int $eleveId, float $montant, string $fraisNom = ''): void
-    {
-        $eleve = (new EleveModel())->findById($eleveId);
-        if (!$eleve || empty($eleve->parent_id)) {
-            return;
-        }
-
-        $montantF = number_format($montant, 0, ',', ' ');
-        $titre    = "Paiement reçu — {$montantF} F";
-        $msg      = "Un paiement de {$montantF} F a été enregistré pour {$eleve->prenom} {$eleve->nom}"
-                  . ($fraisNom ? " ({$fraisNom})" : '') . '.';
-
-        $this->notify((int)$eleve->parent_id, 'paiement', $titre, $msg, BASE_URL . '/parent/paiements');
-    }
+    // onPaiement() (V1) supprimée — le paiement V2 notifie désormais via
+    // App\Modules\Finance\Listeners\NotificationListener (PaymentCompleted).
 
     /**
      * Déclenché quand des notes / bulletins sont disponibles.
@@ -185,11 +174,11 @@ class NotificationService
      */
     public function onAnnonce(object $annonce): void
     {
-        $roles = match ($annonce->audience ?? 'tous') {
-            'parents'     => ['parent'],
-            'eleves'      => ['eleve'],
-            'enseignants' => ['enseignant'],
-            default       => ['parent', 'eleve', 'enseignant', 'secretaire', 'comptable'],
+        $audience = $annonce->audience ?? 'tous';
+        $userIds  = match ($audience) {
+            'classe'       => $this->resolveClasseAudience((int)($annonce->classe_id ?? 0)),
+            'utilisateurs' => $this->resolveUtilisateursAudience((string)($annonce->destinataires_ids ?? '')),
+            default        => $this->resolveRoleAudience($audience),
         };
 
         $titre   = 'Nouvelle annonce : ' . $annonce->titre;
@@ -199,23 +188,75 @@ class NotificationService
         }
         $lien = BASE_URL . '/annonces';
 
-        $users   = $this->userModel->findAllWithRoles($roles);
-        $userIds = array_map(fn($u) => (int)$u->id, $users);
-
         $this->notifyBulk($userIds, 'annonce', $titre, $message, $lien);
+    }
+
+    /** @return int[] */
+    private function resolveRoleAudience(string $audience): array
+    {
+        $roles = match ($audience) {
+            'parents'     => ['parent'],
+            'eleves'      => ['eleve'],
+            'enseignants' => ['enseignant'],
+            // "Tous" doit vraiment signifier tout le monde, y compris le
+            // personnel de direction — sans admin/directeur ici, un admin qui
+            // publie une annonce "Tous" ne reçoit jamais lui-même de
+            // notification, et le compteur de sa propre cloche reste à 0.
+            default       => ['admin', 'directeur', 'parent', 'eleve', 'enseignant', 'secretaire', 'comptable'],
+        };
+
+        $users = $this->userModel->findAllWithRoles($roles);
+        return array_map(fn($u) => (int)$u->id, $users);
+    }
+
+    /** Élèves d'une classe + leurs parents. @return int[] */
+    private function resolveClasseAudience(int $classeId): array
+    {
+        if ($classeId <= 0) {
+            return [];
+        }
+
+        $userIds = [];
+        foreach ((new EleveModel())->findByClasse($classeId) as $eleve) {
+            if (!empty($eleve->parent_id)) {
+                $userIds[] = (int)$eleve->parent_id;
+            }
+            if (!empty($eleve->email)) {
+                $userEleve = $this->userModel->findByEmail($eleve->email);
+                if ($userEleve && ($userEleve->role ?? '') === 'eleve') {
+                    $userIds[] = (int)$userEleve->id;
+                }
+            }
+        }
+
+        return array_values(array_unique($userIds));
+    }
+
+    /** Liste explicite d'utilisateurs (JSON stocké sur l'annonce). @return int[] */
+    private function resolveUtilisateursAudience(string $destinatairesJson): array
+    {
+        $ids = json_decode($destinatairesJson, true);
+        if (!is_array($ids)) {
+            return [];
+        }
+        return array_values(array_unique(array_map('intval', $ids)));
     }
 
     /**
      * Envoi de test depuis l'interface admin.
      */
-    public function sendTest(int $adminId, string $canal, string $message): bool
+    public function sendTest(int $adminId, string $canal, string $message, string $trigger = 'annonce'): bool
     {
+        if (!array_key_exists($trigger, self::TRIGGERS)) {
+            $trigger = 'annonce';
+        }
+
         $admin = $this->userModel->findById($adminId);
         if (!$admin) {
             return false;
         }
 
-        $titre = 'Test de notification — Ecole App';
+        $titre = 'Test de notification — ' . BrandingService::forCurrentRequest()->appName;
 
         if ($canal === 'email') {
             if (empty($admin->email)) {
@@ -223,7 +264,7 @@ class NotificationService
             }
             $html = $this->emailSvc->buildHtml($titre, $message);
             $ok   = $this->emailSvc->send($admin->email, $titre, $html);
-            $this->logModel->log($adminId, 'annonce', 'email', $titre, $message, $admin->email, $ok ? 'envoye' : 'echoue', $ok ? null : 'Échec mail()');
+            $this->logModel->log($adminId, $trigger, 'email', $titre, $message, $admin->email, $ok ? 'envoye' : 'echoue', $ok ? null : 'Échec mail()');
             return $ok;
         }
 
@@ -233,13 +274,13 @@ class NotificationService
                 return false;
             }
             $result = $this->smsSvc->send($phone, '[EcoleApp] ' . $message);
-            $this->logModel->log($adminId, 'annonce', 'sms', $titre, $message, $phone, $result['ok'] ? 'envoye' : 'echoue', $result['error']);
+            $this->logModel->log($adminId, $trigger, 'sms', $titre, $message, $phone, $result['ok'] ? 'envoye' : 'echoue', $result['error']);
             return $result['ok'];
         }
 
         // Canal interne par défaut
-        $this->notifModel->createForUser($adminId, 'annonce', $titre, $message);
-        $this->logModel->log($adminId, 'annonce', 'interne', $titre, $message, null, 'envoye');
+        $this->notifModel->createForUser($adminId, $trigger, $titre, $message);
+        $this->logModel->log($adminId, $trigger, 'interne', $titre, $message, null, 'envoye');
         return true;
     }
 }

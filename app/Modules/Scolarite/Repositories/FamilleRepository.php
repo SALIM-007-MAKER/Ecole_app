@@ -200,6 +200,34 @@ class FamilleRepository
         return (int)$stmt->fetchColumn() > 0;
     }
 
+    /**
+     * Vrai si l'utilisateur $userId est parent/responsable de l'élève
+     * $eleveId — via le lien direct `eleves.parent_id`, ou en tant que
+     * co-parent d'un frère/soeur rattaché à la même famille
+     * (`familles_eleves`, cf. getFratrie()). Même racine d'autorisation que
+     * FamillePolicy::isFamilleOfOwnChild(), réutilisée ici pour
+     * BulletinPolicy::canViewForParent().
+     */
+    public function estParentDe(int $userId, int $eleveId): bool
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT COUNT(*) FROM `eleves` WHERE id = ? AND parent_id = ?"
+        );
+        $stmt->execute([$eleveId, $userId]);
+        if ((int)$stmt->fetchColumn() > 0) {
+            return true;
+        }
+
+        $stmt = $this->pdo->prepare(
+            "SELECT COUNT(*) FROM `familles_eleves` fe1
+             JOIN `familles_eleves` fe2 ON fe2.famille_id = fe1.famille_id
+             JOIN `eleves` e2 ON e2.id = fe2.eleve_id
+             WHERE fe1.eleve_id = ? AND e2.parent_id = ?"
+        );
+        $stmt->execute([$eleveId, $userId]);
+        return (int)$stmt->fetchColumn() > 0;
+    }
+
     // ─── Fratries ─────────────────────────────────────────────────────────────
 
     /** Élèves dans la même famille (fratrie) — exclut l'élève donné. */

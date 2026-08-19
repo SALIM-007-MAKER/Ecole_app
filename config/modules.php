@@ -22,8 +22,12 @@ return [
         'manifest'  => ROOT_PATH . '/app/Modules/Scolarite/module.json',
     ],
 
+    // Activé le 2026-07-22 (migration trimestre → semestre, La Persévérance) :
+    // les 3 anomalies critiques du gel Phase 2.10 sont corrigées (voir
+    // ACADEMIQUE_MODULE_FREEZE.md) — le module devient le seul moteur
+    // académique vivant (Notes/Évaluations/Bulletins/Rangs), natif semestre.
     'academique' => [
-        'enabled'   => false,
+        'enabled'   => true,
         'namespace' => 'App\\Modules\\Academique',
         'routes'    => ROOT_PATH . '/app/Modules/Academique/routes.php',
         'manifest'  => ROOT_PATH . '/app/Modules/Academique/module.json',
@@ -43,6 +47,14 @@ return [
         'manifest'  => ROOT_PATH . '/app/Modules/VieScolaire/module.json',
     ],
 
+    // Désactivé le 2026-07-11 (audit d'architecture) : le module était
+    // déclaré actif alors qu'AUCUNE de ses tables (rh_*) n'existe en base —
+    // toute requête HTTP vers ce module levait une PDOException. Le code
+    // (Employés, Contrats, Congés, Évaluations...) est prêt mais ses
+    // Réactivé le 2026-07-11 (étape 2 de l'unification V1/V2) : les 44 tables
+    // rh_* ont été créées (migrations rh_001→rh_011, corrigées — incompatibilités
+    // de types FK et syntaxe MariaDB-only réparées), le pont rh_employes.professeur_id
+    // → professeurs.id est actif, et tous les événements RH audités/corrigés.
     'rh' => [
         'enabled'   => true,
         'namespace' => 'App\\Modules\\RH',

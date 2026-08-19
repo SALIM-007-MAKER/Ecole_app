@@ -12,7 +12,9 @@ class TeacherQualificationUpdated extends Event
         public readonly string $typeQualification,
         public readonly string $intitule,
         public readonly int    $modifieParId,
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

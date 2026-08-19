@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS `notes_v2` (
     KEY `idx_note_created_by` (`created_by`),
     CONSTRAINT `fk_note_eval`
         FOREIGN KEY (`evaluation_id`) REFERENCES `evaluations` (`id`) ON DELETE RESTRICT,
-    CONSTRAINT `fk_note_eleve`
+    CONSTRAINT `fk_notev2_eleve`
         FOREIGN KEY (`eleve_id`) REFERENCES `eleves` (`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

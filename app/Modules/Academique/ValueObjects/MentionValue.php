@@ -29,6 +29,18 @@ final class MentionValue
         $this->cssColor = $cssColor;
     }
 
+    /**
+     * Table des seuils, du plus haut au plus bas — pour les écrans qui
+     * affichent la légende des mentions (ex: bulletins/index.php) sans
+     * dupliquer les seuils codés en dur ailleurs.
+     *
+     * @return array<int, array{label: string, code: string, css: string}>
+     */
+    public static function thresholds(): array
+    {
+        return self::$THRESHOLDS;
+    }
+
     public static function fromAverage(float $average): self
     {
         foreach (self::$THRESHOLDS as $seuil => $data) {

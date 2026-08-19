@@ -15,7 +15,9 @@ class TrainingSessionOpened extends Event
         public readonly string $dateDebut,
         public readonly string $dateFin,
         public readonly int    $openedBy
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

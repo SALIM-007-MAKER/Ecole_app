@@ -18,7 +18,9 @@ class AttendanceValidated extends Event
         public readonly string  $decision,
         public readonly ?string $motifRejet,
         public readonly int     $validatedBy
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

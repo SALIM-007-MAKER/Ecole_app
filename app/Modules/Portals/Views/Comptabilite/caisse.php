@@ -2,7 +2,7 @@
 <div class="space-y-4">
   <div class="flex items-center justify-between">
     <h2 class="text-sm font-semibold text-slate-700">Journal de caisse — <?= date('d/m/Y') ?></h2>
-    <a href="/v2/finance/caisse" class="text-xs text-amber-600 hover:underline">Gestion complète →</a>
+    <a href="<?= BASE_URL ?>/v2/finance/caisse" class="text-xs text-amber-600 hover:underline">Gestion complète →</a>
   </div>
   <?php if (empty($journal)): ?>
   <div class="text-center py-8 text-slate-400"><p>Aucun mouvement aujourd'hui.</p></div>

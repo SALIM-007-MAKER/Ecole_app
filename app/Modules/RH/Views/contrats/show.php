@@ -6,29 +6,21 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
 $jours      = $contrat['jours_restants'] !== null ? (int)$contrat['jours_restants'] : null;
 $alertClass = $model::alerteColor($jours);
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Contrat <?= e($contrat['numero_contrat']) ?> — EduNova</title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 text-slate-800 min-h-screen">
-<?php include dirname(__DIR__, 2) . '/layouts/sidebar.php'; ?>
-<main class="ml-64 p-8">
 
   <!-- En-tête -->
-  <div class="flex items-start justify-between mb-8">
-    <div>
-      <div class="flex items-center gap-2 text-sm text-slate-500 mb-1">
-        <a href="/v2/rh/employes" class="hover:text-violet-600">RH</a>
-        <span>/</span>
-        <a href="/v2/rh/contrats" class="hover:text-violet-600">Contrats</a>
-        <span>/</span>
-        <span class="font-mono"><?= e($contrat['numero_contrat']) ?></span>
+  <div class="flex items-center gap-2 text-sm text-slate-500 mb-4">
+    <a href="<?= BASE_URL ?>/v2/rh/employes" class="hover:text-violet-600">RH</a>
+    <i data-lucide="chevron-right" class="w-3 h-3"></i>
+    <a href="<?= BASE_URL ?>/v2/rh/contrats" class="hover:text-violet-600">Contrats</a>
+    <i data-lucide="chevron-right" class="w-3 h-3"></i>
+    <span class="font-mono text-slate-700"><?= e($contrat['numero_contrat']) ?></span>
+  </div>
+  <div class="flex items-start justify-between gap-4 mb-8">
+    <div class="flex items-start gap-4">
+      <div class="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+        <i data-lucide="file-signature" class="w-5 h-5 text-violet-600"></i>
       </div>
-      <h1 class="text-2xl font-bold text-slate-900 flex items-center gap-3">
+      <h1 class="text-2xl font-bold text-slate-900 flex items-center gap-3 flex-wrap">
         <?= e($contrat['numero_contrat']) ?>
         <span class="px-3 py-1 text-sm font-medium rounded-full <?= $model::statutColor($contrat['statut']) ?>">
           <?= e($model::statutLabel($contrat['statut'])) ?>
@@ -38,31 +30,31 @@ $alertClass = $model::alerteColor($jours);
         </span>
       </h1>
     </div>
-    <div class="flex gap-2">
+    <div class="flex gap-2 flex-shrink-0">
       <?php if ($canUpdate && in_array($contrat['statut'], ['brouillon','actif'], true)): ?>
-        <a href="/v2/rh/contrats/<?= (int)$contrat['id'] ?>/edit"
-           class="px-4 py-2 bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-sm hover:bg-slate-200">
-          Modifier
+        <a href="<?= BASE_URL ?>/v2/rh/contrats/<?= (int)$contrat['id'] ?>/edit"
+           class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
+          <i data-lucide="pencil" class="w-4 h-4"></i> Modifier
         </a>
       <?php endif; ?>
       <?php if ($canUpdate && $contrat['statut'] === 'brouillon'): ?>
-        <form method="POST" action="/v2/rh/contrats/<?= (int)$contrat['id'] ?>/activer">
+        <form method="POST" action="<?= BASE_URL ?>/v2/rh/contrats/<?= (int)$contrat['id'] ?>/activer">
           <?= \Core\Csrf::field() ?>
           <button class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700">Activer</button>
         </form>
       <?php endif; ?>
       <?php if ($canUpdate && $contrat['statut'] === 'actif'): ?>
-        <form method="POST" action="/v2/rh/contrats/<?= (int)$contrat['id'] ?>/suspendre">
+        <form method="POST" action="<?= BASE_URL ?>/v2/rh/contrats/<?= (int)$contrat['id'] ?>/suspendre">
           <?= \Core\Csrf::field() ?>
           <button onclick="return confirm('Suspendre ce contrat ?')"
                   class="px-4 py-2 bg-amber-500 text-white rounded-lg text-sm hover:bg-amber-600">Suspendre</button>
         </form>
       <?php endif; ?>
       <?php if ($canUpdate && $contrat['statut'] === 'suspendu'): ?>
-        <form method="POST" action="/v2/rh/contrats/<?= (int)$contrat['id'] ?>/reactiver">
+        <form method="POST" action="<?= BASE_URL ?>/v2/rh/contrats/<?= (int)$contrat['id'] ?>/reactiver">
           <?= \Core\Csrf::field() ?>
           <button onclick="return confirm('Réactiver ce contrat ?')"
-                  class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">Réactiver</button>
+                  class="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">Réactiver</button>
         </form>
       <?php endif; ?>
       <?php if ($canTerminate && in_array($contrat['statut'], ['actif','suspendu'], true)): ?>
@@ -87,7 +79,7 @@ $alertClass = $model::alerteColor($jours);
   <?php if ($jours !== null && $alertClass && $contrat['statut'] === 'actif'): ?>
     <div class="mb-6 p-4 <?= $alertClass ?> rounded-lg text-sm flex items-center gap-2">
       <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-      <?= $jours > 0 ? "Ce contrat expire dans <strong>$jours jours</strong> (<?= e($contrat['date_fin']) ?>)." : "Ce contrat a <strong>expiré</strong>." ?>
+      <?= $jours > 0 ? "Ce contrat expire dans <strong>{$jours} jours</strong> (" . e($contrat['date_fin']) . ")." : "Ce contrat a <strong>expiré</strong>." ?>
     </div>
   <?php endif; ?>
 
@@ -137,7 +129,7 @@ $alertClass = $model::alerteColor($jours);
           <div>
             <dt class="text-slate-400">Renouvellement de</dt>
             <dd class="mt-0.5">
-              <a href="/v2/rh/contrats/<?= (int)$contrat['renouvelle_depuis'] ?>"
+              <a href="<?= BASE_URL ?>/v2/rh/contrats/<?= (int)$contrat['renouvelle_depuis'] ?>"
                  class="font-mono text-violet-600 hover:underline text-xs"><?= e($contrat['renouvelle_depuis_numero']) ?></a>
             </dd>
           </div>
@@ -240,7 +232,7 @@ $alertClass = $model::alerteColor($jours);
       </div>
 
       <?php if ($canArchive && in_array($contrat['statut'], ['brouillon','expire','resilie'], true)): ?>
-        <form method="POST" action="/v2/rh/contrats/<?= (int)$contrat['id'] ?>/archive"
+        <form method="POST" action="<?= BASE_URL ?>/v2/rh/contrats/<?= (int)$contrat['id'] ?>/archive"
               onsubmit="return confirm('Archiver définitivement ce contrat ?')">
           <?= \Core\Csrf::field() ?>
           <button class="w-full px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm hover:bg-slate-200">
@@ -251,37 +243,35 @@ $alertClass = $model::alerteColor($jours);
     </div>
   </div>
 
-</main>
-
 <!-- Modal : Avenant -->
 <div id="modal-avenant" class="hidden fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50">
   <div class="bg-white rounded-xl w-full max-w-lg shadow-xl p-6">
     <h2 class="text-lg font-bold text-slate-900 mb-4">Ajouter un avenant</h2>
-    <form method="POST" action="/v2/rh/contrats/<?= (int)$contrat['id'] ?>/avenants">
+    <form method="POST" action="<?= BASE_URL ?>/v2/rh/contrats/<?= (int)$contrat['id'] ?>/avenants">
       <?= \Core\Csrf::field() ?>
       <div class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Type d'avenant *</label>
-          <select name="type" required class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-violet-300">
+          <label class="form-label">Type d'avenant *</label>
+          <select name="type" required class="form-select">
             <?php foreach (\App\Modules\RH\Contrats\DTO\AvenantDTO::TYPES as $t): ?>
               <option value="<?= e($t) ?>"><?= e(ucfirst($t)) ?></option>
             <?php endforeach; ?>
           </select>
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Objet *</label>
+          <label class="form-label">Objet *</label>
           <input type="text" name="objet" maxlength="200" required
-                 class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-violet-300">
+                 class="form-input">
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Date d'effet *</label>
+          <label class="form-label">Date d'effet *</label>
           <input type="date" name="date_effet" required
-                 class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-violet-300">
+                 class="form-input">
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Description</label>
+          <label class="form-label">Description</label>
           <textarea name="description" rows="2"
-                    class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-violet-300"></textarea>
+                    class="form-textarea"></textarea>
         </div>
       </div>
       <div class="flex justify-end gap-3 mt-6">
@@ -292,15 +282,14 @@ $alertClass = $model::alerteColor($jours);
     </form>
   </div>
 </div>
-
 <!-- Modal : Résiliation -->
 <div id="modal-resilier" class="hidden fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50">
   <div class="bg-white rounded-xl w-full max-w-md shadow-xl p-6">
     <h2 class="text-lg font-bold text-red-700 mb-4">Résilier le contrat</h2>
-    <form method="POST" action="/v2/rh/contrats/<?= (int)$contrat['id'] ?>/resilier">
+    <form method="POST" action="<?= BASE_URL ?>/v2/rh/contrats/<?= (int)$contrat['id'] ?>/resilier">
       <?= \Core\Csrf::field() ?>
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1">Motif de résiliation *</label>
+        <label class="form-label">Motif de résiliation *</label>
         <textarea name="motif" rows="3" required placeholder="Ex : démission, fin de mission, licenciement..."
                   class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-300"></textarea>
       </div>
@@ -312,23 +301,22 @@ $alertClass = $model::alerteColor($jours);
     </form>
   </div>
 </div>
-
 <!-- Modal : Renouvellement -->
 <div id="modal-renouveler" class="hidden fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50">
   <div class="bg-white rounded-xl w-full max-w-md shadow-xl p-6">
     <h2 class="text-lg font-bold text-violet-700 mb-4">Renouveler le contrat</h2>
-    <form method="POST" action="/v2/rh/contrats/<?= (int)$contrat['id'] ?>/renouveler">
+    <form method="POST" action="<?= BASE_URL ?>/v2/rh/contrats/<?= (int)$contrat['id'] ?>/renouveler">
       <?= \Core\Csrf::field() ?>
       <div class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Nouvelle date de début *</label>
+          <label class="form-label">Nouvelle date de début *</label>
           <input type="date" name="nouvelle_date_debut" required value="<?= e(date('Y-m-d')) ?>"
-                 class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-violet-300">
+                 class="form-input">
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Nouvelle date de fin <span class="text-slate-400">(vide = CDI)</span></label>
+          <label class="form-label">Nouvelle date de fin <span class="text-slate-400">(vide = CDI)</span></label>
           <input type="date" name="nouvelle_date_fin"
-                 class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-violet-300">
+                 class="form-input">
         </div>
         <p class="text-xs text-slate-500">L'ancien contrat sera marqué comme expiré et un nouveau contrat sera créé avec les mêmes conditions salariales.</p>
       </div>
@@ -340,6 +328,3 @@ $alertClass = $model::alerteColor($jours);
     </form>
   </div>
 </div>
-
-</body>
-</html>

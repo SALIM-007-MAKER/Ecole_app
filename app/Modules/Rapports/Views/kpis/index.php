@@ -1,14 +1,3 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KPIs — Rapports</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-7xl mx-auto px-4 py-8">
 
     <!-- Header -->
@@ -81,7 +70,7 @@
 
     <div class="flex justify-end">
         <form method="post" action="snapshot">
-            <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
             <button class="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">
                 <i data-lucide="refresh-cw" class="w-4 h-4"></i> Capturer snapshots
             </button>
@@ -89,5 +78,3 @@
     </div>
 </div>
 <script>lucide.createIcons();</script>
-</body>
-</html>

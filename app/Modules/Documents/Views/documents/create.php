@@ -9,7 +9,7 @@ $titre = 'Nouveau document';
   </div>
 
   <form id="uploadForm" class="space-y-5 bg-white border border-slate-200 rounded-xl p-6">
-    <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
     <input type="hidden" name="module_source" value="<?= htmlspecialchars($moduleSource) ?>">
 
     <div>
@@ -78,7 +78,7 @@ $titre = 'Nouveau document';
     <div id="errorsBox" class="hidden bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700"></div>
 
     <div class="flex justify-end gap-3 pt-2">
-      <a href="/v2/documents" class="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm hover:bg-slate-50">Annuler</a>
+      <a href="<?= BASE_URL ?>/v2/documents" class="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm hover:bg-slate-50">Annuler</a>
       <button type="submit" class="px-5 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700">
         Téléverser
       </button>
@@ -90,10 +90,10 @@ $titre = 'Nouveau document';
 document.getElementById('uploadForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   const fd = new FormData(this);
-  const res = await fetch('/v2/documents', {method:'POST', body: fd});
+  const res = await fetch('<?= BASE_URL ?>/v2/documents', {method:'POST', body: fd});
   const data = await res.json();
   if (data.success) {
-    window.location = '/v2/documents/' + data.id;
+    window.location = '<?= BASE_URL ?>/v2/documents/' + data.id;
   } else {
     const box = document.getElementById('errorsBox');
     box.classList.remove('hidden');

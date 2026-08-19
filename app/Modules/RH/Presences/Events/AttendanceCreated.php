@@ -15,7 +15,9 @@ class AttendanceCreated extends Event
         public readonly string $statut,
         public readonly string $modePointage,
         public readonly int    $createdBy
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

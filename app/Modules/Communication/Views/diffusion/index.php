@@ -1,17 +1,9 @@
 <?php /** @var array $groupes */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title><?= htmlspecialchars($titre ?? 'Diffusion') ?></title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-4xl mx-auto py-8 px-4">
 
   <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold text-slate-800">Diffusion & Groupes</h1>
-    <a href="/v2/communication/diffuser" class="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-violet-700">
+    <a href="<?= BASE_URL ?>/v2/communication/diffuser" class="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-violet-700">
       + Diffuser un message
     </a>
   </div>
@@ -80,7 +72,7 @@ const csrf = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 
 document.getElementById('form-groupe').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const r = await fetch('/v2/communication/groupes', {
+  const r = await fetch('<?= BASE_URL ?>/v2/communication/groupes', {
     method: 'POST',
     headers: { 'X-CSRF-Token': csrf },
     body: new URLSearchParams(new FormData(e.target))
@@ -94,5 +86,3 @@ async function supprimerGroupe(id) {
   location.reload();
 }
 </script>
-</body>
-</html>

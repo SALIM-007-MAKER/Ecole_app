@@ -46,10 +46,10 @@ $navItems = [
             </a>
             <?php endforeach; ?>
             <div class="ml-auto flex items-center gap-1 flex-shrink-0">
-                <a href="/v2/rapports/exports/form" class="px-3 py-1.5 text-sm text-slate-500 hover:bg-slate-100 rounded-lg flex items-center gap-1">
+                <a href="<?= BASE_URL ?>/v2/rapports/exports/form" class="px-3 py-1.5 text-sm text-slate-500 hover:bg-slate-100 rounded-lg flex items-center gap-1">
                     <i data-lucide="download" class="w-3.5 h-3.5"></i> Export
                 </a>
-                <a href="/v2/rapports/kpis" class="px-3 py-1.5 text-sm text-slate-500 hover:bg-slate-100 rounded-lg flex items-center gap-1">
+                <a href="<?= BASE_URL ?>/v2/rapports/kpis" class="px-3 py-1.5 text-sm text-slate-500 hover:bg-slate-100 rounded-lg flex items-center gap-1">
                     <i data-lucide="bar-chart-2" class="w-3.5 h-3.5"></i> KPIs
                 </a>
             </div>

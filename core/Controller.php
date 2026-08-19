@@ -53,12 +53,32 @@ abstract class Controller
     }
 
     /**
-     * Redirection HTTP
+     * Redirection HTTP.
+     *
+     * Un chemin relatif à la racine (ex: '/dashboard') est automatiquement
+     * préfixé par BASE_URL (ex: 'http://localhost/ecole_app') — l'app étant
+     * servie depuis un sous-dossier, un Location: '/dashboard' brut renvoie
+     * le navigateur vers localhost/dashboard au lieu de localhost/ecole_app/dashboard.
+     * Les URLs déjà absolues (http://, https://, //) ou vides passent inchangées.
      */
     protected function redirect(string $url, int $status = 302): never
     {
-        header("Location: {$url}", true, $status);
+        header('Location: ' . $this->absoluteUrl($url), true, $status);
         exit;
+    }
+
+    /**
+     * Résout un chemin en URL absolue sous BASE_URL si nécessaire.
+     */
+    protected function absoluteUrl(string $url): string
+    {
+        if ($url === '' || preg_match('#^(https?:)?//#i', $url) || str_starts_with($url, BASE_URL)) {
+            return $url;
+        }
+        if ($url[0] === '/') {
+            return rtrim(BASE_URL, '/') . $url;
+        }
+        return $url;
     }
 
     /**
@@ -90,7 +110,7 @@ abstract class Controller
         $user = Session::getUser();
         if (!in_array($user['role'] ?? '', $roles, true)) {
             http_response_code(403);
-            $this->render('errors/403', [], 'main');
+            $this->render('errors/403', [], 'none');
             exit;
         }
     }
@@ -136,7 +156,7 @@ abstract class Controller
         if (!$this->can($permission)) {
             Logger::security('ACCESS_DENIED', "Permission requise : {$permission}");
             http_response_code(403);
-            $this->render('errors/403', ['title' => 'Permission insuffisante'], 'main');
+            $this->render('errors/403', ['title' => 'Permission insuffisante'], 'none');
             exit;
         }
     }

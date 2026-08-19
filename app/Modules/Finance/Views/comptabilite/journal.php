@@ -33,14 +33,14 @@ $sourcesLabels = [
       <h1 class="text-2xl font-bold text-slate-800">Journal comptable</h1>
       <p class="text-slate-500 text-sm"><?= $pagination['total'] ?> écriture(s) — <?= $exercice ? htmlspecialchars($exercice->libelle) : 'Tous exercices' ?></p>
     </div>
-    <a href="/v2/finance/comptabilite" class="text-sm text-slate-500 hover:text-slate-700">← Retour</a>
+    <a href="<?= BASE_URL ?>/v2/finance/comptabilite" class="text-sm text-slate-500 hover:text-slate-700">← Retour</a>
   </div>
 
   <!-- Filtres -->
   <div class="bg-white rounded-xl border border-slate-200 p-4">
     <form method="GET" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
       <input type="text" name="q" placeholder="Numéro, libellé, réf…" value="<?= htmlspecialchars($filters->q ?? '') ?>"
-             class="col-span-2 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-300">
+             class="form-input col-span-2">
 
       <select name="exercice_id" onchange="this.form.submit()" class="rounded-lg border border-slate-200 px-3 py-2 text-sm">
         <option value="">Tous les exercices</option>
@@ -84,7 +84,7 @@ $sourcesLabels = [
 
       <div class="flex gap-2">
         <button class="flex-1 bg-violet-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-violet-700">Filtrer</button>
-        <a href="/v2/finance/comptabilite/journal" class="flex-1 bg-slate-100 text-slate-600 rounded-lg py-2 text-sm font-medium hover:bg-slate-200 text-center">Reset</a>
+        <a href="<?= BASE_URL ?>/v2/finance/comptabilite/journal" class="flex-1 bg-slate-100 text-slate-600 rounded-lg py-2 text-sm font-medium hover:bg-slate-200 text-center">Reset</a>
       </div>
     </form>
   </div>
@@ -129,7 +129,7 @@ $sourcesLabels = [
               </span>
             </td>
             <td class="px-4 py-3 text-center">
-              <a href="/v2/finance/comptabilite/ecritures/<?= $e->id ?>" class="text-violet-600 hover:text-violet-800 text-xs font-medium">Détail</a>
+              <a href="<?= BASE_URL ?>/v2/finance/comptabilite/ecritures/<?= $e->id ?>" class="text-violet-600 hover:text-violet-800 text-xs font-medium">Détail</a>
             </td>
           </tr>
           <?php endforeach; ?>

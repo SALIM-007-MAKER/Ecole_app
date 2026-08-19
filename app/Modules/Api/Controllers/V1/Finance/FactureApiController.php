@@ -17,24 +17,30 @@ class FactureApiController extends ResourceApiController
         $this->requireApiPermission('factures.view');
         $this->checkRateLimit();
 
-        $paging  = $this->parsePagination();
-        $filters = $this->parseFilters(['eleve_id', 'statut', 'annee_scolaire', 'classe_id']);
-        $sort    = $this->parseSort(['date_emission', 'montant_total', 'numero', 'created_at'], 'date_emission');
+        $paging       = $this->parsePagination();
+        $filtersF     = $this->parseFilters(['eleve_id', 'statut', 'annee_scolaire'], 'f');
+        $filtersEleve = $this->parseFilters(['classe_id'], 'e');
+        $sort         = $this->parseSort(['date_emission', 'montant_total', 'numero', 'created_at'], 'date_emission', 'f');
 
         $pdo        = Database::getInstance()->getConnection();
-        $conditions = ['f.etablissement_id = ?'];
+        $conditions = ['e.etablissement_id = ?'];
         $bindings   = [$ctx->etablissementId];
-        foreach ($filters['conditions'] as $c) { $conditions[] = $c; }
-        array_push($bindings, ...$filters['bindings']);
+        foreach ([...$filtersF['conditions'], ...$filtersEleve['conditions']] as $c) { $conditions[] = $c; }
+        array_push($bindings, ...$filtersF['bindings'], ...$filtersEleve['bindings']);
 
         $where = 'WHERE ' . implode(' AND ', $conditions);
-        $cnt   = $pdo->prepare("SELECT COUNT(*) FROM finance_invoices f $where");
+        $cnt   = $pdo->prepare(
+            "SELECT COUNT(*) FROM finance_factures f
+             LEFT JOIN eleves e ON e.id = f.eleve_id
+             $where"
+        );
         $cnt->execute($bindings);
         $total = (int)$cnt->fetchColumn();
 
         $stmt = $pdo->prepare(
-            "SELECT f.*, e.nom AS eleve_nom
-             FROM finance_invoices f LEFT JOIN eleves e ON e.id = f.eleve_id
+            "SELECT f.*, e.nom AS eleve_nom, e.etablissement_id,
+                    (f.montant_total - f.montant_paye) AS reste_a_payer
+             FROM finance_factures f LEFT JOIN eleves e ON e.id = f.eleve_id
              $where ORDER BY $sort LIMIT {$paging['per_page']} OFFSET {$paging['offset']}"
         );
         $stmt->execute($bindings);
@@ -65,13 +71,15 @@ class FactureApiController extends ResourceApiController
 
         $annee  = $_GET['annee_scolaire'] ?? null;
         $pdo    = Database::getInstance()->getConnection();
-        $where  = 'WHERE f.etablissement_id = ? AND f.statut IN (?,?)';
-        $params = [$ctx->etablissementId, 'non_paye', 'partiel'];
+        $where  = 'WHERE e.etablissement_id = ? AND f.statut IN (?,?,?)';
+        $params = [$ctx->etablissementId, 'emise', 'partiellement_payee', 'en_retard'];
         if ($annee) { $where .= ' AND f.annee_scolaire = ?'; $params[] = $annee; }
 
         $stmt = $pdo->prepare(
             "SELECT COUNT(*) AS nb, SUM(f.montant_total - f.montant_paye) AS total_impaye
-             FROM finance_invoices f $where"
+             FROM finance_factures f
+             LEFT JOIN eleves e ON e.id = f.eleve_id
+             $where"
         );
         $stmt->execute($params);
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
@@ -85,9 +93,10 @@ class FactureApiController extends ResourceApiController
     {
         $pdo  = Database::getInstance()->getConnection();
         $stmt = $pdo->prepare(
-            'SELECT f.*, e.nom AS eleve_nom
-             FROM finance_invoices f LEFT JOIN eleves e ON e.id=f.eleve_id
-             WHERE f.id=:id AND f.etablissement_id=:etab LIMIT 1'
+            'SELECT f.*, e.nom AS eleve_nom, e.etablissement_id,
+                    (f.montant_total - f.montant_paye) AS reste_a_payer
+             FROM finance_factures f LEFT JOIN eleves e ON e.id=f.eleve_id
+             WHERE f.id=:id AND e.etablissement_id=:etab LIMIT 1'
         );
         $stmt->execute([':id' => $id, ':etab' => $etab]);
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);

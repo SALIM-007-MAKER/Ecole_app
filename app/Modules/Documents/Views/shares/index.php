@@ -9,14 +9,14 @@ $titre = 'Partages — ' . htmlspecialchars($document['titre']);
       <h1 class="text-2xl font-bold text-slate-800">Partages</h1>
       <p class="text-sm text-slate-500 mt-1"><?= htmlspecialchars($document['titre']) ?></p>
     </div>
-    <a href="/v2/documents/<?= $document['id'] ?>" class="text-sm text-slate-500 hover:text-slate-700">← Retour</a>
+    <a href="<?= BASE_URL ?>/v2/documents/<?= $document['id'] ?>" class="text-sm text-slate-500 hover:text-slate-700">← Retour</a>
   </div>
 
   <?php if ($canShare): ?>
   <div class="bg-white border border-slate-200 rounded-xl p-5">
     <h2 class="text-sm font-semibold text-slate-700 mb-3">Nouveau partage</h2>
     <form id="shareForm" class="flex flex-wrap gap-3">
-      <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+      <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
       <select name="destinataire_type" class="px-3 py-2 border border-slate-300 rounded-lg text-sm">
         <option value="user">Utilisateur</option>
         <option value="role">Rôle</option>

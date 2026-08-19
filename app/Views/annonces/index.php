@@ -8,10 +8,12 @@ $currentUser = \Core\Session::getUser();
 $canManage   = in_array($currentUser['role'] ?? '', ['admin','directeur','secretaire','enseignant'], true);
 
 $roleBadge = [
-    'tous'        => 'bg-violet-100 text-violet-700',
-    'parents'     => 'bg-sky-100 text-sky-700',
-    'enseignants' => 'bg-emerald-100 text-emerald-700',
-    'eleves'      => 'bg-amber-100 text-amber-700',
+    'tous'         => 'bg-violet-100 text-violet-700',
+    'parents'      => 'bg-sky-100 text-sky-700',
+    'enseignants'  => 'bg-emerald-100 text-emerald-700',
+    'eleves'       => 'bg-amber-100 text-amber-700',
+    'classe'       => 'bg-teal-100 text-teal-700',
+    'utilisateurs' => 'bg-slate-200 text-slate-700',
 ];
 
 $threeDaysAgo = strtotime('-3 days');
@@ -122,8 +124,17 @@ $threeDaysAgo = strtotime('-3 days');
                         <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold
                                      <?= $roleBadge[$audience] ?? 'bg-slate-100 text-slate-600' ?>">
                             <?php
-                            $audDef = $audiences[$audience] ?? null;
-                            echo htmlspecialchars(is_array($audDef) ? ($audDef['label'] ?? $audience) : ($audDef ?: ucfirst($audience)), ENT_QUOTES);
+                            if ($audience === 'classe' && !empty($ann->classe_nom)) {
+                                echo 'Classe : ' . htmlspecialchars($ann->classe_nom, ENT_QUOTES);
+                            } elseif ($audience === 'utilisateurs') {
+                                $n = is_string($ann->destinataires_ids ?? null)
+                                    ? count(json_decode($ann->destinataires_ids, true) ?: [])
+                                    : 0;
+                                echo $n . ' destinataire' . ($n > 1 ? 's' : '');
+                            } else {
+                                $audDef = $audiences[$audience] ?? null;
+                                echo htmlspecialchars(is_array($audDef) ? ($audDef['label'] ?? $audience) : ($audDef ?: ucfirst($audience)), ENT_QUOTES);
+                            }
                             ?>
                         </span>
 

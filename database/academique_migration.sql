@@ -92,7 +92,7 @@ INSERT INTO `periodes` (`nom`, `type`, `annee_scolaire`, `date_debut`, `date_fin
 ('Trimestre 2', 'trimestre', '2025-2026', '2026-01-07', '2026-03-27', 1),
 ('Trimestre 3', 'trimestre', '2025-2026', '2026-04-05', '2026-06-25', 1);
 
--- ── Contrôles de démonstration (Classe 1 = 1AS-A, Trimestre 1) ──
+-- ── Contrôles de démonstration (Classe 1 = Seconde-A, Trimestre 1) ──
 INSERT INTO `controles` (`libelle`, `type`, `coefficient`, `note_max`, `matiere_id`, `classe_id`, `periode_id`, `date_controle`) VALUES
 ('Contrôle 1',      'controle', 1.00, 20, 1, 1, 1, '2025-10-15'),  -- Maths
 ('Devoir maison',   'devoir',   0.50, 20, 1, 1, 1, '2025-11-01'),  -- Maths

@@ -1,20 +1,18 @@
 <?php /** @var array $user */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Rapports financiers — Finance V2</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>tailwind.config={theme:{extend:{colors:{primary:'#7c3aed'}}}}</script>
-</head>
-<body class="bg-slate-50 min-h-screen">
-<?php include BASE_PATH . '/app/Modules/Finance/Views/partials/sidebar.php'; ?>
+    <div class="flex items-center gap-2 text-sm text-slate-500 mb-4">
+        <a href="<?= BASE_URL ?>/v2/finance/rapports/dashboard" class="hover:text-violet-600">Finance</a>
+        <i data-lucide="chevron-right" class="w-3 h-3"></i>
+        <span class="text-slate-700">Rapports</span>
+    </div>
 
-<main class="ml-64 p-8">
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold text-slate-800">Rapports financiers</h1>
-        <p class="text-slate-500 mt-1">Générez et exportez les états financiers de l'établissement</p>
+    <div class="flex items-start gap-4 mb-8">
+        <div class="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="trending-up" class="w-5 h-5 text-violet-600"></i>
+        </div>
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">Rapports financiers</h1>
+            <p class="text-slate-500 text-sm mt-0.5">Générez et exportez les états financiers de l'établissement</p>
+        </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -56,10 +54,10 @@
     <!-- Export rapide -->
     <div class="mt-10 bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
         <h2 class="text-lg font-semibold text-slate-800 mb-4">Export rapide</h2>
-        <form action="/v2/finance/rapports/export" method="GET" class="flex flex-wrap gap-4 items-end">
+        <form action="<?= BASE_URL ?>/v2/finance/rapports/export" method="GET" class="flex flex-wrap gap-4 items-end">
             <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Type</label>
-                <select name="type" class="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-300 focus:border-violet-400">
+                <label class="form-label">Type</label>
+                <select name="type" class="form-select">
                     <option value="paiements">Paiements</option>
                     <option value="factures">Factures</option>
                     <option value="impayes">Impayés</option>
@@ -68,29 +66,23 @@
                 </select>
             </div>
             <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Format</label>
-                <select name="format" class="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-300 focus:border-violet-400">
+                <label class="form-label">Format</label>
+                <select name="format" class="form-select">
                     <option value="csv">CSV</option>
                     <option value="excel">Excel</option>
                     <option value="pdf">PDF (impression)</option>
                 </select>
             </div>
             <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Du</label>
-                <input type="date" name="date_debut" class="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-300">
+                <label class="form-label">Du</label>
+                <input type="date" name="date_debut" class="form-input">
             </div>
             <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Au</label>
-                <input type="date" name="date_fin" class="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-300">
+                <label class="form-label">Au</label>
+                <input type="date" name="date_fin" class="form-input">
             </div>
             <button type="submit" class="bg-violet-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors flex items-center gap-2">
                 <i data-lucide="download" class="w-4 h-4"></i> Exporter
             </button>
         </form>
     </div>
-</main>
-
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-<script>lucide.createIcons();</script>
-</body>
-</html>

@@ -44,10 +44,10 @@ class PositionController extends Controller
             'departements' => $departements,
             'categories'   => PositionDTO::CATEGORIES,
             'niveaux'      => OrganizationModel::NIVEAUX,
-            'canCreate'    => $this->policy->canCreate($this->user),
-            'canUpdate'    => $this->policy->canUpdate($this->user),
-            'canArchive'   => $this->policy->canArchive($this->user),
-            'canExport'    => $this->policy->canExport($this->user),
+            'canCreate'    => $this->policy->canCreate($this->currentUser()),
+            'canUpdate'    => $this->policy->canUpdate($this->currentUser()),
+            'canArchive'   => $this->policy->canArchive($this->currentUser()),
+            'canExport'    => $this->policy->canExport($this->currentUser()),
         ]);
     }
 
@@ -91,7 +91,7 @@ class PositionController extends Controller
         }
 
         try {
-            $this->service->creer($dto, (int)$this->user['id']);
+            $this->service->creer($dto, (int)$this->currentUser()['id']);
             Session::flash('success', 'Poste créé avec succès.');
             $this->redirect('/v2/rh/organisation/postes');
         } catch (\RuntimeException $e) {
@@ -160,7 +160,7 @@ class PositionController extends Controller
         }
 
         try {
-            $this->service->modifier($id, $dto, (int)$this->user['id']);
+            $this->service->modifier($id, $dto, (int)$this->currentUser()['id']);
             Session::flash('success', 'Poste mis à jour.');
             $this->redirect('/v2/rh/organisation/postes');
         } catch (\RuntimeException $e) {
@@ -177,7 +177,7 @@ class PositionController extends Controller
         $this->verifyCsrf();
 
         try {
-            $this->service->archiver($id, (int)$this->user['id']);
+            $this->service->archiver($id, (int)$this->currentUser()['id']);
             Session::flash('success', 'Poste archivé.');
         } catch (\RuntimeException $e) {
             Session::flash('error', $e->getMessage());
@@ -191,7 +191,7 @@ class PositionController extends Controller
         $this->verifyCsrf();
 
         try {
-            $this->service->restaurer($id, (int)$this->user['id']);
+            $this->service->restaurer($id, (int)$this->currentUser()['id']);
             Session::flash('success', 'Poste restauré.');
         } catch (\RuntimeException $e) {
             Session::flash('error', $e->getMessage());
@@ -209,9 +209,9 @@ class PositionController extends Controller
 
         $this->render('RH::organisation/fonctions/index', [
             'fonctions' => $fonctions,
-            'canCreate' => $this->policy->canCreate($this->user),
-            'canUpdate' => $this->policy->canUpdate($this->user),
-            'canArchive'=> $this->policy->canArchive($this->user),
+            'canCreate' => $this->policy->canCreate($this->currentUser()),
+            'canUpdate' => $this->policy->canUpdate($this->currentUser()),
+            'canArchive'=> $this->policy->canArchive($this->currentUser()),
         ]);
     }
 
@@ -221,7 +221,7 @@ class PositionController extends Controller
         $this->verifyCsrf();
 
         try {
-            $this->service->creerFonction($_POST, (int)$this->user['id']);
+            $this->service->creerFonction($_POST, (int)$this->currentUser()['id']);
             Session::flash('success', 'Fonction créée avec succès.');
         } catch (\RuntimeException|\InvalidArgumentException $e) {
             Session::flash('error', $e->getMessage());
@@ -235,7 +235,7 @@ class PositionController extends Controller
         $this->verifyCsrf();
 
         try {
-            $this->service->modifierFonction($id, $_POST, (int)$this->user['id']);
+            $this->service->modifierFonction($id, $_POST, (int)$this->currentUser()['id']);
             Session::flash('success', 'Fonction mise à jour.');
         } catch (\RuntimeException|\InvalidArgumentException $e) {
             Session::flash('error', $e->getMessage());
@@ -249,7 +249,7 @@ class PositionController extends Controller
         $this->verifyCsrf();
 
         try {
-            $this->service->archiverFonction($id, (int)$this->user['id']);
+            $this->service->archiverFonction($id, (int)$this->currentUser()['id']);
             Session::flash('success', 'Fonction archivée.');
         } catch (\RuntimeException $e) {
             Session::flash('error', $e->getMessage());

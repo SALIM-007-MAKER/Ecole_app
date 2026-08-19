@@ -35,7 +35,7 @@ $sourcesLabels = [
       <p class="text-slate-500 text-sm"><?= htmlspecialchars($ecriture->libelle ?? '') ?></p>
     </div>
     <div class="flex gap-2">
-      <a href="/v2/finance/comptabilite/journal" class="text-sm text-slate-500 hover:text-slate-700">← Journal</a>
+      <a href="<?= BASE_URL ?>/v2/finance/comptabilite/journal" class="text-sm text-slate-500 hover:text-slate-700">← Journal</a>
     </div>
   </div>
 
@@ -129,12 +129,12 @@ $sourcesLabels = [
   <?php if ($canSaisir && ($ecriture->statut ?? '') === 'valide'): ?>
   <div class="bg-white rounded-xl border border-slate-200 p-5">
     <h3 class="font-semibold text-slate-700 mb-3">Créer une écriture d'extourne</h3>
-    <form method="POST" action="/v2/finance/comptabilite/ecritures/<?= $ecriture->id ?>/extourner"
+    <form method="POST" action="<?= BASE_URL ?>/v2/finance/comptabilite/ecritures/<?= $ecriture->id ?>/extourner"
           onsubmit="return confirm('Confirmer l\'extourne ? L\'écriture originale sera marquée comme extournée et une nouvelle écriture inverse sera créée.')">
-      <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+      <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
       <div class="flex gap-3">
         <input type="text" name="motif" placeholder="Motif d'extourne (obligatoire)…" required
-               class="flex-1 rounded-lg border border-slate-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-300">
+               class="form-input flex-1">
         <button type="submit" class="bg-amber-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-amber-700">
           Extourner
         </button>

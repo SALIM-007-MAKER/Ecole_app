@@ -1,16 +1,6 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planification — <?= htmlspecialchars($planif['nom'] ?? '') ?></title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-3xl mx-auto px-4 py-8">
     <div class="flex items-center gap-3 mb-6">
-        <a href="/v2/rapports/planifications" class="text-slate-400 hover:text-violet-600">
+        <a href="<?= BASE_URL ?>/v2/rapports/planifications" class="text-slate-400 hover:text-violet-600">
             <i data-lucide="arrow-left" class="w-5 h-5"></i>
         </a>
         <h1 class="text-xl font-bold text-slate-800"><?= htmlspecialchars($planif['nom'] ?? '') ?></h1>
@@ -41,20 +31,20 @@
     </div>
 
     <div class="flex gap-3">
-        <a href="/v2/rapports/planifications/<?= $planif['id'] ?>/edit"
+        <a href="<?= BASE_URL ?>/v2/rapports/planifications/<?= $planif['id'] ?>/edit"
            class="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">
             <i data-lucide="pencil" class="w-4 h-4"></i> Modifier
         </a>
-        <form method="post" action="/v2/rapports/planifications/<?= $planif['id'] ?>/executer"
+        <form method="post" action="<?= BASE_URL ?>/v2/rapports/planifications/<?= $planif['id'] ?>/executer"
               onsubmit="return confirm('Exécuter ce rapport maintenant ?')">
-            <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
             <button class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700">
                 <i data-lucide="play" class="w-4 h-4"></i> Exécuter
             </button>
         </form>
-        <form method="post" action="/v2/rapports/planifications/<?= $planif['id'] ?>/supprimer"
+        <form method="post" action="<?= BASE_URL ?>/v2/rapports/planifications/<?= $planif['id'] ?>/supprimer"
               onsubmit="return confirm('Supprimer cette planification ?')">
-            <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
             <button class="flex items-center gap-2 px-4 py-2 border border-red-200 text-red-600 rounded-lg text-sm hover:bg-red-50">
                 <i data-lucide="trash-2" class="w-4 h-4"></i> Supprimer
             </button>
@@ -62,5 +52,3 @@
     </div>
 </div>
 <script>lucide.createIcons();</script>
-</body>
-</html>

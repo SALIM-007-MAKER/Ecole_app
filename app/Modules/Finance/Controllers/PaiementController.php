@@ -10,9 +10,12 @@ use App\Modules\Finance\Policies\PaymentPolicy;
 use App\Modules\Finance\Repositories\PaymentRepository;
 use App\Modules\Finance\Repositories\InvoiceRepository;
 use App\Modules\Finance\Services\PaymentService;
+use App\Shared\Auth\EleveScopeTrait;
 
 class PaiementController extends Controller
 {
+    use EleveScopeTrait;
+
     private PaymentService    $service;
     private PaymentRepository $repo;
     private InvoiceRepository $invoiceRepo;
@@ -41,7 +44,7 @@ class PaiementController extends Controller
         $annees   = $this->invoiceRepo->getAnneesActives();
 
         $this->render('Finance::paiements/index', [
-            'title'     => 'Encaissements',
+            'title'     => 'Paiements',
             'result'    => $result,
             'filters'   => $filters,
             'stats'     => $stats,
@@ -67,7 +70,7 @@ class PaiementController extends Controller
         $facture   = $factureId ? $this->invoiceRepo->findWithDetails($factureId) : null;
 
         if (!$facture || !in_array($facture->statut, ['emise','partiellement_payee','en_retard'], true)) {
-            \Core\Session::setFlash('error', 'Facture introuvable ou non payable.');
+            \Core\Session::flash('error', 'Facture introuvable ou non payable.');
             $this->redirect('/v2/finance/factures');
             return;
         }
@@ -119,7 +122,7 @@ class PaiementController extends Controller
 
         try {
             $paiementId = $this->service->enregistrer($dto, (int)$user['id']);
-            \Core\Session::setFlash('success', 'Paiement enregistré avec succès.');
+            \Core\Session::flash('success', 'Paiement enregistré avec succès.');
             $this->redirect('/v2/finance/paiements/' . $paiementId);
         } catch (\Throwable $e) {
             $factureId  = $dto->factureId;
@@ -145,7 +148,7 @@ class PaiementController extends Controller
 
         $paiement = $this->repo->findWithDetails($id);
         if (!$paiement) {
-            \Core\Session::setFlash('error', 'Paiement introuvable.');
+            \Core\Session::flash('error', 'Paiement introuvable.');
             $this->redirect('/v2/finance/paiements');
             return;
         }
@@ -170,16 +173,16 @@ class PaiementController extends Controller
     {
         $user = $this->currentUser();
         if (!$this->policy->canValider($user)) {
-            \Core\Session::setFlash('error', 'Accès refusé.');
+            \Core\Session::flash('error', 'Accès refusé.');
             $this->redirect('/v2/finance/paiements/' . $id);
             return;
         }
         $this->verifyCsrf();
         try {
             $this->service->valider($id, (int)$user['id']);
-            \Core\Session::setFlash('success', 'Paiement validé.');
+            \Core\Session::flash('success', 'Paiement validé.');
         } catch (\Throwable $e) {
-            \Core\Session::setFlash('error', $e->getMessage());
+            \Core\Session::flash('error', $e->getMessage());
         }
         $this->redirect('/v2/finance/paiements/' . $id);
     }
@@ -189,16 +192,16 @@ class PaiementController extends Controller
     {
         $user = $this->currentUser();
         if (!$this->policy->canCompleter($user)) {
-            \Core\Session::setFlash('error', 'Accès refusé.');
+            \Core\Session::flash('error', 'Accès refusé.');
             $this->redirect('/v2/finance/paiements/' . $id);
             return;
         }
         $this->verifyCsrf();
         try {
             $this->service->completer($id, (int)$user['id']);
-            \Core\Session::setFlash('success', 'Paiement complété. Le reçu a été généré.');
+            \Core\Session::flash('success', 'Paiement complété. Le reçu a été généré.');
         } catch (\Throwable $e) {
-            \Core\Session::setFlash('error', $e->getMessage());
+            \Core\Session::flash('error', $e->getMessage());
         }
         $this->redirect('/v2/finance/paiements/' . $id);
     }
@@ -208,22 +211,22 @@ class PaiementController extends Controller
     {
         $user = $this->currentUser();
         if (!$this->policy->canAnnuler($user)) {
-            \Core\Session::setFlash('error', 'Accès refusé.');
+            \Core\Session::flash('error', 'Accès refusé.');
             $this->redirect('/v2/finance/paiements/' . $id);
             return;
         }
         $this->verifyCsrf();
         $motif = trim($_POST['motif'] ?? '');
         if (empty($motif)) {
-            \Core\Session::setFlash('error', 'Un motif est requis.');
+            \Core\Session::flash('error', 'Un motif est requis.');
             $this->redirect('/v2/finance/paiements/' . $id);
             return;
         }
         try {
             $this->service->annuler($id, $motif, (int)$user['id']);
-            \Core\Session::setFlash('success', 'Paiement annulé.');
+            \Core\Session::flash('success', 'Paiement annulé.');
         } catch (\Throwable $e) {
-            \Core\Session::setFlash('error', $e->getMessage());
+            \Core\Session::flash('error', $e->getMessage());
         }
         $this->redirect('/v2/finance/paiements/' . $id);
     }
@@ -233,7 +236,7 @@ class PaiementController extends Controller
     {
         $user = $this->currentUser();
         if (!$this->policy->canRembourser($user)) {
-            \Core\Session::setFlash('error', 'Accès refusé.');
+            \Core\Session::flash('error', 'Accès refusé.');
             $this->redirect('/v2/finance/paiements/' . $id);
             return;
         }
@@ -241,9 +244,9 @@ class PaiementController extends Controller
         try {
             $dto = RefundDTO::fromRequest($_POST);
             $this->service->rembourser($id, $dto, (int)$user['id']);
-            \Core\Session::setFlash('success', 'Remboursement enregistré.');
+            \Core\Session::flash('success', 'Remboursement enregistré.');
         } catch (\Throwable $e) {
-            \Core\Session::setFlash('error', $e->getMessage());
+            \Core\Session::flash('error', $e->getMessage());
         }
         $this->redirect('/v2/finance/paiements/' . $id);
     }
@@ -259,10 +262,11 @@ class PaiementController extends Controller
         try {
             $recu = $this->service->getOuGenererRecu($id, (int)$user['id']);
         } catch (\Throwable $e) {
-            \Core\Session::setFlash('error', $e->getMessage());
+            \Core\Session::flash('error', $e->getMessage());
             $this->redirect('/v2/finance/paiements/' . $id);
             return;
         }
+        $this->assertOwnEleve((int)$recu->eleve_id);
         $this->render('Finance::paiements/recu', [
             'title' => 'Reçu ' . $recu->numero,
             'recu'  => $recu,
@@ -283,7 +287,13 @@ class PaiementController extends Controller
             $this->redirect('/v2/finance/paiements/' . $id);
             return;
         }
-        $this->render('Finance::paiements/recu_print', ['recu' => $recu]);
+        $this->assertOwnEleve((int)$recu->eleve_id);
+        $branding = \Core\Tenant\BrandingService::forCurrentRequest();
+        $this->render('Finance::paiements/recu_print', [
+            'recu'     => $recu,
+            'branding' => $branding,
+            'devise'   => \Core\Tenant\SettingsService::make()->get($branding->etablissementId, 'finance', 'devise_defaut', 'XOF'),
+        ], 'none');
     }
 
     // GET /v2/finance/factures/{factureId}/paiements
@@ -292,7 +302,7 @@ class PaiementController extends Controller
         $this->requirePermission('finance.paiements.view');
         $facture    = $this->invoiceRepo->findWithDetails($factureId);
         if (!$facture) {
-            \Core\Session::setFlash('error', 'Facture introuvable.');
+            \Core\Session::flash('error', 'Facture introuvable.');
             $this->redirect('/v2/finance/factures');
             return;
         }
@@ -312,16 +322,16 @@ class PaiementController extends Controller
     {
         $user = $this->currentUser();
         if (!$this->policy->canTraiterTropPercu($user)) {
-            \Core\Session::setFlash('error', 'Accès refusé.');
+            \Core\Session::flash('error', 'Accès refusé.');
             $this->redirect('/v2/finance/paiements/' . $id);
             return;
         }
         $this->verifyCsrf();
         try {
             $this->service->traiterTropPercu($tpId, $action, (int)$user['id']);
-            \Core\Session::setFlash('success', 'Trop-perçu traité.');
+            \Core\Session::flash('success', 'Trop-perçu traité.');
         } catch (\Throwable $e) {
-            \Core\Session::setFlash('error', $e->getMessage());
+            \Core\Session::flash('error', $e->getMessage());
         }
         $this->redirect('/v2/finance/paiements/' . $id);
     }

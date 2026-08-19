@@ -1,12 +1,12 @@
 <?php $title = 'Remplacements — ' . $date; ?>
-<?php ob_start(); ?>
 
 <div class="p-6 space-y-6">
 
   <div class="flex items-start justify-between gap-4">
     <div class="flex items-center gap-3">
-      <a href="/v2/vie-scolaire/emplois-du-temps" class="text-slate-400 hover:text-slate-600">
-        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+      <a href="<?= BASE_URL ?>/v2/vie-scolaire/emplois-du-temps"
+         class="inline-flex items-center gap-2 px-3 py-1.5 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 text-sm transition-colors flex-shrink-0">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i> Retour
       </a>
       <div>
         <h1 class="text-2xl font-bold text-slate-800">Remplacements</h1>
@@ -26,18 +26,6 @@
   </div>
 
   <!-- Flash -->
-  <?php if (!empty($_SESSION['flash_success'])): ?>
-    <div class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm">
-      <?= htmlspecialchars($_SESSION['flash_success']) ?>
-      <?php unset($_SESSION['flash_success']); ?>
-    </div>
-  <?php endif; ?>
-  <?php if (!empty($_SESSION['flash_error'])): ?>
-    <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">
-      <?= $_SESSION['flash_error'] ?>
-      <?php unset($_SESSION['flash_error']); ?>
-    </div>
-  <?php endif; ?>
 
   <!-- Liste du jour -->
   <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
@@ -101,8 +89,8 @@
       <i data-lucide="user-x" class="w-4 h-4 text-orange-500"></i>
       Enregistrer un remplacement
     </h2>
-    <form method="POST" action="/v2/vie-scolaire/emplois-du-temps/remplacements" class="grid grid-cols-2 gap-4">
-      <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+    <form method="POST" action="<?= BASE_URL ?>/v2/vie-scolaire/emplois-du-temps/remplacements" class="grid grid-cols-2 gap-4">
+      <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
 
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Créneau <span class="text-red-500">*</span></label>
@@ -161,5 +149,3 @@
 
 </div>
 
-<?php $content = ob_get_clean(); ?>
-<?php include base_path('app/Views/layouts/app.php'); ?>

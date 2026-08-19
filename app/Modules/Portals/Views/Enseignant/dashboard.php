@@ -3,22 +3,22 @@
 
   <!-- Actions rapides enseignant -->
   <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-    <a href="/v2/portals/enseignant/appel"
+    <a href="<?= BASE_URL ?>/v2/portals/enseignant/appel"
        class="flex items-center gap-3 bg-teal-50 border border-teal-200 rounded-xl p-4 hover:bg-teal-100 transition-colors">
       <i data-lucide="check-square" class="w-6 h-6 text-teal-600 flex-shrink-0"></i>
       <span class="text-sm font-medium text-teal-800">Faire l'appel</span>
     </a>
-    <a href="/v2/portals/enseignant/notes"
+    <a href="<?= BASE_URL ?>/v2/portals/enseignant/notes"
        class="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-xl p-4 hover:bg-blue-100 transition-colors">
       <i data-lucide="edit-3" class="w-6 h-6 text-blue-600 flex-shrink-0"></i>
       <span class="text-sm font-medium text-blue-800">Saisir les notes</span>
     </a>
-    <a href="/v2/portals/enseignant/emploi-du-temps"
+    <a href="<?= BASE_URL ?>/v2/portals/enseignant/emploi-du-temps"
        class="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-xl p-4 hover:bg-slate-100 transition-colors">
       <i data-lucide="calendar" class="w-6 h-6 text-slate-600 flex-shrink-0"></i>
       <span class="text-sm font-medium text-slate-800">Mon emploi du temps</span>
     </a>
-    <a href="/v2/portals/enseignant/messagerie"
+    <a href="<?= BASE_URL ?>/v2/portals/enseignant/messagerie"
        class="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl p-4 hover:bg-emerald-100 transition-colors">
       <i data-lucide="mail" class="w-6 h-6 text-emerald-600 flex-shrink-0"></i>
       <span class="text-sm font-medium text-emerald-800">Messagerie</span>

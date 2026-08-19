@@ -146,7 +146,7 @@ $flash = \Core\Session::getFlash();
     </div>
 
     <!-- Verrouillage -->
-    <?php if ($periode->statut === 'verrouillee'): ?>
+    <?php if ($periode->verrouille_par !== null): ?>
     <div class="bg-red-50 rounded-xl border border-red-200 p-5">
         <h3 class="font-semibold text-red-700 mb-3 flex items-center gap-2">
             <i data-lucide="lock" class="w-4 h-4"></i>
@@ -183,7 +183,19 @@ $flash = \Core\Session::getFlash();
             Actions disponibles
         </h3>
         <div class="space-y-2">
-            <?php if (!((int)$periode->is_active) && $periode->statut !== 'archivee' && $policy && $policy->canActivate($user)): ?>
+            <?php if ($periode->statut === 'preparation' && $policy && $policy->canOuvrir($user)): ?>
+            <form method="POST" action="<?= BASE_URL ?>/v2/academique/periodes/<?= $periode->id ?>/ouvrir">
+                <input type="hidden" name="_csrf_token" value="<?= \Core\Session::getCsrfToken() ?>">
+                <button type="submit"
+                        onclick="return confirm('Ouvrir la période ? La saisie de notes sera autorisée.')"
+                        class="w-full btn btn-secondary text-sm justify-start gap-2">
+                    <i data-lucide="unlock" class="w-4 h-4 text-emerald-500"></i>
+                    Ouvrir la période
+                </button>
+            </form>
+            <?php endif; ?>
+
+            <?php if (!((int)$periode->is_active) && $periode->statut === 'ouverte' && $policy && $policy->canActivate($user)): ?>
             <form method="POST" action="<?= BASE_URL ?>/v2/academique/periodes/<?= $periode->id ?>/activer">
                 <input type="hidden" name="_csrf_token" value="<?= \Core\Session::getCsrfToken() ?>">
                 <button type="submit"
@@ -195,19 +207,31 @@ $flash = \Core\Session::getFlash();
             </form>
             <?php endif; ?>
 
-            <?php if ($periode->statut === 'ouverte' && $policy && $policy->canFermer($user)): ?>
-            <form method="POST" action="<?= BASE_URL ?>/v2/academique/periodes/<?= $periode->id ?>/fermer">
+            <?php if ($periode->statut === 'ouverte' && $policy && $policy->canCloturer($user)): ?>
+            <form method="POST" action="<?= BASE_URL ?>/v2/academique/periodes/<?= $periode->id ?>/cloturer">
                 <input type="hidden" name="_csrf_token" value="<?= \Core\Session::getCsrfToken() ?>">
                 <button type="submit"
-                        onclick="return confirm('Fermer la période ? La saisie de notes sera bloquée.')"
+                        onclick="return confirm('Clôturer la période ? La saisie de notes sera bloquée.')"
                         class="w-full btn btn-secondary text-sm justify-start gap-2">
                     <i data-lucide="clock" class="w-4 h-4 text-amber-500"></i>
-                    Fermer la période
+                    Clôturer la période
                 </button>
             </form>
             <?php endif; ?>
 
-            <?php if (in_array($periode->statut, ['ouverte', 'fermee'], true) && $policy && $policy->canVerrouiller($user)): ?>
+            <?php if ($periode->statut === 'cloturee' && $policy && $policy->canReouvrir($user)): ?>
+            <form method="POST" action="<?= BASE_URL ?>/v2/academique/periodes/<?= $periode->id ?>/reouvrir">
+                <input type="hidden" name="_csrf_token" value="<?= \Core\Session::getCsrfToken() ?>">
+                <button type="submit"
+                        onclick="return confirm('Réouvrir la période ? (action administrateur)')"
+                        class="w-full btn btn-secondary text-sm justify-start gap-2">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4 text-emerald-500"></i>
+                    Réouvrir (Admin)
+                </button>
+            </form>
+            <?php endif; ?>
+
+            <?php if ($periode->statut === 'cloturee' && $policy && $policy->canVerrouiller($user)): ?>
             <form method="POST" action="<?= BASE_URL ?>/v2/academique/periodes/<?= $periode->id ?>/verrouiller">
                 <input type="hidden" name="_csrf_token" value="<?= \Core\Session::getCsrfToken() ?>">
                 <button type="submit"
@@ -219,7 +243,7 @@ $flash = \Core\Session::getFlash();
             </form>
             <?php endif; ?>
 
-            <?php if ($policy && $policy->canArchiver($user, $periode)): ?>
+            <?php if ($periode->statut === 'cloturee' && $policy && $policy->canArchiver($user, $periode)): ?>
             <form method="POST" action="<?= BASE_URL ?>/v2/academique/periodes/<?= $periode->id ?>/archiver">
                 <input type="hidden" name="_csrf_token" value="<?= \Core\Session::getCsrfToken() ?>">
                 <button type="submit"

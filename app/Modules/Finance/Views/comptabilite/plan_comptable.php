@@ -29,7 +29,7 @@ $classesLabels = [
       </p>
     </div>
     <div class="flex gap-2">
-      <a href="/v2/finance/comptabilite" class="text-sm text-slate-500 hover:text-slate-700">← Retour</a>
+      <a href="<?= BASE_URL ?>/v2/finance/comptabilite" class="text-sm text-slate-500 hover:text-slate-700">← Retour</a>
     </div>
   </div>
 

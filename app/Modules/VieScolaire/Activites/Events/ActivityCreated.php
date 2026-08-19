@@ -13,5 +13,20 @@ class ActivityCreated extends Event
         public readonly string $dateActivite,
         public readonly string $anneeScolaire,
         public readonly int    $creeParId,
-    ) {}
+    ) {
+        parent::__construct();
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'activity_id'    => $this->activityId,
+            'categorie_id'   => $this->categorieId,
+            'titre'          => $this->titre,
+            'date_activite'  => $this->dateActivite,
+            'annee_scolaire' => $this->anneeScolaire,
+            'cree_par_id'    => $this->creeParId,
+            'fired_at'       => $this->getFiredAt(),
+        ];
+    }
 }

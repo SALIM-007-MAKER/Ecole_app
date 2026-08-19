@@ -29,7 +29,7 @@
   </div>
   <?php endif; ?>
 
-  <a href="/v2/rapports/finance" class="inline-flex items-center gap-2 text-sm text-amber-600 hover:underline">
+  <a href="<?= BASE_URL ?>/v2/rapports/finance" class="inline-flex items-center gap-2 text-sm text-amber-600 hover:underline">
     <i data-lucide="bar-chart-2" class="w-4 h-4"></i> Rapports financiers avancés
   </a>
 </div>

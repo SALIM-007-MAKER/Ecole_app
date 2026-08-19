@@ -151,6 +151,37 @@ class AbsenceRepository
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
     }
 
+    /**
+     * Compte les absences justifiées/non justifiées d'un élève sur une plage
+     * de dates (ex : les dates d'une période scolaire — utilisé par le
+     * bulletin V1, cf. BulletinGenerator).
+     *
+     * @return array{justifiees: int, nonJustifiees: int}
+     */
+    public function countByEleveAndDateRange(int $eleveId, string $dateDebut, string $dateFin): array
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT
+                 IFNULL(SUM(statut = 'justifiee'     AND type = 'absence'), 0) AS justifiees,
+                 IFNULL(SUM(statut = 'non_justifiee' AND type = 'absence'), 0) AS non_justifiees
+             FROM vs_absences
+             WHERE eleve_id = :eleve_id
+               AND date_absence BETWEEN :date_debut AND :date_fin
+               AND deleted_at IS NULL"
+        );
+        $stmt->execute([
+            ':eleve_id'   => $eleveId,
+            ':date_debut' => $dateDebut,
+            ':date_fin'   => $dateFin,
+        ]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        return [
+            'justifiees'    => (int)($row['justifiees']     ?? 0),
+            'nonJustifiees' => (int)($row['non_justifiees']  ?? 0),
+        ];
+    }
+
     public function statsByClasse(int $classeId, string $anneeScolaire): array
     {
         $stmt = $this->pdo->prepare(
@@ -247,6 +278,19 @@ class AbsenceRepository
         if ($filters->eleveId !== null) {
             $conditions[] = 'a.eleve_id = :eleve_id';
             $params[':eleve_id'] = $filters->eleveId;
+        }
+        if ($filters->eleveIds !== null) {
+            if (empty($filters->eleveIds)) {
+                $conditions[] = '1 = 0';
+            } else {
+                $placeholders = [];
+                foreach (array_values($filters->eleveIds) as $i => $eid) {
+                    $key = ":scope_eleve_{$i}";
+                    $placeholders[] = $key;
+                    $params[$key] = $eid;
+                }
+                $conditions[] = 'a.eleve_id IN (' . implode(',', $placeholders) . ')';
+            }
         }
         if ($filters->classeId !== null) {
             $conditions[] = 'a.classe_id = :classe_id';

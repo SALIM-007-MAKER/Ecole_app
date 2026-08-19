@@ -116,6 +116,19 @@ function editM(array $old, string $key, $obj): string {
                         </select>
                     </div>
 
+                    <div>
+                        <label class="form-label" for="categorie">Filière</label>
+                        <select id="categorie" name="categorie" class="form-input">
+                            <?php $currentCategorie = $old['categorie'] ?? ($matiere->categorie ?? 'autre'); ?>
+                            <?php foreach (\App\Models\MatiereModel::CATEGORIES as $val => $label): ?>
+                            <option value="<?= $val ?>" <?= ($currentCategorie === $val) ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($label, ENT_QUOTES) ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <p class="mt-1 block text-xs text-slate-500">Utilisé pour regrouper les moyennes sur le bulletin.</p>
+                    </div>
+
                     <div class="sm:col-span-3">
                         <label class="form-label" for="description">
                             Description <span class="text-slate-400 font-normal">(optionnel)</span>

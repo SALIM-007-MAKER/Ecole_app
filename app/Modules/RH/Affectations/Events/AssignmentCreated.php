@@ -16,7 +16,9 @@ class AssignmentCreated extends Event
         public readonly ?int   $departementId,
         public readonly string $dateDebut,
         public readonly int    $createdBy
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

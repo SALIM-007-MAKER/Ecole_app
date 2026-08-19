@@ -13,6 +13,13 @@ use Core\Listener;
 
 class EvaluationHandler implements Listener
 {
+    private AuditService $audit;
+
+    public function __construct()
+    {
+        $this->audit = new AuditService();
+    }
+
     public function handle(Event $event): void
     {
         match(true) {
@@ -27,54 +34,62 @@ class EvaluationHandler implements Listener
 
     private function onCreated(EvaluationCreated $event): void
     {
-        (new AuditService())->logCreate(
+        $this->audit->logCreate(
+            $event->createdById,
+            'academique',
             'evaluation',
             $event->evaluationId,
-            $event->toArray(),
-            $event->createdById
+            $event->toArray()
         );
     }
 
     private function onUpdated(EvaluationUpdated $event): void
     {
-        (new AuditService())->log(
+        $this->audit->log(
+            $event->updatedById,
             'update',
+            'academique',
             'evaluation',
             $event->evaluationId,
-            $event->changedFields,
-            $event->updatedById
+            null,
+            $event->changedFields
         );
     }
 
     private function onPublished(EvaluationPublished $event): void
     {
-        (new AuditService())->log(
+        $this->audit->log(
+            $event->publishedById,
             'publier',
+            'academique',
             'evaluation',
             $event->evaluationId,
-            ['libelle' => $event->libelle, 'classe_id' => $event->classeId],
-            $event->publishedById
+            null,
+            ['libelle' => $event->libelle, 'classe_id' => $event->classeId]
         );
     }
 
     private function onLocked(EvaluationLocked $event): void
     {
-        (new AuditService())->log(
+        $this->audit->log(
+            $event->lockedById,
             'verrouiller',
+            'academique',
             'evaluation',
             $event->evaluationId,
-            ['libelle' => $event->libelle],
-            $event->lockedById
+            null,
+            ['libelle' => $event->libelle]
         );
     }
 
     private function onArchived(EvaluationArchived $event): void
     {
-        (new AuditService())->logDelete(
+        $this->audit->logDelete(
+            $event->archivedById,
+            'academique',
             'evaluation',
             $event->evaluationId,
-            $event->toArray(),
-            $event->archivedById
+            $event->toArray()
         );
     }
 }

@@ -368,10 +368,15 @@ class ProfesseurController extends Controller
 
         $file     = $_FILES['photo'];
         $maxSize  = 3 * 1024 * 1024;
-        $allowed  = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-        $mimeType = mime_content_type($file['tmp_name']);
+        // Extension dérivée du MIME réel (magic bytes), jamais du nom de
+        // fichier fourni par le client — sinon un polyglotte (ex: PNG valide
+        // avec du PHP ajouté, nommé "x.php") passerait la vérification MIME
+        // puis serait stocké avec l'extension .php dans le webroot public,
+        // exécutable directement par Apache (RCE).
+        $extByMime = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'];
+        $mimeType  = mime_content_type($file['tmp_name']);
 
-        if ($file['size'] > $maxSize || !in_array($mimeType, $allowed, true)) {
+        if ($file['size'] > $maxSize || !isset($extByMime[$mimeType])) {
             return $existingPath;
         }
 
@@ -379,8 +384,7 @@ class ProfesseurController extends Controller
             mkdir($this->photoDir, 0755, true);
         }
 
-        $ext      = pathinfo($file['name'], PATHINFO_EXTENSION);
-        $filename = 'prof_' . uniqid() . '.' . strtolower($ext);
+        $filename = 'prof_' . bin2hex(random_bytes(8)) . '.' . $extByMime[$mimeType];
         $dest     = $this->photoDir . $filename;
 
         if (move_uploaded_file($file['tmp_name'], $dest)) {

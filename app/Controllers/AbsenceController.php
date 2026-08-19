@@ -12,6 +12,7 @@ use App\Models\ClasseModel;
 use App\Models\EleveModel;
 use App\Models\ProfesseurModel;
 use App\Models\EnseignementModel;
+use App\Models\CreneauModel;
 
 class AbsenceController extends Controller
 {
@@ -19,14 +20,16 @@ class AbsenceController extends Controller
     private JustificationModel $justModel;
     private ClasseModel        $classeModel;
     private EleveModel         $eleveModel;
+    private CreneauModel       $creneauModel;
 
     public function __construct()
     {
         parent::__construct();
-        $this->absModel    = new AbsenceModel();
-        $this->justModel   = new JustificationModel();
-        $this->classeModel = new ClasseModel();
-        $this->eleveModel  = new EleveModel();
+        $this->absModel     = new AbsenceModel();
+        $this->justModel    = new JustificationModel();
+        $this->classeModel  = new ClasseModel();
+        $this->eleveModel   = new EleveModel();
+        $this->creneauModel = new CreneauModel();
     }
 
     // ─── Dashboard ───────────────────────────────────────────────────────────
@@ -278,7 +281,7 @@ class AbsenceController extends Controller
         $this->render('absences/create', [
             'title'   => 'Ajouter une absence',
             'classes' => $classes,
-            'sessions'=> AbsenceModel::SESSIONS,
+            'creneaux'=> $this->creneauModel->findCours(),
             'types'   => AbsenceModel::TYPES,
             'old'     => Session::getFlash('old') ?? [],
         ]);
@@ -289,18 +292,47 @@ class AbsenceController extends Controller
         $this->requirePermission('absences.create');
         $this->verifyCsrf();
 
+        // "session_mode" = 'journee' → une seule ligne (session='journee',
+        // sans créneau précis). "session_mode" = 'creneaux' → une ligne
+        // indépendante PAR créneau coché dans creneau_ids[] (permet de
+        // saisir en une fois "absent Cours 1 et 2, présent Cours 3" plutôt
+        // que de n'autoriser qu'une seule absence par demi-journée). Dans ce
+        // second cas, la session matin/après-midi de chaque ligne est
+        // dérivée de l'heure du créneau correspondant.
+        $mode = $this->request->post('session_mode', 'journee');
+
+        $sessions = [];
+        if ($mode === 'creneaux') {
+            $creneauIds = array_map('intval', (array)$this->request->post('creneau_ids', []));
+            $creneauIds = array_values(array_unique(array_filter($creneauIds, fn(int $id) => $id > 0)));
+            foreach ($creneauIds as $cid) {
+                $creneau = $this->creneauModel->findById($cid);
+                if ($creneau) {
+                    $sessions[] = [
+                        'session'    => $creneau->heure_debut < '12:00:00' ? 'matin' : 'apres_midi',
+                        'creneau_id' => $cid,
+                    ];
+                }
+            }
+        } else {
+            $sessions[] = ['session' => 'journee', 'creneau_id' => null];
+        }
+
         $data = [
-            'eleve_id'    => (int)$this->request->post('eleve_id', 0),
-            'classe_id'   => (int)$this->request->post('classe_id', 0),
-            'date_absence'=> $this->request->post('date_absence', ''),
-            'session'     => $this->request->post('session', 'journee'),
-            'type'        => $this->request->post('type', 'absence'),
-            'duree_retard'=> $this->request->post('duree_retard') ?: null,
-            'motif'       => trim($this->request->post('motif', '')),
+            'eleve_id'     => (int)$this->request->post('eleve_id', 0),
+            'classe_id'    => (int)$this->request->post('classe_id', 0),
+            'date_absence' => $this->request->post('date_absence', ''),
+            'session_mode' => $mode,
+            'creneau_ids'  => $mode === 'creneaux' ? array_column($sessions, 'creneau_id') : [],
+            'type'         => $this->request->post('type', 'absence'),
+            'duree_retard' => $this->request->post('duree_retard') ?: null,
+            'motif'        => trim($this->request->post('motif', '')),
         ];
 
-        if (!$data['eleve_id'] || !$data['date_absence']) {
-            Session::flash('error', 'Élève et date obligatoires.');
+        if (!$data['eleve_id'] || !$data['date_absence'] || empty($sessions)) {
+            Session::flash('error', empty($sessions)
+                ? 'Sélectionnez au moins un créneau, ou "Journée complète".'
+                : 'Élève et date obligatoires.');
             Session::flash('old', $data);
             $this->redirect(BASE_URL . '/absences/create');
             return;
@@ -308,22 +340,32 @@ class AbsenceController extends Controller
 
         try {
             $user = $this->currentUser();
-            $this->absModel->execute(
-                "INSERT INTO `absences`
-                    (eleve_id, classe_id, date_absence, session, type, duree_retard, motif, signale_par)
-                 VALUES (?,?,?,?,?,?,?,?)
-                 ON DUPLICATE KEY UPDATE
-                    type=VALUES(type), duree_retard=VALUES(duree_retard),
-                    motif=VALUES(motif), updated_at=NOW()",
-                [
+            foreach ($sessions as $s) {
+                $this->absModel->storeManuelle(
                     $data['eleve_id'], $data['classe_id'], $data['date_absence'],
-                    $data['session'], $data['type'],
+                    $s['session'], $s['creneau_id'], $data['type'],
                     $data['duree_retard'] ? (int)$data['duree_retard'] : null,
                     $data['motif'] ?: null,
-                    (int)$user['id'],
-                ]
-            );
-            Session::flash('success', 'Absence enregistrée.');
+                    (int)$user['id']
+                );
+            }
+
+            // Une absence saisie manuellement doit notifier le parent au même
+            // titre qu'une absence saisie via le pointage journalier — sans
+            // quoi ce second point d'entrée reste muet (bug relevé à l'audit).
+            EventDispatcher::dispatch(new AbsenceCreee(
+                eleveId:    $data['eleve_id'],
+                date:       $data['date_absence'],
+                statut:     $data['type'] === 'retard' ? 'retard' : 'absent',
+                session:    $sessions[0]['session'],
+                classeId:   $data['classe_id'],
+                saisieParId:(int)$user['id'],
+                motif:      $data['motif'] ?: '',
+            ));
+
+            Session::flash('success', count($sessions) > 1
+                ? count($sessions) . ' absences enregistrées.'
+                : 'Absence enregistrée.');
             $this->redirect(BASE_URL . '/absences/liste');
         } catch (\Throwable $e) {
             Session::flash('error', 'Erreur lors de l\'enregistrement : ' . $e->getMessage());
@@ -431,16 +473,37 @@ class AbsenceController extends Controller
         if ($decision === 'accepter') {
             $this->justModel->valider($justif->id, 'acceptee', $commentaire ?: null, (int)$this->currentUser()['id']);
             $this->absModel->updateStatutJustif((int)$id, 'justifiee');
+            $this->notifierDecisionJustification($absence, true);
             Session::flash('success', 'Justification acceptée.');
         } elseif ($decision === 'refuser') {
             $this->justModel->valider($justif->id, 'refusee', $commentaire ?: null, (int)$this->currentUser()['id']);
             $this->absModel->updateStatutJustif((int)$id, 'refusee');
+            $this->notifierDecisionJustification($absence, false);
             Session::flash('success', 'Justification refusée.');
         } else {
             Session::flash('error', 'Décision invalide.');
         }
 
         $this->redirect(BASE_URL . '/absences/' . $id);
+    }
+
+    /** Informe le parent de l'issue de sa demande de justification — silencieux jusqu'ici. */
+    private function notifierDecisionJustification(object $absence, bool $acceptee): void
+    {
+        $eleve = $this->eleveModel->findById((int)$absence->eleve_id);
+        if (!$eleve || empty($eleve->parent_id)) {
+            return;
+        }
+        $dateF = date('d/m/Y', strtotime($absence->date_absence));
+        $titre = $acceptee ? "Justification acceptée — {$dateF}" : "Justification refusée — {$dateF}";
+        $msg   = $acceptee
+            ? "Votre justification pour l'absence du {$dateF} a été acceptée."
+            : "Votre justification pour l'absence du {$dateF} a été refusée.";
+        try {
+            (new \App\Services\NotificationService())->notify(
+                (int)$eleve->parent_id, 'absence', $titre, $msg, BASE_URL . '/parent/absences'
+            );
+        } catch (\Throwable) {}
     }
 
     // ─── Statistiques ────────────────────────────────────────────────────────

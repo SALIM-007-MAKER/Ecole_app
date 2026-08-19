@@ -5,15 +5,15 @@ $roles  = \App\Models\UserModel::allRoles();
 ?>
 
 <!-- Header -->
-<div class="flex items-center gap-3 mb-6">
+<div class="flex items-start gap-4 mb-6">
     <a href="<?= BASE_URL ?>/utilisateurs" class="btn btn-ghost btn-icon">
         <i data-lucide="arrow-left" class="w-4 h-4"></i>
     </a>
+    <div class="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+        <i data-lucide="user-plus" class="w-5 h-5 text-violet-600"></i>
+    </div>
     <div>
-        <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
-            <i data-lucide="user-plus" class="w-5 h-5 text-violet-600"></i>
-            Nouvel utilisateur
-        </h2>
+        <h2 class="text-xl font-bold text-slate-900">Nouvel utilisateur</h2>
         <p class="text-sm text-slate-500 mt-0.5">Créer un nouveau compte d'accès</p>
     </div>
 </div>

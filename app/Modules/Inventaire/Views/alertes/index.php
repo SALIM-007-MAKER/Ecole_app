@@ -1,20 +1,11 @@
 <?php /** @var array $alertes @var int $count */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Alertes Stock — Inventaire</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-6xl mx-auto px-4 py-6">
     <div class="flex items-center justify-between mb-6">
         <div>
             <h1 class="text-2xl font-bold text-slate-800">Alertes</h1>
             <p class="text-slate-500 text-sm"><?= $count ?> alerte(s) active(s)</p>
         </div>
-        <form method="POST" action="/v2/inventaire/alertes/scanner">
+        <form method="POST" action="<?= BASE_URL ?>/v2/inventaire/alertes/scanner">
             <input type="hidden" name="_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
             <button type="submit" class="inline-flex items-center gap-2 border px-4 py-2 rounded-lg text-sm text-slate-600 hover:bg-white">
                 <i data-lucide="refresh-cw" class="w-4 h-4"></i> Scanner les stocks
@@ -51,7 +42,7 @@
                     </td>
                     <td class="px-4 py-3 text-right">
                         <?php if ($a['statut'] === 'active'): ?>
-                        <form method="POST" action="/v2/inventaire/alertes/<?=$a['id']?>/acquitter" class="inline">
+                        <form method="POST" action="<?= BASE_URL ?>/v2/inventaire/alertes/<?=$a['id']?>/acquitter" class="inline">
                             <input type="hidden" name="_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                             <button type="submit" class="text-amber-600 hover:underline text-xs">Acquitter</button>
                         </form>
@@ -67,5 +58,3 @@
     </div>
 </div>
 <script>lucide.createIcons();</script>
-</body>
-</html>

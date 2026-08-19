@@ -6,42 +6,41 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
 $parType   = array_column($stats['par_type']   ?? [], 'nb', 'type');
 $parStatut = array_column($stats['par_statut'] ?? [], 'nb', 'statut');
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Affectations — EduNova</title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 text-slate-800 min-h-screen">
-<?php include dirname(__DIR__, 2) . '/layouts/sidebar.php'; ?>
-<main class="ml-64 p-8">
 
   <!-- En-tête -->
-  <div class="flex items-center justify-between mb-8">
-    <div>
-      <div class="flex items-center gap-2 text-sm text-slate-500 mb-1">
-        <a href="/v2/rh/employes" class="hover:text-violet-600">RH</a>
-        <span>/</span><span>Affectations</span>
+  <div class="flex items-start gap-2 text-sm text-slate-500 mb-4">
+    <a href="<?= BASE_URL ?>/v2/rh/employes" class="hover:text-violet-600">RH</a>
+    <i data-lucide="chevron-right" class="w-3 h-3 mt-0.5"></i>
+    <span class="text-slate-700">Affectations</span>
+  </div>
+
+  <div class="flex flex-wrap items-start justify-between gap-4 mb-8">
+    <div class="flex items-start gap-4">
+      <div class="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+        <i data-lucide="shuffle" class="w-5 h-5 text-violet-600"></i>
       </div>
-      <h1 class="text-2xl font-bold text-slate-900">Affectations du personnel</h1>
+      <div>
+        <h1 class="text-2xl font-bold text-slate-900">Affectations du personnel</h1>
+        <p class="text-sm text-slate-500 mt-0.5">Postes, classes et départements assignés</p>
+      </div>
     </div>
-    <div class="flex gap-3">
-      <a href="/v2/rh/affectations/statistiques"
-         class="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">
+    <div class="flex gap-2 flex-wrap flex-shrink-0">
+      <a href="<?= BASE_URL ?>/v2/rh/affectations/statistiques"
+         class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
+        <i data-lucide="bar-chart-2" class="w-4 h-4"></i>
         Statistiques
       </a>
       <?php if ($canExport): ?>
-        <a href="/v2/rh/affectations/export?<?= http_build_query($_GET) ?>"
-           class="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">
-          CSV
+        <a href="<?= BASE_URL ?>/v2/rh/affectations/export?<?= http_build_query($_GET) ?>"
+           class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          Export CSV
         </a>
       <?php endif; ?>
       <?php if ($canCreate): ?>
-        <a href="/v2/rh/affectations/create"
-           class="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        <a href="<?= BASE_URL ?>/v2/rh/affectations/create"
+           class="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors">
+          <i data-lucide="plus" class="w-4 h-4"></i>
           Nouvelle affectation
         </a>
       <?php endif; ?>
@@ -57,34 +56,50 @@ $parStatut = array_column($stats['par_statut'] ?? [], 'nb', 'statut');
 
   <!-- KPIs -->
   <div class="grid grid-cols-3 md:grid-cols-6 gap-3 mb-8">
-    <div class="col-span-2 bg-emerald-50 border border-emerald-100 rounded-xl p-4">
-      <p class="text-2xl font-bold text-emerald-600"><?= $stats['total_actives'] ?></p>
-      <p class="text-xs text-slate-500 mt-0.5">Affectations actives</p>
+    <div class="col-span-2 bg-emerald-50 border border-emerald-100 rounded-xl shadow-sm p-4 flex items-center gap-3">
+      <div class="w-9 h-9 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
+        <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>
+      </div>
+      <div>
+        <p class="text-2xl font-bold text-emerald-600"><?= $stats['total_actives'] ?></p>
+        <p class="text-xs text-slate-500 mt-0.5">Affectations actives</p>
+      </div>
     </div>
-    <?php foreach ($model::TYPES as $k => $label):
+    <?php
+    $typeIcons = ['principale' => 'star', 'secondaire' => 'link', 'temporaire' => 'clock'];
+    foreach ($model::TYPES as $k => $label):
       $nb = $parType[$k] ?? 0;
+      $typeColorClass = str_contains($model::typeColor($k), 'violet') ? 'violet' : (str_contains($model::typeColor($k), 'blue') ? 'blue' : 'amber');
     ?>
-      <div class="bg-white border border-slate-200 rounded-xl p-4">
-        <p class="text-xl font-bold <?= str_contains($model::typeColor($k), 'violet') ? 'text-violet-600' : (str_contains($model::typeColor($k), 'blue') ? 'text-blue-600' : 'text-amber-600') ?>"><?= $nb ?></p>
+      <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-4">
+        <div class="w-7 h-7 rounded-lg bg-<?= $typeColorClass ?>-100 flex items-center justify-center mb-1.5">
+          <i data-lucide="<?= $typeIcons[$k] ?? 'shuffle' ?>" class="w-3.5 h-3.5 text-<?= $typeColorClass ?>-600"></i>
+        </div>
+        <p class="text-xl font-bold text-<?= $typeColorClass ?>-600"><?= $nb ?></p>
         <p class="text-xs text-slate-500 mt-0.5"><?= $label ?></p>
       </div>
     <?php endforeach; ?>
-    <div class="bg-blue-50 border border-blue-100 rounded-xl p-4">
-      <p class="text-xl font-bold text-blue-600"><?= $stats['total_enseignants_affectes'] ?></p>
-      <p class="text-xs text-slate-500 mt-0.5">Enseignants affectés</p>
+    <div class="bg-blue-50 border border-blue-100 rounded-xl shadow-sm p-4 flex items-center gap-3">
+      <div class="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+        <i data-lucide="graduation-cap" class="w-4 h-4 text-blue-600"></i>
+      </div>
+      <div>
+        <p class="text-xl font-bold text-blue-600"><?= $stats['total_enseignants_affectes'] ?></p>
+        <p class="text-xs text-slate-500 mt-0.5">Enseignants affectés</p>
+      </div>
     </div>
   </div>
 
   <!-- Filtres -->
-  <form method="GET" class="bg-white rounded-xl border border-slate-200 p-4 mb-6 flex flex-wrap gap-4 items-end">
+  <form method="GET" class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 mb-6 flex flex-wrap gap-4 items-end">
     <div class="flex-1 min-w-40">
       <label class="block text-xs font-medium text-slate-600 mb-1">Recherche</label>
       <input type="text" name="q" value="<?= e($filters->q) ?>" placeholder="Nom ou matricule..."
-             class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-violet-300">
+             class="form-input">
     </div>
     <div>
       <label class="block text-xs font-medium text-slate-600 mb-1">Type</label>
-      <select name="type" class="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-violet-300">
+      <select name="type" class="form-select">
         <option value="">Tous</option>
         <?php foreach ($model::TYPES as $k => $label): ?>
           <option value="<?= e($k) ?>" <?= $filters->type === $k ? 'selected' : '' ?>><?= e($label) ?></option>
@@ -93,7 +108,7 @@ $parStatut = array_column($stats['par_statut'] ?? [], 'nb', 'statut');
     </div>
     <div>
       <label class="block text-xs font-medium text-slate-600 mb-1">Statut</label>
-      <select name="statut" class="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-violet-300">
+      <select name="statut" class="form-select">
         <option value="">Tous</option>
         <?php foreach ($model::STATUTS as $k => $label): ?>
           <option value="<?= e($k) ?>" <?= $filters->statut === $k ? 'selected' : '' ?>><?= e($label) ?></option>
@@ -102,19 +117,21 @@ $parStatut = array_column($stats['par_statut'] ?? [], 'nb', 'statut');
     </div>
     <div>
       <label class="block text-xs font-medium text-slate-600 mb-1">Département</label>
-      <select name="departement_id" class="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-violet-300">
+      <select name="departement_id" class="form-select">
         <option value="">Tous</option>
         <?php foreach ($departements as $d): ?>
           <option value="<?= (int)$d['id'] ?>" <?= $filters->departementId === (int)$d['id'] ? 'selected' : '' ?>><?= e($d['nom']) ?></option>
         <?php endforeach; ?>
       </select>
     </div>
-    <button type="submit" class="px-4 py-2 bg-violet-600 text-white text-sm rounded-lg hover:bg-violet-700">Filtrer</button>
-    <a href="/v2/rh/affectations" class="px-4 py-2 bg-slate-100 text-slate-600 text-sm rounded-lg hover:bg-slate-200">Réinitialiser</a>
+    <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white text-sm font-medium rounded-lg hover:bg-violet-700 transition-colors">
+      <i data-lucide="filter" class="w-4 h-4"></i> Filtrer
+    </button>
+    <a href="<?= BASE_URL ?>/v2/rh/affectations" class="text-sm text-slate-500 hover:text-slate-700 self-end py-2">Réinitialiser</a>
   </form>
 
   <!-- Table -->
-  <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+  <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
     <table class="w-full text-sm">
       <thead class="bg-slate-50 border-b border-slate-200">
         <tr>
@@ -129,13 +146,33 @@ $parStatut = array_column($stats['par_statut'] ?? [], 'nb', 'statut');
       </thead>
       <tbody class="divide-y divide-slate-100">
         <?php if (empty($affectations)): ?>
-          <tr><td colspan="7" class="px-4 py-10 text-center text-slate-400">Aucune affectation trouvée.</td></tr>
+          <tr>
+            <td colspan="7" class="py-14">
+              <div class="flex flex-col items-center gap-2 text-slate-400">
+                <div class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center">
+                  <i data-lucide="shuffle" class="w-5 h-5"></i>
+                </div>
+                <p class="text-sm">Aucune affectation trouvée.</p>
+              </div>
+            </td>
+          </tr>
         <?php endif; ?>
         <?php foreach ($affectations as $a): ?>
-          <tr class="hover:bg-slate-50">
+          <?php
+            $nameParts = array_filter(explode(' ', trim($a['employe_nom']), 2));
+            $initiales = implode('', array_map(fn($part) => mb_strtoupper(mb_substr($part, 0, 1)), $nameParts));
+          ?>
+          <tr class="hover:bg-slate-50 transition-colors">
             <td class="px-4 py-3">
-              <span class="font-medium text-slate-800"><?= e($a['employe_nom']) ?></span>
-              <span class="block text-xs text-slate-400"><?= e($a['employe_matricule']) ?></span>
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center text-violet-700 font-semibold text-xs shrink-0">
+                  <?= e($initiales) ?>
+                </div>
+                <div>
+                  <span class="font-medium text-slate-800 block"><?= e($a['employe_nom']) ?></span>
+                  <span class="text-xs text-slate-400"><?= e($a['employe_matricule']) ?></span>
+                </div>
+              </div>
             </td>
             <td class="px-4 py-3">
               <span class="px-2 py-0.5 text-xs font-medium rounded-full <?= $model::typeColor($a['type']) ?>">
@@ -159,8 +196,10 @@ $parStatut = array_column($stats['par_statut'] ?? [], 'nb', 'statut');
               <?= $a['date_fin'] ? '→ ' . e(date('d/m/Y', strtotime($a['date_fin']))) : '<span class="text-slate-300">→ ∞</span>' ?>
             </td>
             <td class="px-4 py-3 text-right">
-              <a href="/v2/rh/affectations/<?= (int)$a['id'] ?>"
-                 class="px-2 py-1 text-xs text-violet-600 bg-violet-50 rounded hover:bg-violet-100">Voir</a>
+              <a href="<?= BASE_URL ?>/v2/rh/affectations/<?= (int)$a['id'] ?>"
+                 class="inline-flex items-center gap-1 text-xs text-violet-600 hover:text-violet-800 font-medium">
+                <i data-lucide="eye" class="w-3.5 h-3.5"></i> Voir
+              </a>
             </td>
           </tr>
         <?php endforeach; ?>
@@ -181,7 +220,3 @@ $parStatut = array_column($stats['par_statut'] ?? [], 'nb', 'statut');
       </div>
     <?php endif; ?>
   </div>
-
-</main>
-</body>
-</html>

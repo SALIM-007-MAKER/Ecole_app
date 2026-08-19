@@ -582,13 +582,38 @@ class AccountingRepository
 
     // ── Paiements (pour lookup mode lors remboursement) ───────────────────────
 
+    /**
+     * Code du mode de paiement (ex: 'ESP', 'VIR') d'un paiement, via la
+     * table de référence `finance_modes_paiement` — corrige FN-C-002
+     * (l'ancienne requête lisait une colonne `mode_paiement` inexistante
+     * sur `finance_paiements`, qui n'a que `mode_paiement_id`).
+     */
     public function findPaiementMode(int $paiementId): ?string
     {
         $stmt = $this->pdo->prepare(
-            "SELECT mode_paiement FROM finance_paiements WHERE id = ?"
+            "SELECT mp.code FROM finance_paiements p
+             JOIN finance_modes_paiement mp ON mp.id = p.mode_paiement_id
+             WHERE p.id = ?"
         );
         $stmt->execute([$paiementId]);
         $row = $stmt->fetch(\PDO::FETCH_OBJ);
-        return $row ? $row->mode_paiement : null;
+        return $row ? $row->code : null;
+    }
+
+    /**
+     * Catégorie comptable ('caisse' ou 'banque') d'un mode de paiement,
+     * lue depuis `finance_modes_paiement.categorie` — remplace les
+     * tableaux PHP hardcodés CASH_MODES/BANK_MODES (voir NIGER_APP_
+     * CONFIGURATION_AUDIT.md). Un mode inconnu ou inactif retombe sur
+     * 'caisse' (comportement le plus restrictif, jamais un blocage).
+     */
+    public function findModeCategorie(string $code): string
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT categorie FROM finance_modes_paiement WHERE code = ?"
+        );
+        $stmt->execute([$code]);
+        $row = $stmt->fetch(\PDO::FETCH_OBJ);
+        return $row ? $row->categorie : 'caisse';
     }
 }

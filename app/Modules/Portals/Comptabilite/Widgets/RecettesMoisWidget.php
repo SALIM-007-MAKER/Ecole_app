@@ -26,10 +26,10 @@ class RecettesMoisWidget extends BaseWidget
             $month = date('Y-m');
             $prev  = date('Y-m', strtotime('first day of last month'));
 
-            $cur = $pdo->prepare('SELECT COALESCE(SUM(montant),0) FROM finance_paiements WHERE etablissement_id=? AND DATE_FORMAT(date_paiement,"%Y-%m")=? AND deleted_at IS NULL');
-            $cur->execute([$etab, $month]);
-            $prevStmt = $pdo->prepare('SELECT COALESCE(SUM(montant),0) FROM finance_paiements WHERE etablissement_id=? AND DATE_FORMAT(date_paiement,"%Y-%m")=? AND deleted_at IS NULL');
-            $prevStmt->execute([$etab, $prev]);
+            $cur = $pdo->prepare('SELECT COALESCE(SUM(montant_applique),0) FROM finance_paiements WHERE statut="complete" AND DATE_FORMAT(date_paiement,"%Y-%m")=?');
+            $cur->execute([$month]);
+            $prevStmt = $pdo->prepare('SELECT COALESCE(SUM(montant_applique),0) FROM finance_paiements WHERE statut="complete" AND DATE_FORMAT(date_paiement,"%Y-%m")=?');
+            $prevStmt->execute([$prev]);
 
             $total    = (float)$cur->fetchColumn();
             $prevTotal = (float)$prevStmt->fetchColumn();

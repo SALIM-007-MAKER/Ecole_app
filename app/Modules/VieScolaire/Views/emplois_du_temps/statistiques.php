@@ -1,5 +1,4 @@
 <?php $title = 'Statistiques EDT'; ?>
-<?php ob_start(); ?>
 
 <div class="p-6 space-y-6">
 
@@ -9,7 +8,7 @@
       <p class="text-slate-500 text-sm mt-1">Répartition horaire par classe et matière</p>
     </div>
     <?php if ($classeId && in_array('timetable.export', $user['permissions'] ?? [])): ?>
-      <a href="/v2/vie-scolaire/emplois-du-temps/export?classe_id=<?= $classeId ?>&annee=<?= urlencode($annee) ?>"
+      <a href="<?= BASE_URL ?>/v2/vie-scolaire/emplois-du-temps/export?classe_id=<?= $classeId ?>&annee=<?= urlencode($annee) ?>"
          class="inline-flex items-center gap-2 border border-slate-300 text-slate-600 hover:bg-slate-50 px-4 py-2 rounded-lg text-sm font-medium transition">
         <i data-lucide="download" class="w-4 h-4"></i> Export CSV
       </a>
@@ -92,5 +91,3 @@
 
 </div>
 
-<?php $content = ob_get_clean(); ?>
-<?php include base_path('app/Views/layouts/app.php'); ?>

@@ -1,16 +1,8 @@
 <?php /** @var array $session @var array $lignes @var array $rapport @var string $titre */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title><?= htmlspecialchars($titre ?? 'Inventaire') ?></title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-4xl mx-auto py-8 px-4">
 
   <div class="mb-4 flex items-center justify-between">
-    <a href="/v2/bibliotheque/inventaire" class="text-sm text-violet-600 hover:underline">← Sessions</a>
+    <a href="<?= BASE_URL ?>/v2/bibliotheque/inventaire" class="text-sm text-violet-600 hover:underline">← Sessions</a>
     <?php if ($session['statut'] === 'en_cours'): ?>
     <button onclick="terminer()" class="bg-red-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-red-700">Clôturer la session</button>
     <?php endif ?>
@@ -103,7 +95,7 @@ function scanner() {
   const data = new URLSearchParams({
     code, statut: document.getElementById('scanStatut').value, csrf_token: '',
   });
-  fetch('/v2/bibliotheque/inventaire/' + sessionId + '/scan', {method:'POST', body:data})
+  fetch('<?= BASE_URL ?>/v2/bibliotheque/inventaire/' + sessionId + '/scan', {method:'POST', body:data})
     .then(r => r.json())
     .then(d => {
       if (d.success) {
@@ -122,9 +114,7 @@ function scanner() {
 
 function terminer() {
   if (!confirm('Clôturer la session ? Cette action est irréversible.')) return;
-  fetch('/v2/bibliotheque/inventaire/' + sessionId + '/terminer', {method:'POST'})
+  fetch('<?= BASE_URL ?>/v2/bibliotheque/inventaire/' + sessionId + '/terminer', {method:'POST'})
     .then(r=>r.json()).then(d=>{ if(d.success) location.reload(); else alert(d.error); });
 }
 </script>
-</body>
-</html>

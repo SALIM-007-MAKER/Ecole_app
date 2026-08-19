@@ -12,11 +12,13 @@ class TeacherDTO
         'contractuel' => 'Contractuel',
     ];
 
+    // Libellés alignés sur la nomenclature nigérienne des classes (App\Models\ClasseModel::NIVEAUX) —
+    // clés de stockage inchangées ('moyen'/'secondaire'), seuls les libellés affichés sont mis à jour.
     public const NIVEAUX_DISPONIBLES = [
         'prescolaire' => 'Préscolaire',
         'primaire'    => 'Primaire',
-        'moyen'       => 'Moyen',
-        'secondaire'  => 'Secondaire',
+        'moyen'       => 'Collège',
+        'secondaire'  => 'Lycée',
         'superieur'   => 'Supérieur',
     ];
 

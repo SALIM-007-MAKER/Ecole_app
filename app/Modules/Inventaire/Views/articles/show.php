@@ -1,22 +1,13 @@
 <?php /** @var array $article @var array $mouvements @var array $affectations */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title><?= htmlspecialchars($article['designation']) ?> — Inventaire</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-6xl mx-auto px-4 py-6">
     <div class="flex items-center justify-between mb-6">
         <div>
-            <a href="/v2/inventaire/articles" class="text-violet-600 hover:underline text-sm">&larr; Articles</a>
+            <a href="<?= BASE_URL ?>/v2/inventaire/articles" class="text-violet-600 hover:underline text-sm">&larr; Articles</a>
             <h1 class="text-2xl font-bold text-slate-800 mt-1"><?= htmlspecialchars($article['designation']) ?></h1>
             <p class="text-slate-500 text-sm font-mono"><?= htmlspecialchars($article['reference']) ?></p>
         </div>
         <div class="flex gap-2">
-            <a href="/v2/inventaire/articles/<?= $article['id'] ?>/modifier"
+            <a href="<?= BASE_URL ?>/v2/inventaire/articles/<?= $article['id'] ?>/modifier"
                class="inline-flex items-center gap-2 border px-4 py-2 rounded-lg text-sm text-slate-700 hover:bg-slate-50">
                 <i data-lucide="edit-2" class="w-4 h-4"></i> Modifier
             </a>
@@ -101,11 +92,11 @@
             <div class="bg-white rounded-xl shadow-sm p-6">
                 <h2 class="font-semibold text-slate-700 mb-4">Actions rapides</h2>
                 <div class="space-y-2">
-                    <a href="/v2/inventaire/affectations/creer?article_id=<?= $article['id'] ?>"
+                    <a href="<?= BASE_URL ?>/v2/inventaire/affectations/creer?article_id=<?= $article['id'] ?>"
                        class="block w-full text-center bg-violet-50 text-violet-700 hover:bg-violet-100 rounded-lg px-4 py-2 text-sm font-medium">
                         Affecter cet article
                     </a>
-                    <a href="/v2/inventaire/maintenances/creer?article_id=<?= $article['id'] ?>"
+                    <a href="<?= BASE_URL ?>/v2/inventaire/maintenances/creer?article_id=<?= $article['id'] ?>"
                        class="block w-full text-center bg-slate-50 text-slate-700 hover:bg-slate-100 rounded-lg px-4 py-2 text-sm font-medium">
                         Planifier maintenance
                     </a>
@@ -115,5 +106,3 @@
     </div>
 </div>
 <script>lucide.createIcons();</script>
-</body>
-</html>

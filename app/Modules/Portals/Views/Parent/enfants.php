@@ -12,8 +12,8 @@
       </div>
     </div>
     <div class="grid grid-cols-2 gap-2">
-      <a href="/v2/portals/parent/notes" class="text-center text-xs bg-amber-50 text-amber-700 rounded-lg py-2 hover:bg-amber-100 transition-colors">Notes</a>
-      <a href="/v2/portals/parent/absences" class="text-center text-xs bg-red-50 text-red-700 rounded-lg py-2 hover:bg-red-100 transition-colors">Absences</a>
+      <a href="<?= BASE_URL ?>/v2/portals/parent/notes" class="text-center text-xs bg-amber-50 text-amber-700 rounded-lg py-2 hover:bg-amber-100 transition-colors">Notes</a>
+      <a href="<?= BASE_URL ?>/v2/portals/parent/absences" class="text-center text-xs bg-red-50 text-red-700 rounded-lg py-2 hover:bg-red-100 transition-colors">Absences</a>
     </div>
   </div>
   <?php endforeach; ?>

@@ -21,9 +21,9 @@ $statutCls = ['ouverte'=>'bg-emerald-100 text-emerald-700','cloturee'=>'bg-slate
       </p>
     </div>
     <div class="flex gap-2 flex-wrap">
-      <a href="/v2/finance/comptabilite/journal?exercice_id=<?= $exercice->id ?? '' ?>"
+      <a href="<?= BASE_URL ?>/v2/finance/comptabilite/journal?exercice_id=<?= $exercice->id ?? '' ?>"
          class="text-sm text-violet-600 hover:text-violet-800 font-medium">Voir le journal →</a>
-      <a href="/v2/finance/comptabilite/exercices" class="text-sm text-slate-500 hover:text-slate-700">← Exercices</a>
+      <a href="<?= BASE_URL ?>/v2/finance/comptabilite/exercices" class="text-sm text-slate-500 hover:text-slate-700">← Exercices</a>
     </div>
   </div>
 
@@ -73,9 +73,9 @@ $statutCls = ['ouverte'=>'bg-emerald-100 text-emerald-700','cloturee'=>'bg-slate
       </div>
     </div>
     <?php if ($nbOpen === 0): ?>
-    <form method="POST" action="/v2/finance/comptabilite/exercices/<?= $exercice->id ?>/cloturer"
+    <form method="POST" action="<?= BASE_URL ?>/v2/finance/comptabilite/exercices/<?= $exercice->id ?>/cloturer"
           onsubmit="return confirm('Clôturer définitivement l\'exercice ? Une écriture de clôture sera créée automatiquement.')">
-      <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+      <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
       <button class="bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-700 whitespace-nowrap">
         Clôturer l'exercice
       </button>
@@ -124,9 +124,9 @@ $statutCls = ['ouverte'=>'bg-emerald-100 text-emerald-700','cloturee'=>'bg-slate
             <?php if ($canGerer): ?>
             <td class="px-4 py-3 text-center">
               <?php if ($p->statut === 'ouverte'): ?>
-              <form method="POST" action="/v2/finance/comptabilite/periodes/<?= $p->id ?>/cloturer"
+              <form method="POST" action="<?= BASE_URL ?>/v2/finance/comptabilite/periodes/<?= $p->id ?>/cloturer"
                     onsubmit="return confirm('Clôturer la période <?= htmlspecialchars($p->libelle) ?> ?')">
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                 <button class="text-xs text-amber-600 hover:text-amber-800 font-medium">Clôturer</button>
               </form>
               <?php else: ?>

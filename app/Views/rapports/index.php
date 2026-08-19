@@ -17,9 +17,12 @@ $f = fn($n) => number_format((float)$n, 0, ',', ' ');
 
 <!-- Header -->
 <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
-    <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-        <i data-lucide="bar-chart-2" class="w-6 h-6 text-violet-600"></i>Dashboard analytique
-    </h2>
+    <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="bar-chart-2" class="w-5 h-5 text-violet-600"></i>
+        </div>
+        <h2 class="text-xl font-bold text-slate-800">Dashboard analytique</h2>
+    </div>
     <form class="flex items-center gap-2 flex-wrap" method="GET">
         <select name="annee" class="form-select" onchange="this.form.submit()">
             <?php foreach ($annees as $a): ?>

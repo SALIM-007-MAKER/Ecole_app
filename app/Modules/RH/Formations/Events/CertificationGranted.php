@@ -16,7 +16,9 @@ class CertificationGranted extends Event
         public readonly string  $dateObtention,
         public readonly ?string $dateExpiration,
         public readonly int     $grantedBy
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

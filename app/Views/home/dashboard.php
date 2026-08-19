@@ -279,8 +279,8 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
                     Nouvel élève
                 </a>
                 <?php endif; ?>
-                <?php if (can($perms, 'notes.create')): ?>
-                <a href="<?= BASE_URL ?>/notes/controles/create"
+                <?php if (can($perms, 'academique.evaluations.manage')): ?>
+                <a href="<?= BASE_URL ?>/v2/academique/evaluations/create"
                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors group">
                     <div class="w-7 h-7 rounded-md bg-emerald-100 flex items-center justify-center group-hover:bg-emerald-200 transition-colors">
                         <i data-lucide="pencil-line" class="w-3.5 h-3.5 text-emerald-600"></i>
@@ -307,7 +307,7 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
                 </a>
                 <?php endif; ?>
                 <div class="pt-1 border-t border-slate-100 mt-1">
-                    <a href="<?= BASE_URL ?>/reporting"
+                    <a href="<?= BASE_URL ?>/rapports"
                        class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors group">
                         <div class="w-7 h-7 rounded-md bg-slate-100 flex items-center justify-center group-hover:bg-slate-200 transition-colors">
                             <i data-lucide="bar-chart-3" class="w-3.5 h-3.5 text-slate-600"></i>
@@ -331,9 +331,9 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
                         ['Élèves',       BASE_URL . '/eleves',       'users',         '#ede9fe', '#7c3aed'],
                         ['Enseignants',  BASE_URL . '/professeurs',  'user-check',    '#dcfce7', '#16a34a'],
                         ['Classes',      BASE_URL . '/classes',      'building-2',    '#e0f2fe', '#0284c7'],
-                        ['Notes',        BASE_URL . '/notes',        'book-open',     '#f3e8ff', '#9333ea'],
+                        ['Notes',        BASE_URL . '/v2/academique/evaluations', 'book-open', '#f3e8ff', '#9333ea'],
                         ['Absences',     BASE_URL . '/absences',     'calendar-x',    '#fef3c7', '#d97706'],
-                        ['Finance',      BASE_URL . '/comptabilite', 'wallet',        '#dcfce7', '#059669'],
+                        ['Finance',      BASE_URL . '/v2/finance/rapports/dashboard', 'wallet',        '#dcfce7', '#059669'],
                     ];
                     foreach ($modules as [$label, $url, $icon, $bg, $color]):
                     ?>
@@ -363,8 +363,8 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
     </a>
     <?php endif; ?>
 
-    <?php if (can($perms, 'notes.create')): ?>
-    <a href="<?= BASE_URL ?>/notes/controles/create" class="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white p-5 text-center text-slate-600 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 hover:shadow-md">
+    <?php if (can($perms, 'academique.evaluations.manage')): ?>
+    <a href="<?= BASE_URL ?>/v2/academique/evaluations/create" class="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white p-5 text-center text-slate-600 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 hover:shadow-md">
         <i data-lucide="pencil-line" class="w-7 h-7 text-emerald-600 mb-2"></i>
         <span class="text-sm font-semibold text-slate-700">Saisir des notes</span>
     </a>
@@ -501,7 +501,7 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
                 Les rapports financiers, paiements et dépenses sont disponibles dans le module Finance.
             </p>
             <div class="flex items-center gap-3">
-                <a href="<?= BASE_URL ?>/comptabilite" class="btn btn-primary">
+                <a href="<?= BASE_URL ?>/v2/finance/rapports/dashboard" class="btn btn-primary">
                     <i data-lucide="wallet" class="w-4 h-4"></i>Accéder à la Finance
                 </a>
                 <a href="<?= BASE_URL ?>/eleves" class="btn btn-outline">
@@ -520,11 +520,11 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
         <div class="p-5 p-3 space-y-1.5">
             <?php
             $comptableLinks = [
-                ['Tableau de bord finance',  BASE_URL . '/comptabilite',          'wallet',        'emerald'],
-                ['Paiements',                BASE_URL . '/comptabilite/paiements','credit-card',   'violet'],
-                ['Dépenses',                 BASE_URL . '/comptabilite/depenses', 'receipt',       'amber'],
-                ['Rapports',                 BASE_URL . '/reporting',             'bar-chart-3',   'sky'],
-                ['Liste des élèves',         BASE_URL . '/eleves',                'users',         'slate'],
+                ['Tableau de bord finance',  BASE_URL . '/v2/finance/rapports/dashboard', 'wallet',        'emerald'],
+                ['Paiements',                BASE_URL . '/v2/finance/paiements',          'credit-card',   'violet'],
+                ['Décaissements',            BASE_URL . '/v2/finance/decaissements',      'receipt',       'amber'],
+                ['Rapports',                 BASE_URL . '/v2/finance/rapports',           'bar-chart-3',   'sky'],
+                ['Liste des élèves',         BASE_URL . '/eleves',                        'users',         'slate'],
             ];
             $comptableColors = [
                 'emerald' => ['bg-emerald-100', 'text-emerald-600', 'hover:bg-emerald-50', 'hover:text-emerald-700'],
@@ -681,7 +681,7 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
                         <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold leading-5 whitespace-nowrap bg-emerald-100 text-emerald-700"><?= $en->nb_eleves ?></span>
                     </td>
                     <td class="text-center">
-                        <a href="<?= BASE_URL ?>/notes/controles/create?classe_id=<?= $en->classe_id ?>&matiere_id=<?= $en->matiere_id ?>"
+                        <a href="<?= BASE_URL ?>/v2/academique/evaluations/create"
                            class="btn btn-success p-2 aspect-square px-2.5 py-1.5 text-xs rounded-md" title="Saisir des notes">
                             <i data-lucide="pencil-line" class="w-4 h-4"></i>
                         </a>
@@ -701,14 +701,14 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
             <span class="font-semibold text-slate-700">Accès rapides</span>
         </div>
         <div class="p-5 p-3 space-y-1.5">
-            <a href="<?= BASE_URL ?>/notes/controles/create"
+            <a href="<?= BASE_URL ?>/v2/academique/evaluations/create"
                class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors group">
                 <div class="w-7 h-7 rounded-md bg-emerald-100 flex items-center justify-center">
                     <i data-lucide="pencil-line" class="w-3.5 h-3.5 text-emerald-600"></i>
                 </div>
                 Saisir des notes
             </a>
-            <a href="<?= BASE_URL ?>/notes"
+            <a href="<?= BASE_URL ?>/v2/academique/evaluations"
                class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-violet-50 hover:text-violet-700 transition-colors group">
                 <div class="w-7 h-7 rounded-md bg-violet-100 flex items-center justify-center">
                     <i data-lucide="book-open-check" class="w-3.5 h-3.5 text-violet-600"></i>
@@ -818,7 +818,7 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
                 <i data-lucide="book-open" class="w-8 h-8 text-violet-600"></i>
             </div>
             <h3 class="font-bold text-slate-900 mb-1">Mes notes</h3>
-            <p class="text-sm text-slate-500 mb-5">Consultez vos résultats par matière et par trimestre.</p>
+            <p class="text-sm text-slate-500 mb-5">Consultez vos résultats par matière et par semestre.</p>
             <a href="<?= BASE_URL ?>/eleve/notes" class="btn btn-primary">
                 <i data-lucide="eye" class="w-4 h-4"></i>Voir mes notes
             </a>

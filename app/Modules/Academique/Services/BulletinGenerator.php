@@ -10,7 +10,10 @@ use App\Modules\Academique\DTO\RankingResultDTO;
 use App\Modules\Academique\Events\BulletinGenerated;
 use App\Modules\Academique\Events\BulletinPublished;
 use App\Modules\Academique\Events\BulletinArchived;
+use App\Modules\Academique\Repositories\AppreciationMatiereRepository;
 use App\Modules\Academique\Repositories\BulletinRepository;
+use App\Modules\Academique\Repositories\PeriodeScolaireRepository;
+use App\Modules\VieScolaire\Absences\Repositories\AbsenceRepository;
 use App\Services\AuditService;
 
 /**
@@ -53,17 +56,44 @@ class BulletinGenerator implements BulletinGeneratorInterface
         ],
     ];
 
+    private PeriodeScolaireRepository      $periodeRepo;
+    private AbsenceRepository              $absenceRepo;
+    private AppreciationMatiereRepository  $apprRepo;
+
+    /** classeId:periodeId:matiereId => RankingResultDTO — mémoïsation par requête, voir moyenneEtRangParMatiere(). */
+    private array $matiereClassementCache = [];
+
     public function __construct(
         private AcademicCalculationService $calculator,
         private RankingEngine              $rankingEngine,
         private BulletinRepository         $repo,
         private float                      $seuilRattrapage = 8.0,
+        private float                      $notePassage     = 10.0,
         private string                     $appKey          = 'ecole_app_v2',
-    ) {}
+        ?PeriodeScolaireRepository         $periodeRepo     = null,
+        ?AbsenceRepository                 $absenceRepo     = null,
+        ?AppreciationMatiereRepository     $apprRepo        = null,
+    ) {
+        $this->periodeRepo = $periodeRepo ?? new PeriodeScolaireRepository();
+        $this->absenceRepo = $absenceRepo ?? new AbsenceRepository();
+        $this->apprRepo    = $apprRepo    ?? new AppreciationMatiereRepository();
+    }
 
     // ─────────────────────────────────────────────────────────────────
     //  API publique
     // ─────────────────────────────────────────────────────────────────
+
+    /**
+     * Expose le RankingEngine déjà configuré par BulletinEngineFactory (mêmes
+     * note_passage/seuils que ceux utilisés pour générer les bulletins) — pour
+     * les écrans de consultation (résultats classe, classement, moyennes) qui
+     * ont besoin du même moteur sans dupliquer sa configuration par
+     * établissement. Voir Academique\Controllers\ResultatsController.
+     */
+    public function getRankingEngine(): RankingEngine
+    {
+        return $this->rankingEngine;
+    }
 
     public function genererBulletin(int $eleveId, int $periodeId, int $userId): BulletinData
     {
@@ -74,13 +104,15 @@ class BulletinGenerator implements BulletinGeneratorInterface
         $matieresData = $this->groupNotesByMatiere($rows);
 
         // Classement entier de la classe — une seule fois
-        $classement = $this->rankingEngine->classementClasse($classeId, $periodeId);
+        $classement       = $this->rankingEngine->classementClasse($classeId, $periodeId);
+        $resultatsAnnuels = $this->resultatsClasseEtAnnuels($classeId, $periode->annee_scolaire, $eleveId);
 
         $bulletin = $this->buildBulletinData(
             $eleveId, $periodeId, $userId,
             $matieresData, $eleve, $periode, $etab,
-            $classement, preview: false
+            $classement, $resultatsAnnuels, preview: false
         );
+        $bulletin = $this->preserveAppreciationDirecteur($bulletin);
 
         // Persistance
         $this->repo->saveBulletin($bulletin);
@@ -121,14 +153,19 @@ class BulletinGenerator implements BulletinGeneratorInterface
                 $eleve = $this->repo->infoEleve((int)$eleveId);
                 if (!$eleve) continue;
 
+                // Rang/décision annuels dépendent de l'élève — recalculés par élève
+                // (le classement annuel lui-même est peu coûteux, classes de petite taille).
+                $resultatsAnnuels = $this->resultatsClasseEtAnnuels($classeId, $periode->annee_scolaire, (int)$eleveId);
+
                 $rows         = $this->repo->notesEleveParPeriode((int)$eleveId, $classeId, $periodeId);
                 $matieresData = $this->groupNotesByMatiere($rows);
 
                 $bulletin = $this->buildBulletinData(
                     (int)$eleveId, $periodeId, $userId,
                     $matieresData, $eleve, $periode, $etab,
-                    $classement, preview: false
+                    $classement, $resultatsAnnuels, preview: false
                 );
+                $bulletin = $this->preserveAppreciationDirecteur($bulletin);
 
                 $this->repo->saveBulletin($bulletin);
 
@@ -156,6 +193,24 @@ class BulletinGenerator implements BulletinGeneratorInterface
         return $bulletins;
     }
 
+    /**
+     * Reporte l'appréciation du chef d'établissement déjà persistée (si elle
+     * existe) sur un bulletin fraîchement reconstruit. Sans cela, régénérer
+     * un bulletin (ex : après correction d'une note) écraserait silencieusement
+     * une appréciation de direction déjà saisie, puisque buildBulletinData()
+     * part toujours de `appreciationDirecteur: null` — voir
+     * BulletinController::appreciationForm()/updateAppreciation().
+     */
+    private function preserveAppreciationDirecteur(BulletinData $bulletin): BulletinData
+    {
+        $existing = $this->repo->findByEleveEtPeriode($bulletin->eleveId, $bulletin->periodeId);
+        $appreciation = $existing['appreciation_directeur'] ?? null;
+
+        return ($appreciation !== null && $appreciation !== '')
+            ? $bulletin->withAppreciationDirecteur($appreciation)
+            : $bulletin;
+    }
+
     public function previewBulletin(int $eleveId, int $periodeId): BulletinData
     {
         [$eleve, $periode, $etab] = $this->fetchContext($eleveId, $periodeId);
@@ -164,12 +219,13 @@ class BulletinGenerator implements BulletinGeneratorInterface
         $rows         = $this->repo->notesEleveParPeriode($eleveId, $classeId, $periodeId);
         $matieresData = $this->groupNotesByMatiere($rows);
         $classement   = $this->rankingEngine->classementClasse($classeId, $periodeId);
+        $resultatsAnnuels = $this->resultatsClasseEtAnnuels($classeId, $periode->annee_scolaire, $eleveId);
 
         // Pas de persistance, pas d'événement
         return $this->buildBulletinData(
             $eleveId, $periodeId, 0,
             $matieresData, $eleve, $periode, $etab,
-            $classement, preview: true
+            $classement, $resultatsAnnuels, preview: true
         );
     }
 
@@ -476,6 +532,7 @@ HTML;
         object           $periode,
         array            $etab,
         RankingResultDTO $classement,
+        array            $resultatsAnnuels,
         bool             $preview,
     ): BulletinData {
         // 1 — AcademicCalculationService : SEULE source des moyennes
@@ -492,11 +549,21 @@ HTML;
         $statsClasse  = $classement->statistiques;
         $moyClasse    = $classement->getMoyenneClasse();
 
-        // 3 — Lignes matières
-        $lignes = $this->buildLignesMatieres($matieresData, $calcResult['matieres']);
+        // 3 — Lignes matières (+ moyenne de classe / rang par matière, bulletin V1 papier)
+        $rangsParMatiere = $this->moyenneEtRangParMatiere(
+            (int)$eleve->classe_id, $periodeId, $eleveId, array_keys($matieresData)
+        );
+        $lignes = $this->buildLignesMatieres($matieresData, $calcResult['matieres'], $rangsParMatiere, $eleveId, $periodeId);
 
         // 4 — Appréciation générale (déterministe via eleve_id)
         $appreciationPp = $this->genererAppreciation($mention->getCode(), $eleve->id, $aEliminatoire);
+
+        // 4bis — Moyennes par filière (littéraire/scientifique/autre) et absences
+        // de la période (bulletin V1 papier — cf. BulletinController::imprimer)
+        $moyennesFiliere = $this->moyennesParFiliere($matieresData, $calcResult['matieres']);
+        $absences        = ($periode->date_debut && $periode->date_fin)
+            ? $this->absenceRepo->countByEleveAndDateRange($eleveId, $periode->date_debut, $periode->date_fin)
+            : ['justifiees' => 0, 'nonJustifiees' => 0];
 
         // 5 — Token de vérification (stable pour le même élève+période)
         $token = $this->generateVerificationToken($eleveId, $periodeId);
@@ -518,6 +585,8 @@ HTML;
             etablissementNom     : $etab['nom'],
             etablissementAdresse : $etab['adresse'],
             etablissementLogo    : $etab['logo'],
+            etablissementTelephone: $etab['telephone'] ?? null,
+            etablissementEmail   : $etab['email']      ?? null,
             lignesMatieres       : $lignes,
             moyennePeriode       : $periodeMoy->isEmpty() ? 0.0 : $periodeMoy->getValue(),
             mentionCode          : $mention->getCode(),
@@ -541,6 +610,12 @@ HTML;
             generatedById        : $userId,
             publishedAt          : null,
             archivedAt           : null,
+            resultatsAnnuels     : $resultatsAnnuels,
+            moyenneLitteraire    : $moyennesFiliere['litteraire']   ?? null,
+            moyenneScientifique  : $moyennesFiliere['scientifique'] ?? null,
+            moyenneAutre         : $moyennesFiliere['autre']        ?? null,
+            absences             : $absences,
+            effectifClasse       : $this->repo->effectifClasse((int)$eleve->classe_id),
         );
     }
 
@@ -560,6 +635,7 @@ HTML;
                     'matiere_id'  => $mid,
                     'matiere_nom' => $row['matiere_nom'] ?? '',
                     'coefficient' => (float)($row['coeff_matiere'] ?? 1.0),
+                    'categorie'   => $row['matiere_categorie'] ?? 'autre',
                     'notes'       => [],
                 ];
             }
@@ -572,6 +648,7 @@ HTML;
                 'est_eliminatoire'   => (bool)($row['est_eliminatoire'] ?? false),
                 'seuil_eliminatoire' => isset($row['seuil_eliminatoire'])
                     ? (float)$row['seuil_eliminatoire'] : null,
+                'type_code'          => $row['type_evaluation_code'] ?? null,
             ];
         }
         return $grouped;
@@ -579,9 +656,17 @@ HTML;
 
     /**
      * Construit les lignes matières enrichies (avec mention et appréciation par matière).
+     *
+     * @param array $rangsParMatiere  matiereId => {moyenneClasse: ?float, rang: ?int}
+     *                                (bulletin V1 papier, cf. moyenneEtRangParMatiere())
      */
-    private function buildLignesMatieres(array $matieresData, array $calcMatieres): array
-    {
+    private function buildLignesMatieres(
+        array $matieresData,
+        array $calcMatieres,
+        array $rangsParMatiere = [],
+        int   $eleveId = 0,
+        int   $periodeId = 0,
+    ): array {
         $lignes = [];
         foreach ($matieresData as $mid => $data) {
             $calcM = $calcMatieres[$mid] ?? null;
@@ -589,31 +674,216 @@ HTML;
 
             $moyMatiere = $calcM['moyenne'];
             $mention    = $this->calculator->mention($moyMatiere);
-            $apprMat    = $moyMatiere->isEmpty()
-                ? ''
-                : $this->genererAppreciation($mention->getCode(), $mid, $calcM['aEliminatoire']);
+            // Saisie manuelle par le professeur (app/Modules/Academique/Controllers/
+            // AppreciationController.php) — jamais générée automatiquement : une
+            // cellule vide signale au professeur qu'il reste à la remplir.
+            $apprMat    = $this->apprRepo->find($eleveId, $mid, $periodeId) ?? '';
 
             $lignes[] = [
-                'matiere_id'    => $mid,
-                'matiere_nom'   => $data['matiere_nom'] ?? '',
-                'coefficient'   => $data['coefficient'] ?? 1.0,
-                'notes'         => array_map(fn($n) => [
+                'matiere_id'      => $mid,
+                'matiere_nom'     => $data['matiere_nom'] ?? '',
+                'coefficient'     => $data['coefficient'] ?? 1.0,
+                'notes'           => array_map(fn($n) => [
                     'valeur'      => $n['valeur'],
                     'note_max'    => $n['note_max'],
                     'coeff_eval'  => $n['coefficient'],
                     'est_absent'  => $n['est_absent'],
                 ], $data['notes']),
-                'moyenne'       => $moyMatiere->isEmpty() ? null : $moyMatiere->getValue(),
-                'mention_code'  => $mention->getCode(),
-                'mention_label' => $mention->getLabel(),
-                'mention_css'   => $mention->getCssColor(),
-                'appreciation'  => $apprMat,
-                'aEliminatoire' => $calcM['aEliminatoire'],
-                'nb_notes'      => $calcM['nbNotes'],
-                'nb_absents'    => $calcM['nbAbsents'],
+                'moyenne'         => $moyMatiere->isEmpty() ? null : $moyMatiere->getValue(),
+                'compo'           => $this->extraireNoteComposition($data['notes']),
+                'moyenne_classe'  => $rangsParMatiere[$mid]['moyenneClasse'] ?? null,
+                'rang'            => $rangsParMatiere[$mid]['rang']          ?? null,
+                'mention_code'    => $mention->getCode(),
+                'mention_label'   => $mention->getLabel(),
+                'mention_css'     => $mention->getCssColor(),
+                'appreciation'    => $apprMat,
+                'aEliminatoire'   => $calcM['aEliminatoire'],
+                'nb_notes'        => $calcM['nbNotes'],
+                'nb_absents'      => $calcM['nbAbsents'],
             ];
         }
         return $lignes;
+    }
+
+    /**
+     * Note de composition d'une matière (colonne « Compo » du bulletin V1
+     * papier) — moyenne des évaluations de type 'examen' (TypeEvaluationModel::
+     * V1_CODES), ramenées /20 via AcademicCalculationService. Retourne null
+     * si la matière n'a aucune évaluation de ce type sur la période (aucune
+     * formule de moyenne réinventée : noteRameneeSur20() uniquement).
+     */
+    private function extraireNoteComposition(array $notes): ?float
+    {
+        $valeurs = [];
+        foreach ($notes as $n) {
+            if (($n['type_code'] ?? null) !== 'examen') continue;
+            if (($n['est_absent'] ?? false) || $n['valeur'] === null) continue;
+            $valeurs[] = $this->calculator->noteRameneeSur20((float)$n['valeur'], (float)$n['note_max']);
+        }
+        if (empty($valeurs)) return null;
+        return $this->calculator->arrondir(array_sum($valeurs) / count($valeurs));
+    }
+
+    /**
+     * Moyenne de classe et rang de l'élève pour chaque matière (colonnes
+     * « Moy. Classe » / « Rang » du bulletin V1 papier). Délègue à
+     * RankingEngine::classementMatiere() — aucun calcul ici. Le résultat par
+     * (classe, période, matière) est mémorisé en mémoire pour la durée de la
+     * requête : appelé une fois par élève, il évite de recalculer le même
+     * classement de matière pour chaque élève d'une génération de classe
+     * (genererBulletinsClasse).
+     *
+     * @return array matiereId => {moyenneClasse: ?float, rang: ?int}
+     */
+    private function moyenneEtRangParMatiere(int $classeId, int $periodeId, int $eleveId, array $matiereIds): array
+    {
+        $result = [];
+        foreach ($matiereIds as $matiereId) {
+            $cacheKey = "{$classeId}:{$periodeId}:{$matiereId}";
+            if (!isset($this->matiereClassementCache[$cacheKey])) {
+                $this->matiereClassementCache[$cacheKey] =
+                    $this->rankingEngine->classementMatiere($matiereId, $periodeId, $classeId);
+            }
+            $classement = $this->matiereClassementCache[$cacheKey];
+
+            $rang = null;
+            foreach ($classement->rankings as $entry) {
+                if ((int)$entry['eleve_id'] === $eleveId) {
+                    $rang = $entry['rang'];
+                    break;
+                }
+            }
+
+            $result[$matiereId] = [
+                'moyenneClasse' => $classement->getMoyenneClasse(),
+                'rang'          => $rang,
+            ];
+        }
+        return $result;
+    }
+
+    /**
+     * Moyennes de l'élève regroupées par filière de matière (littéraire/
+     * scientifique/autre — matieres.categorie, cf. T034). Réutilise
+     * exclusivement AcademicCalculationService::moyennePeriode() — aucune
+     * formule de moyenne réinventée ici (règle d'or du module).
+     *
+     * @param array $matieresData  Même format que groupNotesByMatiere().
+     * @param array $calcMatieres  $calcResult['matieres'] de calculerBulletin().
+     * @return array{litteraire: ?float, scientifique: ?float, autre: ?float}
+     */
+    private function moyennesParFiliere(array $matieresData, array $calcMatieres): array
+    {
+        $groupes = ['litteraire' => [], 'scientifique' => [], 'autre' => []];
+
+        foreach ($matieresData as $matiereId => $data) {
+            $calcM = $calcMatieres[$matiereId] ?? null;
+            if (!$calcM) continue;
+
+            $categorie = $data['categorie'] ?? 'autre';
+            if (!isset($groupes[$categorie])) $categorie = 'autre';
+
+            $groupes[$categorie][] = [
+                'moyenne'     => $calcM['moyenne'],
+                'coefficient' => (float)($data['coefficient'] ?? 1.0),
+            ];
+        }
+
+        $result = [];
+        foreach ($groupes as $categorie => $matieres) {
+            $moy = $this->calculator->moyennePeriode($matieres);
+            $result[$categorie] = $moy['moyenne']->isEmpty() ? null : $moy['moyenne']->getValue();
+        }
+
+        return $result;
+    }
+
+    /**
+     * Résultats de classe 1er/2e semestre + moyenne annuelle, pour les
+     * établissements fonctionnant en semestres (type_periode='semestre',
+     * cf. PeriodeScolaireDTO::typeLabels()). Délègue entièrement à
+     * RankingEngine — aucun calcul de moyenne ici. Retourne des valeurs
+     * null si les 2 semestres de l'année ne sont pas encore disponibles
+     * (établissement en trimestres, ou année en cours non complète) — dans
+     * ce cas rang/décision annuels restent également null (bulletin de
+     * bilan intermédiaire, S1).
+     *
+     * @return array{
+     *     moyenne1erSemestre: ?float, moyenne2emeSemestre: ?float, moyenneAnnuelle: ?float,
+     *     rangAnnuel: ?int, nbElevesAnnuel: ?int,
+     *     decisionAnnuelleCode: ?string, decisionAnnuelleLabel: ?string
+     * }
+     */
+    public function resultatsClasseEtAnnuels(int $classeId, string $anneeScolaire, int $eleveId): array
+    {
+        $semestres = $this->periodeRepo->findByAnneeEtType($anneeScolaire, 'semestre');
+
+        $sem1 = null;
+        $sem2 = null;
+        foreach ($semestres as $s) {
+            if ((int)$s->numero === 1) $sem1 = $s;
+            if ((int)$s->numero === 2) $sem2 = $s;
+        }
+
+        $moy1 = null;
+        $moy2 = null;
+        $moyAnnuelle  = null;
+        $rangAnnuel   = null;
+        $nbElevesAnnuel = null;
+        $decisionCode  = null;
+        $decisionLabel = null;
+
+        if ($sem1 !== null) {
+            $moy1 = $this->rankingEngine->classementClasse($classeId, (int)$sem1->id)->getMoyenneClasse();
+        }
+        if ($sem2 !== null) {
+            $moy2 = $this->rankingEngine->classementClasse($classeId, (int)$sem2->id)->getMoyenneClasse();
+        }
+        if ($sem1 !== null && $sem2 !== null) {
+            $classementAnnuel = $this->rankingEngine
+                ->classementGeneral($classeId, [(int)$sem1->id, (int)$sem2->id]);
+            $moyAnnuelle = $classementAnnuel->getMoyenneClasse();
+
+            $eleveAnnuel  = $this->findEleveInRanking($classementAnnuel, $eleveId);
+            $rangAnnuel   = isset($eleveAnnuel['rang']) ? (int)$eleveAnnuel['rang'] : null;
+            $nbElevesAnnuel = $classementAnnuel->nbTotal;
+
+            if ($moyAnnuelle !== null) {
+                [$decisionCode, $decisionLabel] = $this->decisionAnnuelle((float)$moyAnnuelle);
+            }
+        }
+
+        return [
+            'moyenne1erSemestre'    => $moy1        !== null ? (float)$moy1        : null,
+            'moyenne2emeSemestre'   => $moy2        !== null ? (float)$moy2        : null,
+            'moyenneAnnuelle'       => $moyAnnuelle !== null ? (float)$moyAnnuelle : null,
+            'rangAnnuel'            => $rangAnnuel,
+            'nbElevesAnnuel'        => $nbElevesAnnuel,
+            'decisionAnnuelleCode'  => $decisionCode,
+            'decisionAnnuelleLabel' => $decisionLabel,
+        ];
+    }
+
+    /**
+     * Décision du conseil de classe en fin d'année, mêmes seuils que la
+     * décision par période (AcademicCalculationService::prepareDecision()) :
+     * seuil de passage $this->notePassage (10.0 par défaut), seuil de
+     * rattrapage $this->seuilRattrapage (8.0 par défaut) — appliqués ici à
+     * la moyenne ANNUELLE plutôt que par période. Les deux seuils sont
+     * configurables par établissement (Paramètres > Notation), voir
+     * BulletinEngineFactory.
+     *
+     * @return array{0: string, 1: string} [code, label]
+     */
+    private function decisionAnnuelle(float $moyenneAnnuelle): array
+    {
+        if ($moyenneAnnuelle >= $this->notePassage) {
+            return ['admis_superieur', 'Admis en classe supérieure'];
+        }
+        if ($moyenneAnnuelle >= $this->seuilRattrapage) {
+            return ['reorientation', 'Réorientation'];
+        }
+        return ['redouble', 'Redouble'];
     }
 
     /**

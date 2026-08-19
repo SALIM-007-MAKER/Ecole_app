@@ -28,8 +28,8 @@ $perms         = $perms        ?? [];
             <select name="classe_id" required class="rounded-lg border border-slate-200 text-sm px-3 py-1.5 bg-white focus:ring-2 focus:ring-violet-300 focus:outline-none">
                 <option value="">Choisir une classe…</option>
                 <?php foreach ($classes as $c): ?>
-                <option value="<?= $c['id'] ?>" <?= $classeId == $c['id'] ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($c['nom'], ENT_QUOTES) ?>
+                <option value="<?= $c->id ?>" <?= $classeId == $c->id ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($c->nom, ENT_QUOTES) ?>
                 </option>
                 <?php endforeach; ?>
             </select>

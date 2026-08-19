@@ -3,10 +3,11 @@ $enfants   = $enfants   ?? [];
 $enfant    = $enfant    ?? null;
 $periodes  = $periodes  ?? [];
 $periodeId = $periodeId ?? null;
-$periode   = $periode   ?? null;
+/** @var ?\App\Modules\Academique\DTO\BulletinData $bulletin */
 $bulletin  = $bulletin  ?? null;
-$matieres  = $matieres  ?? [];
-$classement = $classement ?? null;
+$periode   = $bulletin ? (object)['nom' => $bulletin->periodeNom] : null;
+$matieres  = $bulletin ? $bulletin->lignesMatieres : [];
+$classement = $bulletin ? (object)['rang' => $bulletin->rang, 'effectif' => $bulletin->nbEleves] : null;
 ?>
 
 <!-- Header -->
@@ -27,7 +28,7 @@ $classement = $classement ?? null;
             <i data-lucide="arrow-left" class="w-4 h-4"></i>Retour
         </a>
         <?php if ($bulletin && $enfant && $periodeId): ?>
-        <a href="<?= BASE_URL ?>/parent/bulletin/pdf?enfant_id=<?= $enfant->id ?>&periode_id=<?= $periodeId ?>"
+        <a href="<?= BASE_URL ?>/v2/academique/bulletins/<?= $enfant->id ?>/<?= $periodeId ?>/imprimer"
            class="btn btn-primary" target="_blank">
             <i data-lucide="download" class="w-4 h-4"></i>Télécharger PDF
         </a>
@@ -103,7 +104,7 @@ $classement = $classement ?? null;
             <!-- Moyenne -->
             <div class="text-center px-6 border-l border-slate-100">
                 <p class="text-xs text-slate-400 font-semibold uppercase tracking-wide mb-1">Moyenne générale</p>
-                <?php $moy = (float)($bulletin->moyenne_generale ?? 0); ?>
+                <?php $moy = (float)($bulletin->moyennePeriode ?? 0); ?>
                 <p class="text-3xl font-black <?= $moy >= 10 ? 'text-emerald-600' : 'text-red-500' ?>">
                     <?= number_format($moy, 2, ',', '') ?>
                 </p>
@@ -139,27 +140,25 @@ $classement = $classement ?? null;
                     <th>Matière</th>
                     <th class="text-center">Coeff.</th>
                     <th class="text-center">Moyenne</th>
-                    <th class="text-center">Min</th>
-                    <th class="text-center">Max</th>
+                    <th class="text-center">Moy. classe</th>
                     <th>Mention</th>
                     <th>Appréciation</th>
                 </tr>
             </thead>
             <tbody>
             <?php foreach ($matieres as $m):
-                $moyM = (float)($m->moyenne ?? 0);
+                $moyM = (float)($m['moyenne'] ?? 0);
             ?>
             <tr>
-                <td class="font-semibold text-slate-800"><?= htmlspecialchars($m->matiere_nom, ENT_QUOTES) ?></td>
-                <td class="text-center text-slate-500"><?= (float)($m->coefficient ?? 1) ?></td>
+                <td class="font-semibold text-slate-800"><?= htmlspecialchars($m['matiere_nom'], ENT_QUOTES) ?></td>
+                <td class="text-center text-slate-500"><?= (float)($m['coefficient'] ?? 1) ?></td>
                 <td class="text-center font-bold <?= $moyM >= 10 ? 'text-emerald-600' : 'text-red-500' ?>">
                     <?= number_format($moyM, 2, ',', '') ?>
                 </td>
-                <td class="text-center text-slate-400"><?= number_format((float)($m->min ?? 0), 2, ',', '') ?></td>
-                <td class="text-center text-slate-400"><?= number_format((float)($m->max ?? 0), 2, ',', '') ?></td>
+                <td class="text-center text-slate-400"><?= $m['moyenne_classe'] !== null ? number_format((float)$m['moyenne_classe'], 2, ',', '') : '—' ?></td>
                 <td>
                     <?php
-                    $men = $m->mention ?? '';
+                    $men = $m['mention_label'] ?? '';
                     $cls = match(true) {
                         str_contains($men,'Excellent') => 'bg-emerald-100 text-emerald-700',
                         str_contains($men,'Très')     => 'bg-emerald-100 text-emerald-700',
@@ -172,7 +171,7 @@ $classement = $classement ?? null;
                     <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold leading-5 whitespace-nowrap <?= $cls ?> text-xs"><?= htmlspecialchars($men, ENT_QUOTES) ?></span>
                     <?php endif; ?>
                 </td>
-                <td class="text-xs text-slate-400 italic"><?= htmlspecialchars($m->appreciation ?? '', ENT_QUOTES) ?></td>
+                <td class="text-xs text-slate-400 italic"><?= htmlspecialchars($m['appreciation'] ?? '', ENT_QUOTES) ?></td>
             </tr>
             <?php endforeach; ?>
             </tbody>
@@ -180,7 +179,8 @@ $classement = $classement ?? null;
     </div>
 </div>
 
-<?php if (!empty($bulletin->appreciation_generale)): ?>
+<?php $appreciationGenerale = $bulletin->appreciationDirecteur ?? $bulletin->appreciationPp ?? ''; ?>
+<?php if (!empty($appreciationGenerale)): ?>
 <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
     <div class="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-5 py-4 text-sm font-semibold text-slate-900">
         <div class="w-7 h-7 rounded-lg bg-violet-100 flex items-center justify-center">
@@ -190,7 +190,7 @@ $classement = $classement ?? null;
     </div>
     <div class="p-5 p-5">
         <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
-            <p class="text-sm text-slate-700 italic leading-relaxed"><?= nl2br(htmlspecialchars($bulletin->appreciation_generale, ENT_QUOTES)) ?></p>
+            <p class="text-sm text-slate-700 italic leading-relaxed"><?= nl2br(htmlspecialchars($appreciationGenerale, ENT_QUOTES)) ?></p>
         </div>
     </div>
 </div>

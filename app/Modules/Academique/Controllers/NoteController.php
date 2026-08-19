@@ -269,6 +269,35 @@ class NoteController extends Controller
         $this->redirect(BASE_URL . '/v2/academique/notes/' . $id);
     }
 
+    // ─── Listing notes by eleve / filters (legacy compatibility for /notes) ──
+
+    public function listForEleve(): void
+    {
+        $this->requirePermission('academique.notes.view');
+
+        $filters    = NoteFiltersDTO::fromRequest($_GET);
+        $page       = $filters->page ?? 1;
+        $perPage    = $filters->perPage ?? 50;
+        $pagination = $this->repo->paginate($filters->toArray(), $page, $perPage);
+        $user       = $this->currentUser();
+
+        $eleve = null;
+        if (!empty($filters->eleve_id)) {
+            $eleveModel = new \App\Models\EleveModel();
+            $eleve = $eleveModel->findWithDetails((int)$filters->eleve_id) ?: null;
+        }
+
+        $this->render('Academique::notes/eleve', [
+            'title'      => 'Notes',
+            'pagination' => $pagination,
+            'filters'    => $filters,
+            'statuts'    => NoteModel::STATUT_LABELS,
+            'colors'     => NoteModel::STATUT_COLORS,
+            'user'       => $user,
+            'eleve'      => $eleve,
+        ]);
+    }
+
     // ─── Privé ───────────────────────────────────────────────────────────────
 
     private function loadEvaluation(int $id): object

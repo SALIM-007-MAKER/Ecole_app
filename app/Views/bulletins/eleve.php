@@ -1,10 +1,20 @@
 <?php
-$b       = $bulletin ?? [];
-$mats    = $b['matieres'] ?? [];
-$moyGen  = $b['moyenne_generale'] ?? null;
-$rang    = $b['rang'] ?? null;
-$mention = $b['mention'] ?? null;
-$total   = $b['total_eleves'] ?? 0;
+/**
+ * Alimentée par le moteur Académique V2 (BulletinEngineFactory ->
+ * BulletinGenerator::previewBulletin()) — voir BulletinController::eleve().
+ * $bulletin est un \App\Modules\Academique\DTO\BulletinData ou null si
+ * l'élève n'a encore aucune évaluation publiée pour la période affichée.
+ */
+$bulletin    = $bulletin ?? null;
+$mats        = $bulletin->lignesMatieres ?? [];
+$moyGen      = $bulletin?->moyennePeriode;
+$rang        = ($bulletin && $bulletin->rang > 0) ? $bulletin->rang : null;
+$mention     = $bulletin?->mentionLabel;
+$total       = $bulletin?->nbEleves ?? 0;
+$statsClasse = $bulletin->statistiquesClasse ?? [];
+$meilleureMoy  = $statsClasse['max'] ?? null;
+$moinsBonneMoy = $statsClasse['min'] ?? null;
+$semestresDisponibles = $semestresDisponibles ?? [];
 
 function bMentionBadge(?string $m): string {
     return match($m) {
@@ -38,14 +48,18 @@ function bNoteColor(?float $n): string {
         </div>
     </div>
     <div class="flex items-center gap-2 flex-wrap">
-        <a href="<?= BASE_URL ?>/bulletins/print/<?= $eleve->id ?>?classe_id=<?= $classe->id ?>&periode_id=<?= $periode->id ?>"
-           target="_blank" class="btn btn-success">
-            <i data-lucide="printer" class="w-4 h-4"></i>Imprimer / PDF
+        <?php if (empty($semestresDisponibles)): ?>
+        <span class="btn btn-secondary opacity-50 cursor-not-allowed" title="Aucun semestre configuré pour <?= htmlspecialchars($periode->annee_scolaire ?? '', ENT_QUOTES) ?>">
+            <i data-lucide="printer" class="w-4 h-4"></i>Bulletin officiel indisponible
+        </span>
+        <?php else: ?>
+        <?php foreach ($semestresDisponibles as $sem): ?>
+        <a href="<?= BASE_URL ?>/v2/academique/bulletins/<?= $eleve->id ?>/<?= $sem->id ?>/imprimer"
+           target="_blank" class="btn btn-success" title="Bulletin officiel — <?= htmlspecialchars($sem->nom, ENT_QUOTES) ?>">
+            <i data-lucide="printer" class="w-4 h-4"></i>Bulletin officiel — <?= htmlspecialchars($sem->nom, ENT_QUOTES) ?>
         </a>
-        <a href="<?= BASE_URL ?>/bulletins/classement?classe_id=<?= $classe->id ?>&periode_id=<?= $periode->id ?>"
-           class="btn btn-warning">
-            <i data-lucide="trophy" class="w-4 h-4"></i>Classement
-        </a>
+        <?php endforeach; ?>
+        <?php endif; ?>
         <a href="<?= BASE_URL ?>/bulletins" class="btn btn-secondary">
             <i data-lucide="arrow-left" class="w-4 h-4"></i>Retour
         </a>
@@ -143,42 +157,35 @@ function bNoteColor(?float $n): string {
             <?php foreach ($mats as $mat): ?>
             <tr>
                 <td>
-                    <p class="font-semibold text-slate-800"><?= htmlspecialchars($mat->nom, ENT_QUOTES) ?></p>
-                    <?php if ($mat->volume_horaire): ?>
-                    <p class="text-xs text-slate-400"><?= $mat->volume_horaire ?>h/sem</p>
-                    <?php endif; ?>
+                    <p class="font-semibold text-slate-800"><?= htmlspecialchars($mat['matiere_nom'], ENT_QUOTES) ?></p>
                 </td>
                 <td class="text-center">
-                    <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold leading-5 whitespace-nowrap bg-slate-100 text-slate-600"><?= $mat->coefficient ?></span>
+                    <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold leading-5 whitespace-nowrap bg-slate-100 text-slate-600"><?= $mat['coefficient'] ?></span>
                 </td>
                 <td>
                     <div class="flex flex-wrap gap-2">
-                    <?php foreach ($mat->controles as $ctrl): ?>
+                    <?php foreach ($mat['notes'] as $note): ?>
                     <?php
-                    if ($ctrl->absent) {
+                    if ($note['est_absent']) {
                         $badge = 'bg-amber-100 text-amber-800'; $val = 'Abs.';
-                    } elseif ($ctrl->note !== null) {
-                        $pct = (float)$ctrl->note / (float)$ctrl->note_max * 20;
+                    } elseif ($note['valeur'] !== null) {
+                        $pct = (float)$note['valeur'] / (float)$note['note_max'] * 20;
                         $badge = $pct >= 16 ? 'bg-emerald-100 text-emerald-700' : ($pct >= 12 ? 'bg-violet-100 text-violet-700' : ($pct >= 10 ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-700'));
-                        $val   = number_format($ctrl->note, 2) . '/' . (int)$ctrl->note_max;
+                        $val   = number_format($note['valeur'], 2) . '/' . (int)$note['note_max'];
                     } else {
                         $badge = 'bg-slate-100 text-slate-600'; $val = '—';
                     }
                     ?>
                     <div class="text-center">
-                        <p class="text-xs text-slate-400 mb-0.5 whitespace-nowrap">
-                            <?= htmlspecialchars($ctrl->libelle, ENT_QUOTES) ?>
-                            <span class="text-slate-300">(×<?= $ctrl->ctrl_coef ?>)</span>
-                        </p>
                         <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold leading-5 whitespace-nowrap <?= $badge ?>"><?= $val ?></span>
                     </div>
                     <?php endforeach; ?>
                     </div>
                 </td>
                 <td class="text-center">
-                    <?php if ($mat->moyenne_matiere !== null): ?>
-                    <span class="text-xl font-bold <?= bNoteColor((float)$mat->moyenne_matiere) ?>">
-                        <?= number_format($mat->moyenne_matiere, 2) ?>
+                    <?php if ($mat['moyenne'] !== null): ?>
+                    <span class="text-xl font-bold <?= bNoteColor((float)$mat['moyenne']) ?>">
+                        <?= number_format($mat['moyenne'], 2) ?>
                     </span>
                     <span class="text-slate-400 text-sm">/20</span>
                     <?php else: ?>
@@ -203,7 +210,7 @@ function bNoteColor(?float $n): string {
 </div>
 
 <!-- Stats classe -->
-<?php if ($b['meilleure_moy'] !== null || $b['moins_bonne_moy'] !== null): ?>
+<?php if ($meilleureMoy !== null || $moinsBonneMoy !== null): ?>
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
     <div class="stat-card-v">
         <div class="stat-icon" style="background:#dcfce7;color:#16a34a">
@@ -211,7 +218,7 @@ function bNoteColor(?float $n): string {
         </div>
         <div>
             <div class="stat-value text-emerald-600">
-                <?= $b['meilleure_moy'] !== null ? number_format($b['meilleure_moy'], 2) : '—' ?>
+                <?= $meilleureMoy !== null ? number_format($meilleureMoy, 2) : '—' ?>
             </div>
             <div class="stat-label">Meilleure moy. classe</div>
         </div>
@@ -222,7 +229,7 @@ function bNoteColor(?float $n): string {
         </div>
         <div>
             <div class="stat-value text-red-500">
-                <?= $b['moins_bonne_moy'] !== null ? number_format($b['moins_bonne_moy'], 2) : '—' ?>
+                <?= $moinsBonneMoy !== null ? number_format($moinsBonneMoy, 2) : '—' ?>
             </div>
             <div class="stat-label">Moins bonne moy.</div>
         </div>

@@ -62,16 +62,16 @@ UPDATE `matieres` SET `responsable_id` = 8 WHERE `nom` = 'Philosophie';
 -- ── Enseignements de test (prof × matière × classe) ─────────
 -- Classe 1 (1ère AS A)
 INSERT INTO `enseignements` (`professeur_id`, `matiere_id`, `classe_id`, `annee_scolaire`) VALUES
-(1, 1, 1, '2024-2025'),   -- Khelifi / Maths / 1AS-A
-(2, 2, 1, '2024-2025'),   -- Bensalem / Physique / 1AS-A
-(3, 3, 1, '2024-2025'),   -- Cheikh / Arabe / 1AS-A
-(4, 4, 1, '2024-2025'),   -- Moussaoui / Français / 1AS-A
-(5, 5, 1, '2024-2025'),   -- Boukadoum / Anglais / 1AS-A
-(7, 6, 1, '2024-2025'),   -- Terki / Hist-Géo / 1AS-A
+(1, 1, 1, '2024-2025'),   -- Khelifi / Maths / Seconde-A
+(2, 2, 1, '2024-2025'),   -- Bensalem / Physique / Seconde-A
+(3, 3, 1, '2024-2025'),   -- Cheikh / Arabe / Seconde-A
+(4, 4, 1, '2024-2025'),   -- Moussaoui / Français / Seconde-A
+(5, 5, 1, '2024-2025'),   -- Boukadoum / Anglais / Seconde-A
+(7, 6, 1, '2024-2025'),   -- Terki / Hist-Géo / Seconde-A
 -- Classe 2 (1ère AS B)
-(1, 1, 2, '2024-2025'),   -- Khelifi / Maths / 1AS-B
-(2, 2, 2, '2024-2025'),   -- Bensalem / Physique / 1AS-B
-(3, 3, 2, '2024-2025'),   -- Cheikh / Arabe / 1AS-B
+(1, 1, 2, '2024-2025'),   -- Khelifi / Maths / Seconde-B
+(2, 2, 2, '2024-2025'),   -- Bensalem / Physique / Seconde-B
+(3, 3, 2, '2024-2025'),   -- Cheikh / Arabe / Seconde-B
 -- Classe 3 (2ème AS A)
 (1, 1, 3, '2024-2025'),   -- Khelifi / Maths / 2AS-A
 (4, 4, 3, '2024-2025'),   -- Moussaoui / Français / 2AS-A

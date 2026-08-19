@@ -1,16 +1,7 @@
 <?php /** @var array $commande @var array $emplacements @var string|null $error */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Réceptionner commande <?= htmlspecialchars($commande['numero']) ?> — Inventaire</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-4xl mx-auto px-4 py-6">
     <div class="flex items-center gap-3 mb-6">
-        <a href="/v2/inventaire/commandes/<?=$commande['id']?>" class="text-slate-500 hover:text-slate-700">
+        <a href="<?= BASE_URL ?>/v2/inventaire/commandes/<?=$commande['id']?>" class="text-slate-500 hover:text-slate-700">
             <i data-lucide="arrow-left" class="w-5 h-5"></i>
         </a>
         <div>
@@ -23,7 +14,7 @@
         <div class="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 mb-4 text-sm"><?= htmlspecialchars($error) ?></div>
     <?php endif; ?>
 
-    <form method="POST" action="/v2/inventaire/commandes/<?=$commande['id']?>/reception" class="space-y-6">
+    <form method="POST" action="<?= BASE_URL ?>/v2/inventaire/commandes/<?=$commande['id']?>/reception" class="space-y-6">
         <input type="hidden" name="_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
 
         <div class="bg-white rounded-xl shadow-sm p-6 space-y-4">
@@ -102,7 +93,7 @@
         </div>
 
         <div class="flex justify-end gap-3">
-            <a href="/v2/inventaire/commandes/<?=$commande['id']?>" class="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">Annuler</a>
+            <a href="<?= BASE_URL ?>/v2/inventaire/commandes/<?=$commande['id']?>" class="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">Annuler</a>
             <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-green-700">
                 <i data-lucide="package-check" class="w-4 h-4 inline mr-1"></i>Valider la réception
             </button>
@@ -110,5 +101,3 @@
     </form>
 </div>
 <script>lucide.createIcons();</script>
-</body>
-</html>

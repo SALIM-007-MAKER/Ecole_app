@@ -1,6 +1,6 @@
 <div class="space-y-4">
   <p class="text-sm text-slate-500">Gestion des absences de vos classes.</p>
-  <a href="/v2/vie-scolaire/absences" class="inline-flex items-center gap-2 bg-teal-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors">
+  <a href="<?= BASE_URL ?>/v2/vie-scolaire/absences" class="inline-flex items-center gap-2 bg-teal-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors">
     <i data-lucide="user-x" class="w-4 h-4"></i> Voir les absences
   </a>
 </div>

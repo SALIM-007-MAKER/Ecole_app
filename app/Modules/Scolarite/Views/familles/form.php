@@ -8,17 +8,6 @@ $v = function(string $field, string $fallback = '') use ($old, $famille, $isEdit
 $action  = $isEdit ? BASE_URL . '/v2/scolarite/familles/' . $famille->id : BASE_URL . '/v2/scolarite/familles';
 $backUrl = $isEdit ? BASE_URL . '/v2/scolarite/familles/' . $famille->id : BASE_URL . '/v2/scolarite/familles';
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title><?= htmlspecialchars($title) ?></title>
-    <?php include BASE_PATH . '/app/Views/layouts/head_assets.php'; ?>
-</head>
-<body class="bg-slate-50 text-slate-800">
-<?php include BASE_PATH . '/app/Views/layouts/sidebar.php'; ?>
-
-<main class="ml-64 p-6 min-h-screen">
     <div class="max-w-3xl mx-auto">
 
         <!-- Breadcrumb -->
@@ -43,7 +32,7 @@ $backUrl = $isEdit ? BASE_URL . '/v2/scolarite/familles/' . $famille->id : BASE_
         <?php endif; ?>
 
         <form method="POST" action="<?= $action ?>" novalidate>
-            <input type="hidden" name="csrf_token" value="<?= \Core\Session::getCsrfToken() ?>">
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
 
             <div class="space-y-6">
 
@@ -186,8 +175,3 @@ $backUrl = $isEdit ? BASE_URL . '/v2/scolarite/familles/' . $famille->id : BASE_
         </form>
 
     </div>
-</main>
-
-<?php include BASE_PATH . '/app/Views/layouts/footer_assets.php'; ?>
-</body>
-</html>

@@ -4,6 +4,8 @@ namespace App\Controllers;
 
 use Core\Controller;
 use Core\Session;
+use Core\Tenant\BrandingService;
+use Core\Tenant\SettingsService;
 use Core\Tenant\TenantMembershipService;
 use App\Models\UserModel;
 
@@ -17,6 +19,13 @@ class AuthController extends Controller
         parent::__construct();
         $this->userModel = new UserModel();
         $this->membership = TenantMembershipService::make();
+    }
+
+    /** Longueur minimale de mot de passe configurée pour l'établissement courant (voir /parametres/securite). */
+    private function passwordMinLength(): int
+    {
+        $etabId = BrandingService::forCurrentRequest()->etablissementId;
+        return (int)SettingsService::make()->get($etabId, 'securite', 'password_min_length', 8);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -316,7 +325,7 @@ class AuthController extends Controller
 
         $errors = $this->validate(
             ['password' => $password],
-            ['password' => 'required|min:8']
+            ['password' => 'required|min:' . $this->passwordMinLength()]
         );
 
         if ($password !== $confirm) {
@@ -432,7 +441,7 @@ class AuthController extends Controller
 
         $errors = $this->validate(
             ['password' => $newPass],
-            ['password' => 'required|min:8']
+            ['password' => 'required|min:' . $this->passwordMinLength()]
         );
 
         if ($newPass !== $confirm) {
@@ -481,7 +490,7 @@ class AuthController extends Controller
 
         $errors = $this->validate(
             ['nom' => $nom, 'email' => $email, 'password' => $password],
-            ['nom' => 'required|min:2|max:100', 'email' => 'required|email', 'password' => 'required|min:8']
+            ['nom' => 'required|min:2|max:100', 'email' => 'required|email', 'password' => 'required|min:' . $this->passwordMinLength()]
         );
 
         if ($this->userModel->findByEmail($email)) {

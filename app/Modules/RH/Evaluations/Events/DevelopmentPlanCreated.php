@@ -14,7 +14,9 @@ class DevelopmentPlanCreated extends Event
         public readonly int    $employeId,
         public readonly string $objectif,
         public readonly int    $createdBy
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

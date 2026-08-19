@@ -1,8 +1,8 @@
 
 <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
     <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
-            <i data-lucide="file-text" class="w-5 h-5 text-emerald-600"></i>
+        <div class="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center shrink-0">
+            <i data-lucide="file-text" class="w-5 h-5 text-violet-600"></i>
         </div>
         <div>
             <h2 class="text-lg font-bold text-slate-900">Bulletins de notes</h2>
@@ -16,7 +16,7 @@
     <!-- Sélection bulletins/classement -->
     <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
         <div class="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-5 py-4 text-sm font-semibold text-slate-900">
-            <i data-lucide="filter" class="w-4 h-4 text-emerald-500"></i>
+            <i data-lucide="filter" class="w-4 h-4 text-violet-600"></i>
             <span class="font-semibold text-slate-700">Accès aux bulletins</span>
         </div>
         <div class="p-5 p-5 space-y-6">
@@ -106,25 +106,19 @@
                             <th>Mention</th><th>Seuil</th><th>Description</th>
                         </tr></thead>
                         <tbody>
-                        <?php foreach (\App\Models\NoteModel::MENTIONS as $m): ?>
+                        <?php foreach (\App\Modules\Academique\ValueObjects\MentionValue::thresholds() as $seuil => $m): ?>
                         <tr>
                             <td>
-                                <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold leading-5 whitespace-nowrap <?= match($m['label']) {
-                                    'Très Bien'  => 'bg-emerald-100 text-emerald-700',
-                                    'Bien'       => 'bg-violet-100 text-violet-700',
-                                    'Assez Bien' => 'bg-sky-100 text-sky-700',
-                                    'Passable'   => 'bg-amber-100 text-amber-800',
-                                    default      => 'bg-red-100 text-red-700',
-                                } ?>"><?= $m['label'] ?></span>
+                                <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold leading-5 whitespace-nowrap bg-<?= $m['css'] ?>-100 text-<?= $m['css'] ?>-700"><?= htmlspecialchars($m['label'], ENT_QUOTES) ?></span>
                             </td>
-                            <td class="font-semibold text-slate-700">≥ <?= $m['seuil'] ?>/20</td>
+                            <td class="font-semibold text-slate-700">≥ <?= $seuil ?>/20</td>
                             <td class="text-slate-500">
-                                <?= match($m['label']) {
-                                    'Très Bien'  => 'Excellence scolaire',
-                                    'Bien'       => 'Très bon niveau',
-                                    'Assez Bien' => 'Bon niveau',
-                                    'Passable'   => 'Niveau suffisant',
-                                    default      => 'Rattrapage requis',
+                                <?= match($m['code']) {
+                                    'TB'  => 'Excellence scolaire',
+                                    'B'   => 'Très bon niveau',
+                                    'AB'  => 'Bon niveau',
+                                    'P'   => 'Niveau suffisant',
+                                    default => 'Rattrapage requis',
                                 } ?>
                             </td>
                         </tr>
@@ -141,14 +135,14 @@
                 <span class="font-semibold text-slate-700">Liens rapides</span>
             </div>
             <div class="p-5 p-4 space-y-2">
-                <a href="<?= BASE_URL ?>/notes" class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors">
+                <a href="<?= BASE_URL ?>/v2/academique/evaluations" class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors">
                     <div class="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center shrink-0">
                         <i data-lucide="book-open-check" class="w-4 h-4 text-violet-600"></i>
                     </div>
-                    <span class="text-sm font-semibold text-slate-700">Gestion des notes et contrôles</span>
+                    <span class="text-sm font-semibold text-slate-700">Gestion des notes et évaluations</span>
                     <i data-lucide="chevron-right" class="w-4 h-4 text-slate-300 ml-auto"></i>
                 </a>
-                <a href="<?= BASE_URL ?>/notes/moyennes" class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors">
+                <a href="<?= BASE_URL ?>/v2/academique/resultats/moyennes" class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors">
                     <div class="w-8 h-8 rounded-lg bg-sky-100 flex items-center justify-center shrink-0">
                         <i data-lucide="table-2" class="w-4 h-4 text-sky-600"></i>
                     </div>

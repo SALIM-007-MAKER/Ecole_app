@@ -1,15 +1,7 @@
 <?php /** @var array|null $article @var array $categories @var array $fournisseurs @var string|null $error */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title><?= $article ? 'Modifier Article' : 'Nouvel Article' ?> — Inventaire</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-3xl mx-auto px-4 py-6">
     <div class="mb-6">
-        <a href="/v2/inventaire/articles" class="text-violet-600 hover:underline text-sm">&larr; Retour aux articles</a>
+        <a href="<?= BASE_URL ?>/v2/inventaire/articles" class="text-violet-600 hover:underline text-sm">&larr; Retour aux articles</a>
         <h1 class="text-2xl font-bold text-slate-800 mt-1"><?= $article ? 'Modifier l\'article' : 'Nouvel article' ?></h1>
     </div>
 
@@ -107,12 +99,10 @@
         </div>
 
         <div class="flex justify-end gap-3 pt-4 border-t">
-            <a href="/v2/inventaire/articles" class="px-4 py-2 border rounded-lg text-sm text-slate-600 hover:bg-slate-50">Annuler</a>
+            <a href="<?= BASE_URL ?>/v2/inventaire/articles" class="px-4 py-2 border rounded-lg text-sm text-slate-600 hover:bg-slate-50">Annuler</a>
             <button type="submit" class="px-6 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700">
                 <?= $article ? 'Enregistrer les modifications' : 'Créer l\'article' ?>
             </button>
         </div>
     </form>
 </div>
-</body>
-</html>

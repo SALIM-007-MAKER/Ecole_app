@@ -27,7 +27,7 @@ $errors     = $errors     ?? [];
     <?php endif; ?>
 
     <form method="POST" action="<?= BASE_URL ?>/v2/finance/factures/generer">
-        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken()) ?>">
+        <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
 
         <div class="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100">
 
@@ -36,22 +36,22 @@ $errors     = $errors     ?? [];
                 <h2 class="text-sm font-semibold text-slate-700 uppercase tracking-wide">Période & scope</h2>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">
-                            Année scolaire <span class="text-red-500">*</span>
+                        <label class="form-label">
+                            Année scolaire <span class="form-required">*</span>
                         </label>
                         <input type="text" name="annee_scolaire" placeholder="ex: 2026-2027"
                                pattern="\d{4}-\d{4}" required
-                               class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500">
+                               class="form-input">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Date d'échéance</label>
+                        <label class="form-label">Date d'échéance</label>
                         <input type="date" name="date_echeance"
-                               class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500">
+                               class="form-input">
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-2">Générer pour</label>
+                    <label class="form-label">Générer pour</label>
                     <div class="flex gap-4">
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input type="radio" name="scope" value="classe" checked
@@ -72,9 +72,9 @@ $errors     = $errors     ?? [];
                 </div>
 
                 <div id="scope-classe">
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Classe</label>
+                    <label class="form-label">Classe</label>
                     <select name="classe_id"
-                            class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500">
+                            class="form-select">
                         <option value="">-- Sélectionner --</option>
                         <?php foreach ($classes as $cl): ?>
                         <option value="<?= $cl->id ?>"><?= htmlspecialchars($cl->nom) ?></option>
@@ -83,9 +83,9 @@ $errors     = $errors     ?? [];
                 </div>
 
                 <div id="scope-niveau" class="hidden">
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Niveau</label>
+                    <label class="form-label">Niveau</label>
                     <select name="niveau"
-                            class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500">
+                            class="form-select">
                         <option value="">-- Sélectionner --</option>
                         <?php foreach ($niveaux as $n): ?>
                         <option value="<?= htmlspecialchars($n) ?>"><?= htmlspecialchars($n) ?></option>
@@ -97,7 +97,7 @@ $errors     = $errors     ?? [];
             <!-- Types de frais -->
             <div class="p-5 space-y-4">
                 <h2 class="text-sm font-semibold text-slate-700 uppercase tracking-wide">
-                    Types de frais à facturer <span class="text-red-500">*</span>
+                    Types de frais à facturer <span class="form-required">*</span>
                 </h2>
                 <?php if (empty($fraisTypes)): ?>
                 <p class="text-sm text-amber-700 bg-amber-50 p-3 rounded-lg">

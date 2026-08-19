@@ -15,7 +15,19 @@ class RewardFiltersDTO
         public readonly ?string $dateFin        = null,
         public readonly int     $page           = 1,
         public readonly int     $perPage        = 25,
+        /** @var int[]|null Restriction serveur (jamais depuis la requête) — cf. EleveScopeTrait */
+        public readonly ?array  $eleveIds       = null,
     ) {}
+
+    /** Retourne une copie restreinte au périmètre autorisé (parent/eleve). */
+    public function withEleveIds(array $ids): self
+    {
+        return new self(
+            $this->eleveId, $this->classeId, $this->anneeScolaire,
+            $this->categorieId, $this->niveau, $this->statut,
+            $this->dateDebut, $this->dateFin, $this->page, $this->perPage, $ids
+        );
+    }
 
     public static function fromRequest(array $data): self
     {

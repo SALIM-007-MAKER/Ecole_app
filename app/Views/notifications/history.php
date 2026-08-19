@@ -3,7 +3,7 @@ $logs      = $logs      ?? [];
 $stats     = $stats     ?? [];
 $types     = $types     ?? [];
 $canaux    = $canaux    ?? ['interne'=>'Interne','email'=>'Email','sms'=>'SMS'];
-$statuts   = $statuts   ?? ['envoyee'=>'Envoyée','echec'=>'Échec','en_attente'=>'En attente'];
+$statuts   = $statuts   ?? ['envoye'=>'Envoyée','echoue'=>'Échec','en_attente'=>'En attente'];
 $typeFilter   = $typeFilter   ?? '';
 $canalFilter  = $canalFilter  ?? '';
 $statutFilter = $statutFilter ?? '';
@@ -11,8 +11,8 @@ $csrfToken = \Core\Session::getCsrfToken();
 
 function histStatutBadge(string $s): string {
     return match($s) {
-        'envoyee'    => '<span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold leading-5 whitespace-nowrap bg-emerald-100 text-emerald-700">Envoyée</span>',
-        'echec'      => '<span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold leading-5 whitespace-nowrap bg-red-100 text-red-700">Échec</span>',
+        'envoye'     => '<span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold leading-5 whitespace-nowrap bg-emerald-100 text-emerald-700">Envoyée</span>',
+        'echoue'     => '<span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold leading-5 whitespace-nowrap bg-red-100 text-red-700">Échec</span>',
         'en_attente' => '<span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold leading-5 whitespace-nowrap bg-amber-100 text-amber-800">En attente</span>',
         default      => '<span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold leading-5 whitespace-nowrap bg-slate-100 text-slate-600">'.htmlspecialchars($s,ENT_QUOTES).'</span>',
     };
@@ -129,7 +129,7 @@ function histCanalBadge(string $c): string {
                     <?php endif; ?>
                 </td>
                 <td>
-                    <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold leading-5 whitespace-nowrap bg-slate-100 text-slate-600 text-xs"><?= htmlspecialchars($log->type ?? '-', ENT_QUOTES) ?></span>
+                    <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold leading-5 whitespace-nowrap bg-slate-100 text-slate-600 text-xs"><?= htmlspecialchars($types[$log->trigger_type ?? ''] ?? ($log->trigger_type ?? '-'), ENT_QUOTES) ?></span>
                 </td>
                 <td class="max-w-xs">
                     <p class="text-slate-700 truncate" title="<?= htmlspecialchars($log->message ?? '', ENT_QUOTES) ?>">

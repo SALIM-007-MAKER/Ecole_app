@@ -10,7 +10,9 @@ class EmployeeRestored extends Event
         public readonly int    $employeId,
         public readonly string $matricule,
         public readonly int    $restaureParId,
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

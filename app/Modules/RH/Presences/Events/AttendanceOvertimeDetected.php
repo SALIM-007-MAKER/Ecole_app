@@ -16,7 +16,9 @@ class AttendanceOvertimeDetected extends Event
         public readonly int    $dureeEffectiveMinutes,
         public readonly int    $dureeReferenceMinutes,
         public readonly int    $createdBy
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

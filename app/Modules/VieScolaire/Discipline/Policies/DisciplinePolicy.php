@@ -41,6 +41,20 @@ class DisciplinePolicy
             && !in_array($dossier['statut'] ?? '', ['clos'], true);
     }
 
+    /** Signaler un incident sur un dossier = droit de création + dossier non clos. */
+    public function canAddIncident(array $user, array $dossier): bool
+    {
+        return $this->canCreate($user)
+            && !in_array($dossier['statut'] ?? '', ['clos'], true);
+    }
+
+    /** Prononcer une sanction = droit de sanction + dossier non clos. */
+    public function canProposeSanction(array $user, array $dossier): bool
+    {
+        return $this->canSanction($user)
+            && !in_array($dossier['statut'] ?? '', ['clos'], true);
+    }
+
     /** Sanction modifiable = statut 'prononcee'. */
     public function canModifySanction(array $user, array $sanction): bool
     {

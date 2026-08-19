@@ -7,40 +7,34 @@ $retard   = (int)($presence['retard_minutes']    ?? 0);
 $heuresSup= (int)($presence['heures_supp_minutes']?? 0);
 $estValide= $presence['statut_validation'] === 'valide';
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pointage — EduNova</title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 text-slate-800 min-h-screen">
-<?php include dirname(__DIR__, 2) . '/layouts/sidebar.php'; ?>
-<main class="ml-64 p-8">
 
   <!-- En-tête -->
-  <div class="flex items-start justify-between mb-8">
-    <div>
-      <div class="flex items-center gap-2 text-sm text-slate-500 mb-1">
-        <a href="/v2/rh/presences" class="hover:text-violet-600">Présences</a>
-        <span>/</span>
-        <span><?= e($presence['employe_nom']) ?></span>
+  <div class="flex items-center gap-2 text-sm text-slate-500 mb-4">
+    <a href="<?= BASE_URL ?>/v2/rh/presences" class="hover:text-violet-600">Présences</a>
+    <i data-lucide="chevron-right" class="w-3 h-3"></i>
+    <span class="text-slate-700"><?= e($presence['employe_nom']) ?></span>
+  </div>
+  <div class="flex items-start justify-between gap-4 mb-8">
+    <div class="flex items-start gap-4">
+      <div class="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+        <i data-lucide="clock" class="w-5 h-5 text-violet-600"></i>
       </div>
-      <h1 class="text-2xl font-bold text-slate-900 flex items-center gap-3">
-        <?= e($presence['employe_nom']) ?>
-        <span class="px-2 py-0.5 text-sm rounded-full <?= $model::statutColor($presence['statut']) ?>">
-          <?= e($model::statutLabel($presence['statut'])) ?>
-        </span>
-        <span class="px-2 py-0.5 text-sm rounded-full <?= $model::validationColor($presence['statut_validation']) ?>">
-          <?= e($model::validationLabel($presence['statut_validation'])) ?>
-        </span>
-      </h1>
-      <div class="text-slate-500 text-sm mt-1"><?= e($presence['employe_matricule'] ?? '') ?> · <?= e(date('l d F Y', strtotime($presence['date_presence']))) ?></div>
+      <div>
+        <h1 class="text-2xl font-bold text-slate-900 flex items-center gap-3 flex-wrap">
+          <?= e($presence['employe_nom']) ?>
+          <span class="px-2 py-0.5 text-sm rounded-full <?= $model::statutColor($presence['statut']) ?>">
+            <?= e($model::statutLabel($presence['statut'])) ?>
+          </span>
+          <span class="px-2 py-0.5 text-sm rounded-full <?= $model::validationColor($presence['statut_validation']) ?>">
+            <?= e($model::validationLabel($presence['statut_validation'])) ?>
+          </span>
+        </h1>
+        <div class="text-slate-500 text-sm mt-1"><?= e($presence['employe_matricule'] ?? '') ?> · <?= e(date('l d F Y', strtotime($presence['date_presence']))) ?></div>
+      </div>
     </div>
-    <div class="flex gap-3">
+    <div class="flex gap-3 flex-shrink-0">
       <?php if ($canUpdate && !$estValide): ?>
-      <a href="/v2/rh/presences/<?= (int)$presence['id'] ?>/edit"
+      <a href="<?= BASE_URL ?>/v2/rh/presences/<?= (int)$presence['id'] ?>/edit"
          class="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">
         Modifier
       </a>
@@ -218,13 +212,11 @@ $estValide= $presence['statut_validation'] === 'valide';
   </div>
   <?php endif; ?>
 
-</main>
-
 <!-- Modal Valider/Rejeter -->
 <div id="modal-valider" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
   <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
     <h3 class="text-lg font-semibold mb-4">Valider ou rejeter ce pointage</h3>
-    <form method="POST" action="/v2/rh/presences/<?= (int)$presence['id'] ?>/valider">
+    <form method="POST" action="<?= BASE_URL ?>/v2/rh/presences/<?= (int)$presence['id'] ?>/valider">
       <?= \Core\Csrf::field() ?>
       <div class="flex gap-3 mb-4">
         <label class="flex-1 flex items-center gap-2 p-3 border-2 rounded-xl cursor-pointer has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50">
@@ -237,9 +229,9 @@ $estValide= $presence['statut_validation'] === 'valide';
         </label>
       </div>
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1">Motif de rejet (obligatoire si rejet)</label>
+        <label class="form-label">Motif de rejet (obligatoire si rejet)</label>
         <textarea name="motif_rejet" rows="2"
-                  class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-300 outline-none"></textarea>
+                  class="form-textarea"></textarea>
       </div>
       <div class="flex gap-3 mt-4">
         <button type="submit" class="flex-1 px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">Confirmer</button>
@@ -249,38 +241,36 @@ $estValide= $presence['statut_validation'] === 'valide';
     </form>
   </div>
 </div>
-
 <!-- Modal Justifier -->
 <div id="modal-justifier" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
   <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
     <h3 class="text-lg font-semibold mb-4">Ajouter une justification</h3>
-    <form method="POST" action="/v2/rh/presences/<?= (int)$presence['id'] ?>/justifier">
+    <form method="POST" action="<?= BASE_URL ?>/v2/rh/presences/<?= (int)$presence['id'] ?>/justifier">
       <?= \Core\Csrf::field() ?>
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1">Justification *</label>
+        <label class="form-label">Justification *</label>
         <textarea name="justification" rows="4" required
-                  class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-300 outline-none"
+                  class="form-textarea"
                   placeholder="Expliquer la situation (maladie, transport, etc.)"><?= e($presence['justification'] ?? '') ?></textarea>
       </div>
       <div class="flex gap-3 mt-4">
-        <button type="submit" class="flex-1 px-4 py-2 bg-sky-600 text-white rounded-lg text-sm hover:bg-sky-700">Enregistrer</button>
+        <button type="submit" class="flex-1 px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">Enregistrer</button>
         <button type="button" onclick="document.getElementById('modal-justifier').classList.add('hidden')"
                 class="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm hover:bg-slate-200">Annuler</button>
       </div>
     </form>
   </div>
 </div>
-
 <!-- Modal Régulariser -->
 <div id="modal-regulariser" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
   <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
     <h3 class="text-lg font-semibold mb-4">Régularisation</h3>
-    <form method="POST" action="/v2/rh/presences/<?= (int)$presence['id'] ?>/regulariser">
+    <form method="POST" action="<?= BASE_URL ?>/v2/rh/presences/<?= (int)$presence['id'] ?>/regulariser">
       <?= \Core\Csrf::field() ?>
       <div class="mb-4">
-        <label class="block text-sm font-medium text-slate-700 mb-1">Type de régularisation *</label>
+        <label class="form-label">Type de régularisation *</label>
         <select name="type_regularisation" id="reg-type" required
-                class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-300 outline-none">
+                class="form-select">
           <?php foreach ($model::REG_TYPES as $k => $v): ?>
             <?php if ($k !== 'annulation'): ?>
             <option value="<?= e($k) ?>"><?= e($v) ?></option>
@@ -290,18 +280,18 @@ $estValide= $presence['statut_validation'] === 'valide';
       </div>
       <div id="reg-heures" class="mb-4 grid grid-cols-2 gap-3">
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Nouvelle heure d'arrivée</label>
+          <label class="form-label">Nouvelle heure d'arrivée</label>
           <input type="time" name="heure_arrivee" value="<?= e(substr($presence['heure_arrivee'] ?? '', 0, 5)) ?>"
                  class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Nouvelle heure de départ</label>
+          <label class="form-label">Nouvelle heure de départ</label>
           <input type="time" name="heure_depart" value="<?= e(substr($presence['heure_depart'] ?? '', 0, 5)) ?>"
                  class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
         </div>
       </div>
       <div id="reg-statut" class="mb-4 hidden">
-        <label class="block text-sm font-medium text-slate-700 mb-1">Nouveau statut</label>
+        <label class="form-label">Nouveau statut</label>
         <select name="nouveau_statut" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
           <?php foreach ($model::STATUTS as $k => $v): ?>
             <option value="<?= e($k) ?>" <?= $presence['statut'] === $k ? 'selected' : '' ?>><?= e($v) ?></option>
@@ -309,9 +299,9 @@ $estValide= $presence['statut_validation'] === 'valide';
         </select>
       </div>
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1">Motif *</label>
+        <label class="form-label">Motif *</label>
         <textarea name="motif" rows="2" required
-                  class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-300 outline-none"
+                  class="form-textarea"
                   placeholder="Raison de la régularisation"></textarea>
       </div>
       <div class="flex gap-3 mt-4">
@@ -322,16 +312,15 @@ $estValide= $presence['statut_validation'] === 'valide';
     </form>
   </div>
 </div>
-
 <!-- Modal Archiver -->
 <div id="modal-archiver" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
   <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6">
     <h3 class="text-lg font-semibold text-red-700 mb-4">Archiver ce pointage</h3>
     <p class="text-sm text-slate-600 mb-4">Cette action masquera le pointage. Une régularisation sera enregistrée.</p>
-    <form method="POST" action="/v2/rh/presences/<?= (int)$presence['id'] ?>/archive">
+    <form method="POST" action="<?= BASE_URL ?>/v2/rh/presences/<?= (int)$presence['id'] ?>/archive">
       <?= \Core\Csrf::field() ?>
       <div class="mb-4">
-        <label class="block text-sm font-medium text-slate-700 mb-1">Motif</label>
+        <label class="form-label">Motif</label>
         <input type="text" name="motif" value="Archivage manuel"
                class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
       </div>
@@ -343,7 +332,6 @@ $estValide= $presence['statut_validation'] === 'valide';
     </form>
   </div>
 </div>
-
 <script>
 // Afficher/masquer les champs selon le type de régularisation
 document.getElementById('reg-type')?.addEventListener('change', function() {
@@ -361,5 +349,3 @@ document.getElementById('reg-type')?.addEventListener('change', function() {
     }
 });
 </script>
-</body>
-</html>

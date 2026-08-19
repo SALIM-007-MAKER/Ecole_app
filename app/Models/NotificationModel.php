@@ -9,11 +9,14 @@ class NotificationModel extends Model
     protected string $table = 'notifications';
 
     const TYPES = [
-        'note'     => ['label' => 'Note',      'icon' => 'pencil-square',   'color' => 'primary'],
-        'absence'  => ['label' => 'Absence',   'icon' => 'calendar-x',      'color' => 'danger'],
-        'paiement' => ['label' => 'Paiement',  'icon' => 'cash-stack',      'color' => 'success'],
-        'annonce'  => ['label' => 'Annonce',   'icon' => 'megaphone',        'color' => 'warning'],
-        'info'     => ['label' => 'Info',      'icon' => 'info-circle',      'color' => 'secondary'],
+        'note'       => ['label' => 'Note',        'icon' => 'pencil-square',        'color' => 'primary'],
+        'absence'    => ['label' => 'Absence',     'icon' => 'calendar-x',           'color' => 'danger'],
+        'paiement'   => ['label' => 'Paiement',    'icon' => 'cash-stack',           'color' => 'success'],
+        'annonce'    => ['label' => 'Annonce',     'icon' => 'megaphone',            'color' => 'warning'],
+        'info'       => ['label' => 'Info',        'icon' => 'info-circle',          'color' => 'secondary'],
+        'retard'     => ['label' => 'Retard',      'icon' => 'clock-history',        'color' => 'warning'],
+        'discipline' => ['label' => 'Discipline',  'icon' => 'exclamation-triangle', 'color' => 'danger'],
+        'recompense' => ['label' => 'Récompense',  'icon' => 'award',                'color' => 'success'],
     ];
 
     public function findForUser(int $userId, int $limit = 30): array
@@ -40,6 +43,17 @@ class NotificationModel extends Model
             [$userId]
         );
         return (int)($r?->n ?? 0);
+    }
+
+    /** Marque comme lues toutes les notifications d'un type donné pour cet
+     *  utilisateur — utilisé quand consulter la liste source (ex: Annonces)
+     *  vaut acquittement, sans affecter les notifications d'autres types. */
+    public function markReadByType(int $userId, string $type): void
+    {
+        $this->execute(
+            'UPDATE `notifications` SET `lu` = 1 WHERE `user_id` = ? AND `type` = ? AND `lu` = 0',
+            [$userId, $type]
+        );
     }
 
     public function markAllRead(int $userId): void

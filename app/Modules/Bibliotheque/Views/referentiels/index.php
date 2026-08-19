@@ -1,12 +1,4 @@
 <?php /** @var array $auteurs @var array $editeurs @var array $categories @var array $tags @var string $titre */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title><?= htmlspecialchars($titre ?? 'Référentiels') ?></title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-5xl mx-auto py-8 px-4">
 
   <h1 class="text-2xl font-bold text-slate-800 mb-6">Référentiels</h1>
@@ -144,24 +136,22 @@ function showForm(type) { document.getElementById('form-' + type).classList.remo
 
 function saveAuteur() {
   const data = new URLSearchParams({nom: document.getElementById('a_nom').value, prenom: document.getElementById('a_prenom').value, csrf_token: ''});
-  fetch('/v2/bibliotheque/referentiels/auteurs', {method:'POST', body:data}).then(()=>location.reload());
+  fetch('<?= BASE_URL ?>/v2/bibliotheque/referentiels/auteurs', {method:'POST', body:data}).then(()=>location.reload());
 }
 function saveEditeur() {
   const data = new URLSearchParams({nom: document.getElementById('e_nom').value, csrf_token: ''});
-  fetch('/v2/bibliotheque/referentiels/editeurs', {method:'POST', body:data}).then(()=>location.reload());
+  fetch('<?= BASE_URL ?>/v2/bibliotheque/referentiels/editeurs', {method:'POST', body:data}).then(()=>location.reload());
 }
 function saveCategorie() {
   const data = new URLSearchParams({nom: document.getElementById('c_nom').value, csrf_token: ''});
-  fetch('/v2/bibliotheque/referentiels/categories', {method:'POST', body:data}).then(()=>location.reload());
+  fetch('<?= BASE_URL ?>/v2/bibliotheque/referentiels/categories', {method:'POST', body:data}).then(()=>location.reload());
 }
 function saveTag() {
   const data = new URLSearchParams({nom: document.getElementById('tag_nom').value, csrf_token: ''});
-  fetch('/v2/bibliotheque/referentiels/tags', {method:'POST', body:data}).then(()=>location.reload());
+  fetch('<?= BASE_URL ?>/v2/bibliotheque/referentiels/tags', {method:'POST', body:data}).then(()=>location.reload());
 }
 function archiveRef(type, id) {
   if (!confirm('Archiver ?')) return;
-  fetch('/v2/bibliotheque/referentiels/' + type + 's/' + id + '/archive', {method:'POST'}).then(()=>location.reload());
+  fetch('<?= BASE_URL ?>/v2/bibliotheque/referentiels/' + type + 's/' + id + '/archive', {method:'POST'}).then(()=>location.reload());
 }
 </script>
-</body>
-</html>

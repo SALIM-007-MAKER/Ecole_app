@@ -4,9 +4,6 @@
 /** @var array $historique */
 /** @var \App\Modules\VieScolaire\Recompenses\Policies\RewardPolicy $policy */
 
-$flash_success = $_SESSION['flash_success'] ?? null;
-$flash_error   = $_SESSION['flash_error']   ?? null;
-unset($_SESSION['flash_success'], $_SESSION['flash_error']);
 
 $statutBadge = [
     'attribuee' => 'bg-amber-100 text-amber-800',
@@ -19,36 +16,20 @@ $niveauLabel = [
     'academique'   => 'Académique',
 ];
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Récompense #<?= $reward['id'] ?></title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
-
-<?php include BASE_PATH . '/app/Views/partials/sidebar.php'; ?>
-
-<main class="ml-64 p-8">
     <div class="flex items-center gap-3 mb-6">
-        <a href="/v2/vie-scolaire/recompenses" class="text-slate-400 hover:text-slate-600">
-            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+        <a href="<?= BASE_URL ?>/v2/vie-scolaire/recompenses"
+           class="inline-flex items-center gap-2 px-3 py-1.5 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 text-sm transition-colors flex-shrink-0">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Retour
         </a>
+        <div class="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="award" class="w-5 h-5 text-violet-600"></i>
+        </div>
         <h1 class="text-2xl font-bold text-slate-800">Récompense #<?= $reward['id'] ?></h1>
         <span class="px-3 py-1 rounded-full text-sm font-medium <?= $statutBadge[$reward['statut']] ?? 'bg-slate-100' ?>">
             <?= ucfirst($reward['statut']) ?>
         </span>
     </div>
 
-    <?php if ($flash_success): ?>
-        <div class="mb-4 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg"><?= htmlspecialchars($flash_success) ?></div>
-    <?php endif; ?>
-    <?php if ($flash_error): ?>
-        <div class="mb-4 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg"><?= htmlspecialchars($flash_error) ?></div>
-    <?php endif; ?>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Détails -->
@@ -124,15 +105,15 @@ $niveauLabel = [
             <?php if ($reward['statut'] !== 'revoquee'): ?>
                 <div class="flex flex-wrap gap-3">
                     <?php if ($policy->canModify($user, $reward)): ?>
-                        <a href="/v2/vie-scolaire/recompenses/<?= $reward['id'] ?>/edit"
-                           class="inline-flex items-center gap-2 bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                        <a href="<?= BASE_URL ?>/v2/vie-scolaire/recompenses/<?= $reward['id'] ?>/edit"
+                           class="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                             <i data-lucide="edit" class="w-4 h-4"></i> Modifier
                         </a>
                     <?php endif; ?>
 
                     <?php if ($reward['statut'] === 'attribuee' && $policy->canValidate($user)): ?>
-                        <form method="POST" action="/v2/vie-scolaire/recompenses/<?= $reward['id'] ?>/valider">
-                            <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+                        <form method="POST" action="<?= BASE_URL ?>/v2/vie-scolaire/recompenses/<?= $reward['id'] ?>/valider">
+                            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                             <button type="submit"
                                     class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                                 <i data-lucide="check-circle" class="w-4 h-4"></i> Valider
@@ -149,8 +130,8 @@ $niveauLabel = [
                 </div>
 
                 <div id="bloc-revoquer" class="hidden bg-red-50 border border-red-200 rounded-xl p-4">
-                    <form method="POST" action="/v2/vie-scolaire/recompenses/<?= $reward['id'] ?>/revoquer" class="space-y-3">
-                        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+                    <form method="POST" action="<?= BASE_URL ?>/v2/vie-scolaire/recompenses/<?= $reward['id'] ?>/revoquer" class="space-y-3">
+                        <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                         <label class="block text-sm font-medium text-red-800">Motif de révocation <span class="text-red-500">*</span></label>
                         <textarea name="motif" rows="3" required minlength="10"
                                   placeholder="Expliquer la raison de la révocation (min. 10 caractères)"
@@ -201,7 +182,4 @@ $niveauLabel = [
             <?php endif; ?>
         </div>
     </div>
-</main>
 <script>lucide.createIcons();</script>
-</body>
-</html>

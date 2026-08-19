@@ -29,11 +29,11 @@ class HRDocumentController extends Controller
         $this->policy  = new HRDocumentPolicy();
     }
 
-    private function currentUser(): array { return Session::getUser() ?? []; }
-    private function userId(): int        { return (int)($this->currentUser()['id'] ?? 0); }
+    private function authUser(): array { return Session::getUser() ?? []; }
+    private function userId(): int        { return (int)($this->authUser()['id'] ?? 0); }
     private function userName(): string
     {
-        $u = $this->currentUser();
+        $u = $this->authUser();
         return trim(($u['prenom'] ?? '') . ' ' . ($u['nom'] ?? '')) ?: 'Système';
     }
 
@@ -42,7 +42,7 @@ class HRDocumentController extends Controller
     {
         $this->requirePermission('hr_document.view');
         $filters = HRDocumentFiltersDTO::fromRequest($_GET);
-        if (!$this->policy->canViewSecret($this->currentUser())) {
+        if (!$this->policy->canViewSecret($this->authUser())) {
             $filters = new HRDocumentFiltersDTO(
                 q: $filters->q, type: $filters->type, statut: $filters->statut,
                 employeId: $filters->employeId, confidentialite: $filters->confidentialite,
@@ -62,7 +62,7 @@ class HRDocumentController extends Controller
             'pages'   => (int)ceil($total / $filters->perPage),
             'model'   => HRDocumentModel::class,
             'policy'  => $this->policy,
-            'user'    => $this->currentUser(),
+            'user'    => $this->authUser(),
         ]);
     }
 
@@ -122,7 +122,7 @@ class HRDocumentController extends Controller
     {
         $this->requirePermission('hr_document.view');
         $doc = $this->requireDoc($id);
-        if ($doc['confidentialite'] === 'secret' && !$this->policy->canViewSecret($this->currentUser())) {
+        if ($doc['confidentialite'] === 'secret' && !$this->policy->canViewSecret($this->authUser())) {
             Session::flash('error', 'Accès refusé — document confidentiel.');
             $this->redirect('/v2/rh/documents');
         }
@@ -135,7 +135,7 @@ class HRDocumentController extends Controller
             'historique' => $historique,
             'model'      => HRDocumentModel::class,
             'policy'     => $this->policy,
-            'user'       => $this->currentUser(),
+            'user'       => $this->authUser(),
         ]);
     }
 
@@ -234,7 +234,7 @@ class HRDocumentController extends Controller
     {
         $this->requirePermission('hr_document.view');
         $jours         = max(1, (int)($_GET['jours'] ?? 60));
-        $canViewSecret = $this->policy->canViewSecret($this->currentUser());
+        $canViewSecret = $this->policy->canViewSecret($this->authUser());
         $docs          = $this->repo->findExpiring($jours, $canViewSecret);
 
         $this->render('RH::documents/expirations', [
@@ -242,7 +242,7 @@ class HRDocumentController extends Controller
             'jours'  => $jours,
             'model'  => HRDocumentModel::class,
             'policy' => $this->policy,
-            'user'   => $this->currentUser(),
+            'user'   => $this->authUser(),
         ]);
     }
 
@@ -251,7 +251,7 @@ class HRDocumentController extends Controller
     {
         $this->requirePermission('hr_document.export');
         $filters = HRDocumentFiltersDTO::fromRequest(array_merge($_GET, ['per_page' => 9999]));
-        if (!$this->policy->canViewSecret($this->currentUser())) {
+        if (!$this->policy->canViewSecret($this->authUser())) {
             $filters = new HRDocumentFiltersDTO(
                 q: $filters->q, type: $filters->type, statut: $filters->statut,
                 employeId: $filters->employeId, confidentialite: $filters->confidentialite,
@@ -301,7 +301,7 @@ class HRDocumentController extends Controller
         $pdo = Database::getInstance()->getConnection();
         return $pdo->query(
             'SELECT id, CONCAT(prenom,\' \',nom) AS nom_complet, matricule
-             FROM rh_employes WHERE actif = 1 AND deleted_at IS NULL ORDER BY nom, prenom'
+             FROM rh_employes WHERE statut = \'actif\' AND deleted_at IS NULL ORDER BY nom, prenom'
         )->fetchAll(PDO::FETCH_ASSOC);
     }
 }

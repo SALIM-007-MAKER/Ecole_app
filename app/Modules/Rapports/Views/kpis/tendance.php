@@ -1,17 +1,6 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tendance — <?= htmlspecialchars($metrique) ?></title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-5xl mx-auto px-4 py-8">
     <div class="flex items-center gap-3 mb-6">
-        <a href="/v2/rapports/kpis?domaine=<?= urlencode($domaine) ?>" class="text-slate-400 hover:text-violet-600">
+        <a href="<?= BASE_URL ?>/v2/rapports/kpis?domaine=<?= urlencode($domaine) ?>" class="text-slate-400 hover:text-violet-600">
             <i data-lucide="arrow-left" class="w-5 h-5"></i>
         </a>
         <h1 class="text-xl font-bold text-slate-800">
@@ -81,5 +70,3 @@
     </div>
 </div>
 <script>lucide.createIcons();</script>
-</body>
-</html>

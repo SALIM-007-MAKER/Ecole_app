@@ -28,6 +28,9 @@ $statuts = \App\Modules\Finance\Models\SessionCaisseModel::STATUTS;
                class="p-2 text-slate-500 hover:text-violet-600 rounded-lg hover:bg-violet-50">
                 <i data-lucide="arrow-left" class="w-5 h-5"></i>
             </a>
+            <div class="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="vault" class="w-5 h-5 text-violet-600"></i>
+            </div>
             <div>
                 <div class="flex items-center gap-3">
                     <h1 class="text-2xl font-bold text-slate-800"><?= htmlspecialchars($session->numero) ?></h1>
@@ -136,7 +139,7 @@ $statuts = \App\Modules\Finance\Models\SessionCaisseModel::STATUTS;
         </div>
         <?php if ($journal->statut !== 'rapproche' && $canRapproche): ?>
         <form method="POST" action="<?= BASE_URL ?>/v2/finance/caisse/<?= $session->id ?>/rapprocher" class="flex items-center gap-2">
-            <?php echo csrf_field() ?? '<input type="hidden" name="csrf_token" value="' . ($_SESSION['csrf_token'] ?? '') . '">'; ?>
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
             <input type="text" name="note" placeholder="Note de rapprochement…"
                    class="px-3 py-1.5 text-sm border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-300">
             <button class="px-3 py-1.5 text-sm font-medium text-amber-800 bg-amber-100 rounded-lg hover:bg-amber-200">
@@ -156,11 +159,11 @@ $statuts = \App\Modules\Finance\Models\SessionCaisseModel::STATUTS;
         </div>
         <form method="POST" action="<?= BASE_URL ?>/v2/finance/caisse/<?= $session->id ?>/mouvement"
               class="grid grid-cols-1 sm:grid-cols-5 gap-3 items-end">
-            <?php echo csrf_field() ?? '<input type="hidden" name="csrf_token" value="' . ($_SESSION['csrf_token'] ?? '') . '">'; ?>
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
             <div>
-                <label class="block text-xs text-slate-500 mb-1">Type <span class="text-red-500">*</span></label>
+                <label class="block text-xs text-slate-500 mb-1">Type <span class="form-required">*</span></label>
                 <select name="type" id="mv_type" required onchange="updateSens(this.value)"
-                        class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-300">
+                        class="form-select">
                     <option value="recette">Recette</option>
                     <option value="decaissement">Décaissement</option>
                     <option value="correction">Correction</option>
@@ -168,24 +171,24 @@ $statuts = \App\Modules\Finance\Models\SessionCaisseModel::STATUTS;
             </div>
             <div id="sens_field" class="hidden">
                 <label class="block text-xs text-slate-500 mb-1">Sens</label>
-                <select name="sens" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-300">
+                <select name="sens" class="form-select">
                     <option value="credit">Crédit (entrée)</option>
                     <option value="debit">Débit (sortie)</option>
                 </select>
             </div>
             <input type="hidden" name="sens" id="sens_hidden" value="credit">
             <div>
-                <label class="block text-xs text-slate-500 mb-1">Montant <span class="text-red-500">*</span></label>
+                <label class="block text-xs text-slate-500 mb-1">Montant <span class="form-required">*</span></label>
                 <div class="relative">
                     <input type="number" name="montant" min="0.01" step="0.01" required placeholder="0"
-                           class="w-full pl-3 pr-10 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-300">
+                           class="form-input pl-3 pr-10">
                     <span class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400">XOF</span>
                 </div>
             </div>
             <div class="sm:col-span-2">
-                <label class="block text-xs text-slate-500 mb-1">Libellé <span class="text-red-500">*</span></label>
+                <label class="block text-xs text-slate-500 mb-1">Libellé <span class="form-required">*</span></label>
                 <input type="text" name="libelle" required placeholder="Description…"
-                       class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-300">
+                       class="form-input">
             </div>
             <div>
                 <button type="submit"
@@ -294,9 +297,9 @@ $statuts = \App\Modules\Finance\Models\SessionCaisseModel::STATUTS;
             <br><span class="text-xs text-amber-600">Un mouvement inverse sera créé automatiquement.</span>
         </p>
         <form method="POST" action="<?= BASE_URL ?>/v2/finance/caisse/<?= $session->id ?>/mouvement/<?= $m->id ?>/annuler">
-            <?php echo csrf_field() ?? '<input type="hidden" name="csrf_token" value="' . ($_SESSION['csrf_token'] ?? '') . '">'; ?>
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
             <div class="mb-4">
-                <label class="block text-sm font-medium text-slate-700 mb-1">Motif <span class="text-red-500">*</span></label>
+                <label class="form-label">Motif <span class="form-required">*</span></label>
                 <textarea name="motif" rows="2" required
                           class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-rose-300"
                           placeholder="Raison de l'annulation…"></textarea>

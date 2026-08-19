@@ -19,17 +19,6 @@ if (!empty($old['niveaux'])) {
 // Couleur courante
 $currentCouleur = $old['couleur'] ?? ($isEdit && $matiere ? ($matiere->couleur ?? '') : '');
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title><?= htmlspecialchars($title) ?></title>
-    <?php include BASE_PATH . '/app/Views/layouts/head_assets.php'; ?>
-</head>
-<body class="bg-slate-50 text-slate-800">
-<?php include BASE_PATH . '/app/Views/layouts/sidebar.php'; ?>
-
-<main class="ml-64 p-6 min-h-screen">
     <div class="max-w-4xl mx-auto">
 
         <!-- Breadcrumb -->
@@ -54,7 +43,7 @@ $currentCouleur = $old['couleur'] ?? ($isEdit && $matiere ? ($matiere->couleur ?
         <?php endif; ?>
 
         <form method="POST" action="<?= $action ?>" novalidate>
-            <input type="hidden" name="csrf_token" value="<?= \Core\Session::getCsrfToken() ?>">
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
@@ -290,15 +279,12 @@ $currentCouleur = $old['couleur'] ?? ($isEdit && $matiere ? ($matiere->couleur ?
             </div>
         </form>
     </div>
-</main>
-
 <script>
 function updatePreview() {
     document.getElementById('prevNom').textContent  = document.getElementById('nom').value  || '—';
     document.getElementById('prevCoef').textContent = document.getElementById('coefficient').value || '—';
     document.getElementById('prevVh').textContent   = document.getElementById('volume_horaire').value || '—';
 }
-
 function setCouleur(hex) {
     if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return;
     document.getElementById('couleur').value      = hex;
@@ -312,10 +298,5 @@ function setCouleur(hex) {
         btn.classList.toggle('border-transparent', !active);
     });
 }
-
 updatePreview();
 </script>
-
-<?php include BASE_PATH . '/app/Views/layouts/footer_assets.php'; ?>
-</body>
-</html>

@@ -34,7 +34,7 @@ $titre = 'Administration — Expirations';
           <td class="px-3 py-2 text-slate-600"><?= htmlspecialchars($d['module_source']) ?></td>
           <td class="px-3 py-2 text-amber-700 font-medium"><?= date('d/m/Y', strtotime($d['date_expiration'])) ?></td>
           <td class="px-3 py-2 text-right">
-            <a href="/v2/documents/<?= $d['id'] ?>" class="text-xs text-violet-600 hover:text-violet-800">Voir</a>
+            <a href="<?= BASE_URL ?>/v2/documents/<?= $d['id'] ?>" class="text-xs text-violet-600 hover:text-violet-800">Voir</a>
           </td>
         </tr>
         <?php endforeach; ?>
@@ -65,7 +65,7 @@ $titre = 'Administration — Expirations';
           <td class="px-3 py-2 text-slate-600"><?= htmlspecialchars($d['module_source']) ?></td>
           <td class="px-3 py-2 text-red-700"><?= date('d/m/Y', strtotime($d['date_expiration'])) ?></td>
           <td class="px-3 py-2 text-right">
-            <a href="/v2/documents/<?= $d['id'] ?>" class="text-xs text-violet-600 hover:text-violet-800">Voir</a>
+            <a href="<?= BASE_URL ?>/v2/documents/<?= $d['id'] ?>" class="text-xs text-violet-600 hover:text-violet-800">Voir</a>
           </td>
         </tr>
         <?php endforeach; ?>
@@ -78,7 +78,7 @@ $titre = 'Administration — Expirations';
 <script>
 async function lancerVerification() {
   const csrf = document.querySelector('meta[name=csrf-token]')?.content ?? '';
-  const r = await fetch('/v2/documents/admin/expire-check', {method:'POST', headers:{'X-CSRF-Token': csrf}});
+  const r = await fetch('<?= BASE_URL ?>/v2/documents/admin/expire-check', {method:'POST', headers:{'X-CSRF-Token': csrf}});
   const d = await r.json();
   if (d.success) { alert(d.processed + ' document(s) traité(s).'); location.reload(); }
 }

@@ -44,8 +44,8 @@ class AssignmentController extends Controller
             'departements' => $refs['departements'],
             'postes'       => $refs['postes'],
             'model'        => AssignmentModel::class,
-            'canCreate'    => $this->policy->canCreate($this->user),
-            'canExport'    => $this->policy->canExport($this->user),
+            'canCreate'    => $this->policy->canCreate($this->currentUser()),
+            'canExport'    => $this->policy->canExport($this->currentUser()),
         ]);
     }
 
@@ -70,8 +70,8 @@ class AssignmentController extends Controller
             'matieres'    => $matieres,
             'historique'  => $historique,
             'model'       => AssignmentModel::class,
-            'canUpdate'   => $this->policy->canUpdate($this->user),
-            'canArchive'  => $this->policy->canArchive($this->user),
+            'canUpdate'   => $this->policy->canUpdate($this->currentUser()),
+            'canArchive'  => $this->policy->canArchive($this->currentUser()),
         ]);
     }
 
@@ -114,8 +114,8 @@ class AssignmentController extends Controller
         }
 
         try {
-            $userName = trim(($this->user['prenom'] ?? '') . ' ' . ($this->user['nom'] ?? '')) ?: 'Système';
-            $id = $this->service->creer($dto, (int)$this->user['id'], $userName);
+            $userName = trim(($this->currentUser()['prenom'] ?? '') . ' ' . ($this->currentUser()['nom'] ?? '')) ?: 'Système';
+            $id = $this->service->creer($dto, (int)$this->currentUser()['id'], $userName);
             Session::flash('success', 'Affectation créée avec succès.');
             $this->redirect('/v2/rh/affectations/' . $id);
         } catch (\RuntimeException|\InvalidArgumentException $e) {
@@ -180,8 +180,8 @@ class AssignmentController extends Controller
         }
 
         try {
-            $userName = trim(($this->user['prenom'] ?? '') . ' ' . ($this->user['nom'] ?? '')) ?: 'Système';
-            $this->service->modifier($id, $dto, (int)$this->user['id'], $userName);
+            $userName = trim(($this->currentUser()['prenom'] ?? '') . ' ' . ($this->currentUser()['nom'] ?? '')) ?: 'Système';
+            $this->service->modifier($id, $dto, (int)$this->currentUser()['id'], $userName);
             Session::flash('success', 'Affectation mise à jour.');
             $this->redirect('/v2/rh/affectations/' . $id);
         } catch (\RuntimeException|\InvalidArgumentException $e) {
@@ -206,8 +206,8 @@ class AssignmentController extends Controller
         ];
 
         try {
-            $userName = trim(($this->user['prenom'] ?? '') . ' ' . ($this->user['nom'] ?? '')) ?: 'Système';
-            $this->service->transferer($id, $dest, $motif, (int)$this->user['id'], $userName);
+            $userName = trim(($this->currentUser()['prenom'] ?? '') . ' ' . ($this->currentUser()['nom'] ?? '')) ?: 'Système';
+            $this->service->transferer($id, $dest, $motif, (int)$this->currentUser()['id'], $userName);
             Session::flash('success', 'Transfert enregistré.');
         } catch (\RuntimeException|\InvalidArgumentException $e) {
             Session::flash('error', $e->getMessage());
@@ -223,8 +223,8 @@ class AssignmentController extends Controller
         $this->verifyCsrf();
 
         try {
-            $userName = trim(($this->user['prenom'] ?? '') . ' ' . ($this->user['nom'] ?? '')) ?: 'Système';
-            $this->service->suspendre($id, (int)$this->user['id'], $userName);
+            $userName = trim(($this->currentUser()['prenom'] ?? '') . ' ' . ($this->currentUser()['nom'] ?? '')) ?: 'Système';
+            $this->service->suspendre($id, (int)$this->currentUser()['id'], $userName);
             Session::flash('success', 'Affectation suspendue.');
         } catch (\RuntimeException $e) {
             Session::flash('error', $e->getMessage());
@@ -238,8 +238,8 @@ class AssignmentController extends Controller
         $this->verifyCsrf();
 
         try {
-            $userName = trim(($this->user['prenom'] ?? '') . ' ' . ($this->user['nom'] ?? '')) ?: 'Système';
-            $this->service->reactiver($id, (int)$this->user['id'], $userName);
+            $userName = trim(($this->currentUser()['prenom'] ?? '') . ' ' . ($this->currentUser()['nom'] ?? '')) ?: 'Système';
+            $this->service->reactiver($id, (int)$this->currentUser()['id'], $userName);
             Session::flash('success', 'Affectation réactivée.');
         } catch (\RuntimeException $e) {
             Session::flash('error', $e->getMessage());
@@ -257,8 +257,8 @@ class AssignmentController extends Controller
         $motif = trim($_POST['motif'] ?? '');
 
         try {
-            $userName = trim(($this->user['prenom'] ?? '') . ' ' . ($this->user['nom'] ?? '')) ?: 'Système';
-            $this->service->clore($id, $motif, (int)$this->user['id'], $userName);
+            $userName = trim(($this->currentUser()['prenom'] ?? '') . ' ' . ($this->currentUser()['nom'] ?? '')) ?: 'Système';
+            $this->service->clore($id, $motif, (int)$this->currentUser()['id'], $userName);
             Session::flash('success', 'Affectation clôturée.');
         } catch (\RuntimeException|\InvalidArgumentException $e) {
             Session::flash('error', $e->getMessage());
@@ -276,8 +276,8 @@ class AssignmentController extends Controller
         $motif = trim($_POST['motif'] ?? 'Archivage manuel');
 
         try {
-            $userName = trim(($this->user['prenom'] ?? '') . ' ' . ($this->user['nom'] ?? '')) ?: 'Système';
-            $this->service->archiver($id, $motif, (int)$this->user['id'], $userName);
+            $userName = trim(($this->currentUser()['prenom'] ?? '') . ' ' . ($this->currentUser()['nom'] ?? '')) ?: 'Système';
+            $this->service->archiver($id, $motif, (int)$this->currentUser()['id'], $userName);
             Session::flash('success', 'Affectation archivée.');
         } catch (\RuntimeException $e) {
             Session::flash('error', $e->getMessage());
@@ -297,7 +297,7 @@ class AssignmentController extends Controller
         $dto = MatiereAssignmentDTO::fromRequest($_POST);
 
         try {
-            $this->service->ajouterMatiere($id, $dto, (int)$this->user['id']);
+            $this->service->ajouterMatiere($id, $dto, (int)$this->currentUser()['id']);
             Session::flash('success', 'Affectation matière ajoutée.');
         } catch (\RuntimeException|\InvalidArgumentException $e) {
             Session::flash('error', $e->getMessage());
@@ -311,7 +311,7 @@ class AssignmentController extends Controller
         $this->verifyCsrf();
 
         try {
-            $this->service->retirerMatiere($id, $matId, (int)$this->user['id']);
+            $this->service->retirerMatiere($id, $matId, (int)$this->currentUser()['id']);
             Session::flash('success', 'Affectation matière clôturée.');
         } catch (\RuntimeException $e) {
             Session::flash('error', $e->getMessage());

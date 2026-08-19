@@ -11,32 +11,29 @@
 $fmt = fn(float $v) => number_format($v, 0, ',', ' ') . ' XOF';
 $agingColor = ['0-30j'=>'emerald','31-60j'=>'amber','61-90j'=>'orange','+90j'=>'red'];
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Rapport impayés — Finance V2</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>tailwind.config={theme:{extend:{colors:{primary:'#7c3aed'}}}}</script>
-</head>
-<body class="bg-slate-50 min-h-screen">
-<?php include BASE_PATH . '/app/Modules/Finance/Views/partials/sidebar.php'; ?>
+    <div class="flex items-center gap-2 text-sm text-slate-500 mb-4">
+        <a href="<?= BASE_URL ?>/v2/finance/rapports" class="hover:text-violet-600">Rapports</a>
+        <i data-lucide="chevron-right" class="w-3 h-3"></i>
+        <span class="text-slate-700">Impayés</span>
+    </div>
 
-<main class="ml-64 p-8">
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-            <nav class="text-sm text-slate-400 mb-1">
-                <a href="/v2/finance/rapports" class="hover:text-violet-600">Rapports</a> / Impayés
-            </nav>
-            <h1 class="text-2xl font-bold text-slate-800">Rapport des impayés</h1>
+    <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
+        <div class="flex items-start gap-4">
+            <div class="w-11 h-11 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="alert-triangle" class="w-5 h-5 text-red-600"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">Rapport des impayés</h1>
+                <p class="text-sm text-slate-500 mt-0.5">Créances par élève, classe et ancienneté</p>
+            </div>
         </div>
-        <div class="flex gap-2">
-            <a href="/v2/finance/rapports/export?type=impayes&format=csv&<?= http_build_query($_GET) ?>"
-               class="border border-slate-200 bg-white text-slate-700 px-4 py-2 rounded-lg text-sm hover:bg-slate-50 flex items-center gap-2">
-                <i data-lucide="file-text" class="w-4 h-4"></i> CSV
+        <div class="flex gap-2 flex-shrink-0">
+            <a href="<?= BASE_URL ?>/v2/finance/rapports/export?type=impayes&format=csv&<?= http_build_query($_GET) ?>"
+               class="inline-flex items-center gap-2 border border-slate-300 bg-white text-slate-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
+                <i data-lucide="download" class="w-4 h-4"></i> CSV
             </a>
-            <a href="/v2/finance/rapports/print?type=impayes&<?= http_build_query($_GET) ?>" target="_blank"
-               class="border border-slate-200 bg-white text-slate-700 px-4 py-2 rounded-lg text-sm hover:bg-slate-50 flex items-center gap-2">
+            <a href="<?= BASE_URL ?>/v2/finance/rapports/print?type=impayes&<?= http_build_query($_GET) ?>" target="_blank"
+               class="inline-flex items-center gap-2 border border-slate-300 bg-white text-slate-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
                 <i data-lucide="printer" class="w-4 h-4"></i> Imprimer
             </a>
         </div>
@@ -75,21 +72,28 @@ $agingColor = ['0-30j'=>'emerald','31-60j'=>'amber','61-90j'=>'orange','+90j'=>'
             <label class="block text-xs font-medium text-slate-600 mb-1">Recherche</label>
             <input type="text" name="q" value="<?= htmlspecialchars($filters->q) ?>" placeholder="Élève, matricule…" class="border border-slate-200 rounded-lg px-3 py-2 text-sm w-44">
         </div>
-        <button type="submit" class="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-violet-700">Filtrer</button>
-        <a href="/v2/finance/rapports/impayes" class="text-slate-500 text-sm px-3 py-2 hover:text-slate-700">Reset</a>
+        <button type="submit" class="inline-flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors">
+            <i data-lucide="filter" class="w-4 h-4"></i> Filtrer
+        </button>
+        <a href="<?= BASE_URL ?>/v2/finance/rapports/impayes" class="text-slate-500 text-sm px-3 py-2 hover:text-slate-700">Réinitialiser</a>
     </form>
 
     <!-- KPIs -->
     <div class="grid grid-cols-2 gap-4 mb-6">
-        <div class="bg-white rounded-xl border border-red-200 bg-red-50 p-5">
-            <div class="text-3xl font-bold text-red-700"><?= $fmt($totalDu) ?></div>
-            <div class="text-sm text-red-600 mt-1"><?= count($impayes) ?> factures impayées — <?= $totalEleves ?> élève(s)</div>
+        <div class="bg-red-50 rounded-xl border border-red-200 shadow-sm p-5 flex items-center gap-4">
+            <div class="w-11 h-11 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="alert-triangle" class="w-5 h-5 text-red-600"></i>
+            </div>
+            <div>
+                <div class="text-3xl font-bold text-red-700"><?= $fmt($totalDu) ?></div>
+                <div class="text-sm text-red-600 mt-1"><?= count($impayes) ?> factures impayées — <?= $totalEleves ?> élève(s)</div>
+            </div>
         </div>
         <div class="grid grid-cols-2 gap-3">
             <?php foreach ($aging as $ag):
                 $clr = $agingColor[$ag->tranche] ?? 'slate';
             ?>
-            <div class="bg-white rounded-xl border border-<?= $clr ?>-200 p-4 text-center">
+            <div class="bg-white rounded-xl border border-<?= $clr ?>-200 shadow-sm p-4 text-center">
                 <div class="text-lg font-bold text-<?= $clr ?>-700"><?= $fmt((float)$ag->montant) ?></div>
                 <div class="text-xs text-<?= $clr ?>-600 mt-1"><?= $ag->tranche ?> — <?= $ag->nb ?> fact.</div>
             </div>
@@ -119,7 +123,16 @@ $agingColor = ['0-30j'=>'emerald','31-60j'=>'amber','61-90j'=>'orange','+90j'=>'
                 </thead>
                 <tbody class="divide-y divide-slate-50">
                 <?php if (empty($impayes)): ?>
-                <tr><td colspan="9" class="text-center py-10 text-slate-400">Aucun impayé</td></tr>
+                <tr>
+                    <td colspan="9" class="py-14">
+                        <div class="flex flex-col items-center gap-2 text-slate-400">
+                            <div class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center">
+                                <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+                            </div>
+                            <p class="text-sm">Aucun impayé</p>
+                        </div>
+                    </td>
+                </tr>
                 <?php else: ?>
                 <?php foreach ($impayes as $i):
                     $clr = $agingColor[$i->tranche_age] ?? 'slate';
@@ -155,8 +168,3 @@ $agingColor = ['0-30j'=>'emerald','31-60j'=>'amber','61-90j'=>'orange','+90j'=>'
             </table>
         </div>
     </div>
-</main>
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-<script>lucide.createIcons();</script>
-</body>
-</html>

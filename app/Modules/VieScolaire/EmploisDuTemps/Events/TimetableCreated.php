@@ -12,5 +12,19 @@ class TimetableCreated extends Event
         public readonly string $anneeScolaire,
         public readonly string $semaineType,
         public readonly int    $creeParId,
-    ) {}
+    ) {
+        parent::__construct();
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'edt_id'         => $this->edtId,
+            'classe_id'      => $this->classeId,
+            'annee_scolaire' => $this->anneeScolaire,
+            'semaine_type'   => $this->semaineType,
+            'cree_par_id'    => $this->creeParId,
+            'fired_at'       => $this->getFiredAt(),
+        ];
+    }
 }

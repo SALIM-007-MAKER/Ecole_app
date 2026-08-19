@@ -3,48 +3,44 @@
 /** @var string $model — ContractModel FQCN */
 function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8'); }
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Contrats — EduNova</title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 text-slate-800 min-h-screen">
-<?php include dirname(__DIR__, 2) . '/layouts/sidebar.php'; ?>
-<main class="ml-64 p-8">
 
   <!-- En-tête -->
-  <div class="flex items-center justify-between mb-8">
-    <div>
-      <div class="flex items-center gap-2 text-sm text-slate-500 mb-1">
-        <a href="/v2/rh/employes" class="hover:text-violet-600">RH</a>
-        <span>/</span>
-        <span>Contrats</span>
+  <div class="flex items-start gap-2 text-sm text-slate-500 mb-4">
+    <a href="<?= BASE_URL ?>/v2/rh/employes" class="hover:text-violet-600">RH</a>
+    <i data-lucide="chevron-right" class="w-3 h-3 mt-0.5"></i>
+    <span class="text-slate-700">Contrats</span>
+  </div>
+
+  <div class="flex flex-wrap items-start justify-between gap-4 mb-8">
+    <div class="flex items-start gap-4">
+      <div class="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+        <i data-lucide="file-signature" class="w-5 h-5 text-violet-600"></i>
       </div>
-      <h1 class="text-2xl font-bold text-slate-900">Contrats du personnel</h1>
+      <div>
+        <h1 class="text-2xl font-bold text-slate-900">Contrats du personnel</h1>
+        <p class="text-sm text-slate-500 mt-0.5">Suivi des contrats, types et échéances</p>
+      </div>
     </div>
-    <div class="flex gap-3">
-      <a href="/v2/rh/contrats/echeances"
-         class="flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg text-sm hover:bg-amber-100">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    <div class="flex gap-2 flex-wrap flex-shrink-0">
+      <a href="<?= BASE_URL ?>/v2/rh/contrats/echeances"
+         class="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg text-sm font-medium hover:bg-amber-100 transition-colors">
+        <i data-lucide="clock" class="w-4 h-4"></i>
         Échéances
         <?php if ($stats['echeances_30'] > 0): ?>
           <span class="bg-red-500 text-white text-xs rounded-full px-1.5"><?= $stats['echeances_30'] ?></span>
         <?php endif; ?>
       </a>
       <?php if ($canExport): ?>
-        <a href="/v2/rh/contrats/export?<?= http_build_query($_GET) ?>"
-           class="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm hover:bg-slate-50">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-          CSV
+        <a href="<?= BASE_URL ?>/v2/rh/contrats/export?<?= http_build_query($_GET) ?>"
+           class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          Export CSV
         </a>
       <?php endif; ?>
       <?php if ($canCreate): ?>
-        <a href="/v2/rh/contrats/create"
-           class="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        <a href="<?= BASE_URL ?>/v2/rh/contrats/create"
+           class="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors">
+          <i data-lucide="plus" class="w-4 h-4"></i>
           Nouveau contrat
         </a>
       <?php endif; ?>
@@ -63,14 +59,17 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
     <?php
     $statutCounts = array_column($stats['par_statut'] ?? [], 'nb', 'statut');
     $cards = [
-      ['Actifs',    $stats['actifs_total'],     'text-emerald-600', 'bg-emerald-50'],
-      ['CDI',       $stats['cdi_total'],         'text-violet-600',  'bg-violet-50'],
-      ['Éch. 90j',  $stats['echeances_90'],      'text-amber-600',   'bg-amber-50'],
-      ['Éch. 30j',  $stats['echeances_30'],      'text-red-600',     'bg-red-50'],
+      ['Actifs',    $stats['actifs_total'],     'text-emerald-600', 'bg-emerald-50', 'bg-emerald-100', 'text-emerald-600', 'check-circle'],
+      ['CDI',       $stats['cdi_total'],         'text-violet-600',  'bg-violet-50',  'bg-violet-100',  'text-violet-600',  'file-signature'],
+      ['Éch. 90j',  $stats['echeances_90'],      'text-amber-600',   'bg-amber-50',   'bg-amber-100',   'text-amber-600',   'clock'],
+      ['Éch. 30j',  $stats['echeances_30'],      'text-red-600',     'bg-red-50',     'bg-red-100',     'text-red-600',     'alert-triangle'],
     ];
     ?>
-    <?php foreach ($cards as [$label, $val, $textColor, $bg]): ?>
-      <div class="<?= $bg ?> rounded-xl border border-slate-200 p-5 flex items-center gap-4">
+    <?php foreach ($cards as [$label, $val, $textColor, $bg, $iconBg, $iconColor, $icon]): ?>
+      <div class="<?= $bg ?> rounded-xl border border-slate-200 shadow-sm p-5 flex items-center gap-4">
+        <div class="w-9 h-9 rounded-lg <?= $iconBg ?> flex items-center justify-center flex-shrink-0">
+          <i data-lucide="<?= $icon ?>" class="w-4 h-4 <?= $iconColor ?>"></i>
+        </div>
         <div class="flex-1">
           <p class="text-2xl font-bold <?= $textColor ?>"><?= $val ?></p>
           <p class="text-xs text-slate-500 mt-0.5"><?= $label ?></p>
@@ -80,15 +79,15 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
   </div>
 
   <!-- Filtres -->
-  <form method="GET" class="bg-white rounded-xl border border-slate-200 p-4 mb-6 flex flex-wrap gap-4 items-end">
+  <form method="GET" class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 mb-6 flex flex-wrap gap-4 items-end">
     <div class="flex-1 min-w-40">
       <label class="block text-xs font-medium text-slate-600 mb-1">Recherche</label>
       <input type="text" name="q" value="<?= e($filters->q) ?>" placeholder="Numéro ou employé..."
-             class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-300">
+             class="form-input">
     </div>
     <div>
       <label class="block text-xs font-medium text-slate-600 mb-1">Type</label>
-      <select name="type" class="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-violet-300">
+      <select name="type" class="form-select">
         <option value="">Tous</option>
         <?php foreach ($model::TYPES as $k => $label): ?>
           <option value="<?= e($k) ?>" <?= $filters->type === $k ? 'selected' : '' ?>><?= e($label) ?></option>
@@ -97,7 +96,7 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
     </div>
     <div>
       <label class="block text-xs font-medium text-slate-600 mb-1">Statut</label>
-      <select name="statut" class="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-violet-300">
+      <select name="statut" class="form-select">
         <option value="">Tous</option>
         <?php foreach ($model::STATUTS as $k => $label): ?>
           <option value="<?= e($k) ?>" <?= $filters->statut === $k ? 'selected' : '' ?>><?= e($label) ?></option>
@@ -106,19 +105,21 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
     </div>
     <div>
       <label class="block text-xs font-medium text-slate-600 mb-1">Échéance dans</label>
-      <select name="echeance_dans" class="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-violet-300">
+      <select name="echeance_dans" class="form-select">
         <option value="">Toutes</option>
         <option value="30"  <?= $filters->echeanceDans === '30' ? 'selected' : '' ?>>30 jours</option>
         <option value="60"  <?= $filters->echeanceDans === '60' ? 'selected' : '' ?>>60 jours</option>
         <option value="90"  <?= $filters->echeanceDans === '90' ? 'selected' : '' ?>>90 jours</option>
       </select>
     </div>
-    <button type="submit" class="px-4 py-2 bg-violet-600 text-white text-sm rounded-lg hover:bg-violet-700">Filtrer</button>
-    <a href="/v2/rh/contrats" class="px-4 py-2 bg-slate-100 text-slate-600 text-sm rounded-lg hover:bg-slate-200">Réinitialiser</a>
+    <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white text-sm font-medium rounded-lg hover:bg-violet-700 transition-colors">
+      <i data-lucide="filter" class="w-4 h-4"></i> Filtrer
+    </button>
+    <a href="<?= BASE_URL ?>/v2/rh/contrats" class="text-sm text-slate-500 hover:text-slate-700 self-end py-2">Réinitialiser</a>
   </form>
 
   <!-- Table -->
-  <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+  <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
     <table class="w-full text-sm">
       <thead class="bg-slate-50 border-b border-slate-200">
         <tr>
@@ -133,7 +134,16 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
       </thead>
       <tbody class="divide-y divide-slate-100">
         <?php if (empty($contrats)): ?>
-          <tr><td colspan="7" class="px-4 py-10 text-center text-slate-400">Aucun contrat trouvé.</td></tr>
+          <tr>
+            <td colspan="7" class="py-14">
+              <div class="flex flex-col items-center gap-2 text-slate-400">
+                <div class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center">
+                  <i data-lucide="file-signature" class="w-5 h-5"></i>
+                </div>
+                <p class="text-sm">Aucun contrat trouvé.</p>
+              </div>
+            </td>
+          </tr>
         <?php endif; ?>
         <?php foreach ($contrats as $c): ?>
           <?php
@@ -142,15 +152,26 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
           ?>
           <tr class="hover:bg-slate-50">
             <td class="px-4 py-3">
-              <a href="/v2/rh/contrats/<?= (int)$c['id'] ?>"
+              <a href="<?= BASE_URL ?>/v2/rh/contrats/<?= (int)$c['id'] ?>"
                  class="font-mono text-sm text-violet-700 hover:underline"><?= e($c['numero_contrat']) ?></a>
               <?php if ($c['renouvelle_depuis_numero']): ?>
                 <span class="block text-xs text-slate-400">↻ <?= e($c['renouvelle_depuis_numero']) ?></span>
               <?php endif; ?>
             </td>
+            <?php
+              $nameParts = array_filter(explode(' ', trim($c['employe_nom']), 2));
+              $initiales = implode('', array_map(fn($p) => mb_strtoupper(mb_substr($p, 0, 1)), $nameParts));
+            ?>
             <td class="px-4 py-3">
-              <span class="font-medium text-slate-700"><?= e($c['employe_nom']) ?></span>
-              <span class="block text-xs text-slate-400"><?= e($c['employe_matricule']) ?></span>
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center text-violet-700 font-semibold text-xs shrink-0">
+                  <?= e($initiales) ?>
+                </div>
+                <div>
+                  <span class="font-medium text-slate-700 block"><?= e($c['employe_nom']) ?></span>
+                  <span class="text-xs text-slate-400"><?= e($c['employe_matricule']) ?></span>
+                </div>
+              </div>
             </td>
             <td class="px-4 py-3">
               <span class="px-2 py-0.5 text-xs font-medium rounded-full <?= $model::typeColor($c['type']) ?>">
@@ -177,8 +198,10 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
               <?php endif; ?>
             </td>
             <td class="px-4 py-3 text-right">
-              <a href="/v2/rh/contrats/<?= (int)$c['id'] ?>"
-                 class="px-2 py-1 text-xs text-violet-600 bg-violet-50 rounded hover:bg-violet-100">Voir</a>
+              <a href="<?= BASE_URL ?>/v2/rh/contrats/<?= (int)$c['id'] ?>"
+                 class="inline-flex items-center gap-1 text-xs text-violet-600 hover:text-violet-800 font-medium">
+                <i data-lucide="eye" class="w-3.5 h-3.5"></i> Voir
+              </a>
             </td>
           </tr>
         <?php endforeach; ?>
@@ -199,7 +222,3 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
       </div>
     <?php endif; ?>
   </div>
-
-</main>
-</body>
-</html>

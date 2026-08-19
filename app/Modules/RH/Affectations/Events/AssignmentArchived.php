@@ -13,7 +13,9 @@ class AssignmentArchived extends Event
         public readonly int    $employeId,
         public readonly string $motif,
         public readonly int    $archivedBy
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

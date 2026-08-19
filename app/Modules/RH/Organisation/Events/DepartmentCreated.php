@@ -14,7 +14,9 @@ class DepartmentCreated extends Event
         public readonly string $code,
         public readonly ?int   $parentId,
         public readonly int    $createdBy
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

@@ -1,17 +1,8 @@
 <?php /** @var array $commande */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Commande <?= htmlspecialchars($commande['numero']) ?> — Inventaire</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-5xl mx-auto px-4 py-6">
     <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-3">
-            <a href="/v2/inventaire/commandes" class="text-slate-500 hover:text-slate-700">
+            <a href="<?= BASE_URL ?>/v2/inventaire/commandes" class="text-slate-500 hover:text-slate-700">
                 <i data-lucide="arrow-left" class="w-5 h-5"></i>
             </a>
             <div>
@@ -27,7 +18,7 @@
         </div>
         <div class="flex gap-2">
             <?php if ($commande['statut'] === 'brouillon'): ?>
-            <form method="POST" action="/v2/inventaire/commandes/<?=$commande['id']?>/valider">
+            <form method="POST" action="<?= BASE_URL ?>/v2/inventaire/commandes/<?=$commande['id']?>/valider">
                 <input type="hidden" name="_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                 <button type="submit" class="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
                     <i data-lucide="check-circle" class="w-4 h-4"></i> Valider
@@ -35,7 +26,7 @@
             </form>
             <?php endif; ?>
             <?php if (in_array($commande['statut'], ['validee','envoyee','partiellement_recue'], true)): ?>
-            <a href="/v2/inventaire/commandes/<?=$commande['id']?>/reception/creer"
+            <a href="<?= BASE_URL ?>/v2/inventaire/commandes/<?=$commande['id']?>/reception/creer"
                class="inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700">
                 <i data-lucide="package-check" class="w-4 h-4"></i> Réceptionner
             </a>
@@ -101,5 +92,3 @@
     <?php endif; ?>
 </div>
 <script>lucide.createIcons();</script>
-</body>
-</html>

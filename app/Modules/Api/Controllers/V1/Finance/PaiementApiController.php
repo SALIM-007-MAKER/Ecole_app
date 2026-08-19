@@ -18,25 +18,34 @@ class PaiementApiController extends ResourceApiController
         $this->checkRateLimit();
 
         $paging  = $this->parsePagination();
-        $filters = $this->parseFilters(['facture_id', 'mode_paiement', 'statut', 'annee_scolaire']);
-        $sort    = $this->parseSort(['date_paiement', 'montant', 'created_at'], 'date_paiement');
+        $filters = $this->parseFilters(['facture_id', 'statut'], 'p');
+        $sort    = $this->parseSort(['date_paiement', 'montant', 'created_at'], 'date_paiement', 'p');
 
         $pdo        = Database::getInstance()->getConnection();
-        $conditions = ['p.etablissement_id = ?'];
+        $conditions = ['e.etablissement_id = ?'];
         $bindings   = [$ctx->etablissementId];
         foreach ($filters['conditions'] as $c) { $conditions[] = $c; }
         array_push($bindings, ...$filters['bindings']);
 
         $where = 'WHERE ' . implode(' AND ', $conditions);
-        $cnt   = $pdo->prepare("SELECT COUNT(*) FROM finance_payments p $where");
+        $cnt   = $pdo->prepare(
+            "SELECT COUNT(*) FROM finance_paiements p
+             LEFT JOIN finance_factures f ON f.id = p.facture_id
+             LEFT JOIN eleves e ON e.id = f.eleve_id
+             $where"
+        );
         $cnt->execute($bindings);
         $total = (int)$cnt->fetchColumn();
 
         $stmt = $pdo->prepare(
-            "SELECT p.*, f.numero AS facture_numero, e.nom AS eleve_nom
-             FROM finance_payments p
-             LEFT JOIN finance_invoices f ON f.id = p.invoice_id
+            "SELECT p.*, p.reference_externe AS reference, e.etablissement_id,
+                    f.numero AS facture_numero, e.nom AS eleve_nom,
+                    mp.code AS mode_paiement, r.numero AS recu_numero
+             FROM finance_paiements p
+             LEFT JOIN finance_factures f ON f.id = p.facture_id
              LEFT JOIN eleves e ON e.id = f.eleve_id
+             LEFT JOIN finance_modes_paiement mp ON mp.id = p.mode_paiement_id
+             LEFT JOIN finance_recus r ON r.paiement_id = p.id
              $where ORDER BY $sort LIMIT {$paging['per_page']} OFFSET {$paging['offset']}"
         );
         $stmt->execute($bindings);
@@ -67,10 +76,12 @@ class PaiementApiController extends ResourceApiController
 
         $pdo  = Database::getInstance()->getConnection();
         $stmt = $pdo->prepare(
-            "SELECT DATE_FORMAT(date_paiement, '%Y-%m') AS mois,
-                    SUM(montant) AS total, COUNT(*) AS nb_paiements
-             FROM finance_payments
-             WHERE etablissement_id = :etab AND annee_scolaire = :ann AND statut = 'valide'
+            "SELECT DATE_FORMAT(p.date_paiement, '%Y-%m') AS mois,
+                    SUM(p.montant_applique) AS total, COUNT(*) AS nb_paiements
+             FROM finance_paiements p
+             JOIN finance_factures f ON f.id = p.facture_id
+             JOIN eleves e ON e.id = f.eleve_id
+             WHERE e.etablissement_id = :etab AND f.annee_scolaire = :ann AND p.statut IN ('valide','complete')
              GROUP BY mois ORDER BY mois ASC"
         );
         $stmt->execute([':etab' => $ctx->etablissementId, ':ann' => $annee]);
@@ -84,11 +95,15 @@ class PaiementApiController extends ResourceApiController
     {
         $pdo  = Database::getInstance()->getConnection();
         $stmt = $pdo->prepare(
-            'SELECT p.*, f.numero AS facture_numero, e.nom AS eleve_nom
-             FROM finance_payments p
-             LEFT JOIN finance_invoices f ON f.id=p.invoice_id
+            'SELECT p.*, p.reference_externe AS reference, e.etablissement_id,
+                    f.numero AS facture_numero, e.nom AS eleve_nom,
+                    mp.code AS mode_paiement, r.numero AS recu_numero
+             FROM finance_paiements p
+             LEFT JOIN finance_factures f ON f.id=p.facture_id
              LEFT JOIN eleves e ON e.id=f.eleve_id
-             WHERE p.id=:id AND p.etablissement_id=:etab LIMIT 1'
+             LEFT JOIN finance_modes_paiement mp ON mp.id = p.mode_paiement_id
+             LEFT JOIN finance_recus r ON r.paiement_id = p.id
+             WHERE p.id=:id AND e.etablissement_id=:etab LIMIT 1'
         );
         $stmt->execute([':id' => $id, ':etab' => $etab]);
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);

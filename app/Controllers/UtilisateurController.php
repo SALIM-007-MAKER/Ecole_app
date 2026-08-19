@@ -94,6 +94,10 @@ class UtilisateurController extends Controller
         if (!in_array($role, UserModel::allRoles(), true)) {
             $errors['role'][] = 'Rôle invalide.';
         }
+        // Seul un admin peut créer un autre compte admin.
+        if ($role === 'admin' && ($this->currentUser()['role'] ?? '') !== 'admin') {
+            $errors['role'][] = 'Seul un administrateur peut attribuer le rôle administrateur.';
+        }
         if ($password !== $confirm) {
             $errors['password_confirmation'][] = 'Les mots de passe ne correspondent pas.';
         }
@@ -169,6 +173,13 @@ class UtilisateurController extends Controller
 
         if (!in_array($role, UserModel::allRoles(), true)) {
             $errors['role'][] = 'Rôle invalide.';
+        }
+        // Seul un admin peut accorder ou retirer le rôle admin — sans ce
+        // contrôle, un directeur (qui possède déjà users.edit) peut
+        // s'auto-promouvoir admin ou modifier un compte admin existant.
+        $actingRole = $this->currentUser()['role'] ?? '';
+        if ($actingRole !== 'admin' && ($role === 'admin' || $user->role === 'admin')) {
+            $errors['role'][] = 'Seul un administrateur peut attribuer ou modifier le rôle administrateur.';
         }
         if (empty($errors['email']) && $this->userModel->emailExistsForOther($email, $userId)) {
             $errors['email'][] = 'Cet email est déjà utilisé par un autre compte.';

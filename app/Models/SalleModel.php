@@ -45,6 +45,6 @@ class SalleModel extends Model
             $sql    .= ' AND id != ?';
             $params[] = $exceptId;
         }
-        return $this->queryOne($sql, $params) === null;
+        return $this->queryOne($sql, $params) === false;
     }
 }

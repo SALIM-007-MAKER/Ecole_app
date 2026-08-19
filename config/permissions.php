@@ -13,20 +13,27 @@ return [
         'notes.view', 'notes.create', 'notes.edit', 'notes.delete', 'notes.view_own',
         'absences.view', 'absences.create', 'absences.edit', 'absences.view_own',
         'bulletins.view',
-        'comptabilite.view', 'comptabilite.create', 'comptabilite.edit',
         'emploi_du_temps.view', 'emploi_du_temps.create', 'emploi_du_temps.edit',
         'annonces.view', 'annonces.create', 'annonces.edit', 'annonces.delete',
         'notifications.manage',
         'users.view', 'users.create', 'users.edit', 'users.delete',
         'rapports.view',
-        // ── Branding & Paramètres établissement (Phase 14.5) ─────────────────────
+        // ── Paramètres — centre de configuration métier (T026) ───────────────────
+        // Établissement & Apparence réutilisent branding.* ; Année scolaire réutilise
+        // settings.general.* ; Matières et Utilisateurs réutilisent matieres.view/users.view.
         'branding.view', 'branding.update',
-        // ── Domaines personnalisés (Phase 14.7) ───────────────────────────────────
-        'domains.view', 'domains.manage',
-        // ── Stockage & Quotas (Phase 14.8) ─────────────────────────────────────────
-        'quota.view',
-        // ── Cache & Files d'attente (Phase 14.9) ───────────────────────────────────
-        'monitoring.view',
+        'settings.general.view', 'settings.general.update',
+        'settings.academique.view', 'settings.academique.update',
+        'settings.notation.view', 'settings.notation.update',
+        'settings.finances.view', 'settings.finances.update',
+        'settings.documents.view', 'settings.documents.update',
+        'settings.notifications.view', 'settings.notifications.update',
+        'settings.securite.view', 'settings.securite.update',
+        'settings.sauvegarde.view', 'settings.sauvegarde.update',
+        'settings.avance.view', 'settings.avance.update',
+        // Domaines personnalisés, Stockage & Quotas, Monitoring & Cache : retirés du
+        // périmètre établissement (T026) — réservés à l'Administration de la
+        // plateforme (Core\Platform\PlatformAuth, Super Administrateur uniquement).
         // ── Finance V2 ──────────────────────────────────────────────────────────
         'finance.dashboard.view',
         'finance.frais.view', 'finance.frais.manage', 'finance.frais.admin',
@@ -45,8 +52,8 @@ return [
         'familles.view', 'familles.manage',
         // ── Académique V2 ───────────────────────────────────────────────────────
         'academique.periodes.view', 'academique.periodes.manage',
-        'academique.evaluations.view', 'academique.evaluations.manage',
-        'academique.notes.view', 'academique.notes.manage',
+        'academique.evaluations.view', 'academique.evaluations.manage', 'academique.evaluations.admin',
+        'academique.notes.view', 'academique.notes.manage', 'academique.notes.admin',
         'academique.moyennes.view', 'academique.moyennes.recalcul',
         'academique.classement.view', 'academique.classement.generer',
         'academique.bulletin.view', 'academique.bulletin.generer', 'academique.bulletin.publier',
@@ -128,20 +135,27 @@ return [
         'notes.view', 'notes.create', 'notes.edit', 'notes.delete',
         'absences.view', 'absences.create', 'absences.edit',
         'bulletins.view',
-        'comptabilite.view', 'comptabilite.create', 'comptabilite.edit',
         'emploi_du_temps.view', 'emploi_du_temps.create', 'emploi_du_temps.edit',
         'annonces.view', 'annonces.create', 'annonces.edit', 'annonces.delete',
         'notifications.manage',
         'users.view', 'users.create', 'users.edit',
         'rapports.view',
-        // ── Branding & Paramètres établissement (Phase 14.5) ─────────────────────
+        // ── Paramètres — centre de configuration métier (T026) ───────────────────
+        // Établissement & Apparence réutilisent branding.* ; Année scolaire réutilise
+        // settings.general.* ; Matières et Utilisateurs réutilisent matieres.view/users.view.
         'branding.view', 'branding.update',
-        // ── Domaines personnalisés (Phase 14.7) ───────────────────────────────────
-        'domains.view', 'domains.manage',
-        // ── Stockage & Quotas (Phase 14.8) ─────────────────────────────────────────
-        'quota.view',
-        // ── Cache & Files d'attente (Phase 14.9) ───────────────────────────────────
-        'monitoring.view',
+        'settings.general.view', 'settings.general.update',
+        'settings.academique.view', 'settings.academique.update',
+        'settings.notation.view', 'settings.notation.update',
+        'settings.finances.view', 'settings.finances.update',
+        'settings.documents.view', 'settings.documents.update',
+        'settings.notifications.view', 'settings.notifications.update',
+        'settings.securite.view', 'settings.securite.update',
+        'settings.sauvegarde.view', 'settings.sauvegarde.update',
+        'settings.avance.view', 'settings.avance.update',
+        // Domaines personnalisés, Stockage & Quotas, Monitoring & Cache : retirés du
+        // périmètre établissement (T026) — réservés à l'Administration de la
+        // plateforme (Core\Platform\PlatformAuth, Super Administrateur uniquement).
         // ── Finance V2 ──────────────────────────────────────────────────────────
         'finance.dashboard.view',
         'finance.frais.view', 'finance.frais.manage', 'finance.frais.admin',
@@ -156,8 +170,8 @@ return [
         'finance.rapports.view', 'finance.rapports.export',
         // ── Académique V2 ───────────────────────────────────────────────────────
         'academique.periodes.view', 'academique.periodes.manage',
-        'academique.evaluations.view', 'academique.evaluations.manage',
-        'academique.notes.view', 'academique.notes.manage',
+        'academique.evaluations.view', 'academique.evaluations.manage', 'academique.evaluations.admin',
+        'academique.notes.view', 'academique.notes.manage', 'academique.notes.admin',
         'academique.moyennes.view', 'academique.moyennes.recalcul',
         'academique.classement.view', 'academique.classement.generer',
         'academique.bulletin.view', 'academique.bulletin.generer', 'academique.bulletin.publier',
@@ -243,7 +257,6 @@ return [
         'classes.view', 'matieres.view',
         'notes.view', 'bulletins.view',
         'absences.view', 'absences.create', 'absences.edit',
-        'comptabilite.view', 'comptabilite.create',
         'emploi_du_temps.view',
         'annonces.view', 'annonces.create', 'annonces.edit', 'annonces.delete',
         'rapports.view',
@@ -320,7 +333,6 @@ return [
     ],
     'comptable' => [
         'eleves.view', 'classes.view', 'matieres.view', 'enseignants.view', 'rapports.view',
-        'comptabilite.view', 'comptabilite.create', 'comptabilite.edit',
         'annonces.view',
         // ── Finance V2 ──────────────────────────────────────────────────────────
         'finance.dashboard.view',
@@ -328,7 +340,8 @@ return [
         'finance.factures.view', 'finance.factures.emettre',
         'finance.paiements.view', 'finance.paiements.create',
         'finance.paiements.annuler', 'finance.paiements.trop_percu',
-        'finance.decaissements.view', 'finance.decaissements.valider', 'finance.decaissements.approuver',
+        'finance.decaissements.view', 'finance.decaissements.valider',
+        'finance.decaissements.approuver', 'finance.decaissements.rejeter',
         'finance.caisse.view', 'finance.caisse.ouvrir', 'finance.caisse.fermer', 'finance.caisse.rapprocher',
         'finance.comptabilite.view', 'finance.comptabilite.saisir',
         'finance.rapports.view', 'finance.rapports.export',
@@ -370,6 +383,11 @@ return [
         'academique.notes.view', 'academique.notes.manage',
         'academique.evaluations.view', 'academique.evaluations.manage',
         'academique.bulletin.view',
+        // Écrans de résultats (ResultatsController) — parité avec l'accès V1
+        // équivalent (bulletins.view/notes.view, déjà accordés ci-dessous),
+        // sans quoi l'enseignant perdrait l'accès aux écrans classe/
+        // classement/moyennes en migrant vers les routes V2.
+        'academique.moyennes.view', 'academique.classement.view',
         // ── Vie Scolaire V2 ─────────────────────────────────────────────────────
         'attendance.view', 'attendance.create', 'attendance.validate',
         'attendance.session.view', 'attendance.session.create',
@@ -454,6 +472,8 @@ return [
         'notes.view_own', 'absences.view_own', 'bulletins.view',
         'emploi_du_temps.view_own',
         'annonces.view',
+        // ── Finance V2 ──────────────────────────────────────────────────────────
+        'finance.paiements.view.own',
         // ── Académique V2 ───────────────────────────────────────────────────────
         'academique.bulletin.view',
         // ── Vie Scolaire V2 ─────────────────────────────────────────────────────

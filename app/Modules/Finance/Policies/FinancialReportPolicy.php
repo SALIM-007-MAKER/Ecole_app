@@ -6,19 +6,19 @@ class FinancialReportPolicy
 {
     public function canView(array $user): bool
     {
-        return in_array('finance.reports.view', $user['permissions'] ?? [], true)
+        return in_array('finance.rapports.view', $user['permissions'] ?? [], true)
             || $this->canExport($user)
             || $this->canPrint($user);
     }
 
     public function canExport(array $user): bool
     {
-        return in_array('finance.reports.export', $user['permissions'] ?? [], true);
+        return in_array('finance.rapports.export', $user['permissions'] ?? [], true);
     }
 
     public function canPrint(array $user): bool
     {
-        return in_array('finance.reports.print', $user['permissions'] ?? [], true)
+        return in_array('finance.rapports.print', $user['permissions'] ?? [], true)
             || $this->canExport($user);
     }
 

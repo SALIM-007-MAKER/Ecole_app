@@ -7,17 +7,6 @@ function fPermV2(array $u, string $p): bool {
 }
 $canManage = fPermV2($user, 'familles.manage');
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title><?= htmlspecialchars($title) ?></title>
-    <?php include BASE_PATH . '/app/Views/layouts/head_assets.php'; ?>
-</head>
-<body class="bg-slate-50 text-slate-800">
-<?php include BASE_PATH . '/app/Views/layouts/sidebar.php'; ?>
-
-<main class="ml-64 p-6 min-h-screen">
     <div class="max-w-7xl mx-auto">
 
         <!-- En-tête -->
@@ -202,8 +191,6 @@ $canManage = fPermV2($user, 'familles.manage');
         <?php endif; ?>
 
     </div>
-</main>
-
 <!-- Modal archivage -->
 <div id="archiveModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40">
     <div class="bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4">
@@ -216,7 +203,7 @@ $canManage = fPermV2($user, 'familles.manage');
             <button onclick="document.getElementById('archiveModal').classList.add('hidden')"
                     class="px-4 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50">Annuler</button>
             <form id="archiveForm" method="POST">
-                <input type="hidden" name="csrf_token" value="<?= \Core\Session::getCsrfToken() ?>">
+                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                 <button type="submit"
                         class="px-4 py-2 text-sm bg-amber-600 hover:bg-amber-700 text-white rounded-lg">
                     Archiver
@@ -225,7 +212,6 @@ $canManage = fPermV2($user, 'familles.manage');
         </div>
     </div>
 </div>
-
 <script>
 function confirmArchive(id, nom) {
     document.getElementById('archiveNom').textContent = nom;
@@ -233,7 +219,3 @@ function confirmArchive(id, nom) {
     document.getElementById('archiveModal').classList.remove('hidden');
 }
 </script>
-
-<?php include BASE_PATH . '/app/Views/layouts/footer_assets.php'; ?>
-</body>
-</html>

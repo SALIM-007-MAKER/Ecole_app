@@ -1,17 +1,8 @@
 <?php /** @var array $fournisseur */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title><?= htmlspecialchars($fournisseur['nom']) ?> — Fournisseurs</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-4xl mx-auto px-4 py-6">
     <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-3">
-            <a href="/v2/inventaire/fournisseurs" class="text-slate-500 hover:text-slate-700">
+            <a href="<?= BASE_URL ?>/v2/inventaire/fournisseurs" class="text-slate-500 hover:text-slate-700">
                 <i data-lucide="arrow-left" class="w-5 h-5"></i>
             </a>
             <div>
@@ -22,7 +13,7 @@
                 </span>
             </div>
         </div>
-        <a href="/v2/inventaire/fournisseurs/<?=$fournisseur['id']?>/modifier"
+        <a href="<?= BASE_URL ?>/v2/inventaire/fournisseurs/<?=$fournisseur['id']?>/modifier"
            class="inline-flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-lg hover:bg-violet-700 text-sm font-medium">
             <i data-lucide="pencil" class="w-4 h-4"></i> Modifier
         </a>
@@ -62,7 +53,7 @@
 
         <?php if ($fournisseur['statut'] !== 'bloque'): ?>
         <div class="mt-6 pt-4 border-t flex justify-end">
-            <form method="POST" action="/v2/inventaire/fournisseurs/<?=$fournisseur['id']?>/bloquer">
+            <form method="POST" action="<?= BASE_URL ?>/v2/inventaire/fournisseurs/<?=$fournisseur['id']?>/bloquer">
                 <input type="hidden" name="_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                 <button type="submit"
                         onclick="return confirm('Bloquer ce fournisseur ?')"
@@ -75,5 +66,3 @@
     </div>
 </div>
 <script>lucide.createIcons();</script>
-</body>
-</html>

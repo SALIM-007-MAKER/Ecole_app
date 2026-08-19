@@ -15,7 +15,7 @@ class ClasseModel extends Model
     public function findByAnnee(string $anneeScolaire): array
     {
         return $this->query(
-            'SELECT * FROM `classes` WHERE `annee_scolaire` = ? ORDER BY `niveau`, `nom`',
+            'SELECT * FROM `classes` WHERE `annee_scolaire` = ? ORDER BY ' . \App\Models\ClasseModel::ordreNiveauSql() . ', `nom`',
             [$anneeScolaire]
         );
     }

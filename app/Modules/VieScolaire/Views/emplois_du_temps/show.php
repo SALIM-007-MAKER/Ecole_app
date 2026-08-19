@@ -1,5 +1,4 @@
 <?php $title = 'EDT — ' . ($edt['classe_nom'] ?? ''); ?>
-<?php ob_start(); ?>
 
 <?php
 $joursLabels = ['', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
@@ -23,8 +22,9 @@ $statutEdt = match($edt['statut']) {
   <!-- En-tête -->
   <div class="flex items-start justify-between gap-4">
     <div class="flex items-center gap-3">
-      <a href="/v2/vie-scolaire/emplois-du-temps" class="text-slate-400 hover:text-slate-600">
-        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+      <a href="<?= BASE_URL ?>/v2/vie-scolaire/emplois-du-temps"
+         class="inline-flex items-center gap-2 px-3 py-1.5 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 text-sm transition-colors flex-shrink-0">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i> Retour
       </a>
       <div>
         <h1 class="text-2xl font-bold text-slate-800">
@@ -41,22 +41,22 @@ $statutEdt = match($edt['statut']) {
     </div>
     <div class="flex gap-2 flex-wrap">
       <?php if ($policy->canModifyEdt($user, $edt)): ?>
-        <a href="/v2/vie-scolaire/emplois-du-temps/<?= $edt['id'] ?>/creneaux/ajouter"
+        <a href="<?= BASE_URL ?>/v2/vie-scolaire/emplois-du-temps/<?= $edt['id'] ?>/creneaux/ajouter"
            class="inline-flex items-center gap-1 bg-violet-600 hover:bg-violet-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition">
           <i data-lucide="plus" class="w-4 h-4"></i> Ajouter créneau
         </a>
       <?php endif; ?>
       <?php if ($policy->canPublishEdt($user, $edt)): ?>
-        <form method="POST" action="/v2/vie-scolaire/emplois-du-temps/<?= $edt['id'] ?>/publier"
+        <form method="POST" action="<?= BASE_URL ?>/v2/vie-scolaire/emplois-du-temps/<?= $edt['id'] ?>/publier"
               onsubmit="return confirm('Publier cet emploi du temps ?')">
-          <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+          <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
           <button type="submit" class="inline-flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition">
             <i data-lucide="send" class="w-4 h-4"></i> Publier
           </button>
         </form>
       <?php endif; ?>
       <?php if (in_array('timetable.export', $user['permissions'] ?? [])): ?>
-        <a href="/v2/vie-scolaire/emplois-du-temps/export?classe_id=<?= $edt['classe_id'] ?>&annee=<?= $edt['annee_scolaire'] ?>"
+        <a href="<?= BASE_URL ?>/v2/vie-scolaire/emplois-du-temps/export?classe_id=<?= $edt['classe_id'] ?>&annee=<?= $edt['annee_scolaire'] ?>"
            class="inline-flex items-center gap-1 border border-slate-300 text-slate-600 hover:bg-slate-50 px-3 py-1.5 rounded-lg text-sm font-medium transition">
           <i data-lucide="download" class="w-4 h-4"></i> Export CSV
         </a>
@@ -65,18 +65,6 @@ $statutEdt = match($edt['statut']) {
   </div>
 
   <!-- Flash -->
-  <?php if (!empty($_SESSION['flash_success'])): ?>
-    <div class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm">
-      <?= htmlspecialchars($_SESSION['flash_success']) ?>
-      <?php unset($_SESSION['flash_success']); ?>
-    </div>
-  <?php endif; ?>
-  <?php if (!empty($_SESSION['flash_error'])): ?>
-    <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">
-      <?= $_SESSION['flash_error'] ?>
-      <?php unset($_SESSION['flash_error']); ?>
-    </div>
-  <?php endif; ?>
 
   <!-- Grille visuelle -->
   <div class="bg-white border border-slate-200 rounded-xl overflow-x-auto">
@@ -111,9 +99,9 @@ $statutEdt = match($edt['statut']) {
                     <?php endif; ?>
                     <?php if ($policy->canModifyEdt($user, $edt)): ?>
                       <div class="hidden group-hover:flex gap-1 mt-1">
-                        <form method="POST" action="/v2/vie-scolaire/emplois-du-temps/creneaux/<?= $cr['id'] ?>/supprimer"
+                        <form method="POST" action="<?= BASE_URL ?>/v2/vie-scolaire/emplois-du-temps/creneaux/<?= $cr['id'] ?>/supprimer"
                               onsubmit="return confirm('Supprimer ce créneau ?')" class="inline">
-                          <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+                          <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                           <button type="submit" class="text-red-500 hover:text-red-700 p-0.5 rounded" title="Supprimer">
                             <i data-lucide="trash-2" class="w-3 h-3"></i>
                           </button>
@@ -167,5 +155,3 @@ $statutEdt = match($edt['statut']) {
 
 </div>
 
-<?php $content = ob_get_clean(); ?>
-<?php include base_path('app/Views/layouts/app.php'); ?>

@@ -1,16 +1,7 @@
 <?php /** @var array|null $fournisseur @var string|null $error */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title><?= $fournisseur ? 'Modifier fournisseur' : 'Nouveau fournisseur' ?> — Inventaire</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-2xl mx-auto px-4 py-6">
     <div class="flex items-center gap-3 mb-6">
-        <a href="/v2/inventaire/fournisseurs" class="text-slate-500 hover:text-slate-700">
+        <a href="<?= BASE_URL ?>/v2/inventaire/fournisseurs" class="text-slate-500 hover:text-slate-700">
             <i data-lucide="arrow-left" class="w-5 h-5"></i>
         </a>
         <h1 class="text-2xl font-bold text-slate-800">
@@ -77,7 +68,7 @@
         </div>
 
         <div class="flex justify-end gap-3 pt-2">
-            <a href="/v2/inventaire/fournisseurs" class="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">Annuler</a>
+            <a href="<?= BASE_URL ?>/v2/inventaire/fournisseurs" class="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">Annuler</a>
             <button type="submit" class="bg-violet-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-violet-700">
                 <?= $fournisseur ? 'Enregistrer' : 'Créer' ?>
             </button>
@@ -85,5 +76,3 @@
     </form>
 </div>
 <script>lucide.createIcons();</script>
-</body>
-</html>

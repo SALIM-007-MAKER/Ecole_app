@@ -197,6 +197,30 @@ class AbsenceModel extends Model
         }
     }
 
+    // ─── Saisie manuelle (formulaire /absences/create) ────────────────────────
+
+    public function storeManuelle(
+        int     $eleveId,
+        int     $classeId,
+        string  $date,
+        string  $session,
+        ?int    $creneauId,
+        string  $type,
+        ?int    $dureeRetard,
+        ?string $motif,
+        int     $userId
+    ): void {
+        $this->execute(
+            "INSERT INTO `absences`
+                (eleve_id, classe_id, date_absence, session, creneau_id, type, duree_retard, motif, signale_par, etablissement_id)
+             VALUES (?,?,?,?,?,?,?,?,?,?)
+             ON DUPLICATE KEY UPDATE
+                creneau_id=VALUES(creneau_id), type=VALUES(type), duree_retard=VALUES(duree_retard),
+                motif=VALUES(motif), updated_at=NOW()",
+            [$eleveId, $classeId, $date, $session, $creneauId, $type, $dureeRetard, $motif, $userId, $this->tenantId()]
+        );
+    }
+
     // ─── Trouver une absence avec jointures ───────────────────────────────────
 
     public function findWithDetails(int $id): ?\stdClass

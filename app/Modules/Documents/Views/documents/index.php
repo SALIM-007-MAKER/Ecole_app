@@ -14,11 +14,11 @@ $titre = 'Documents';
       </p>
     </div>
     <div class="flex gap-2">
-      <a href="/v2/documents/search" class="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 text-sm">
+      <a href="<?= BASE_URL ?>/v2/documents/search" class="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 text-sm">
         Recherche avancée
       </a>
       <?php if ($canCreate): ?>
-      <a href="/v2/documents/create" class="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 text-sm font-medium">
+      <a href="<?= BASE_URL ?>/v2/documents/create" class="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 text-sm font-medium">
         + Nouveau document
       </a>
       <?php endif; ?>
@@ -45,7 +45,7 @@ $titre = 'Documents';
       <option value="expire" <?= $filters->statut === 'expire' ? 'selected' : '' ?>>Expiré</option>
     </select>
     <button type="submit" class="px-4 py-2 bg-slate-700 text-white rounded-lg text-sm">Filtrer</button>
-    <a href="/v2/documents" class="px-4 py-2 text-slate-500 hover:text-slate-700 text-sm">Réinitialiser</a>
+    <a href="<?= BASE_URL ?>/v2/documents" class="px-4 py-2 text-slate-500 hover:text-slate-700 text-sm">Réinitialiser</a>
   </form>
 
   <!-- Tableau -->
@@ -92,7 +92,7 @@ $titre = 'Documents';
             <?= date('d/m/Y', strtotime($doc['created_at'])) ?>
           </td>
           <td class="px-4 py-3 text-right">
-            <a href="/v2/documents/<?= $doc['id'] ?>" class="text-violet-600 hover:text-violet-800 font-medium">Voir</a>
+            <a href="<?= BASE_URL ?>/v2/documents/<?= $doc['id'] ?>" class="text-violet-600 hover:text-violet-800 font-medium">Voir</a>
           </td>
         </tr>
         <?php endforeach; ?>

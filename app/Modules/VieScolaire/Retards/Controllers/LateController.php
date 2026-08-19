@@ -7,18 +7,25 @@ use App\Modules\VieScolaire\Retards\DTO\LateFiltersDTO;
 use App\Modules\VieScolaire\Retards\DTO\LateJustificationDTO;
 use App\Modules\VieScolaire\Retards\Policies\LatePolicy;
 use App\Modules\VieScolaire\Retards\Services\LateService;
+use App\Services\UploadService;
+use App\Shared\Auth\EleveScopeTrait;
 use Core\Controller;
 use Core\View;
 
 class LateController extends Controller
 {
-    private LateService $service;
-    private LatePolicy  $policy;
+    use EleveScopeTrait;
+
+    private LateService   $service;
+    private LatePolicy    $policy;
+    private UploadService $uploadService;
 
     public function __construct()
     {
-        $this->service = new LateService();
-        $this->policy  = new LatePolicy();
+        parent::__construct();
+        $this->service       = new LateService();
+        $this->policy        = new LatePolicy();
+        $this->uploadService = new UploadService();
     }
 
     public function index(): void
@@ -26,9 +33,15 @@ class LateController extends Controller
         $this->requirePermission('late.view');
         $user    = $this->currentUser();
         $filters = LateFiltersDTO::fromRequest($_GET);
+
+        $scope = $this->myEleveIds();
+        if ($scope !== null) {
+            $filters = $filters->withEleveIds($scope);
+        }
+
         $result  = $this->service->paginate($filters);
 
-        View::render('VieScolaire::retards/index', [
+        $this->view->render('VieScolaire::retards/index', [
             'retards'  => $result['data'],
             'total'    => $result['total'],
             'page'     => $result['page'],
@@ -44,9 +57,11 @@ class LateController extends Controller
         $this->requirePermission('late.create');
 
         $classes = (new \App\Models\ClasseModel())->findAll();
+        $eleves  = (new \App\Models\EleveModel())->findAll('nom', 'ASC');
 
-        View::render('VieScolaire::retards/create', [
+        $this->view->render('VieScolaire::retards/create', [
             'classes' => $classes,
+            'eleves'  => $eleves,
             'user'    => $this->currentUser(),
         ]);
     }
@@ -63,17 +78,17 @@ class LateController extends Controller
         if (!empty($errors)) {
             $_SESSION['errors']    = $errors;
             $_SESSION['old_input'] = $_POST;
-            header('Location: /v2/vie-scolaire/retards/create');
+            $this->redirect('/v2/vie-scolaire/retards/create');
             exit;
         }
 
         try {
             $retardId = $this->service->enregistrerManuellement($dto, (int)$user['id']);
-            $_SESSION['flash_success'] = 'Retard enregistré avec succès.';
-            header("Location: /v2/vie-scolaire/retards/{$retardId}");
+            \Core\Session::flash('success', 'Retard enregistré avec succès.');
+            $this->redirect("/v2/vie-scolaire/retards/{$retardId}");
         } catch (\Throwable $e) {
-            $_SESSION['flash_error'] = $e->getMessage();
-            header('Location: /v2/vie-scolaire/retards/create');
+            \Core\Session::flash('error', $e->getMessage());
+            $this->redirect('/v2/vie-scolaire/retards/create');
         }
         exit;
     }
@@ -85,14 +100,15 @@ class LateController extends Controller
         $retard = $this->service->findById((int)$id);
         if ($retard === null) {
             http_response_code(404);
-            View::render('errors/404');
+            $this->view->render('errors/404', [], 'none');
             return;
         }
+        $this->assertOwnEleve((int)$retard['eleve_id']);
 
         $repo     = new \App\Modules\VieScolaire\Retards\Repositories\LateRepository();
         $justif   = $repo->findJustificationByRetard((int)$id);
 
-        View::render('VieScolaire::retards/show', [
+        $this->view->render('VieScolaire::retards/show', [
             'retard'      => $retard,
             'justif'      => $justif,
             'policy'      => $this->policy,
@@ -110,19 +126,19 @@ class LateController extends Controller
         $retard = $this->service->findById((int)$id);
         if ($retard === null) {
             http_response_code(404);
-            View::render('errors/404');
+            $this->view->render('errors/404', [], 'none');
             return;
         }
 
         if (!$this->policy->canModifyRetard($user, $retard)) {
-            $_SESSION['flash_error'] = 'Ce retard ne peut plus être modifié.';
-            header("Location: /v2/vie-scolaire/retards/{$id}");
+            \Core\Session::flash('error', 'Ce retard ne peut plus être modifié.');
+            $this->redirect("/v2/vie-scolaire/retards/{$id}");
             exit;
         }
 
         $classes = (new \App\Models\ClasseModel())->findAll();
 
-        View::render('VieScolaire::retards/edit', [
+        $this->view->render('VieScolaire::retards/edit', [
             'retard'  => $retard,
             'classes' => $classes,
             'user'    => $user,
@@ -138,23 +154,23 @@ class LateController extends Controller
         $retard = $this->service->findById((int)$id);
         if ($retard === null) {
             http_response_code(404);
-            View::render('errors/404');
+            $this->view->render('errors/404', [], 'none');
             return;
         }
 
         if (!$this->policy->canModifyRetard($user, $retard)) {
-            $_SESSION['flash_error'] = 'Ce retard ne peut plus être modifié.';
-            header("Location: /v2/vie-scolaire/retards/{$id}");
+            \Core\Session::flash('error', 'Ce retard ne peut plus être modifié.');
+            $this->redirect("/v2/vie-scolaire/retards/{$id}");
             exit;
         }
 
         try {
             $this->service->mettreAJour((int)$id, $_POST, (int)$user['id']);
-            $_SESSION['flash_success'] = 'Retard mis à jour.';
-            header("Location: /v2/vie-scolaire/retards/{$id}");
+            \Core\Session::flash('success', 'Retard mis à jour.');
+            $this->redirect("/v2/vie-scolaire/retards/{$id}");
         } catch (\Throwable $e) {
-            $_SESSION['flash_error'] = $e->getMessage();
-            header("Location: /v2/vie-scolaire/retards/{$id}/edit");
+            \Core\Session::flash('error', $e->getMessage());
+            $this->redirect("/v2/vie-scolaire/retards/{$id}/edit");
         }
         exit;
     }
@@ -166,11 +182,12 @@ class LateController extends Controller
         $retard = $this->service->findById((int)$id);
         if ($retard === null) {
             http_response_code(404);
-            View::render('errors/404');
+            $this->view->render('errors/404', [], 'none');
             return;
         }
+        $this->assertOwnEleve((int)$retard['eleve_id']);
 
-        View::render('VieScolaire::retards/justifier', [
+        $this->view->render('VieScolaire::retards/justifier', [
             'retard' => $retard,
             'user'   => $user,
         ]);
@@ -181,15 +198,29 @@ class LateController extends Controller
         $this->requirePermission('late.justify');
         $this->verifyCsrf();
 
-        $user = $this->currentUser();
+        $user   = $this->currentUser();
+        $retard = $this->service->findById((int)$id);
+        if ($retard === null) {
+            http_response_code(404);
+            $this->view->render('errors/404', [], 'none');
+            return;
+        }
+        $this->assertOwnEleve((int)$retard['eleve_id']);
 
         $uploadedFile = null;
         if (!empty($_FILES['fichier_justificatif']['tmp_name'])) {
-            $ext      = pathinfo($_FILES['fichier_justificatif']['name'], PATHINFO_EXTENSION);
-            $filename = 'retard_' . (int)$id . '_' . time() . '.' . $ext;
-            $dest     = __DIR__ . '/../../../../../../public/uploads/retards/' . $filename;
-            if (move_uploaded_file($_FILES['fichier_justificatif']['tmp_name'], $dest)) {
-                $uploadedFile = '/public/uploads/retards/' . $filename;
+            $validation = $this->uploadService->validate($_FILES['fichier_justificatif'], 'justification_retard');
+            if (!$validation['ok']) {
+                $_SESSION['errors'] = ['fichier_justificatif' => $validation['errors']];
+                $this->redirect("/v2/vie-scolaire/retards/{$id}/justifier");
+                exit;
+            }
+            try {
+                $uploadedFile = $this->uploadService->upload($_FILES['fichier_justificatif'], 'justification_retard', 'retard_' . (int)$id . '_');
+            } catch (\Throwable $e) {
+                $_SESSION['errors'] = ['fichier_justificatif' => [$e->getMessage()]];
+                $this->redirect("/v2/vie-scolaire/retards/{$id}/justifier");
+                exit;
             }
         }
 
@@ -198,17 +229,17 @@ class LateController extends Controller
 
         if (!empty($errors)) {
             $_SESSION['errors'] = $errors;
-            header("Location: /v2/vie-scolaire/retards/{$id}/justifier");
+            $this->redirect("/v2/vie-scolaire/retards/{$id}/justifier");
             exit;
         }
 
         try {
             $this->service->soumettreJustification((int)$id, $dto, (int)$user['id']);
-            $_SESSION['flash_success'] = 'Justification soumise avec succès.';
-            header("Location: /v2/vie-scolaire/retards/{$id}");
+            \Core\Session::flash('success', 'Justification soumise avec succès.');
+            $this->redirect("/v2/vie-scolaire/retards/{$id}");
         } catch (\Throwable $e) {
-            $_SESSION['flash_error'] = $e->getMessage();
-            header("Location: /v2/vie-scolaire/retards/{$id}/justifier");
+            \Core\Session::flash('error', $e->getMessage());
+            $this->redirect("/v2/vie-scolaire/retards/{$id}/justifier");
         }
         exit;
     }
@@ -222,12 +253,12 @@ class LateController extends Controller
 
         try {
             $this->service->validerJustification((int)$id, (int)$user['id']);
-            $_SESSION['flash_success'] = 'Justification validée.';
+            \Core\Session::flash('success', 'Justification validée.');
         } catch (\Throwable $e) {
-            $_SESSION['flash_error'] = $e->getMessage();
+            \Core\Session::flash('error', $e->getMessage());
         }
 
-        header("Location: /v2/vie-scolaire/retards/{$id}");
+        $this->redirect("/v2/vie-scolaire/retards/{$id}");
         exit;
     }
 
@@ -240,19 +271,19 @@ class LateController extends Controller
         $motifRefus = trim($_POST['motif_refus'] ?? '');
 
         if (empty($motifRefus)) {
-            $_SESSION['flash_error'] = 'Le motif de refus est obligatoire.';
-            header("Location: /v2/vie-scolaire/retards/{$id}");
+            \Core\Session::flash('error', 'Le motif de refus est obligatoire.');
+            $this->redirect("/v2/vie-scolaire/retards/{$id}");
             exit;
         }
 
         try {
             $this->service->refuserJustification((int)$id, $motifRefus, (int)$user['id']);
-            $_SESSION['flash_success'] = 'Justification refusée.';
+            \Core\Session::flash('success', 'Justification refusée.');
         } catch (\Throwable $e) {
-            $_SESSION['flash_error'] = $e->getMessage();
+            \Core\Session::flash('error', $e->getMessage());
         }
 
-        header("Location: /v2/vie-scolaire/retards/{$id}");
+        $this->redirect("/v2/vie-scolaire/retards/{$id}");
         exit;
     }
 
@@ -265,12 +296,12 @@ class LateController extends Controller
 
         try {
             $this->service->archiver((int)$id, (int)$user['id']);
-            $_SESSION['flash_success'] = 'Retard archivé.';
+            \Core\Session::flash('success', 'Retard archivé.');
         } catch (\Throwable $e) {
-            $_SESSION['flash_error'] = $e->getMessage();
+            \Core\Session::flash('error', $e->getMessage());
         }
 
-        header('Location: /v2/vie-scolaire/retards');
+        $this->redirect('/v2/vie-scolaire/retards');
         exit;
     }
 
@@ -286,7 +317,7 @@ class LateController extends Controller
             ? $this->service->statistiquesClasse($classeId, $annee)
             : [];
 
-        View::render('VieScolaire::retards/statistiques', [
+        $this->view->render('VieScolaire::retards/statistiques', [
             'stats'    => $stats,
             'classes'  => $classes,
             'classeId' => $classeId,

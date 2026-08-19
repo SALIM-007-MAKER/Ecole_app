@@ -11,7 +11,9 @@ class TeacherAssigned extends Event
         public readonly string $matricule,
         public readonly array  $matieres,
         public readonly int    $assigneParId,
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

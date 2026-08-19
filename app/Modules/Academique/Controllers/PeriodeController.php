@@ -2,11 +2,13 @@
 
 namespace App\Modules\Academique\Controllers;
 
+use App\Modules\Academique\DTO\PeriodeConfigDTO;
 use App\Modules\Academique\DTO\PeriodeScolaireDTO;
 use App\Modules\Academique\DTO\PeriodeScolaireFiltersDTO;
 use App\Modules\Academique\Models\PeriodeScolaireModel;
 use App\Modules\Academique\Policies\PeriodePolicy;
 use App\Modules\Academique\Repositories\PeriodeScolaireRepository;
+use App\Modules\Academique\Services\PeriodeConfigService;
 use App\Modules\Academique\Services\PeriodeScolaireService;
 use Core\Controller;
 use Core\Session;
@@ -15,14 +17,16 @@ class PeriodeController extends Controller
 {
     private PeriodeScolaireRepository $repo;
     private PeriodeScolaireService    $service;
+    private PeriodeConfigService      $configService;
     private PeriodePolicy             $policy;
 
     public function __construct()
     {
         parent::__construct();
-        $this->repo    = new PeriodeScolaireRepository();
-        $this->service = new PeriodeScolaireService();
-        $this->policy  = new PeriodePolicy();
+        $this->repo          = new PeriodeScolaireRepository();
+        $this->service       = new PeriodeScolaireService();
+        $this->configService = new PeriodeConfigService();
+        $this->policy        = new PeriodePolicy();
     }
 
     // ─── Liste ───────────────────────────────────────────────────────────────
@@ -37,6 +41,11 @@ class PeriodeController extends Controller
         $annees     = $this->repo->listAnneesScolaires();
         $user       = $this->currentUser();
 
+        $couverture = null;
+        if (!empty($filters->anneeScolaire)) {
+            $couverture = $this->service->verifierCouverture($filters->anneeScolaire);
+        }
+
         $this->render('Academique::periodes/index', [
             'title'      => 'Périodes Scolaires',
             'pagination' => $pagination,
@@ -45,6 +54,7 @@ class PeriodeController extends Controller
             'annees'     => $annees,
             'types'      => PeriodeScolaireModel::TYPE_LABELS,
             'statuts'    => PeriodeScolaireModel::STATUT_LABELS,
+            'couverture' => $couverture,
             'perms'      => $user['permissions'] ?? [],
             'policy'     => $this->policy,
             'user'       => $user,
@@ -89,6 +99,9 @@ class PeriodeController extends Controller
             'title'   => 'Nouvelle période scolaire',
             'periode' => null,
             'types'   => PeriodeScolaireModel::TYPE_LABELS,
+            'statuts' => PeriodeScolaireModel::STATUT_LABELS,
+            'user'    => $this->currentUser(),
+            'policy'  => $this->policy,
             'errors'  => Session::getFlash('errors', []),
             'old'     => Session::getFlash('old', []),
         ]);
@@ -120,6 +133,74 @@ class PeriodeController extends Controller
         }
     }
 
+    // ─── Génération automatique (modèle par défaut Niger) ───────────────────
+
+    public function generer(): void
+    {
+        $this->requirePermission('academique.periodes.manage');
+        $this->verifyCsrf();
+
+        $annee = trim($_POST['annee_scolaire'] ?? '');
+
+        try {
+            $user     = $this->currentUser();
+            $resultat = $this->service->genererParDefaut($annee, (int)$user['id']);
+
+            $nbCrees = count($resultat['crees']);
+            if ($nbCrees > 0) {
+                Session::flash('success', "{$nbCrees} période(s) générée(s) pour {$annee} à partir du modèle par défaut.");
+            }
+            if (!empty($resultat['ignores'])) {
+                Session::flash('error', 'Ignoré(s) : ' . implode(' · ', $resultat['ignores']));
+            }
+        } catch (\RuntimeException $e) {
+            Session::flash('error', $e->getMessage());
+        }
+
+        $this->redirect(BASE_URL . '/v2/academique/periodes?annee_scolaire=' . urlencode($annee));
+    }
+
+    // ─── Configuration du modèle par défaut ─────────────────────────────────
+
+    public function configIndex(): void
+    {
+        $this->requirePermission('academique.periodes.admin');
+
+        $this->render('Academique::periodes/config', [
+            'title'    => 'Modèle par défaut des périodes',
+            'template' => $this->configService->getTemplate(),
+            'errors'   => Session::getFlash('errors', []),
+        ]);
+    }
+
+    public function configUpdate(): void
+    {
+        $this->requirePermission('academique.periodes.admin');
+        $this->verifyCsrf();
+
+        $user   = $this->currentUser();
+        $errors = [];
+
+        foreach ((array)($_POST['config'] ?? []) as $numero => $data) {
+            $dto        = PeriodeConfigDTO::fromRequest((int)$numero, $data);
+            $lignErrors = $dto->validate();
+            if (!empty($lignErrors)) {
+                $errors[$numero] = $lignErrors;
+                continue;
+            }
+            $this->configService->mettreAJour((int)$numero, $dto, (int)$user['id']);
+        }
+
+        if (!empty($errors)) {
+            Session::flash('errors', $errors);
+            Session::flash('error', 'Certaines lignes du modèle par défaut sont invalides et n\'ont pas été enregistrées.');
+        } else {
+            Session::flash('success', 'Modèle par défaut mis à jour.');
+        }
+
+        $this->redirect(BASE_URL . '/v2/academique/periodes/config');
+    }
+
     // ─── Édition ─────────────────────────────────────────────────────────────
 
     public function edit(string $id): void
@@ -141,6 +222,9 @@ class PeriodeController extends Controller
             'title'   => 'Modifier — ' . $periode->nom,
             'periode' => $periode,
             'types'   => PeriodeScolaireModel::TYPE_LABELS,
+            'statuts' => PeriodeScolaireModel::STATUT_LABELS,
+            'user'    => $user,
+            'policy'  => $this->policy,
             'errors'  => Session::getFlash('errors', []),
             'old'     => Session::getFlash('old', []),
         ]);
@@ -163,7 +247,14 @@ class PeriodeController extends Controller
 
         $this->verifyCsrf();
 
-        $dto    = PeriodeScolaireDTO::fromRequest($_POST);
+        $isAdmin = $this->policy->canEditStatutDirectement($user);
+
+        $postData = $_POST;
+        if (!$isAdmin) {
+            unset($postData['statut']);
+        }
+
+        $dto    = PeriodeScolaireDTO::fromRequest($postData);
         $errors = $dto->validate();
 
         if (!empty($errors)) {
@@ -171,8 +262,6 @@ class PeriodeController extends Controller
             Session::flash('old', $_POST);
             $this->redirect(BASE_URL . '/v2/academique/periodes/' . $periodeId . '/edit');
         }
-
-        $isAdmin = in_array('academique.periodes.admin', $user['permissions'] ?? [], true);
 
         try {
             $this->service->modifier($periodeId, $dto, (int)$user['id'], $isAdmin);
@@ -203,15 +292,47 @@ class PeriodeController extends Controller
         $this->redirect(BASE_URL . '/v2/academique/periodes/' . $id);
     }
 
-    public function fermer(string $id): void
+    public function ouvrir(string $id): void
     {
         $this->requirePermission('academique.periodes.manage');
         $this->verifyCsrf();
 
         try {
             $user = $this->currentUser();
-            $this->service->fermer((int)$id, (int)$user['id']);
-            Session::flash('success', "Période fermée. La saisie de notes est désormais bloquée.");
+            $this->service->ouvrir((int)$id, (int)$user['id']);
+            Session::flash('success', "Période ouverte.");
+        } catch (\RuntimeException $e) {
+            Session::flash('error', $e->getMessage());
+        }
+
+        $this->redirect(BASE_URL . '/v2/academique/periodes/' . $id);
+    }
+
+    public function cloturer(string $id): void
+    {
+        $this->requirePermission('academique.periodes.manage');
+        $this->verifyCsrf();
+
+        try {
+            $user = $this->currentUser();
+            $this->service->cloturer((int)$id, (int)$user['id']);
+            Session::flash('success', "Période clôturée. La saisie de notes est désormais bloquée.");
+        } catch (\RuntimeException $e) {
+            Session::flash('error', $e->getMessage());
+        }
+
+        $this->redirect(BASE_URL . '/v2/academique/periodes/' . $id);
+    }
+
+    public function reouvrir(string $id): void
+    {
+        $this->requirePermission('academique.periodes.admin');
+        $this->verifyCsrf();
+
+        try {
+            $user = $this->currentUser();
+            $this->service->reouvrir((int)$id, (int)$user['id']);
+            Session::flash('success', "Période réouverte.");
         } catch (\RuntimeException $e) {
             Session::flash('error', $e->getMessage());
         }

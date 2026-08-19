@@ -1,12 +1,4 @@
 <?php /** @var array $notifications @var int $total @var int $page @var int $unread */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title><?= htmlspecialchars($titre ?? 'Notifications') ?></title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-3xl mx-auto py-8 px-4">
 
   <div class="flex items-center justify-between mb-6">
@@ -78,7 +70,7 @@ async function markRead(id) {
 }
 
 async function markAllRead() {
-  await fetch('/v2/notifications/read-all', {method:'POST', headers:{'X-CSRF-Token':csrf}});
+  await fetch('<?= BASE_URL ?>/v2/notifications/read-all', {method:'POST', headers:{'X-CSRF-Token':csrf}});
   location.reload();
 }
 
@@ -88,5 +80,3 @@ async function deleteNotif(id) {
   document.getElementById('notif-' + id)?.remove();
 }
 </script>
-</body>
-</html>

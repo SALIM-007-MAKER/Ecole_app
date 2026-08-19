@@ -28,9 +28,9 @@ class ImpayesWidget extends BaseWidget
                         SUM(montant_total - COALESCE(montant_paye,0)) AS montant_total,
                         SUM(CASE WHEN date_echeance < CURDATE() THEN 1 ELSE 0 END) AS nb_en_retard
                  FROM finance_factures
-                 WHERE etablissement_id=? AND statut IN ("emise","partielle") AND deleted_at IS NULL'
+                 WHERE statut IN ("emise","partiellement_payee","en_retard")'
             );
-            $stmt->execute([$etab]);
+            $stmt->execute();
             $row = $stmt->fetch(\PDO::FETCH_ASSOC);
             return [
                 'nb'           => (int)($row['nb'] ?? 0),

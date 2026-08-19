@@ -120,7 +120,7 @@ class FraisRepository
              FROM `finance_tarifs` ft
              LEFT JOIN `classes` c ON c.id = ft.classe_id
              WHERE ft.frais_type_id = ?
-             ORDER BY ft.annee_scolaire DESC, ft.niveau, c.nom"
+             ORDER BY ft.annee_scolaire DESC, " . \App\Models\ClasseModel::ordreNiveauSql('ft.niveau') . ", c.nom"
         );
         $stmt->execute([$fraisTypeId]);
         return $stmt->fetchAll(PDO::FETCH_OBJ);

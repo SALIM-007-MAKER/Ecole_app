@@ -251,7 +251,7 @@ class EmployeeRepository
     public function findUsers(): array
     {
         $stmt = $this->pdo->query(
-            "SELECT id, CONCAT(prenom, ' ', nom, ' (', email, ')') AS label, role
+            "SELECT id, CONCAT(COALESCE(prenom, ''), ' ', COALESCE(nom, ''), ' (', COALESCE(email, ''), ')') AS label, role
              FROM users WHERE actif = 1 ORDER BY nom, prenom"
         );
         return $stmt->fetchAll(PDO::FETCH_ASSOC);

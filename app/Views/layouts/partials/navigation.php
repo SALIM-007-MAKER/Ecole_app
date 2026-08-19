@@ -31,8 +31,10 @@ if (empty($menus)): ?>
             <?php
             $groupActive = ($item['id'] ?? null) !== null && $item['id'] === $activeGroupId;
             ?>
-            <button class="nav-item<?= $groupActive ? ' nav-active' : '' ?>"
+            <button class="nav-item<?= $groupActive ? ' nav-active group-open' : '' ?>"
                     data-group="<?= htmlspecialchars($item['id'] ?? '', ENT_QUOTES) ?>"
+                    data-default-open="<?= $groupActive ? 'true' : 'false' ?>"
+                    title="<?= htmlspecialchars($item['label'] ?? '', ENT_QUOTES) ?>"
                     aria-expanded="<?= $groupActive ? 'true' : 'false' ?>">
                 <i class="fa-solid <?= htmlspecialchars(MenuService::getMenuIconClass($item['icon'] ?? 'chevron-right'), ENT_QUOTES) ?>"></i>
                 <span class="nav-item-text"><?= htmlspecialchars($item['label'] ?? '', ENT_QUOTES) ?></span>

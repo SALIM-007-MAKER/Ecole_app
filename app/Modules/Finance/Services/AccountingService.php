@@ -21,9 +21,6 @@ class AccountingService implements AccountingInterface
     private AccountingRepository $repo;
     private AuditService         $audit;
 
-    private const CASH_MODES = ['ESP', 'OM', 'WAVE', 'MOOV'];
-    private const BANK_MODES = ['CHQ', 'VIR', 'CB'];
-
     public function __construct()
     {
         $this->repo  = new AccountingRepository();
@@ -32,7 +29,7 @@ class AccountingService implements AccountingInterface
 
     // ── Entrées automatiques depuis les événements ────────────────────────────
 
-    public function enregistrerDepuisPaiement(PaymentCompleted $e): void
+    public function enregistrerDepuisPaiement(PaymentCompleted $e, ?string $dateEcriture = null): void
     {
         $regle = $this->resoudreReglePaiement($e->modePaiement);
 
@@ -56,6 +53,7 @@ class AccountingService implements AccountingInterface
                 ['compte' => $regle->compte_credit_code, 'libelle' => "Frais scolaires {$e->numero}", 'debit' => 0.0,     'credit' => $montant],
             ],
             userId:      $e->completedById,
+            dateStr:     $dateEcriture,
         );
     }
 
@@ -66,7 +64,7 @@ class AccountingService implements AccountingInterface
         }
 
         $mode = $this->repo->findPaiementMode($e->paiementId) ?? 'ESP';
-        $typeSource = in_array($mode, self::CASH_MODES, true) ? 'refund_esp' : 'refund_bnq';
+        $typeSource = $this->repo->findModeCategorie($mode) === 'caisse' ? 'refund_esp' : 'refund_bnq';
         $regle = $this->repo->findRegle($typeSource);
         if (!$regle) {
             throw new \DomainException("Règle comptable '{$typeSource}' introuvable.");
@@ -487,13 +485,11 @@ class AccountingService implements AccountingInterface
 
     private function resoudreReglePaiement(string $modePaiement): object
     {
-        if (in_array($modePaiement, self::CASH_MODES, true)) {
-            $typeSource = 'payment_esp';
-        } elseif (in_array($modePaiement, self::BANK_MODES, true)) {
-            $typeSource = 'payment_bnq';
-        } else {
-            $typeSource = 'payment_avoir';
-        }
+        $typeSource = match ($this->repo->findModeCategorie($modePaiement)) {
+            'caisse' => 'payment_esp',
+            'banque' => 'payment_bnq',
+            default  => 'payment_avoir',
+        };
 
         $regle = $this->repo->findRegle($typeSource);
         if (!$regle) {

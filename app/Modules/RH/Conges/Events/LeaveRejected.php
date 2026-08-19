@@ -16,7 +16,9 @@ class LeaveRejected extends Event
         public readonly string $dateFin,
         public readonly string $motifRejet,
         public readonly int    $rejectedBy
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

@@ -2,6 +2,8 @@
 
 namespace App\Modules\Academique\DTO;
 
+use App\Modules\Academique\Models\PeriodeScolaireModel;
+
 class PeriodeScolaireDTO
 {
     public function __construct(
@@ -12,6 +14,9 @@ class PeriodeScolaireDTO
         public readonly ?string $dateDebut,
         public readonly ?string $dateFin,
         public readonly int     $ordre,
+        /** Édition directe et libre du statut par un administrateur.
+         *  NULL = non fourni (création normale : statut géré par le service). */
+        public readonly ?string $statut = null,
     ) {}
 
     public static function fromRequest(array $data): self
@@ -23,6 +28,9 @@ class PeriodeScolaireDTO
         $dateDebut     = trim($data['date_debut']      ?? '') ?: null;
         $dateFin       = trim($data['date_fin']        ?? '') ?: null;
         $ordre         = (int)($data['ordre']           ?? 0);
+        $statut        = array_key_exists('statut', $data) && trim((string)$data['statut']) !== ''
+            ? trim((string)$data['statut'])
+            : null;
 
         if ($nom === '' && $anneeScolaire !== '' && $typePeriode !== '') {
             $labels = self::typeLabels();
@@ -30,12 +38,12 @@ class PeriodeScolaireDTO
             $nom = $typeLabel . ' ' . $numero . ' — ' . $anneeScolaire;
         }
 
-        return new self($anneeScolaire, $typePeriode, $numero, $nom, $dateDebut, $dateFin, $ordre);
+        return new self($anneeScolaire, $typePeriode, $numero, $nom, $dateDebut, $dateFin, $ordre, $statut);
     }
 
     public function toArray(): array
     {
-        return [
+        $data = [
             'annee_scolaire'       => $this->anneeScolaire,
             'type_periode'         => $this->typePeriode,
             'numero'               => $this->numero,
@@ -44,6 +52,10 @@ class PeriodeScolaireDTO
             'date_fin'             => $this->dateFin,
             'ordre'                => $this->ordre,
         ];
+        if ($this->statut !== null) {
+            $data['statut'] = $this->statut;
+        }
+        return $data;
     }
 
     public function validate(): array
@@ -88,9 +100,20 @@ class PeriodeScolaireDTO
             $errors['ordre'][] = "L'ordre doit être compris entre 0 et 99.";
         }
 
+        if ($this->statut !== null && !in_array($this->statut, PeriodeScolaireModel::STATUTS, true)) {
+            $errors['statut'][] = 'Statut invalide.';
+        }
+
         return $errors;
     }
 
+    /**
+     * Types de période autorisés à la création/modification. Le système
+     * officiel du Niger (trimestre) reste le défaut, 'custom' couvre les
+     * besoins ponctuels, et 'semestre' est proposé pour les établissements
+     * fonctionnant en 2 semestres + moyenne annuelle (ex : bulletin CSP
+     * La Persévérance) — voir PeriodeScolaireModel::TYPES.
+     */
     public static function typeLabels(): array
     {
         return [
@@ -100,24 +123,16 @@ class PeriodeScolaireDTO
         ];
     }
 
+    /** @deprecated Utiliser PeriodeScolaireModel::STATUT_LABELS (source unique). */
     public static function statutLabels(): array
     {
-        return [
-            'ouverte'      => 'Ouverte',
-            'fermee'       => 'Fermée',
-            'verrouillee'  => 'Verrouillée',
-            'archivee'     => 'Archivée',
-        ];
+        return PeriodeScolaireModel::STATUT_LABELS;
     }
 
+    /** @deprecated Utiliser PeriodeScolaireModel::STATUT_COLORS (source unique). */
     public static function statutColors(): array
     {
-        return [
-            'ouverte'      => 'emerald',
-            'fermee'       => 'amber',
-            'verrouillee'  => 'red',
-            'archivee'     => 'slate',
-        ];
+        return PeriodeScolaireModel::STATUT_COLORS;
     }
 
     private function isValidDate(string $date): bool

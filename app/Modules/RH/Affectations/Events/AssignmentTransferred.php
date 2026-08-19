@@ -15,7 +15,9 @@ class AssignmentTransferred extends Event
         public readonly array  $to,     // [poste_id, departement_id, service_id, responsable_id]
         public readonly string $motif,
         public readonly int    $transferredBy
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

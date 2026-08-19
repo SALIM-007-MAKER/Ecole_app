@@ -72,7 +72,7 @@ async function purger(id) {
 
 async function viderCorbeille() {
   if (!confirm('Vider toute la corbeille ? Cette action est irréversible.')) return;
-  const r = await fetch('/v2/trash/purge-all', {method:'POST', headers:{'X-CSRF-Token': csrf}});
+  const r = await fetch('<?= BASE_URL ?>/v2/trash/purge-all', {method:'POST', headers:{'X-CSRF-Token': csrf}});
   const d = await r.json();
   if (d.success) location.reload();
 }

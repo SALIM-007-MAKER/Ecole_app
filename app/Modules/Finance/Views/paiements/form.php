@@ -78,19 +78,19 @@ if ($facture) {
 
     <!-- Formulaire -->
     <form method="POST" action="<?= BASE_URL ?>/v2/finance/paiements" class="bg-white rounded-xl border border-slate-200 p-6 space-y-5">
-        <?php echo csrf_field() ?? '<input type="hidden" name="csrf_token" value="' . ($_SESSION['csrf_token'] ?? '') . '">'; ?>
+        <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
         <input type="hidden" name="facture_id" value="<?= $old_v('facture_id', $facture->id ?? '') ?>">
 
         <!-- Montant -->
         <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">
-                Montant versé <span class="text-red-500">*</span>
+            <label class="form-label">
+                Montant versé <span class="form-required">*</span>
             </label>
             <div class="relative">
                 <input type="number" name="montant" id="montant"
                        value="<?= $old_v('montant', $montantRestant ?? '') ?>"
                        min="0.01" step="0.01" required
-                       class="w-full pl-3 pr-16 py-2.5 border <?= isset($errors['montant']) ? 'border-red-400 bg-red-50' : 'border-slate-300' ?> rounded-lg text-sm focus:ring-2 focus:ring-violet-300 focus:border-violet-400">
+                       class="form-input <?= isset($errors['montant']) ? 'is-invalid' : '' ?> pl-3 pr-16">
                 <span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-500">XOF</span>
             </div>
             <?php if (isset($errors['montant'])): ?>
@@ -102,11 +102,11 @@ if ($facture) {
 
         <!-- Mode de paiement -->
         <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">
-                Mode de paiement <span class="text-red-500">*</span>
+            <label class="form-label">
+                Mode de paiement <span class="form-required">*</span>
             </label>
             <select name="mode_paiement" id="mode_paiement" required
-                    class="w-full px-3 py-2.5 border <?= isset($errors['mode_paiement']) ? 'border-red-400 bg-red-50' : 'border-slate-300' ?> rounded-lg text-sm focus:ring-2 focus:ring-violet-300 focus:border-violet-400"
+                    class="form-select <?= isset($errors['mode_paiement']) ? 'is-invalid' : '' ?>"
                     onchange="toggleModeFields(this.value)">
                 <option value="">— Sélectionner —</option>
                 <?php foreach ($modes as $m): ?>
@@ -122,11 +122,11 @@ if ($facture) {
 
         <!-- Référence externe (CHQ / VIR) -->
         <div id="field_reference" class="hidden">
-            <label class="block text-sm font-medium text-slate-700 mb-1">
+            <label class="form-label">
                 Référence / N° chèque-virement <span class="text-red-500" id="ref_required_star">*</span>
             </label>
             <input type="text" name="reference_externe" value="<?= $old_v('reference_externe') ?>"
-                   class="w-full px-3 py-2.5 border <?= isset($errors['reference_externe']) ? 'border-red-400 bg-red-50' : 'border-slate-300' ?> rounded-lg text-sm focus:ring-2 focus:ring-violet-300 focus:border-violet-400"
+                   class="form-select <?= isset($errors['reference_externe']) ? 'is-invalid' : '' ?>"
                    placeholder="Ex : CHQ-00123">
             <?php if (isset($errors['reference_externe'])): ?>
             <p class="mt-1 text-xs text-red-600"><?= htmlspecialchars($errors['reference_externe']) ?></p>
@@ -136,10 +136,10 @@ if ($facture) {
         <!-- Avoir (mode AVOIR) -->
         <?php if ($avoirsDisponibles): ?>
         <div id="field_avoir" class="hidden">
-            <label class="block text-sm font-medium text-slate-700 mb-1">
-                Avoir à utiliser <span class="text-red-500">*</span>
+            <label class="form-label">
+                Avoir à utiliser <span class="form-required">*</span>
             </label>
-            <select name="avoir_id" class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-violet-300">
+            <select name="avoir_id" class="form-select">
                 <option value="">— Sélectionner un avoir —</option>
                 <?php foreach ($avoirsDisponibles as $av): ?>
                 <option value="<?= $av->id ?>" <?= $old_v('avoir_id') == $av->id ? 'selected' : '' ?>>
@@ -156,8 +156,8 @@ if ($facture) {
         <!-- Échéance ciblée -->
         <?php if ($echeancier && !empty($echeancier->echeances)): ?>
         <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Imputer sur une échéance (optionnel)</label>
-            <select name="echeance_id" class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-violet-300">
+            <label class="form-label">Imputer sur une échéance (optionnel)</label>
+            <select name="echeance_id" class="form-select">
                 <option value="">— Paiement global —</option>
                 <?php foreach ($echeancier->echeances as $ech): if ($ech->statut === 'payee') continue; ?>
                 <option value="<?= $ech->id ?>" <?= $old_v('echeance_id') == $ech->id ? 'selected' : '' ?>>
@@ -170,16 +170,16 @@ if ($facture) {
 
         <!-- Date -->
         <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Date du paiement</label>
+            <label class="form-label">Date du paiement</label>
             <input type="date" name="date_paiement" value="<?= $old_v('date_paiement', date('Y-m-d')) ?>"
-                   class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-violet-300 focus:border-violet-400">
+                   class="form-input">
         </div>
 
         <!-- Note -->
         <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Note interne (optionnel)</label>
+            <label class="form-label">Note interne (optionnel)</label>
             <textarea name="note" rows="2"
-                      class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-violet-300 focus:border-violet-400"
+                      class="form-textarea"
                       placeholder="Observations…"><?= $old_v('note') ?></textarea>
         </div>
 

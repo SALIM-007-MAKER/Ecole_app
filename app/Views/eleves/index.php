@@ -15,13 +15,15 @@ function buildQuery(array $base, array $override = []): string {
 ?>
 
 <!-- Page header -->
-<div class="flex flex-wrap items-center justify-between gap-4 mb-6">
-    <div>
-        <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+<div class="flex flex-wrap items-start justify-between gap-4 mb-6">
+    <div class="flex items-start gap-4">
+        <div class="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
             <i data-lucide="users" class="w-5 h-5 text-violet-600"></i>
-            Gestion des élèves
-        </h2>
-        <p class="text-sm text-slate-500 mt-0.5"><?= $stats['total'] ?? 0 ?> élève(s) enregistré(s)</p>
+        </div>
+        <div>
+            <h2 class="text-xl font-bold text-slate-900">Gestion des élèves</h2>
+            <p class="text-sm text-slate-500 mt-0.5"><?= $stats['total'] ?? 0 ?> élève(s) enregistré(s)</p>
+        </div>
     </div>
     <div class="flex items-center gap-2 flex-wrap">
         <?php if (ep($perms,'eleves.create')): ?>
@@ -168,6 +170,7 @@ function buildQuery(array $base, array $override = []): string {
                     <th>Sexe</th>
                     <th>Naissance</th>
                     <th>Classe</th>
+                    <th>Parent responsable</th>
                     <th>Téléphone</th>
                     <th class="text-center">Statut</th>
                     <th class="text-right col-actions">Actions</th>
@@ -213,6 +216,23 @@ function buildQuery(array $base, array $override = []): string {
                     </span>
                     <?php else: ?>
                     <span class="text-slate-300 text-sm">—</span>
+                    <?php endif; ?>
+                </td>
+                <td>
+                    <?php if (!empty($e->parent_nom) && trim($e->parent_nom) !== ''): ?>
+                    <div class="min-w-40">
+                        <div class="font-medium text-slate-700">
+                            <?= htmlspecialchars($e->parent_nom, ENT_QUOTES) ?>
+                        </div>
+                        <?php if (!empty($e->parent_telephone)): ?>
+                        <a href="tel:<?= htmlspecialchars($e->parent_telephone, ENT_QUOTES) ?>"
+                           class="text-xs text-slate-500 hover:text-violet-600">
+                            <?= htmlspecialchars($e->parent_telephone, ENT_QUOTES) ?>
+                        </a>
+                        <?php endif; ?>
+                    </div>
+                    <?php else: ?>
+                    <span class="text-slate-400 text-xs">Non affecté</span>
                     <?php endif; ?>
                 </td>
                 <td class="text-sm text-slate-500">

@@ -13,7 +13,9 @@ class CertificationExpired extends Event
         public readonly int    $employeId,
         public readonly string $certificationCode,
         public readonly string $dateExpiration
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

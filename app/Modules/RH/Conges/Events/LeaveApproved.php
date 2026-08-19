@@ -16,7 +16,9 @@ class LeaveApproved extends Event
         public readonly string $dateFin,
         public readonly float  $dureeJours,
         public readonly int    $approvedBy
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

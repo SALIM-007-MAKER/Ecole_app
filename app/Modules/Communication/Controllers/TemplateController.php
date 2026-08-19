@@ -93,7 +93,7 @@ class TemplateController extends Controller
             'template' => $template,
             'rendered' => $rendered,
             'titre'    => 'Aperçu template',
-        ]);
+        ], 'none');
     }
 
     public function destroy(int $id): void

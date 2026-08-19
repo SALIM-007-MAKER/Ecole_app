@@ -74,6 +74,7 @@ class NotificationLogModel extends Model
             "SELECT COUNT(*) AS total,
                     SUM(statut = 'envoye') AS ok,
                     SUM(statut = 'echoue') AS ko,
+                    SUM(statut = 'en_attente') AS attente,
                     SUM(DATE(created_at) = CURDATE()) AS today
              FROM `notification_logs`"
         );
@@ -94,10 +95,11 @@ class NotificationLogModel extends Model
         );
 
         return [
-            'total'     => (int)($global?->total ?? 0),
-            'ok'        => (int)($global?->ok    ?? 0),
-            'ko'        => (int)($global?->ko    ?? 0),
-            'today'     => (int)($global?->today ?? 0),
+            'total'     => (int)($global?->total   ?? 0),
+            'ok'        => (int)($global?->ok      ?? 0),
+            'ko'        => (int)($global?->ko      ?? 0),
+            'attente'   => (int)($global?->attente ?? 0),
+            'today'     => (int)($global?->today   ?? 0),
             'byCanal'   => $byCanal,
             'byTrigger' => $byTrigger,
         ];

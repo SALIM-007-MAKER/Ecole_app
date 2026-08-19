@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\RH\Affectations\Repositories;
 
 use PDO;
-use App\Core\Database;
+use Core\Database;
 use App\Modules\RH\Affectations\DTO\AssignmentFiltersDTO;
 
 class AssignmentRepository
@@ -329,7 +329,7 @@ class AssignmentRepository
             'total_enseignants_affectes' => (int)$this->pdo->query(
                 "SELECT COUNT(DISTINCT a.employe_id) FROM rh_affectations a
                  JOIN rh_employes e ON e.id = a.employe_id
-                 WHERE a.statut = 'active' AND a.deleted_at IS NULL AND e.type = 'enseignant'"
+                 WHERE a.statut = 'active' AND a.deleted_at IS NULL AND e.type_personnel = 'enseignant'"
             )->fetchColumn(),
 
             'total_matieres_actives' => (int)$this->pdo->query(
@@ -343,7 +343,7 @@ class AssignmentRepository
     public function findEmployes(): array
     {
         return $this->pdo->query(
-            "SELECT id, CONCAT(prenom,' ',nom,' (',matricule,')') AS label, type
+            "SELECT id, CONCAT(prenom,' ',nom,' (',matricule,')') AS label, type_personnel AS type
              FROM rh_employes WHERE deleted_at IS NULL ORDER BY nom, prenom"
         )->fetchAll(PDO::FETCH_ASSOC);
     }

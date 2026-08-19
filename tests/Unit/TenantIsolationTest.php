@@ -85,7 +85,7 @@ try {
     TenantContext::set($etabA);
     $classeModel = new ClasseModel();
     $classeAId = $classeModel->insert([
-        'nom' => 'IsoTestA', 'niveau' => '1AS', 'annee_scolaire' => '2025-2026', 'max_eleves' => 30,
+        'nom' => 'IsoTestA', 'niveau' => 'Seconde', 'annee_scolaire' => '2025-2026', 'max_eleves' => 30,
     ]);
     $eleveModel = new EleveModel();
     $eleveAId = $eleveModel->insert([
@@ -95,7 +95,7 @@ try {
 
     TenantContext::set($etabB);
     $classeBId = $classeModel->insert([
-        'nom' => 'IsoTestB', 'niveau' => '1AS', 'annee_scolaire' => '2025-2026', 'max_eleves' => 30,
+        'nom' => 'IsoTestB', 'niveau' => 'Seconde', 'annee_scolaire' => '2025-2026', 'max_eleves' => 30,
     ]);
     $eleveBId = $eleveModel->insert([
         'matricule' => 'ISO-B-001', 'nom' => 'IsolationB', 'prenom' => 'Test',

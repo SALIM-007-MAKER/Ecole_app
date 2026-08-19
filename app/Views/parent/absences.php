@@ -74,10 +74,10 @@ function pAbsJustBadge(bool $j): string {
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
     <?php
     $kpis = [
-        ['val'=>(int)($stats['total']??0),     'label'=>'Total',         'icon'=>'calendar-x',    'bg'=>'bg-slate-100',    'ic'=>'text-slate-500'],
-        ['val'=>(int)($stats['absences']??0),   'label'=>'Absences',      'icon'=>'user-x',        'bg'=>'bg-red-100',      'ic'=>'text-red-500'],
-        ['val'=>(int)($stats['retards']??0),    'label'=>'Retards',       'icon'=>'clock',         'bg'=>'bg-amber-100',    'ic'=>'text-amber-600'],
-        ['val'=>(int)($stats['justifiees']??0), 'label'=>'Justifiées',    'icon'=>'check-circle',  'bg'=>'bg-emerald-100',  'ic'=>'text-emerald-600'],
+        ['val'=>(int)($stats->total ?? 0),     'label'=>'Total',         'icon'=>'calendar-x',    'bg'=>'bg-slate-100',    'ic'=>'text-slate-500'],
+        ['val'=>(int)($stats->absences ?? 0),   'label'=>'Absences',      'icon'=>'user-x',        'bg'=>'bg-red-100',      'ic'=>'text-red-500'],
+        ['val'=>(int)($stats->retards ?? 0),    'label'=>'Retards',       'icon'=>'clock',         'bg'=>'bg-amber-100',    'ic'=>'text-amber-600'],
+        ['val'=>(int)($stats->justifiees ?? 0), 'label'=>'Justifiées',    'icon'=>'check-circle',  'bg'=>'bg-emerald-100',  'ic'=>'text-emerald-600'],
     ];
     foreach ($kpis as $k): ?>
     <div class="rounded-xl border border-slate-200 bg-white shadow-sm">

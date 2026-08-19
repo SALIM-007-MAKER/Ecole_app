@@ -13,5 +13,20 @@ class AbsenceRejected extends Event
         public readonly int    $classeId,
         public readonly string $motifRefus,
         public readonly int    $rejeteParId,
-    ) {}
+    ) {
+        parent::__construct();
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'absence_id'       => $this->absenceId,
+            'justification_id' => $this->justificationId,
+            'eleve_id'         => $this->eleveId,
+            'classe_id'        => $this->classeId,
+            'motif_refus'      => $this->motifRefus,
+            'rejete_par_id'    => $this->rejeteParId,
+            'fired_at'         => $this->getFiredAt(),
+        ];
+    }
 }

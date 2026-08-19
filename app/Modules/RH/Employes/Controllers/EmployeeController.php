@@ -38,8 +38,8 @@ class EmployeeController extends Controller
             'stats'       => $stats,
             'departements'=> $departements,
             'filters'     => $filters,
-            'canCreate'   => $this->policy->canCreate($this->user),
-            'canExport'   => $this->policy->canExport($this->user),
+            'canCreate'   => $this->policy->canCreate($this->currentUser()),
+            'canExport'   => $this->policy->canExport($this->currentUser()),
         ]);
     }
 
@@ -61,9 +61,9 @@ class EmployeeController extends Controller
         $this->render('RH::employes/show', [
             'employe'  => $employe,
             'contacts' => $contacts,
-            'canUpdate'  => $this->policy->canUpdate($this->user),
-            'canArchive' => $this->policy->canArchive($this->user),
-            'canRestore' => $this->policy->canRestore($this->user),
+            'canUpdate'  => $this->policy->canUpdate($this->currentUser()),
+            'canArchive' => $this->policy->canArchive($this->currentUser()),
+            'canRestore' => $this->policy->canRestore($this->currentUser()),
         ]);
     }
 
@@ -102,7 +102,7 @@ class EmployeeController extends Controller
         }
 
         try {
-            $id = $this->service->creer($dto, $contacts, (int)$this->user['id']);
+            $id = $this->service->creer($dto, $contacts, (int)$this->currentUser()['id']);
             Session::flash('success', 'Employé créé avec succès.');
             $this->redirect("/v2/rh/employes/{$id}");
         } catch (\InvalidArgumentException $e) {
@@ -169,7 +169,7 @@ class EmployeeController extends Controller
         }
 
         try {
-            $this->service->modifier($id, $dto, $contacts, (int)$this->user['id']);
+            $this->service->modifier($id, $dto, $contacts, (int)$this->currentUser()['id']);
             Session::flash('success', 'Employé mis à jour avec succès.');
             $this->redirect("/v2/rh/employes/{$id}");
         } catch (\InvalidArgumentException | \RuntimeException $e) {
@@ -187,7 +187,7 @@ class EmployeeController extends Controller
         $this->verifyCsrf();
 
         try {
-            $this->service->archiver($id, (int)$this->user['id']);
+            $this->service->archiver($id, (int)$this->currentUser()['id']);
             Session::flash('success', 'Employé archivé.');
         } catch (\RuntimeException $e) {
             Session::flash('error', $e->getMessage());
@@ -204,7 +204,7 @@ class EmployeeController extends Controller
         $this->verifyCsrf();
 
         try {
-            $this->service->restaurer($id, (int)$this->user['id']);
+            $this->service->restaurer($id, (int)$this->currentUser()['id']);
             Session::flash('success', 'Employé restauré.');
             $this->redirect("/v2/rh/employes/{$id}");
         } catch (\RuntimeException $e) {
@@ -223,7 +223,7 @@ class EmployeeController extends Controller
         $statut = trim($_POST['statut'] ?? '');
 
         try {
-            $this->service->changerStatut($id, $statut, (int)$this->user['id']);
+            $this->service->changerStatut($id, $statut, (int)$this->currentUser()['id']);
             Session::flash('success', 'Statut mis à jour.');
         } catch (\InvalidArgumentException | \RuntimeException $e) {
             Session::flash('error', $e->getMessage());

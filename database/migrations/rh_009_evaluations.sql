@@ -8,7 +8,7 @@
 
 -- Campagnes d'évaluation
 CREATE TABLE IF NOT EXISTS rh_campagnes_evaluation (
-    id                      INT AUTO_INCREMENT PRIMARY KEY,
+    id                      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     code                    VARCHAR(50)  NOT NULL,
     libelle                 VARCHAR(255) NOT NULL,
     description             TEXT         NULL,
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS rh_campagnes_evaluation (
     date_limite_auto_eval   DATE         NULL,
     date_limite_eval        DATE         NULL,
     statut                  ENUM('brouillon','active','cloturee','archivee') DEFAULT 'brouillon',
-    created_by              INT          NOT NULL,
+    created_by              INT UNSIGNED NOT NULL,
     created_at              DATETIME     DEFAULT CURRENT_TIMESTAMP,
     updated_at              DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at              DATETIME     NULL,
@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS rh_campagnes_evaluation (
 
 -- Référentiel de critères
 CREATE TABLE IF NOT EXISTS rh_criteres_evaluation (
-    id          INT AUTO_INCREMENT PRIMARY KEY,
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     code        VARCHAR(50)  NOT NULL,
     libelle     VARCHAR(255) NOT NULL,
     description TEXT         NULL,
@@ -45,9 +45,9 @@ CREATE TABLE IF NOT EXISTS rh_criteres_evaluation (
 
 -- Critères associés à une campagne
 CREATE TABLE IF NOT EXISTS rh_campagne_criteres (
-    id             INT AUTO_INCREMENT PRIMARY KEY,
-    campagne_id    INT          NOT NULL,
-    critere_id     INT          NOT NULL,
+    id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    campagne_id    INT UNSIGNED NOT NULL,
+    critere_id     INT UNSIGNED NOT NULL,
     poids_override DECIMAL(5,2) NULL,
     obligatoire    TINYINT(1)   DEFAULT 1,
     ordre          TINYINT      DEFAULT 0,
@@ -58,11 +58,11 @@ CREATE TABLE IF NOT EXISTS rh_campagne_criteres (
 
 -- Évaluations (une par employé par campagne)
 CREATE TABLE IF NOT EXISTS rh_evaluations (
-    id                      INT AUTO_INCREMENT PRIMARY KEY,
-    campagne_id             INT          NOT NULL,
-    employe_id              INT          NOT NULL,
-    affectation_id          INT          NULL,
-    evaluateur_id           INT          NULL,
+    id                      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    campagne_id             INT UNSIGNED NOT NULL,
+    employe_id              INT UNSIGNED NOT NULL,
+    affectation_id          INT UNSIGNED NULL,
+    evaluateur_id           INT UNSIGNED NULL,
     evaluateur_nom          VARCHAR(120) NULL,
     statut                  ENUM('brouillon','en_auto_evaluation','en_evaluation','soumise','validee','publiee','archivee') DEFAULT 'brouillon',
     score_auto_eval         DECIMAL(5,2) NULL,
@@ -76,12 +76,12 @@ CREATE TABLE IF NOT EXISTS rh_evaluations (
     date_evaluation         DATETIME     NULL,
     date_validation         DATETIME     NULL,
     date_publication        DATETIME     NULL,
-    valide_par              INT          NULL,
+    valide_par              INT UNSIGNED NULL,
     valide_par_nom          VARCHAR(120) NULL,
-    publie_par              INT          NULL,
+    publie_par              INT UNSIGNED NULL,
     publie_par_nom          VARCHAR(120) NULL,
-    created_by              INT          NOT NULL,
-    updated_by              INT          NOT NULL,
+    created_by              INT UNSIGNED NOT NULL,
+    updated_by              INT UNSIGNED NOT NULL,
     created_at              DATETIME     DEFAULT CURRENT_TIMESTAMP,
     updated_at              DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at              DATETIME     NULL,
@@ -93,9 +93,9 @@ CREATE TABLE IF NOT EXISTS rh_evaluations (
 
 -- Scores par critère
 CREATE TABLE IF NOT EXISTS rh_evaluation_criteres (
-    id                      INT AUTO_INCREMENT PRIMARY KEY,
-    evaluation_id           INT          NOT NULL,
-    critere_id              INT          NOT NULL,
+    id                      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    evaluation_id           INT UNSIGNED NOT NULL,
+    critere_id              INT UNSIGNED NOT NULL,
     note_auto_eval          DECIMAL(4,2) NULL,
     note_evaluateur         DECIMAL(4,2) NULL,
     commentaire_auto_eval   TEXT         NULL,
@@ -107,13 +107,13 @@ CREATE TABLE IF NOT EXISTS rh_evaluation_criteres (
 
 -- Historique des transitions
 CREATE TABLE IF NOT EXISTS rh_evaluation_historique (
-    id               INT AUTO_INCREMENT PRIMARY KEY,
-    evaluation_id    INT          NOT NULL,
+    id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    evaluation_id    INT UNSIGNED NOT NULL,
     statut_avant     VARCHAR(30)  NULL,
     statut_apres     VARCHAR(30)  NOT NULL,
     action           VARCHAR(60)  NOT NULL,
     commentaire      TEXT         NULL,
-    effectue_par     INT          NOT NULL,
+    effectue_par     INT UNSIGNED NOT NULL,
     effectue_par_nom VARCHAR(120) NOT NULL,
     created_at       DATETIME     DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (evaluation_id) REFERENCES rh_evaluations(id) ON DELETE CASCADE
@@ -121,9 +121,9 @@ CREATE TABLE IF NOT EXISTS rh_evaluation_historique (
 
 -- Plans de développement
 CREATE TABLE IF NOT EXISTS rh_plans_developpement (
-    id            INT AUTO_INCREMENT PRIMARY KEY,
-    evaluation_id INT          NOT NULL,
-    employe_id    INT          NOT NULL,
+    id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    evaluation_id INT UNSIGNED NOT NULL,
+    employe_id    INT UNSIGNED NOT NULL,
     objectif      TEXT         NOT NULL,
     actions       TEXT         NULL,
     ressources    TEXT         NULL,
@@ -131,7 +131,7 @@ CREATE TABLE IF NOT EXISTS rh_plans_developpement (
     statut        ENUM('en_cours','realise','abandonne') DEFAULT 'en_cours',
     progression   TINYINT      DEFAULT 0,
     commentaire   TEXT         NULL,
-    created_by    INT          NOT NULL,
+    created_by    INT UNSIGNED NOT NULL,
     created_at    DATETIME     DEFAULT CURRENT_TIMESTAMP,
     updated_at    DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (evaluation_id) REFERENCES rh_evaluations(id) ON DELETE CASCADE,

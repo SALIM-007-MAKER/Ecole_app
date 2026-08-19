@@ -6,27 +6,16 @@ $parStatut = array_column($stats['par_statut'] ?? [], 'nb', 'statut');
 $parType   = array_column($stats['par_type']   ?? [], 'nb', 'type');
 $totalType = array_sum($parType) ?: 1;
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Statistiques contrats — EduNova</title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 text-slate-800 min-h-screen">
-<?php include dirname(__DIR__, 2) . '/layouts/sidebar.php'; ?>
-<main class="ml-64 p-8">
 
   <div class="flex items-center justify-between mb-8">
     <div>
       <div class="flex items-center gap-2 text-sm text-slate-500 mb-1">
-        <a href="/v2/rh/contrats" class="hover:text-violet-600">Contrats</a>
+        <a href="<?= BASE_URL ?>/v2/rh/contrats" class="hover:text-violet-600">Contrats</a>
         <span>/</span><span>Statistiques</span>
       </div>
       <h1 class="text-2xl font-bold text-slate-900">Statistiques des contrats</h1>
     </div>
-    <a href="/v2/rh/contrats" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm hover:bg-slate-200">← Retour</a>
+    <a href="<?= BASE_URL ?>/v2/rh/contrats" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm hover:bg-slate-200">← Retour</a>
   </div>
 
   <!-- KPIs -->
@@ -108,11 +97,7 @@ $totalType = array_sum($parType) ?: 1;
     <div class="mt-6 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-800 flex items-center gap-3">
       <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
       <span><strong><?= $stats['echeances_30'] ?> contrat(s)</strong> arrivent à échéance dans moins de 30 jours.
-        <a href="/v2/rh/contrats/echeances?jours=30" class="underline hover:text-red-900">Voir la liste →</a>
+        <a href="<?= BASE_URL ?>/v2/rh/contrats/echeances?jours=30" class="underline hover:text-red-900">Voir la liste →</a>
       </span>
     </div>
   <?php endif; ?>
-
-</main>
-</body>
-</html>

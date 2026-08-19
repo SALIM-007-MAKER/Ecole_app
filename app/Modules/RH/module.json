@@ -7,7 +7,7 @@
   "enabled": true,
   "routes": "app/Modules/RH/routes.php",
   "phase": "6.13",
-  "status": "FROZEN — 10 sous-domaines gelés, dépendance stable, aucune modification structurelle avant V2.1",
+  "status": "ACTIF — activé le 2026-07-11 (étape 2 unification V1/V2) après correction : migrations rh_004/rh_009/rh_010 réparées (syntaxe MariaDB-only, FK signed/unsigned), 45 events sans parent::__construct() corrigés, bugs runtime (namespace, propriété $this->user, colonnes SQL, vues introuvables, classe Core\\Csrf manquante) corrigés dans 7 domaines, pont rh_employes.professeur_id ↔ professeurs.id actif (9/9 enseignants V1 importés), menu câblé (admin/directeur/secrétaire complet, comptable restreint). Voir RH_MODULE_FREEZE.md pour l'historique de gel initial.",
   "depends": [],
   "migrations_done": [
     "Phase 6.2 — rh_001_organisation.sql (rh_departements, rh_postes)",
@@ -247,7 +247,7 @@
   "sql_migrations": [
     "database/migrations/rh_001_organisation.sql",
     "database/migrations/rh_002_employes.sql",
-    "database/migrations/rh_003_employes.sql",
+    "database/migrations/rh_003_enseignants.sql",
     "database/migrations/rh_004_organisation.sql",
     "database/migrations/rh_005_contrats.sql",
     "database/migrations/rh_006_affectations.sql",

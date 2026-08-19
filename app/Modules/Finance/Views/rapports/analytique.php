@@ -14,23 +14,10 @@
  */
 $fmt = fn(float $v) => number_format($v, 0, ',', ' ') . ' XOF';
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Rapport analytique — Finance V2</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
-    <script>tailwind.config={theme:{extend:{colors:{primary:'#7c3aed'}}}}</script>
-</head>
-<body class="bg-slate-50 min-h-screen">
-<?php include BASE_PATH . '/app/Modules/Finance/Views/partials/sidebar.php'; ?>
-
-<main class="ml-64 p-8">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
             <nav class="text-sm text-slate-400 mb-1">
-                <a href="/v2/finance/rapports" class="hover:text-violet-600">Rapports</a> / Analytique
+                <a href="<?= BASE_URL ?>/v2/finance/rapports" class="hover:text-violet-600">Rapports</a> / Analytique
             </nav>
             <h1 class="text-2xl font-bold text-slate-800">Rapport analytique</h1>
         </div>
@@ -52,7 +39,7 @@ $fmt = fn(float $v) => number_format($v, 0, ',', ' ') . ' XOF';
                 </select>
             </div>
             <button type="submit" class="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-violet-700">Actualiser</button>
-            <a href="/v2/finance/rapports/export?type=analytique&format=excel&<?= http_build_query($_GET) ?>"
+            <a href="<?= BASE_URL ?>/v2/finance/rapports/export?type=analytique&format=excel&<?= http_build_query($_GET) ?>"
                class="border border-slate-200 bg-white text-slate-700 px-4 py-2 rounded-lg text-sm hover:bg-slate-50 flex items-center gap-2">
                 <i data-lucide="table" class="w-4 h-4"></i> Excel
             </a>
@@ -120,12 +107,9 @@ $fmt = fn(float $v) => number_format($v, 0, ',', ' ') . ' XOF';
         </div>
         <?php endif; ?>
     </div>
-</main>
-
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <script>
 lucide.createIcons();
-
 const annees      = <?= json_encode(array_column($comparatifAnnuel, 'annee')) ?>;
 const recettes    = <?= json_encode(array_column($comparatifAnnuel, 'recettes')) ?>;
 const evoLabels   = <?= json_encode(array_column($evolution, 'mois_label')) ?>;
@@ -133,7 +117,6 @@ const evoData     = <?= json_encode(array_column($evolution, 'recettes')) ?>;
 const projLabels  = <?= json_encode(array_column($projectionMens, 'mois')) ?>;
 const projReelles = <?= json_encode(array_column($projectionMens, 'recettes_reelles')) ?>;
 const projTendance= <?= json_encode(array_column($projectionMens, 'tendance')) ?>;
-
 new Chart(document.getElementById('chartComparatif'), {
     type: 'bar',
     data: {
@@ -151,7 +134,6 @@ new Chart(document.getElementById('chartComparatif'), {
         scales: { y: { ticks: { callback: v => v.toLocaleString('fr') } } }
     }
 });
-
 if (evoData.length > 0) {
     new Chart(document.getElementById('chartEvolution'), {
         type: 'line',
@@ -169,7 +151,6 @@ if (evoData.length > 0) {
         options: { responsive: true, plugins: { legend: { display: false } } }
     });
 }
-
 if (projReelles.length > 0) {
     new Chart(document.getElementById('chartProjection'), {
         type: 'line',
@@ -184,5 +165,3 @@ if (projReelles.length > 0) {
     });
 }
 </script>
-</body>
-</html>

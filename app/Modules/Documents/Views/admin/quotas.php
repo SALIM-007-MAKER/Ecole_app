@@ -51,9 +51,9 @@ $titre = 'Administration — Quotas';
 
   <!-- Liens admin -->
   <div class="flex gap-4 text-sm">
-    <a href="/v2/documents/admin/expirations" class="text-violet-600 hover:text-violet-800 font-medium">Gérer les expirations →</a>
-    <a href="/v2/documents/admin/statistics" class="text-violet-600 hover:text-violet-800 font-medium">Statistiques →</a>
-    <a href="/v2/trash" class="text-violet-600 hover:text-violet-800 font-medium">Corbeille →</a>
+    <a href="<?= BASE_URL ?>/v2/documents/admin/expirations" class="text-violet-600 hover:text-violet-800 font-medium">Gérer les expirations →</a>
+    <a href="<?= BASE_URL ?>/v2/documents/admin/statistics" class="text-violet-600 hover:text-violet-800 font-medium">Statistiques →</a>
+    <a href="<?= BASE_URL ?>/v2/trash" class="text-violet-600 hover:text-violet-800 font-medium">Corbeille →</a>
   </div>
 </div>
 

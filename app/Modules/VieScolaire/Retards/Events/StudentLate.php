@@ -19,5 +19,22 @@ class StudentLate extends Event
         public readonly string $heureArrivee,
         public readonly string $anneeScolaire,
         public readonly int    $saisieParId,
-    ) {}
+    ) {
+        parent::__construct();
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'retard_id'      => $this->retardId,
+            'eleve_id'       => $this->eleveId,
+            'classe_id'      => $this->classeId,
+            'date_retard'    => $this->dateRetard,
+            'retard_minutes' => $this->retardMinutes,
+            'heure_arrivee'  => $this->heureArrivee,
+            'annee_scolaire' => $this->anneeScolaire,
+            'saisie_par_id'  => $this->saisieParId,
+            'fired_at'       => $this->getFiredAt(),
+        ];
+    }
 }

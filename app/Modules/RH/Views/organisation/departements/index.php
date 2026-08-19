@@ -3,23 +3,12 @@
 $title = 'Départements';
 function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8'); }
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title><?= e($title) ?> — EduNova</title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 text-slate-800 min-h-screen">
-<?php include dirname(__DIR__, 3) . '/layouts/sidebar.php'; ?>
-<main class="ml-64 p-8">
 
   <!-- En-tête -->
   <div class="flex items-center justify-between mb-8">
     <div>
       <div class="flex items-center gap-2 text-sm text-slate-500 mb-1">
-        <a href="/v2/rh/organisation" class="hover:text-violet-600">Organisation</a>
+        <a href="<?= BASE_URL ?>/v2/rh/organisation" class="hover:text-violet-600">Organisation</a>
         <span>/</span>
         <span>Départements</span>
       </div>
@@ -27,14 +16,14 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
     </div>
     <div class="flex gap-3">
       <?php if ($canExport): ?>
-        <a href="/v2/rh/organisation/export/departements"
+        <a href="<?= BASE_URL ?>/v2/rh/organisation/export/departements"
            class="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm hover:bg-slate-50">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
           CSV
         </a>
       <?php endif; ?>
       <?php if ($canCreate): ?>
-        <a href="/v2/rh/organisation/departements/create"
+        <a href="<?= BASE_URL ?>/v2/rh/organisation/departements/create"
            class="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
           Nouveau
@@ -56,14 +45,14 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
       <label class="block text-xs font-medium text-slate-600 mb-1">Recherche</label>
       <input type="text" name="q" value="<?= e($filters->q) ?>"
              placeholder="Nom ou code..."
-             class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-300">
+             class="form-input">
     </div>
     <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
       <input type="checkbox" name="archive" value="1" <?= $filters->includeArch ? 'checked' : '' ?> class="rounded text-violet-600">
       Inclure archivés
     </label>
     <button type="submit" class="px-4 py-2 bg-violet-600 text-white text-sm rounded-lg hover:bg-violet-700">Filtrer</button>
-    <a href="/v2/rh/organisation/departements" class="px-4 py-2 bg-slate-100 text-slate-600 text-sm rounded-lg hover:bg-slate-200">Réinitialiser</a>
+    <a href="<?= BASE_URL ?>/v2/rh/organisation/departements" class="px-4 py-2 bg-slate-100 text-slate-600 text-sm rounded-lg hover:bg-slate-200">Réinitialiser</a>
   </form>
 
   <!-- Table -->
@@ -93,7 +82,7 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
           ?>
           <tr class="hover:bg-slate-50 <?= $rowClass ?>">
             <td class="px-4 py-3">
-              <a href="/v2/rh/organisation/departements/<?= (int)$dept['id'] ?>"
+              <a href="<?= BASE_URL ?>/v2/rh/organisation/departements/<?= (int)$dept['id'] ?>"
                  class="font-medium text-violet-700 hover:underline"><?= e($dept['nom']) ?></a>
             </td>
             <td class="px-4 py-3">
@@ -114,20 +103,20 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
             </td>
             <td class="px-4 py-3 text-right">
               <div class="flex justify-end gap-2">
-                <a href="/v2/rh/organisation/departements/<?= (int)$dept['id'] ?>"
+                <a href="<?= BASE_URL ?>/v2/rh/organisation/departements/<?= (int)$dept['id'] ?>"
                    class="px-2 py-1 text-xs text-slate-600 bg-slate-100 rounded hover:bg-slate-200">Voir</a>
                 <?php if ($canUpdate && !$archived): ?>
-                  <a href="/v2/rh/organisation/departements/<?= (int)$dept['id'] ?>/edit"
+                  <a href="<?= BASE_URL ?>/v2/rh/organisation/departements/<?= (int)$dept['id'] ?>/edit"
                      class="px-2 py-1 text-xs text-violet-600 bg-violet-50 rounded hover:bg-violet-100">Éditer</a>
                 <?php endif; ?>
                 <?php if ($canArchive && !$archived): ?>
-                  <form method="POST" action="/v2/rh/organisation/departements/<?= (int)$dept['id'] ?>/archive"
+                  <form method="POST" action="<?= BASE_URL ?>/v2/rh/organisation/departements/<?= (int)$dept['id'] ?>/archive"
                         onsubmit="return confirm('Archiver ce département ?')">
                     <?php \Core\Csrf::field(); ?>
                     <button type="submit" class="px-2 py-1 text-xs text-amber-600 bg-amber-50 rounded hover:bg-amber-100">Archiver</button>
                   </form>
                 <?php elseif ($canArchive && $archived): ?>
-                  <form method="POST" action="/v2/rh/organisation/departements/<?= (int)$dept['id'] ?>/restore">
+                  <form method="POST" action="<?= BASE_URL ?>/v2/rh/organisation/departements/<?= (int)$dept['id'] ?>/restore">
                     <?php \Core\Csrf::field(); ?>
                     <button type="submit" class="px-2 py-1 text-xs text-emerald-600 bg-emerald-50 rounded hover:bg-emerald-100">Restaurer</button>
                   </form>
@@ -155,7 +144,3 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
       </div>
     <?php endif; ?>
   </div>
-
-</main>
-</body>
-</html>

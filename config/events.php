@@ -1,12 +1,9 @@
 <?php
 
 use App\Events\EleveCreated;
-use App\Events\PaiementValide;
-use App\Events\NoteAjoutee;
 use App\Events\AbsenceCreee;
 use App\Events\DocumentGenere;
 use App\Events\ImportCsvCompleted;
-use App\Events\ControleUpdated;
 use App\Listeners\AuditHandler;
 use App\Listeners\NotificationHandler;
 use App\Listeners\StatsCacheHandler;
@@ -60,6 +57,7 @@ use App\Modules\Academique\Listeners\RankingHandler;
 use App\Modules\Academique\Events\BulletinGenerated;
 use App\Modules\Academique\Events\BulletinPublished;
 use App\Modules\Academique\Events\BulletinArchived;
+use App\Modules\Academique\Events\BulletinAppreciationUpdated;
 use App\Modules\Academique\Listeners\BulletinHandler;
 use App\Modules\Academique\Events\AnalyticsGenerated;
 use App\Modules\Academique\Events\StatisticsUpdated;
@@ -126,6 +124,9 @@ use App\Modules\Academique\Events\NotePublished;
 use App\Modules\Academique\Events\NoteLocked;
 use App\Modules\Academique\Events\NoteImported;
 use App\Modules\Academique\Listeners\NoteHandler;
+use App\Modules\Academique\Listeners\NoteNotificationHandler;
+use App\Modules\Academique\Events\AppreciationMatiereSaisie;
+use App\Modules\Academique\Listeners\AppreciationHandler;
 use App\Modules\Academique\Events\EvaluationCreated;
 use App\Modules\Academique\Events\EvaluationUpdated;
 use App\Modules\Academique\Events\EvaluationPublished;
@@ -164,16 +165,6 @@ return [
         new StatsCacheHandler(),
     ],
 
-    PaiementValide::class => [
-        new AuditHandler(),
-        new NotificationHandler(),
-    ],
-
-    NoteAjoutee::class => [
-        new AuditHandler(),
-        new NotificationHandler(),
-    ],
-
     AbsenceCreee::class => [
         new AuditHandler(),
         new NotificationHandler(),
@@ -187,10 +178,6 @@ return [
     ImportCsvCompleted::class => [
         new AuditHandler(),
         new StatsCacheHandler(),
-    ],
-
-    ControleUpdated::class => [
-        new AuditHandler(),
     ],
 
     EleveUpdated::class => [
@@ -367,6 +354,7 @@ return [
 
     NotePublished::class => [
         new NoteHandler(),
+        new NoteNotificationHandler(),
         new CrossModuleListener(),
     ],
 
@@ -376,6 +364,10 @@ return [
 
     NoteImported::class => [
         new NoteHandler(),
+    ],
+
+    AppreciationMatiereSaisie::class => [
+        new AppreciationHandler(),
     ],
 
     // ── Moyennes V2 ─────────────────────────────────────────────────────────
@@ -410,6 +402,10 @@ return [
     ],
 
     BulletinArchived::class => [
+        new BulletinHandler(),
+    ],
+
+    BulletinAppreciationUpdated::class => [
         new BulletinHandler(),
     ],
 
@@ -504,11 +500,12 @@ return [
     // AccountingHandler écoute les événements métier pour créer des écritures
     // automatiques. Échec silencieux — le métier ne doit pas être bloqué.
 
-    // PaymentCompleted → 3 handlers : audit(PaymentHandler), caisse(CashRegisterHandler), compta(AccountingHandler)
+    // PaymentCompleted → 4 handlers : audit(PaymentHandler), caisse(CashRegisterHandler), compta(AccountingHandler), notification parent
     \App\Modules\Finance\Events\PaymentCompleted::class => [
         new \App\Modules\Finance\Listeners\PaymentHandler(),
         new \App\Modules\Finance\Listeners\CashRegisterHandler(),
         new \App\Modules\Finance\Listeners\AccountingHandler(),
+        new \App\Modules\Finance\Listeners\NotificationListener(),
         new CrossModuleListener(),
         new \App\Modules\Bibliotheque\Listeners\FinanceIntegrationListener(),
     ],
@@ -530,6 +527,28 @@ return [
 
     \App\Modules\Finance\Events\ExpenseValidated::class => [
         new \App\Modules\Finance\Listeners\AccountingHandler(),
+    ],
+
+    // ── Module Finance V2 — Dépenses / Décaissements ─────────────────────────
+
+    \App\Modules\Finance\Events\DecaissementCreated::class => [
+        new \App\Modules\Finance\Listeners\DecaissementHandler(),
+    ],
+
+    \App\Modules\Finance\Events\DecaissementValidated::class => [
+        new \App\Modules\Finance\Listeners\DecaissementHandler(),
+    ],
+
+    \App\Modules\Finance\Events\DecaissementApproved::class => [
+        new \App\Modules\Finance\Listeners\DecaissementHandler(),
+    ],
+
+    \App\Modules\Finance\Events\DecaissementRejected::class => [
+        new \App\Modules\Finance\Listeners\DecaissementHandler(),
+    ],
+
+    \App\Modules\Finance\Events\DecaissementCancelled::class => [
+        new \App\Modules\Finance\Listeners\DecaissementHandler(),
     ],
 
     \App\Modules\Finance\Events\JournalEntryCreated::class => [

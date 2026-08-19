@@ -12,7 +12,7 @@
       ['Messagerie','mail','eleve/messagerie','text-teal-600 bg-teal-50'],
       ['Mon profil','user','eleve/profil','text-slate-600 bg-slate-50'],
     ] as [$label, $icon, $path, $colors]): ?>
-    <a href="/v2/portals/<?= $path ?>"
+    <a href="<?= BASE_URL ?>/v2/portals/<?= $path ?>"
        class="flex flex-col items-center gap-2 p-3 rounded-xl border border-slate-200 hover:shadow-sm transition-shadow <?= $colors ?>">
       <i data-lucide="<?= $icon ?>" class="w-5 h-5"></i>
       <span class="text-xs font-medium text-center leading-tight"><?= $label ?></span>
@@ -65,7 +65,7 @@
             <div class="text-center">
               <p class="text-3xl font-bold text-blue-600"><?= number_format((float)($widget->data['bulletin']['moyenne_generale'] ?? 0), 2) ?></p>
               <p class="text-xs text-slate-400 mt-1">Moy. générale — <?= htmlspecialchars($widget->data['bulletin']['mention'] ?? '') ?></p>
-              <a href="/v2/portals/eleve/bulletins" class="mt-2 inline-block text-xs text-blue-600 hover:underline">Voir le bulletin</a>
+              <a href="<?= BASE_URL ?>/v2/portals/eleve/bulletins" class="mt-2 inline-block text-xs text-blue-600 hover:underline">Voir le bulletin</a>
             </div>
           <?php else: ?>
             <p class="text-xs text-slate-400">Bulletin non disponible</p>

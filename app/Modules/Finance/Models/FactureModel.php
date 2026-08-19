@@ -4,6 +4,7 @@ namespace App\Modules\Finance\Models;
 
 use Core\Model;
 
+#[\AllowDynamicProperties]
 class FactureModel extends Model
 {
     protected string $table = 'finance_factures';

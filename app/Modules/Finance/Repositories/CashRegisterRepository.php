@@ -168,10 +168,11 @@ class CashRegisterRepository
     // ----------------------------------------------------------------
     public function genererNumero(string $type, int $annee): string
     {
-        $this->pdo->exec(
-            "INSERT INTO `finance_sequences` (`type`, `annee`, `valeur`) VALUES ('{$type}', {$annee}, 1)
+        $stmt = $this->pdo->prepare(
+            "INSERT INTO `finance_sequences` (`type`, `annee`, `valeur`) VALUES (?, ?, 1)
              ON DUPLICATE KEY UPDATE `valeur` = `valeur` + 1"
         );
+        $stmt->execute([$type, $annee]);
         $stmt = $this->pdo->prepare(
             'SELECT `valeur` FROM `finance_sequences` WHERE `type` = ? AND `annee` = ?'
         );

@@ -25,10 +25,10 @@ class LeaveController extends Controller
         $this->policy  = new LeavePolicy();
     }
 
-    private function currentUser(): array { return Session::getUser() ?? []; }
-    private function userId(): int        { return (int)($this->currentUser()['id'] ?? 0); }
+    private function authUser(): array { return Session::getUser() ?? []; }
+    private function userId(): int        { return (int)($this->authUser()['id'] ?? 0); }
     private function userName(): string   {
-        $u = $this->currentUser();
+        $u = $this->authUser();
         return trim(($u['prenom'] ?? '') . ' ' . ($u['nom'] ?? '')) ?: 'Système';
     }
 
@@ -42,7 +42,7 @@ class LeaveController extends Controller
         $result  = $this->service->paginate($filters);
         $stats   = $this->service->statistiques();
         $refs    = $this->service->referentiels();
-        $user    = $this->currentUser();
+        $user    = $this->authUser();
 
         $this->render('RH::conges/index', [
             'conges'       => $result['items'],
@@ -65,7 +65,7 @@ class LeaveController extends Controller
         $this->requirePermission('leave.approve');
 
         $enAttente = $this->service->findEnAttente();
-        $user      = $this->currentUser();
+        $user      = $this->authUser();
 
         $this->render('RH::conges/validation', [
             'conges'     => $enAttente,
@@ -92,7 +92,7 @@ class LeaveController extends Controller
             'model'       => LeaveModel::class,
             'annee'       => $annee,
             'employeId'   => $employeId,
-            'canUpdate'   => $this->policy->canUpdate($this->currentUser()),
+            'canUpdate'   => $this->policy->canUpdate($this->authUser()),
         ]);
     }
 
@@ -128,7 +128,7 @@ class LeaveController extends Controller
             return;
         }
 
-        $user = $this->currentUser();
+        $user = $this->authUser();
 
         $this->render('RH::conges/show', [
             'conge'      => $conge,

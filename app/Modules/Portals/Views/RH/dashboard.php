@@ -37,7 +37,7 @@
       ['Évaluations','clipboard','rh/evaluations','bg-rose-50 text-rose-700'],
       ['Documents','folder','rh/documents','bg-slate-50 text-slate-700'],
     ] as [$label, $icon, $path, $colors]): ?>
-    <a href="/v2/portals/<?= $path ?>"
+    <a href="<?= BASE_URL ?>/v2/portals/<?= $path ?>"
        class="flex flex-col items-center gap-2 p-3 rounded-xl border border-slate-200 hover:shadow-sm transition-shadow <?= $colors ?>">
       <i data-lucide="<?= $icon ?>" class="w-5 h-5"></i>
       <span class="text-xs font-medium"><?= $label ?></span>

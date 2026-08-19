@@ -16,7 +16,7 @@
        class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-slate-100 z-50">
     <div class="p-3 border-b border-slate-100 flex justify-between items-center">
       <span class="font-semibold text-sm text-slate-700">Notifications</span>
-      <a href="/v2/notifications" class="text-xs text-violet-600 hover:underline">Tout voir</a>
+      <a href="<?= BASE_URL ?>/v2/notifications" class="text-xs text-violet-600 hover:underline">Tout voir</a>
     </div>
     <div id="notif-panel-list" class="max-h-80 overflow-y-auto">
       <div class="p-4 text-center text-slate-400 text-sm">Chargement...</div>
@@ -29,7 +29,7 @@
   // Poll toutes les 30s pour mettre à jour le badge
   async function pollUnread() {
     try {
-      const r = await fetch('/v2/notifications/poll');
+      const r = await fetch('<?= BASE_URL ?>/v2/notifications/poll');
       const d = await r.json();
       const badge = document.getElementById('badge-count');
       if (d.unread > 0) {

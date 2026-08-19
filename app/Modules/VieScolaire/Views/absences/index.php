@@ -31,7 +31,7 @@ $typeLabels = [
             <i data-lucide="calendar-x" class="w-5 h-5 text-violet-600"></i>
             Absences
         </h2>
-        <p class="text-sm text-slate-500 mt-0.5">Gestion des absences — Module Vie Scolaire V2</p>
+        <p class="text-sm text-slate-500 mt-0.5">Gestion des absences</p>
     </div>
     <div class="flex items-center gap-2 flex-wrap">
         <?php if (epAbs($perms, 'attendance.view')): ?>
@@ -72,8 +72,8 @@ $typeLabels = [
             <select name="classe_id" class="rounded-lg border border-slate-200 text-sm px-3 py-1.5 bg-white focus:ring-2 focus:ring-violet-300 focus:outline-none">
                 <option value="">Toutes les classes</option>
                 <?php foreach ($classes as $c): ?>
-                <option value="<?= $c['id'] ?>" <?= ($filters?->classeId == $c['id']) ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($c['nom'], ENT_QUOTES) ?>
+                <option value="<?= $c->id ?>" <?= ($filters?->classeId == $c->id) ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($c->nom, ENT_QUOTES) ?>
                 </option>
                 <?php endforeach; ?>
             </select>

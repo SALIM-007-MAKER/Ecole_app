@@ -15,7 +15,9 @@ class PositionCreated extends Event
         public readonly string $categorie,
         public readonly ?int   $departementId,
         public readonly int    $createdBy
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

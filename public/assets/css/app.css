@@ -99,6 +99,7 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
     background: var(--sb-bg);
     border-right: 1px solid var(--sb-border);
     display: flex; flex-direction: column;
+    overflow-x: hidden;
     z-index: 60;
     transform: translateX(-100%);
     transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
@@ -139,19 +140,51 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 .sidebar-close-btn:hover,
 .sidebar-collapse-btn:hover { background: rgba(255,255,255,0.08); color: var(--sb-text-hover); }
 .sidebar-collapse-btn { margin-left: 0.15rem; }
+/* ── Mode réduit (icônes seules) ──────────────────────────────────────────
+   L'état "collapsed" est piloté entièrement par le contrôleur JS
+   (EcoleApp.initSidebar) : passer en mode réduit referme systématiquement
+   tous les groupes ouverts (voir closeAllGroups), donc .nav-group-content
+   n'a normalement plus de max-height résiduel ici. display:none reste une
+   sécurité supplémentaire (JS désactivé, contenu injecté dynamiquement…)
+   pour qu'aucun sous-menu ni texte ne puisse jamais déborder. */
 #sidebar.collapsed .sidebar-brand-name,
 #sidebar.collapsed .sidebar-user-name,
 #sidebar.collapsed .sidebar-user-role,
 #sidebar.collapsed .nav-item-text,
 #sidebar.collapsed .nav-group-arrow,
 #sidebar.collapsed .sidebar-close-btn { display: none; }
-#sidebar.collapsed .sidebar-brand { padding: 0 0.875rem; }
+
+#sidebar.collapsed .nav-group-content { display: none; }
+
+#sidebar.collapsed .sidebar-brand { padding: 0 0.875rem; justify-content: center; }
+
 #sidebar.collapsed .sidebar-user { justify-content: center; padding: 0.5rem; }
+#sidebar.collapsed .sidebar-user > div,
+#sidebar.collapsed .sidebar-user > i { display: none; }
+
 #sidebar.collapsed .nav-item,
-#sidebar.collapsed .nav-sub { justify-content: center; padding-left: 0.625rem; padding-right: 0.625rem; }
-#sidebar.collapsed .nav-sub { padding-left: 0; }
+#sidebar.collapsed .nav-sub {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+}
 #sidebar.collapsed .nav-item > i,
 #sidebar.collapsed .nav-sub > i { margin: 0; }
+
+/* Le liseré de l'élément actif reste dans la marge réduite de la sidebar
+   au lieu de déborder hors de la colonne (cause fréquente de scrollbar
+   horizontale en mode réduit). */
+#sidebar.collapsed .nav-item.nav-active::before { margin-left: -0.4rem; }
+
+/* Le badge de notification devient une pastille compacte superposée à
+   l'icône plutôt qu'un second élément qui casse le centrage. */
+#sidebar.collapsed .sidebar-notif-badge {
+    position: absolute;
+    top: 0.25rem; right: 0.75rem;
+    min-width: 0.5rem; width: 0.5rem; height: 0.5rem;
+    padding: 0; font-size: 0;
+}
+
 #sidebar.collapsed .sidebar-nav { padding-inline: 0.4rem; }
 #sidebar.collapsed .sidebar-collapse-btn i { transform: rotate(180deg); }
 
@@ -160,7 +193,7 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 }
 
 /* Sidebar nav */
-.sidebar-nav { flex: 1; overflow-y: auto; padding: 0.625rem 0.75rem; }
+.sidebar-nav { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 0.625rem 0.75rem; }
 .sidebar-nav::-webkit-scrollbar { width: 3px; }
 .sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
 
@@ -277,6 +310,7 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 }
 
 .header-icon-btn {
+    position: relative;
     display: inline-flex; align-items: center; justify-content: center;
     width: 2.25rem; height: 2.25rem; border-radius: 999px; border: 0;
     background: transparent; color: var(--txt-2); cursor: pointer;
@@ -284,7 +318,17 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 }
 .header-icon-btn:hover { background: #f3f4f6; color: var(--txt-1); }
 .header-icon-btn i { font-size: 1rem; }
-.header-icon-btn #notif-badge { position:absolute; top:0.2rem; right:0.2rem; width:0.6rem; height:0.6rem; border-radius:999px; background:#ef4444; display:none; }
+/* Compteur numéroté (pas un simple point) — nécessite .header-icon-btn en
+   position:relative (ci-dessus) pour se positionner correctement dans le
+   coin du bouton plutôt que par rapport à un ancêtre positionné imprévu. */
+.header-icon-btn #notif-badge {
+    position: absolute; top: -0.1rem; right: -0.1rem;
+    display: none; align-items: center; justify-content: center;
+    min-width: 1.125rem; height: 1.125rem; padding: 0 0.25rem;
+    border-radius: 999px; border: 2px solid #fff;
+    background: #ef4444; color: #fff;
+    font-size: 0.625rem; font-weight: 700; line-height: 1;
+}
 
 .header-brand-mobile {
     display: none; align-items: center; gap: 0.625rem;

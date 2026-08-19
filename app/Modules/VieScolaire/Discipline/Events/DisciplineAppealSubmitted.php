@@ -13,5 +13,20 @@ class DisciplineAppealSubmitted extends Event
         public readonly int    $eleveId,
         public readonly string $anneeScolaire,
         public readonly int    $deposePar,
-    ) {}
+    ) {
+        parent::__construct();
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'appel_id'       => $this->appelId,
+            'sanction_id'    => $this->sanctionId,
+            'dossier_id'     => $this->dossierId,
+            'eleve_id'       => $this->eleveId,
+            'annee_scolaire' => $this->anneeScolaire,
+            'depose_par'     => $this->deposePar,
+            'fired_at'       => $this->getFiredAt(),
+        ];
+    }
 }

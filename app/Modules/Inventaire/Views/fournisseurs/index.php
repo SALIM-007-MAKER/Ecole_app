@@ -1,17 +1,8 @@
 <?php /** @var array $fournisseurs */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Fournisseurs — Inventaire</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-6xl mx-auto px-4 py-6">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold text-slate-800">Fournisseurs</h1>
-        <a href="/v2/inventaire/fournisseurs/creer"
+        <a href="<?= BASE_URL ?>/v2/inventaire/fournisseurs/creer"
            class="inline-flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-lg hover:bg-violet-700 text-sm font-medium">
             <i data-lucide="plus" class="w-4 h-4"></i> Nouveau fournisseur
         </a>
@@ -42,10 +33,10 @@
                         </span>
                     </td>
                     <td class="px-4 py-3 text-right space-x-2">
-                        <a href="/v2/inventaire/fournisseurs/<?=$f['id']?>" class="text-violet-600 hover:underline text-xs">Voir</a>
-                        <a href="/v2/inventaire/fournisseurs/<?=$f['id']?>/modifier" class="text-slate-500 hover:underline text-xs">Modifier</a>
+                        <a href="<?= BASE_URL ?>/v2/inventaire/fournisseurs/<?=$f['id']?>" class="text-violet-600 hover:underline text-xs">Voir</a>
+                        <a href="<?= BASE_URL ?>/v2/inventaire/fournisseurs/<?=$f['id']?>/modifier" class="text-slate-500 hover:underline text-xs">Modifier</a>
                         <?php if ($f['statut'] !== 'bloque'): ?>
-                        <form method="POST" action="/v2/inventaire/fournisseurs/<?=$f['id']?>/bloquer" class="inline">
+                        <form method="POST" action="<?= BASE_URL ?>/v2/inventaire/fournisseurs/<?=$f['id']?>/bloquer" class="inline">
                             <input type="hidden" name="_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                             <button type="submit" class="text-red-500 hover:underline text-xs" onclick="return confirm('Bloquer ce fournisseur ?')">Bloquer</button>
                         </form>
@@ -61,5 +52,3 @@
     </div>
 </div>
 <script>lucide.createIcons();</script>
-</body>
-</html>

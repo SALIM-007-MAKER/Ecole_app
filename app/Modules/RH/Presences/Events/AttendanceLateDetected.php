@@ -16,7 +16,9 @@ class AttendanceLateDetected extends Event
         public readonly string $heureArrivee,
         public readonly string $heureReference,
         public readonly int    $createdBy
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

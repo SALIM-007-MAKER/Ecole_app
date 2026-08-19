@@ -13,26 +13,14 @@ $statutBadge = [
     'en_attente'   => 'bg-amber-100 text-amber-700',
 ];
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Rapport caisse — Finance V2</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>tailwind.config={theme:{extend:{colors:{primary:'#7c3aed'}}}}</script>
-</head>
-<body class="bg-slate-50 min-h-screen">
-<?php include BASE_PATH . '/app/Modules/Finance/Views/partials/sidebar.php'; ?>
-
-<main class="ml-64 p-8">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
             <nav class="text-sm text-slate-400 mb-1">
-                <a href="/v2/finance/rapports" class="hover:text-violet-600">Rapports</a> / Caisse
+                <a href="<?= BASE_URL ?>/v2/finance/rapports" class="hover:text-violet-600">Rapports</a> / Caisse
             </nav>
             <h1 class="text-2xl font-bold text-slate-800">Rapport de caisse</h1>
         </div>
-        <a href="/v2/finance/rapports/export?type=caisse&format=csv&<?= http_build_query($_GET) ?>"
+        <a href="<?= BASE_URL ?>/v2/finance/rapports/export?type=caisse&format=csv&<?= http_build_query($_GET) ?>"
            class="border border-slate-200 bg-white text-slate-700 px-4 py-2 rounded-lg text-sm hover:bg-slate-50 flex items-center gap-2">
             <i data-lucide="file-text" class="w-4 h-4"></i> CSV
         </a>
@@ -58,7 +46,7 @@ $statutBadge = [
             <input type="date" name="date_fin" value="<?= htmlspecialchars($filters->dateFin) ?>" class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
         </div>
         <button type="submit" class="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-violet-700">Filtrer</button>
-        <a href="/v2/finance/rapports/caisse" class="text-slate-500 text-sm px-3 py-2">Reset</a>
+        <a href="<?= BASE_URL ?>/v2/finance/rapports/caisse" class="text-slate-500 text-sm px-3 py-2">Reset</a>
     </form>
 
     <!-- KPIs -->
@@ -141,8 +129,5 @@ $statutBadge = [
         </div>
         <?php endif; ?>
     </div>
-</main>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <script>lucide.createIcons();</script>
-</body>
-</html>

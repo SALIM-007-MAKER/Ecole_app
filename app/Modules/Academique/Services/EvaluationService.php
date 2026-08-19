@@ -12,21 +12,24 @@ use App\Modules\Academique\Models\EvaluationModel;
 use App\Modules\Academique\Models\PeriodeScolaireModel;
 use App\Modules\Academique\Models\TypeEvaluationModel;
 use App\Modules\Academique\Repositories\EvaluationRepository;
+use App\Modules\Scolarite\Repositories\InscriptionRepository;
 use Core\EventDispatcher;
 
 class EvaluationService
 {
-    private EvaluationModel      $model;
-    private EvaluationRepository $repo;
-    private PeriodeScolaireModel $periodeModel;
-    private TypeEvaluationModel  $typeModel;
+    private EvaluationModel        $model;
+    private EvaluationRepository   $repo;
+    private PeriodeScolaireModel   $periodeModel;
+    private TypeEvaluationModel    $typeModel;
+    private InscriptionRepository  $inscriptionRepo;
 
     public function __construct()
     {
-        $this->model        = new EvaluationModel();
-        $this->repo         = new EvaluationRepository();
-        $this->periodeModel = new PeriodeScolaireModel();
-        $this->typeModel    = new TypeEvaluationModel();
+        $this->model           = new EvaluationModel();
+        $this->repo            = new EvaluationRepository();
+        $this->periodeModel    = new PeriodeScolaireModel();
+        $this->typeModel       = new TypeEvaluationModel();
+        $this->inscriptionRepo = new InscriptionRepository();
     }
 
     // ─── Création ────────────────────────────────────────────────────────────
@@ -41,8 +44,17 @@ class EvaluationService
         if ($periode->statut === 'archivee') {
             throw new \RuntimeException("Impossible de créer une évaluation dans une période archivée.");
         }
-        if ($periode->statut === 'verrouillee') {
+        if (($periode->verrouille_par ?? null) !== null) {
             throw new \RuntimeException("Impossible de créer une évaluation dans une période verrouillée.");
+        }
+
+        // AN-C-001 : la classe doit avoir au moins un élève activement inscrit
+        // pour l'année scolaire de la période — sinon l'évaluation ne peut
+        // rattacher aucune note à un élève réellement inscrit cette année-là.
+        if (!$this->inscriptionRepo->existsForClasseEtAnnee($dto->classeId, $periode->annee_scolaire)) {
+            throw new \RuntimeException(
+                "Aucun élève n'est inscrit dans cette classe pour l'année scolaire {$periode->annee_scolaire}."
+            );
         }
 
         // Valider le type d'évaluation
@@ -102,10 +114,9 @@ class EvaluationService
             if (!$periode) {
                 throw new \RuntimeException("Nouvelle période scolaire introuvable.");
             }
-            if (in_array($periode->statut, ['archivee', 'verrouillee'], true)) {
-                throw new \RuntimeException(
-                    "Impossible de déplacer l'évaluation vers une période {$periode->statut}."
-                );
+            if ($periode->statut === 'archivee' || ($periode->verrouille_par ?? null) !== null) {
+                $motif = $periode->statut === 'archivee' ? 'archivée' : 'verrouillée';
+                throw new \RuntimeException("Impossible de déplacer l'évaluation vers une période {$motif}.");
             }
         }
 

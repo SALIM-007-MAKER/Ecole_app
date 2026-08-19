@@ -3,8 +3,8 @@ $enfants   = $enfants   ?? [];
 $enfant    = $enfant    ?? null;
 $periodes  = $periodes  ?? [];
 $periodeId = $periodeId ?? null;
-$notes     = $notes     ?? [];
-$matieres  = $matieres  ?? [];
+/** @var ?\App\Modules\Academique\DTO\BulletinData $bulletin */
+$bulletin  = $bulletin  ?? null;
 
 function pNoteMoyBadge(float $m): string {
     if ($m >= 16) return '<span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold leading-5 whitespace-nowrap bg-emerald-100 text-emerald-700">Excellent</span>';
@@ -74,7 +74,7 @@ function pNoteMoyBadge(float $m): string {
     <p class="text-slate-500 font-medium">Sélectionnez un enfant</p>
     <p class="text-sm text-slate-400 mt-1">Choisissez un enfant dans le filtre ci-dessus pour afficher ses notes.</p>
 </div>
-<?php elseif (empty($notes)): ?>
+<?php elseif (!$bulletin || empty($bulletin->lignesMatieres)): ?>
 <div class="flex flex-col items-center justify-center gap-3 text-center text-slate-500 py-16">
     <div class="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
         <i data-lucide="inbox" class="w-8 h-8 text-slate-300"></i>
@@ -83,26 +83,16 @@ function pNoteMoyBadge(float $m): string {
     <p class="text-sm text-slate-400 mt-1">Aucune note enregistrée pour cette période.</p>
 </div>
 <?php else: ?>
-<!-- Group notes by matière -->
-<?php
-$byMat = [];
-foreach ($notes as $n) {
-    $mid = $n->matiere_id ?? 0;
-    $byMat[$mid]['nom']    = $n->matiere_nom ?? '-';
-    $byMat[$mid]['notes'][] = $n;
-}
-?>
 <div class="space-y-4">
-    <?php foreach ($byMat as $mat):
-        $matNotes  = array_map(fn($n) => (float)$n->note, $mat['notes']);
-        $moyMat    = count($matNotes) ? round(array_sum($matNotes) / count($matNotes), 2) : 0;
+    <?php foreach ($bulletin->lignesMatieres as $ligne):
+        $moyMat = (float)($ligne['moyenne'] ?? 0);
     ?>
     <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
         <div class="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-5 py-4 text-sm font-semibold text-slate-900">
             <div class="w-7 h-7 rounded-lg bg-violet-100 flex items-center justify-center">
                 <i data-lucide="book-open" class="w-3.5 h-3.5 text-violet-600"></i>
             </div>
-            <span class="font-semibold text-slate-700"><?= htmlspecialchars($mat['nom'], ENT_QUOTES) ?></span>
+            <span class="font-semibold text-slate-700"><?= htmlspecialchars($ligne['matiere_nom'], ENT_QUOTES) ?></span>
             <div class="ml-auto flex items-center gap-2">
                 <span class="text-sm font-bold <?= $moyMat >= 10 ? 'text-emerald-600' : 'text-red-500' ?>">
                     Moy. : <?= number_format($moyMat, 2, ',', '') ?>
@@ -114,23 +104,19 @@ foreach ($notes as $n) {
             <table class="min-w-full divide-y divide-slate-200 text-sm [&_thead]:bg-slate-50 [&_th]:px-4 [&_th]:py-3 [&_th]:text-left [&_th]:text-[11px] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-wide [&_th]:text-slate-500 [&_td]:px-4 [&_td]:py-3 [&_td]:align-middle [&_td]:text-slate-700 [&_tbody]:divide-y [&_tbody]:divide-slate-100 [&_tbody_tr:hover]:bg-slate-50 text-sm">
                 <thead>
                     <tr>
-                        <th>Contrôle</th>
                         <th class="text-center">Note</th>
                         <th class="text-center">Barème</th>
                         <th class="text-center">Coeff.</th>
-                        <th>Date</th>
                     </tr>
                 </thead>
                 <tbody>
-                <?php foreach ($mat['notes'] as $n): ?>
+                <?php foreach ($ligne['notes'] as $n): ?>
                 <tr>
-                    <td class="text-slate-700 font-medium"><?= htmlspecialchars($n->controle_nom ?? 'Contrôle', ENT_QUOTES) ?></td>
-                    <td class="text-center font-bold <?= (float)$n->note >= (float)($n->bareme ?? 20) / 2 ? 'text-emerald-600' : 'text-red-500' ?>">
-                        <?= number_format((float)$n->note, 2, ',', '') ?>
+                    <td class="text-center font-bold <?= $n['est_absent'] ? 'text-slate-400' : ((float)($n['valeur'] ?? 0) >= (float)($n['note_max'] ?? 20) / 2 ? 'text-emerald-600' : 'text-red-500') ?>">
+                        <?= $n['est_absent'] ? 'Abs' : number_format((float)($n['valeur'] ?? 0), 2, ',', '') ?>
                     </td>
-                    <td class="text-center text-slate-400">/ <?= number_format((float)($n->bareme ?? 20), 0, ',', '') ?></td>
-                    <td class="text-center text-slate-400"><?= (float)($n->coefficient ?? 1) ?>×</td>
-                    <td class="text-slate-400 text-xs"><?= !empty($n->date_controle) ? date('d/m/Y', strtotime($n->date_controle)) : '-' ?></td>
+                    <td class="text-center text-slate-400">/ <?= number_format((float)($n['note_max'] ?? 20), 0, ',', '') ?></td>
+                    <td class="text-center text-slate-400"><?= (float)($n['coeff_eval'] ?? 1) ?>×</td>
                 </tr>
                 <?php endforeach; ?>
                 </tbody>

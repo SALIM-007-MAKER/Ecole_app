@@ -9,11 +9,14 @@ use App\Modules\VieScolaire\Absences\DTO\JustificationDTO;
 use App\Modules\VieScolaire\Absences\Policies\AbsencePolicy;
 use App\Modules\VieScolaire\Absences\Repositories\AbsenceRepository;
 use App\Modules\VieScolaire\Absences\Services\AbsenceService;
+use App\Shared\Auth\EleveScopeTrait;
 use Core\Controller;
 use Core\Session;
 
 class AbsenceController extends Controller
 {
+    use EleveScopeTrait;
+
     private AbsenceRepository $repo;
     private AbsenceService    $service;
     private AbsencePolicy     $policy;
@@ -34,6 +37,12 @@ class AbsenceController extends Controller
 
         $user    = $this->currentUser();
         $filters = AbsenceFiltersDTO::fromRequest($_GET);
+
+        $scope = $this->myEleveIds();
+        if ($scope !== null) {
+            $filters = $filters->withEleveIds($scope);
+        }
+
         $result  = $this->service->paginate($filters);
         $classes = (new ClasseModel())->findForSelect();
 
@@ -57,6 +66,7 @@ class AbsenceController extends Controller
             Session::flash('error', 'Absence introuvable.');
             $this->redirect(BASE_URL . '/v2/vie-scolaire/absences');
         }
+        $this->assertOwnEleve((int)$absence['eleve_id']);
 
         $justification = $this->repo->findJustificationByAbsence((int)$id);
         $user          = $this->currentUser();
@@ -153,6 +163,7 @@ class AbsenceController extends Controller
             Session::flash('error', 'Absence introuvable.');
             $this->redirect(BASE_URL . '/v2/vie-scolaire/absences');
         }
+        $this->assertOwnEleve((int)$absence['eleve_id']);
 
         $motifs = $this->service->motifs();
 
@@ -171,6 +182,13 @@ class AbsenceController extends Controller
         $this->verifyCsrf();
 
         $absenceId = (int)$id;
+        $absence   = $this->service->findById($absenceId);
+        if (!$absence) {
+            Session::flash('error', 'Absence introuvable.');
+            $this->redirect(BASE_URL . '/v2/vie-scolaire/absences');
+        }
+        $this->assertOwnEleve((int)$absence['eleve_id']);
+
         $user      = $this->currentUser();
         $dto       = JustificationDTO::fromRequest($_POST);
         $errors    = $dto->validate();

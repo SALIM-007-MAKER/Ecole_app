@@ -11,22 +11,28 @@ use App\Modules\Academique\Events\NotePublished;
 use App\Modules\Academique\Events\NoteUpdated;
 use App\Modules\Academique\Models\EvaluationModel;
 use App\Modules\Academique\Models\NoteModel;
+use App\Modules\Academique\Models\PeriodeScolaireModel;
 use App\Modules\Academique\Repositories\NoteRepository;
 use App\Modules\Academique\ValueObjects\BaremeValue;
 use App\Modules\Academique\ValueObjects\NoteValue;
+use App\Modules\Scolarite\Repositories\InscriptionRepository;
 use Core\EventDispatcher;
 
 class NoteService
 {
-    private NoteModel       $model;
-    private NoteRepository  $repo;
-    private EvaluationModel $evalModel;
+    private NoteModel              $model;
+    private NoteRepository         $repo;
+    private EvaluationModel        $evalModel;
+    private PeriodeScolaireModel   $periodeModel;
+    private InscriptionRepository  $inscriptionRepo;
 
     public function __construct()
     {
-        $this->model     = new NoteModel();
-        $this->repo      = new NoteRepository();
-        $this->evalModel = new EvaluationModel();
+        $this->model           = new NoteModel();
+        $this->repo            = new NoteRepository();
+        $this->evalModel       = new EvaluationModel();
+        $this->periodeModel    = new PeriodeScolaireModel();
+        $this->inscriptionRepo = new InscriptionRepository();
     }
 
     // ─── Saisie batch ────────────────────────────────────────────────────────
@@ -39,10 +45,23 @@ class NoteService
         }
         $this->assertSaisieOuverte($evaluation);
 
+        $periode = $this->periodeModel->findById((int)$evaluation->periode_scolaire_id);
+        $anneeScolaire = $periode->annee_scolaire ?? null;
+
         $bareme  = new BaremeValue((float)$evaluation->note_max);
         $results = ['created' => 0, 'updated' => 0, 'errors' => []];
 
         foreach ($batch->notes as $dto) {
+            // AN-C-001 : une note ne peut être rattachée qu'à un élève
+            // activement inscrit pour l'année scolaire de la période.
+            if ($anneeScolaire !== null
+                && !$this->inscriptionRepo->findActiveByEleve($dto->eleveId, $anneeScolaire)
+            ) {
+                $results['errors'][$dto->eleveId] =
+                    "Élève non inscrit pour l'année scolaire {$anneeScolaire}.";
+                continue;
+            }
+
             try {
                 $noteValue = new NoteValue(
                     $dto->estAbsent ? null : $dto->valeur,

@@ -35,7 +35,7 @@ $old     = $old     ?? [];
           action="<?= $isEdit
             ? BASE_URL . '/v2/finance/factures/' . $facture->id
             : BASE_URL . '/v2/finance/factures' ?>">
-        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken()) ?>">
+        <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
 
         <div class="space-y-4">
 
@@ -46,8 +46,8 @@ $old     = $old     ?? [];
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">
-                                Élève <span class="text-red-500">*</span>
+                            <label class="form-label">
+                                Élève <span class="form-required">*</span>
                                 <?php if ($isEdit): ?><span class="font-normal text-slate-400">(immuable)</span><?php endif; ?>
                             </label>
                             <?php if ($isEdit): ?>
@@ -55,7 +55,7 @@ $old     = $old     ?? [];
                                    readonly class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg cursor-not-allowed">
                             <?php else: ?>
                             <select name="eleve_id" required
-                                    class="w-full px-3 py-2 text-sm border <?= isset($errors['eleve_id']) ? 'border-red-400' : 'border-slate-200' ?> rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500">
+                                    class="form-select <?= isset($errors['eleve_id']) ? 'is-invalid' : '' ?>">
                                 <option value="">-- Sélectionner un élève --</option>
                                 <?php foreach ($eleves as $e): ?>
                                 <option value="<?= $e->id ?>" <?= ((int)($old['eleve_id'] ?? 0) === (int)$e->id) ? 'selected' : '' ?>>
@@ -74,8 +74,8 @@ $old     = $old     ?? [];
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">
-                                Année scolaire <span class="text-red-500">*</span>
+                            <label class="form-label">
+                                Année scolaire <span class="form-required">*</span>
                                 <?php if ($isEdit): ?><span class="font-normal text-slate-400">(immuable)</span><?php endif; ?>
                             </label>
                             <?php if ($isEdit): ?>
@@ -85,7 +85,7 @@ $old     = $old     ?? [];
                             <input type="text" name="annee_scolaire"
                                    value="<?= htmlspecialchars($old['annee_scolaire'] ?? '') ?>"
                                    placeholder="ex: 2026-2027" pattern="\d{4}-\d{4}" required
-                                   class="w-full px-3 py-2 text-sm border <?= isset($errors['annee_scolaire']) ? 'border-red-400' : 'border-slate-200' ?> rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500">
+                                   class="form-input <?= isset($errors['annee_scolaire']) ? 'is-invalid' : '' ?>">
                             <?php if (isset($errors['annee_scolaire'])): ?>
                             <p class="text-xs text-red-600 mt-1"><?= htmlspecialchars($errors['annee_scolaire']) ?></p>
                             <?php endif; ?>
@@ -95,17 +95,17 @@ $old     = $old     ?? [];
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Date d'échéance</label>
+                            <label class="form-label">Date d'échéance</label>
                             <input type="date" name="date_echeance"
                                    value="<?= htmlspecialchars($old['date_echeance'] ?? $facture->date_echeance ?? '') ?>"
-                                   class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500">
+                                   class="form-input">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 mb-1">Note interne</label>
+                            <label class="form-label">Note interne</label>
                             <input type="text" name="note"
                                    value="<?= htmlspecialchars($old['note'] ?? $facture->note ?? '') ?>"
                                    placeholder="Remarque optionnelle..."
-                                   class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500">
+                                   class="form-input">
                         </div>
                     </div>
                 </div>
@@ -116,7 +116,7 @@ $old     = $old     ?? [];
             <div class="bg-white rounded-xl border border-slate-200" id="lignes-container">
                 <div class="p-5 border-b border-slate-100 flex items-center justify-between">
                     <h2 class="text-sm font-semibold text-slate-700 uppercase tracking-wide">
-                        Lignes de facturation <span class="text-red-500">*</span>
+                        Lignes de facturation <span class="form-required">*</span>
                     </h2>
                     <button type="button" onclick="ajouterLigne()"
                             class="text-xs font-medium text-violet-600 hover:text-violet-800">
@@ -130,19 +130,19 @@ $old     = $old     ?? [];
                         <div class="col-span-5">
                             <label class="block text-xs font-medium text-slate-600 mb-1">Libellé *</label>
                             <input type="text" name="lignes[0][libelle]" required
-                                   class="w-full px-2 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                                   class="form-input"
                                    placeholder="Ex: Frais d'inscription">
                         </div>
                         <div class="col-span-2">
                             <label class="block text-xs font-medium text-slate-600 mb-1">Qté</label>
                             <input type="number" name="lignes[0][quantite]" value="1" min="0.01" step="0.01"
-                                   class="w-full px-2 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                                   class="form-input"
                                    oninput="calcTotal(this)">
                         </div>
                         <div class="col-span-3">
                             <label class="block text-xs font-medium text-slate-600 mb-1">Prix unitaire *</label>
                             <input type="number" name="lignes[0][montant_unitaire]" min="0" step="0.01" required
-                                   class="w-full px-2 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                                   class="form-input"
                                    oninput="calcTotal(this)">
                         </div>
                         <div class="col-span-1 text-right">
@@ -192,18 +192,18 @@ function ajouterLigne() {
         <div class="col-span-5">
             <label class="block text-xs font-medium text-slate-600 mb-1">Libellé *</label>
             <input type="text" name="lignes[${i}][libelle]" required
-                   class="w-full px-2 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500">
+                   class="form-input">
         </div>
         <div class="col-span-2">
             <label class="block text-xs font-medium text-slate-600 mb-1">Qté</label>
             <input type="number" name="lignes[${i}][quantite]" value="1" min="0.01" step="0.01"
-                   class="w-full px-2 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                   class="form-input"
                    oninput="calcTotal(this)">
         </div>
         <div class="col-span-3">
             <label class="block text-xs font-medium text-slate-600 mb-1">Prix unitaire *</label>
             <input type="number" name="lignes[${i}][montant_unitaire]" min="0" step="0.01" required
-                   class="w-full px-2 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                   class="form-input"
                    oninput="calcTotal(this)">
         </div>
         <div class="col-span-1 text-right">

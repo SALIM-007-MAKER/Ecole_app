@@ -16,15 +16,17 @@ $v = fn(string $k, $def = '') => $old[$k] ?? ($isEdit ? ($seance->$k ?? $def) : 
 ?>
 
 <!-- Header -->
-<div class="flex items-center justify-between gap-4 mb-6">
-    <div>
-        <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+<div class="flex items-start justify-between gap-4 mb-6">
+    <div class="flex items-start gap-4">
+        <div class="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
             <i data-lucide="<?= $isEdit ? 'pencil' : 'plus-circle' ?>" class="w-5 h-5 text-violet-600"></i>
-            <?= $isEdit ? 'Modifier la séance' : 'Ajouter une séance' ?>
-        </h2>
-        <p class="text-sm text-slate-400 mt-0.5">
-            <?= $isEdit ? 'Modifiez les informations de la séance existante' : 'Planifiez une nouvelle séance dans l\'emploi du temps' ?>
-        </p>
+        </div>
+        <div>
+            <h2 class="text-lg font-bold text-slate-900"><?= $isEdit ? 'Modifier la séance' : 'Ajouter une séance' ?></h2>
+            <p class="text-sm text-slate-400 mt-0.5">
+                <?= $isEdit ? 'Modifiez les informations de la séance existante' : 'Planifiez une nouvelle séance dans l\'emploi du temps' ?>
+            </p>
+        </div>
     </div>
     <a href="<?= BASE_URL ?>/emplois-du-temps?annee=<?= urlencode($annee) ?>" class="btn btn-secondary">
         <i data-lucide="arrow-left" class="w-4 h-4"></i>Retour au planning

@@ -24,9 +24,9 @@
 
 <div class="no-print flex items-center justify-center gap-2 bg-slate-950 px-4 py-3 text-white">
     <button onclick="window.print()" class="inline-flex items-center justify-center rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-slate-900 transition hover:bg-slate-100">
-        ðŸ–¨ Imprimer / Enregistrer en PDF
+        &#128424; Imprimer / Enregistrer en PDF
     </button>
-    <button onclick="window.close()" class="inline-flex items-center justify-center rounded-lg border border-white/30 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-white/10">âœ• Fermer</button>
+    <button onclick="window.close()" class="inline-flex items-center justify-center rounded-lg border border-white/30 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-white/10">&#10005; Fermer</button>
 </div>
 
 <div class="page">

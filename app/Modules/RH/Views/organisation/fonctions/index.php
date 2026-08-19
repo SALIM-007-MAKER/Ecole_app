@@ -4,24 +4,13 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
 $perimetreLabels = ['etablissement' => 'Établissement', 'departement' => 'Département', 'service' => 'Service', 'transversal' => 'Transversal'];
 $niveauLabels    = [1 => 'Opérationnel', 2 => 'Encadrement', 3 => 'Direction'];
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fonctions transversales — EduNova</title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 text-slate-800 min-h-screen">
-<?php include dirname(__DIR__, 3) . '/layouts/sidebar.php'; ?>
-<main class="ml-64 p-8">
 
   <div class="flex items-center justify-between mb-8">
     <div>
       <div class="flex items-center gap-2 text-sm text-slate-500 mb-1">
-        <a href="/v2/rh/organisation" class="hover:text-violet-600">Organisation</a>
+        <a href="<?= BASE_URL ?>/v2/rh/organisation" class="hover:text-violet-600">Organisation</a>
         <span>/</span>
-        <a href="/v2/rh/organisation/postes" class="hover:text-violet-600">Postes</a>
+        <a href="<?= BASE_URL ?>/v2/rh/organisation/postes" class="hover:text-violet-600">Postes</a>
         <span>/</span>
         <span>Fonctions</span>
       </div>
@@ -87,7 +76,7 @@ $niveauLabels    = [1 => 'Opérationnel', 2 => 'Encadrement', 3 => 'Direction'];
                           class="px-2 py-1 text-xs text-violet-600 bg-violet-50 rounded hover:bg-violet-100">Éditer</button>
                 <?php endif; ?>
                 <?php if ($canArchive && !$archived): ?>
-                  <form method="POST" action="/v2/rh/organisation/fonctions/<?= (int)$f['id'] ?>/archive"
+                  <form method="POST" action="<?= BASE_URL ?>/v2/rh/organisation/fonctions/<?= (int)$f['id'] ?>/archive"
                         onsubmit="return confirm('Archiver cette fonction ?')">
                     <?php \Core\Csrf::field(); ?>
                     <button type="submit" class="px-2 py-1 text-xs text-amber-600 bg-amber-50 rounded hover:bg-amber-100">Archiver</button>
@@ -101,25 +90,23 @@ $niveauLabels    = [1 => 'Opérationnel', 2 => 'Encadrement', 3 => 'Direction'];
     </table>
   </div>
 
-</main>
-
 <!-- Modal nouvelle fonction -->
 <?php if ($canCreate): ?>
 <div id="modal-new" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
   <div class="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
     <h2 class="font-semibold text-slate-800 mb-4">Nouvelle fonction</h2>
-    <form method="POST" action="/v2/rh/organisation/fonctions" class="space-y-4">
+    <form method="POST" action="<?= BASE_URL ?>/v2/rh/organisation/fonctions" class="space-y-4">
       <?php \Core\Csrf::field(); ?>
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Nom *</label>
           <input type="text" name="nom" required placeholder="Ex : Tuteur"
-                 class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-300">
+                 class="form-input">
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Code *</label>
           <input type="text" name="code" required placeholder="TUTEUR" pattern="[A-Z0-9_]{2,30}"
-                 class="w-full px-3 py-2 text-sm font-mono border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-300"
+                 class="form-input font-mono"
                  oninput="this.value=this.value.toUpperCase()">
         </div>
       </div>
@@ -156,7 +143,6 @@ $niveauLabels    = [1 => 'Opérationnel', 2 => 'Encadrement', 3 => 'Direction'];
   </div>
 </div>
 <?php endif; ?>
-
 <!-- Modal édition fonction -->
 <?php if ($canUpdate): ?>
 <div id="modal-edit" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -168,12 +154,12 @@ $niveauLabels    = [1 => 'Opérationnel', 2 => 'Encadrement', 3 => 'Direction'];
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Nom *</label>
           <input type="text" id="edit-nom" name="nom" required
-                 class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-violet-300">
+                 class="form-input">
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Code *</label>
           <input type="text" id="edit-code" name="code" required pattern="[A-Z0-9_]{2,30}"
-                 class="w-full px-3 py-2 text-sm font-mono border border-slate-200 rounded-lg focus:ring-2 focus:ring-violet-300"
+                 class="form-input font-mono"
                  oninput="this.value=this.value.toUpperCase()">
         </div>
       </div>
@@ -222,6 +208,3 @@ function openEditModal(id, nom, code, niveau, perimetre, description) {
 }
 </script>
 <?php endif; ?>
-
-</body>
-</html>

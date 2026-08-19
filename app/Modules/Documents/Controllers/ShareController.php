@@ -84,6 +84,6 @@ class ShareController extends Controller
             echo "Lien invalide ou expiré.";
             return;
         }
-        $this->render('Documents::shares/public', ['document' => $result['document'], 'partage' => $result['partage']]);
+        $this->render('Documents::shares/public', ['document' => $result['document'], 'partage' => $result['partage']], 'none');
     }
 }

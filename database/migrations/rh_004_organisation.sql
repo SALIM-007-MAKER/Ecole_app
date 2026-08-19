@@ -7,16 +7,16 @@
 -- ─── 1. Extension rh_departements — soft delete + métadonnées ───────────────
 
 ALTER TABLE rh_departements
-    ADD COLUMN IF NOT EXISTS deleted_at       DATETIME NULL DEFAULT NULL AFTER updated_at,
-    ADD COLUMN IF NOT EXISTS budget_centre    VARCHAR(30) NULL COMMENT 'Code centre de coût (Finance V2)' AFTER description,
-    ADD COLUMN IF NOT EXISTS ordre_affichage  TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Tri visuel organigramme' AFTER actif;
+    ADD COLUMN deleted_at       DATETIME NULL DEFAULT NULL AFTER updated_at,
+    ADD COLUMN budget_centre    VARCHAR(30) NULL COMMENT 'Code centre de coût (Finance V2)' AFTER description,
+    ADD COLUMN ordre_affichage  TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Tri visuel organigramme' AFTER actif;
 
 -- ─── 2. Extension rh_postes — soft delete + capacité + service ───────────────
 
 ALTER TABLE rh_postes
-    ADD COLUMN IF NOT EXISTS deleted_at       DATETIME NULL DEFAULT NULL AFTER updated_at,
-    ADD COLUMN IF NOT EXISTS nb_occupants_max TINYINT UNSIGNED NOT NULL DEFAULT 1 COMMENT 'Nb maximal de titulaires simultanés' AFTER niveau,
-    ADD COLUMN IF NOT EXISTS service_id       INT UNSIGNED NULL COMMENT 'FK rh_services.id — optionnel' AFTER departement_id;
+    ADD COLUMN deleted_at       DATETIME NULL DEFAULT NULL AFTER updated_at,
+    ADD COLUMN nb_occupants_max TINYINT UNSIGNED NOT NULL DEFAULT 1 COMMENT 'Nb maximal de titulaires simultanés' AFTER niveau,
+    ADD COLUMN service_id       INT UNSIGNED NULL COMMENT 'FK rh_services.id — optionnel' AFTER departement_id;
 
 -- ─── 3. Table rh_services — subdivision d'un département ────────────────────
 

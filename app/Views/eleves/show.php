@@ -259,8 +259,8 @@ $age       = $eleve->date_naissance
                 <div class="p-5">
                     <div class="flex items-center justify-between mb-4">
                         <p class="text-sm font-semibold text-slate-700">Relevé de notes</p>
-                        <a href="<?= BASE_URL ?>/notes?eleve_id=<?= $eleve->id ?>"
-                           class="btn btn-primary">
+                                <a href="<?= BASE_URL ?>/v2/academique/notes?eleve_id=<?= $eleve->id ?>"
+                                    class="btn btn-primary">
                             <i data-lucide="external-link" class="w-4 h-4"></i>Voir toutes les notes
                         </a>
                     </div>
@@ -268,7 +268,7 @@ $age       = $eleve->date_naissance
                         <i data-lucide="book-open-check" class="w-10 h-10 text-slate-300 mx-auto mb-3"></i>
                         <p class="text-sm text-slate-500 font-medium mb-1">Notes disponibles dans le module académique</p>
                         <p class="text-xs text-slate-400 mb-3">Consultez le relevé complet depuis la page notes.</p>
-                        <a href="<?= BASE_URL ?>/notes?eleve_id=<?= $eleve->id ?>" class="btn btn-primary">
+                        <a href="<?= BASE_URL ?>/v2/academique/notes?eleve_id=<?= $eleve->id ?>" class="btn btn-primary">
                             <i data-lucide="book-open-check" class="w-4 h-4"></i>Consulter les notes
                         </a>
                     </div>
@@ -301,16 +301,16 @@ $age       = $eleve->date_naissance
                 <div class="p-5">
                     <div class="flex items-center justify-between mb-4">
                         <p class="text-sm font-semibold text-slate-700">Historique des paiements</p>
-                        <a href="<?= BASE_URL ?>/comptabilite/paiements?eleve_id=<?= $eleve->id ?>"
+                        <a href="<?= BASE_URL ?>/v2/finance/paiements?eleve_id=<?= $eleve->id ?>"
                            class="btn btn-success">
                             <i data-lucide="external-link" class="w-4 h-4"></i>Voir tous les paiements
                         </a>
                     </div>
                     <div class="flex flex-col items-center justify-center gap-3 text-center text-slate-500 py-10">
                         <i data-lucide="credit-card" class="w-10 h-10 text-slate-300 mx-auto mb-3"></i>
-                        <p class="text-sm text-slate-500 font-medium mb-1">Paiements disponibles dans la comptabilité</p>
-                        <p class="text-xs text-slate-400 mb-3">Consultez l'historique complet depuis le module comptabilité.</p>
-                        <a href="<?= BASE_URL ?>/comptabilite/paiements?eleve_id=<?= $eleve->id ?>" class="btn btn-success">
+                        <p class="text-sm text-slate-500 font-medium mb-1">Paiements disponibles dans le module Finance</p>
+                        <p class="text-xs text-slate-400 mb-3">Consultez l'historique complet depuis le module Finance.</p>
+                        <a href="<?= BASE_URL ?>/v2/finance/paiements?eleve_id=<?= $eleve->id ?>" class="btn btn-success">
                             <i data-lucide="credit-card" class="w-4 h-4"></i>Consulter les paiements
                         </a>
                     </div>
@@ -326,8 +326,8 @@ $age       = $eleve->date_naissance
             </div>
             <div class="p-5 p-4">
                 <div class="grid grid-cols-3 gap-3">
-                    <a href="<?= BASE_URL ?>/notes?eleve_id=<?= $eleve->id ?>"
-                       class="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white p-5 text-center text-slate-600 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 hover:shadow-md">
+                          <a href="<?= BASE_URL ?>/v2/academique/notes?eleve_id=<?= $eleve->id ?>"
+                              class="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white p-5 text-center text-slate-600 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 hover:shadow-md">
                         <i data-lucide="book-open-check" class="w-7 h-7 text-violet-600 mb-1.5"></i>
                         <span class="text-sm font-semibold text-slate-700">Notes</span>
                         <span class="text-xs text-slate-400">Relevé complet</span>
@@ -338,7 +338,7 @@ $age       = $eleve->date_naissance
                         <span class="text-sm font-semibold text-slate-700">Absences</span>
                         <span class="text-xs text-slate-400">Assiduité</span>
                     </a>
-                    <a href="<?= BASE_URL ?>/comptabilite/paiements?eleve_id=<?= $eleve->id ?>"
+                    <a href="<?= BASE_URL ?>/v2/finance/paiements?eleve_id=<?= $eleve->id ?>"
                        class="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white p-5 text-center text-slate-600 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 hover:shadow-md">
                         <i data-lucide="credit-card" class="w-7 h-7 text-emerald-500 mb-1.5"></i>
                         <span class="text-sm font-semibold text-slate-700">Paiements</span>

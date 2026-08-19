@@ -1,16 +1,8 @@
 <?php /** @var int $ouvrageId @var array $exemplaires @var string $titre */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title><?= htmlspecialchars($titre ?? 'Exemplaires') ?></title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-4xl mx-auto py-8 px-4">
 
   <div class="mb-4 flex items-center justify-between">
-    <a href="/v2/bibliotheque/catalogue/<?= $ouvrageId ?>" class="text-sm text-violet-600 hover:underline">← Retour à l'ouvrage</a>
+    <a href="<?= BASE_URL ?>/v2/bibliotheque/catalogue/<?= $ouvrageId ?>" class="text-sm text-violet-600 hover:underline">← Retour à l'ouvrage</a>
     <button onclick="showAddForm()" class="bg-violet-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-violet-700">+ Ajouter un exemplaire</button>
   </div>
 
@@ -18,8 +10,8 @@
 
   <!-- Formulaire ajout -->
   <div id="addForm" class="hidden bg-white rounded-xl shadow-sm p-4 mb-4">
-    <form method="POST" action="/v2/bibliotheque/exemplaires/<?= $ouvrageId ?>" class="grid grid-cols-2 gap-3">
-      <input type="hidden" name="csrf_token" value="">
+    <form method="POST" action="<?= BASE_URL ?>/v2/bibliotheque/exemplaires/<?= $ouvrageId ?>" class="grid grid-cols-2 gap-3">
+      <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
       <div>
         <label class="block text-xs font-medium text-slate-600 mb-1">N° inventaire (auto si vide)</label>
         <input type="text" name="numero_inventaire" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-400 focus:outline-none font-mono">
@@ -84,8 +76,8 @@
               </span>
             </td>
             <td class="px-4 py-3 flex gap-2 justify-end">
-              <a href="/v2/bibliotheque/exemplaires/<?= $ex['id'] ?>/qrcode" target="_blank" class="text-xs text-violet-600 hover:underline">QR</a>
-              <a href="/v2/bibliotheque/exemplaires/<?= $ex['id'] ?>/barcode" target="_blank" class="text-xs text-violet-600 hover:underline">BC</a>
+              <a href="<?= BASE_URL ?>/v2/bibliotheque/exemplaires/<?= $ex['id'] ?>/qrcode" target="_blank" class="text-xs text-violet-600 hover:underline">QR</a>
+              <a href="<?= BASE_URL ?>/v2/bibliotheque/exemplaires/<?= $ex['id'] ?>/barcode" target="_blank" class="text-xs text-violet-600 hover:underline">BC</a>
               <button onclick="archiver(<?= $ex['id'] ?>)" class="text-xs text-red-500 hover:underline">Archiver</button>
             </td>
           </tr>
@@ -100,8 +92,6 @@
 function showAddForm() { document.getElementById('addForm').classList.remove('hidden'); }
 function archiver(id) {
   if (!confirm('Archiver cet exemplaire ?')) return;
-  fetch('/v2/bibliotheque/exemplaires/' + id + '/archive', {method:'POST'}).then(()=>location.reload());
+  fetch('<?= BASE_URL ?>/v2/bibliotheque/exemplaires/' + id + '/archive', {method:'POST'}).then(()=>location.reload());
 }
 </script>
-</body>
-</html>

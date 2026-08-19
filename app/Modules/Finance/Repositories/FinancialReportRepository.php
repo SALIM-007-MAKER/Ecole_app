@@ -609,6 +609,140 @@ class FinancialReportRepository
         return $stmt->fetchAll(\PDO::FETCH_OBJ);
     }
 
+    // ── KPIs financiers par année scolaire (Sept→Août) ────────────────────────
+    // Remplace RapportModel::getKpiFinance/getFinanceParMois/getDepensesParCategorie/
+    // getRecouvrementParFrais (V1, tables paiements/depenses/frais_eleves/frais_types)
+    // — sources exclusivement V2 : finance_paiements, finance_decaissements,
+    // finance_categories_depenses, finance_factures, finance_lignes_facture.
+
+    private function anneeScolaireYears(string $anneeScolaire): array
+    {
+        $parts = explode('-', $anneeScolaire);
+        return [(int)($parts[0] ?? date('Y')), (int)($parts[1] ?? (date('Y') + 1))];
+    }
+
+    public function getKpiFinanceAnnuel(string $anneeScolaire): object
+    {
+        [$y1, $y2] = $this->anneeScolaireYears($anneeScolaire);
+
+        $stmt = $this->pdo->prepare(
+            "SELECT COALESCE(SUM(p.montant_applique), 0) AS total
+             FROM finance_paiements p
+             WHERE p.statut = 'complete'
+               AND ((YEAR(p.date_paiement) = ? AND MONTH(p.date_paiement) >= 9)
+                 OR (YEAR(p.date_paiement) = ? AND MONTH(p.date_paiement) < 9))"
+        );
+        $stmt->execute([$y1, $y2]);
+        $recettes = (float)$stmt->fetchColumn();
+
+        $stmt = $this->pdo->prepare(
+            "SELECT COALESCE(SUM(d.montant), 0) AS total
+             FROM finance_decaissements d
+             WHERE d.statut = 'paye' AND d.deleted_at IS NULL
+               AND ((YEAR(d.date_depense) = ? AND MONTH(d.date_depense) >= 9)
+                 OR (YEAR(d.date_depense) = ? AND MONTH(d.date_depense) < 9))"
+        );
+        $stmt->execute([$y1, $y2]);
+        $depenses = (float)$stmt->fetchColumn();
+
+        $stmt = $this->pdo->prepare(
+            "SELECT COALESCE(SUM(montant_total), 0) AS total
+             FROM finance_factures
+             WHERE statut != 'brouillon' AND annee_scolaire = ?"
+        );
+        $stmt->execute([$anneeScolaire]);
+        $fraisTotal = (float)$stmt->fetchColumn();
+
+        $stmt = $this->pdo->prepare(
+            "SELECT COALESCE(SUM(montant_total - montant_paye), 0) AS total
+             FROM finance_factures
+             WHERE statut IN ('emise','partiellement_payee','en_retard') AND annee_scolaire = ?"
+        );
+        $stmt->execute([$anneeScolaire]);
+        $impayes = (float)$stmt->fetchColumn();
+
+        return (object)[
+            'recettes'          => $recettes,
+            'depenses'          => $depenses,
+            'impayes'           => $impayes,
+            'frais_total'       => $fraisTotal,
+            'solde'             => $recettes - $depenses,
+            'taux_recouvrement' => $fraisTotal > 0 ? round($recettes / $fraisTotal * 100, 1) : 0.0,
+        ];
+    }
+
+    public function getRecettesDepensesParMois(string $anneeScolaire): array
+    {
+        [$y1, $y2] = $this->anneeScolaireYears($anneeScolaire);
+
+        $stmt = $this->pdo->prepare(
+            "SELECT DATE_FORMAT(p.date_paiement, '%Y-%m') AS mois, SUM(p.montant_applique) AS total
+             FROM finance_paiements p
+             WHERE p.statut = 'complete'
+               AND ((YEAR(p.date_paiement) = ? AND MONTH(p.date_paiement) >= 9)
+                 OR (YEAR(p.date_paiement) = ? AND MONTH(p.date_paiement) < 9))
+             GROUP BY mois"
+        );
+        $stmt->execute([$y1, $y2]);
+        $recettes = $stmt->fetchAll(\PDO::FETCH_OBJ);
+
+        $stmt = $this->pdo->prepare(
+            "SELECT DATE_FORMAT(d.date_depense, '%Y-%m') AS mois, SUM(d.montant) AS total
+             FROM finance_decaissements d
+             WHERE d.statut = 'paye' AND d.deleted_at IS NULL
+               AND ((YEAR(d.date_depense) = ? AND MONTH(d.date_depense) >= 9)
+                 OR (YEAR(d.date_depense) = ? AND MONTH(d.date_depense) < 9))
+             GROUP BY mois"
+        );
+        $stmt->execute([$y1, $y2]);
+        $depenses = $stmt->fetchAll(\PDO::FETCH_OBJ);
+
+        return ['recettes' => $recettes, 'depenses' => $depenses];
+    }
+
+    public function getDepensesParCategorieScolaire(string $anneeScolaire): array
+    {
+        [$y1, $y2] = $this->anneeScolaireYears($anneeScolaire);
+
+        $stmt = $this->pdo->prepare(
+            "SELECT dc.nom, dc.couleur, COALESCE(SUM(d.montant), 0) AS total
+             FROM finance_categories_depenses dc
+             LEFT JOIN finance_decaissements d ON d.categorie_id = dc.id
+                AND d.statut = 'paye' AND d.deleted_at IS NULL
+                AND ((YEAR(d.date_depense) = ? AND MONTH(d.date_depense) >= 9)
+                  OR (YEAR(d.date_depense) = ? AND MONTH(d.date_depense) < 9))
+             GROUP BY dc.id
+             HAVING total > 0
+             ORDER BY total DESC"
+        );
+        $stmt->execute([$y1, $y2]);
+        return $stmt->fetchAll(\PDO::FETCH_OBJ);
+    }
+
+    public function getRecouvrementParTypeFrais(string $anneeScolaire): array
+    {
+        // Le paiement est enregistré au niveau facture (pas par ligne) : on
+        // proratise le montant payé de chaque facture sur ses lignes, au prorata
+        // du poids de la ligne dans le total de la facture.
+        $stmt = $this->pdo->prepare(
+            "SELECT
+                ft.nom,
+                COUNT(DISTINCT ff.eleve_id)                                              AS nb_eleves,
+                COALESCE(SUM(fl.montant_total), 0)                                       AS montant_total,
+                COALESCE(SUM(
+                    fl.montant_total * IF(ff.montant_total > 0, ff.montant_paye / ff.montant_total, 0)
+                ), 0)                                                                    AS montant_paye
+             FROM finance_lignes_facture fl
+             JOIN finance_factures ff    ON ff.id = fl.facture_id
+             JOIN finance_frais_types ft ON ft.id = fl.frais_type_id
+             WHERE ff.statut != 'brouillon' AND ff.annee_scolaire = ?
+             GROUP BY ft.id
+             ORDER BY montant_total DESC"
+        );
+        $stmt->execute([$anneeScolaire]);
+        return $stmt->fetchAll(\PDO::FETCH_OBJ);
+    }
+
     // ── Référentiels (classes, niveaux, modes, années) ────────────────────────
 
     public function getAnneesScolaires(): array
@@ -621,14 +755,14 @@ class FinancialReportRepository
 
     public function getClasses(): array
     {
-        $stmt = $this->pdo->query("SELECT id, nom, niveau FROM classes ORDER BY niveau, nom");
+        $stmt = $this->pdo->query("SELECT id, nom, niveau FROM classes ORDER BY " . \App\Models\ClasseModel::ordreNiveauSql() . ", nom");
         return $stmt->fetchAll(\PDO::FETCH_OBJ);
     }
 
     public function getNiveaux(): array
     {
         $stmt = $this->pdo->query(
-            "SELECT DISTINCT niveau FROM classes WHERE niveau IS NOT NULL AND niveau != '' ORDER BY niveau"
+            "SELECT DISTINCT niveau FROM classes WHERE niveau IS NOT NULL AND niveau != '' ORDER BY " . \App\Models\ClasseModel::ordreNiveauSql()
         );
         return $stmt->fetchAll(\PDO::FETCH_COLUMN);
     }

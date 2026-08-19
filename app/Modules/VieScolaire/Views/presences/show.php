@@ -29,8 +29,8 @@ $statutLabels = [
 <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
     <div>
         <a href="<?= BASE_URL ?>/v2/vie-scolaire/presences"
-           class="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 mb-2">
-            <i data-lucide="arrow-left" class="w-4 h-4"></i>Retour à la liste
+           class="inline-flex items-center gap-2 px-3 py-1.5 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 text-sm transition-colors mb-3">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Retour à la liste
         </a>
         <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
             <i data-lucide="clipboard-check" class="w-5 h-5 text-violet-600"></i>

@@ -46,8 +46,8 @@ class ContractController extends Controller
             'stats'        => $stats,
             'departements' => $refs['departements'],
             'model'        => ContractModel::class,
-            'canCreate'    => $this->policy->canCreate($this->user),
-            'canExport'    => $this->policy->canExport($this->user),
+            'canCreate'    => $this->policy->canCreate($this->currentUser()),
+            'canExport'    => $this->policy->canExport($this->currentUser()),
         ]);
     }
 
@@ -64,7 +64,7 @@ class ContractController extends Controller
             'contrats' => $contrats,
             'jours'    => $jours,
             'model'    => ContractModel::class,
-            'canRenew' => $this->policy->canRenew($this->user),
+            'canRenew' => $this->policy->canRenew($this->currentUser()),
         ]);
     }
 
@@ -87,10 +87,10 @@ class ContractController extends Controller
             'contrat'   => $contrat,
             'avenants'  => $avenants,
             'model'     => ContractModel::class,
-            'canUpdate' => $this->policy->canUpdate($this->user),
-            'canRenew'  => $this->policy->canRenew($this->user),
-            'canTerminate' => $this->policy->canTerminate($this->user),
-            'canArchive'   => $this->policy->canArchive($this->user),
+            'canUpdate' => $this->policy->canUpdate($this->currentUser()),
+            'canRenew'  => $this->policy->canRenew($this->currentUser()),
+            'canTerminate' => $this->policy->canTerminate($this->currentUser()),
+            'canArchive'   => $this->policy->canArchive($this->currentUser()),
         ]);
     }
 
@@ -130,7 +130,7 @@ class ContractController extends Controller
         }
 
         try {
-            $id = $this->service->creer($dto, (int)$this->user['id']);
+            $id = $this->service->creer($dto, (int)$this->currentUser()['id']);
             Session::flash('success', 'Contrat créé avec succès.');
             $this->redirect('/v2/rh/contrats/' . $id);
         } catch (\RuntimeException|\InvalidArgumentException $e) {
@@ -194,7 +194,7 @@ class ContractController extends Controller
         }
 
         try {
-            $this->service->modifier($id, $dto, (int)$this->user['id']);
+            $this->service->modifier($id, $dto, (int)$this->currentUser()['id']);
             Session::flash('success', 'Contrat mis à jour.');
             $this->redirect('/v2/rh/contrats/' . $id);
         } catch (\RuntimeException|\InvalidArgumentException $e) {
@@ -213,7 +213,7 @@ class ContractController extends Controller
         $dto = AvenantDTO::fromRequest($_POST);
 
         try {
-            $this->service->ajouterAvenant($id, $dto, (int)$this->user['id']);
+            $this->service->ajouterAvenant($id, $dto, (int)$this->currentUser()['id']);
             Session::flash('success', 'Avenant ajouté.');
         } catch (\RuntimeException|\InvalidArgumentException $e) {
             Session::flash('error', $e->getMessage());
@@ -232,7 +232,7 @@ class ContractController extends Controller
         $nouvelleDateFin   = ($_POST['nouvelle_date_fin'] ?? '') !== '' ? trim($_POST['nouvelle_date_fin']) : null;
 
         try {
-            $nouveauId = $this->service->renouveler($id, $nouvelleDateDebut, $nouvelleDateFin, (int)$this->user['id']);
+            $nouveauId = $this->service->renouveler($id, $nouvelleDateDebut, $nouvelleDateFin, (int)$this->currentUser()['id']);
             Session::flash('success', 'Contrat renouvelé. Nouveau contrat créé.');
             $this->redirect('/v2/rh/contrats/' . $nouveauId);
         } catch (\RuntimeException|\InvalidArgumentException $e) {
@@ -251,7 +251,7 @@ class ContractController extends Controller
         $motif = trim($_POST['motif'] ?? '');
 
         try {
-            $this->service->resilier($id, $motif, (int)$this->user['id']);
+            $this->service->resilier($id, $motif, (int)$this->currentUser()['id']);
             Session::flash('success', 'Contrat résilié.');
         } catch (\RuntimeException|\InvalidArgumentException $e) {
             Session::flash('error', $e->getMessage());
@@ -267,7 +267,7 @@ class ContractController extends Controller
         $this->verifyCsrf();
 
         try {
-            $this->service->suspendre($id, (int)$this->user['id']);
+            $this->service->suspendre($id, (int)$this->currentUser()['id']);
             Session::flash('success', 'Contrat suspendu.');
         } catch (\RuntimeException $e) {
             Session::flash('error', $e->getMessage());
@@ -281,7 +281,7 @@ class ContractController extends Controller
         $this->verifyCsrf();
 
         try {
-            $this->service->reactiver($id, (int)$this->user['id']);
+            $this->service->reactiver($id, (int)$this->currentUser()['id']);
             Session::flash('success', 'Contrat réactivé.');
         } catch (\RuntimeException $e) {
             Session::flash('error', $e->getMessage());
@@ -297,7 +297,7 @@ class ContractController extends Controller
         $this->verifyCsrf();
 
         try {
-            $this->service->activer($id, (int)$this->user['id']);
+            $this->service->activer($id, (int)$this->currentUser()['id']);
             Session::flash('success', 'Contrat activé.');
         } catch (\RuntimeException $e) {
             Session::flash('error', $e->getMessage());
@@ -313,7 +313,7 @@ class ContractController extends Controller
         $this->verifyCsrf();
 
         try {
-            $this->service->archiver($id, (int)$this->user['id']);
+            $this->service->archiver($id, (int)$this->currentUser()['id']);
             Session::flash('success', 'Contrat archivé.');
         } catch (\RuntimeException $e) {
             Session::flash('error', $e->getMessage());

@@ -73,6 +73,22 @@ final class BulletinData
         public readonly int     $generatedById,
         public readonly ?string $publishedAt,
         public readonly ?string $archivedAt,
+
+        // ── Bulletin V1 (papier) — résultats classe/annuels, filières, absences ──
+        // resultatsAnnuels: {moyenne1erSemestre: ?float, moyenne2emeSemestre: ?float, moyenneAnnuelle: ?float}
+        public readonly array   $resultatsAnnuels = [],
+        public readonly ?float  $moyenneLitteraire = null,
+        public readonly ?float  $moyenneScientifique = null,
+        public readonly ?float  $moyenneAutre = null,
+        // absences: {justifiees: int, nonJustifiees: int}
+        public readonly array   $absences = ['justifiees' => 0, 'nonJustifiees' => 0],
+        public readonly int     $effectifClasse = 0,
+
+        // Figés au moment de la génération (comme nom/adresse/logo ci-dessus) —
+        // pour qu'un bulletin déjà émis conserve les coordonnées de l'établissement
+        // telles qu'elles étaient à cet instant, même si elles changent ensuite.
+        public readonly ?string $etablissementTelephone = null,
+        public readonly ?string $etablissementEmail = null,
     ) {}
 
     // ─────────────────────────────────────────────────────────────────
@@ -122,6 +138,14 @@ final class BulletinData
             generatedById        : $this->generatedById,
             publishedAt          : $publishedAt ?? $this->publishedAt,
             archivedAt           : $archivedAt  ?? $this->archivedAt,
+            resultatsAnnuels     : $this->resultatsAnnuels,
+            moyenneLitteraire    : $this->moyenneLitteraire,
+            moyenneScientifique  : $this->moyenneScientifique,
+            moyenneAutre         : $this->moyenneAutre,
+            absences             : $this->absences,
+            effectifClasse       : $this->effectifClasse,
+            etablissementTelephone: $this->etablissementTelephone,
+            etablissementEmail   : $this->etablissementEmail,
         );
     }
 
@@ -165,6 +189,14 @@ final class BulletinData
             generatedById        : $this->generatedById,
             publishedAt          : $this->publishedAt,
             archivedAt           : $this->archivedAt,
+            resultatsAnnuels     : $this->resultatsAnnuels,
+            moyenneLitteraire    : $this->moyenneLitteraire,
+            moyenneScientifique  : $this->moyenneScientifique,
+            moyenneAutre         : $this->moyenneAutre,
+            absences             : $this->absences,
+            effectifClasse       : $this->effectifClasse,
+            etablissementTelephone: $this->etablissementTelephone,
+            etablissementEmail   : $this->etablissementEmail,
         );
     }
 
@@ -212,6 +244,14 @@ final class BulletinData
             'generated_by_id'        => $this->generatedById,
             'published_at'           => $this->publishedAt,
             'archived_at'            => $this->archivedAt,
+            'resultats_annuels'      => $this->resultatsAnnuels,
+            'moyenne_litteraire'     => $this->moyenneLitteraire,
+            'moyenne_scientifique'   => $this->moyenneScientifique,
+            'moyenne_autre'          => $this->moyenneAutre,
+            'absences'               => $this->absences,
+            'effectif_classe'        => $this->effectifClasse,
+            'etablissement_telephone'=> $this->etablissementTelephone,
+            'etablissement_email'    => $this->etablissementEmail,
         ];
     }
 
@@ -255,6 +295,14 @@ final class BulletinData
             generatedById        : (int)($d['generated_by_id']  ?? 0),
             publishedAt          : $d['published_at']           ?? null,
             archivedAt           : $d['archived_at']            ?? null,
+            resultatsAnnuels     : $d['resultats_annuels']      ?? [],
+            moyenneLitteraire    : isset($d['moyenne_litteraire'])   ? (float)$d['moyenne_litteraire']   : null,
+            moyenneScientifique  : isset($d['moyenne_scientifique']) ? (float)$d['moyenne_scientifique'] : null,
+            moyenneAutre         : isset($d['moyenne_autre'])        ? (float)$d['moyenne_autre']        : null,
+            absences             : $d['absences']               ?? ['justifiees' => 0, 'nonJustifiees' => 0],
+            effectifClasse       : (int)($d['effectif_classe']  ?? 0),
+            etablissementTelephone: $d['etablissement_telephone'] ?? null,
+            etablissementEmail   : $d['etablissement_email']      ?? null,
         );
     }
 

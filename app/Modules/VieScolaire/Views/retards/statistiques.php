@@ -1,6 +1,5 @@
 <?php
-$titre = 'Statistiques retards — Vie Scolaire V2';
-ob_start();
+$title = 'Statistiques retards';
 ?>
 <div class="max-w-7xl mx-auto px-4 py-6">
 
@@ -9,7 +8,7 @@ ob_start();
       <h1 class="text-2xl font-bold text-slate-800">Statistiques des retards</h1>
       <p class="text-slate-500 text-sm mt-1">Par classe et par élève</p>
     </div>
-    <a href="/v2/vie-scolaire/retards"
+    <a href="<?= BASE_URL ?>/v2/vie-scolaire/retards"
        class="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 text-sm">
       <i data-lucide="arrow-left" class="w-4 h-4"></i> Retour à la liste
     </a>
@@ -21,11 +20,11 @@ ob_start();
       <div>
         <label class="block text-xs font-medium text-slate-500 mb-1">Classe</label>
         <select name="classe_id"
-                class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+                class="form-select">
           <option value="">Sélectionner une classe</option>
           <?php foreach ($classes as $c): ?>
-          <option value="<?= $c['id'] ?>" <?= $classeId == $c['id'] ? 'selected' : '' ?>>
-            <?= htmlspecialchars($c['nom']) ?>
+          <option value="<?= $c->id ?>" <?= $classeId == $c->id ? 'selected' : '' ?>>
+            <?= htmlspecialchars($c->nom) ?>
           </option>
           <?php endforeach; ?>
         </select>
@@ -34,7 +33,7 @@ ob_start();
         <label class="block text-xs font-medium text-slate-500 mb-1">Année scolaire</label>
         <input type="text" name="annee_scolaire" value="<?= htmlspecialchars($annee) ?>"
                placeholder="2024-2025"
-               class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+               class="form-input">
       </div>
       <button type="submit"
               class="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">
@@ -120,6 +119,3 @@ ob_start();
   <?php endif; ?>
 
 </div>
-<?php
-$content = ob_get_clean();
-include __DIR__ . '/../../../../Views/layouts/app.php';

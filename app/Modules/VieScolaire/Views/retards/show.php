@@ -1,6 +1,5 @@
 <?php
-$titre = 'Détail retard — Vie Scolaire V2';
-ob_start();
+$title = 'Détail retard';
 $statutClass = match($retard['statut']) {
     'justifie'   => 'bg-green-100 text-green-700',
     'en_attente' => 'bg-amber-100 text-amber-700',
@@ -18,23 +17,11 @@ $statutLabel = match($retard['statut']) {
 <div class="max-w-4xl mx-auto px-4 py-6">
 
   <div class="flex items-center gap-2 text-sm text-slate-500 mb-4">
-    <a href="/v2/vie-scolaire/retards" class="hover:text-violet-600">Retards</a>
+    <a href="<?= BASE_URL ?>/v2/vie-scolaire/retards" class="hover:text-violet-600">Retards</a>
     <i data-lucide="chevron-right" class="w-3 h-3"></i>
     <span class="text-slate-700">Retard #<?= $retard['id'] ?></span>
   </div>
 
-  <?php if (!empty($_SESSION['flash_success'])): ?>
-  <div class="mb-4 px-4 py-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">
-    <?= htmlspecialchars($_SESSION['flash_success']) ?>
-    <?php unset($_SESSION['flash_success']); ?>
-  </div>
-  <?php endif; ?>
-  <?php if (!empty($_SESSION['flash_error'])): ?>
-  <div class="mb-4 px-4 py-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-    <?= htmlspecialchars($_SESSION['flash_error']) ?>
-    <?php unset($_SESSION['flash_error']); ?>
-  </div>
-  <?php endif; ?>
 
   <!-- Fiche retard -->
   <div class="bg-white border border-slate-200 rounded-xl p-6 mb-6">
@@ -76,7 +63,7 @@ $statutLabel = match($retard['statut']) {
       <?php if ($retard['appel_id']): ?>
       <div>
         <p class="text-xs text-slate-400 uppercase tracking-wide font-medium mb-1">Session d'appel</p>
-        <a href="/v2/vie-scolaire/presences/<?= $retard['appel_id'] ?>"
+        <a href="<?= BASE_URL ?>/v2/vie-scolaire/presences/<?= $retard['appel_id'] ?>"
            class="text-violet-600 hover:underline text-sm">Appel #<?= $retard['appel_id'] ?></a>
       </div>
       <?php endif; ?>
@@ -92,19 +79,19 @@ $statutLabel = match($retard['statut']) {
     <!-- Actions -->
     <div class="flex flex-wrap gap-2 pt-4 border-t border-slate-100">
       <?php if ($canJustify && $retard['statut'] === 'non_justifie' && $justif === null): ?>
-      <a href="/v2/vie-scolaire/retards/<?= $retard['id'] ?>/justifier"
-         class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+      <a href="<?= BASE_URL ?>/v2/vie-scolaire/retards/<?= $retard['id'] ?>/justifier"
+         class="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 text-sm">
         <i data-lucide="file-text" class="w-4 h-4"></i> Soumettre une justification
       </a>
       <?php endif; ?>
       <?php if ($canModify): ?>
-      <a href="/v2/vie-scolaire/retards/<?= $retard['id'] ?>/edit"
+      <a href="<?= BASE_URL ?>/v2/vie-scolaire/retards/<?= $retard['id'] ?>/edit"
          class="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 text-sm">
         <i data-lucide="pencil" class="w-4 h-4"></i> Modifier
       </a>
-      <form method="POST" action="/v2/vie-scolaire/retards/<?= $retard['id'] ?>/delete"
+      <form method="POST" action="<?= BASE_URL ?>/v2/vie-scolaire/retards/<?= $retard['id'] ?>/delete"
             onsubmit="return confirm('Archiver ce retard ?')">
-        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+        <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
         <button type="submit"
                 class="inline-flex items-center gap-2 px-4 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 text-sm">
           <i data-lucide="archive" class="w-4 h-4"></i> Archiver
@@ -148,7 +135,7 @@ $statutLabel = match($retard['statut']) {
     <?php endif; ?>
 
     <?php if ($justif['fichier_justificatif']): ?>
-    <a href="<?= htmlspecialchars($justif['fichier_justificatif']) ?>" target="_blank"
+    <a href="<?= htmlspecialchars((new \App\Services\UploadService())->url($justif['fichier_justificatif'])) ?>" target="_blank"
        class="inline-flex items-center gap-2 text-violet-600 hover:underline text-sm mb-3">
       <i data-lucide="paperclip" class="w-4 h-4"></i> Voir le fichier joint
     </a>
@@ -163,16 +150,16 @@ $statutLabel = match($retard['statut']) {
     <!-- Actions validation/refus -->
     <?php if ($canValidate && $justif['statut'] === 'en_attente'): ?>
     <div class="flex gap-2 pt-4 border-t border-slate-100 mt-4">
-      <form method="POST" action="/v2/vie-scolaire/retards/<?= $retard['id'] ?>/valider">
-        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+      <form method="POST" action="<?= BASE_URL ?>/v2/vie-scolaire/retards/<?= $retard['id'] ?>/valider">
+        <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
         <button type="submit"
                 class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm">
           <i data-lucide="check" class="w-4 h-4"></i> Valider
         </button>
       </form>
 
-      <form method="POST" action="/v2/vie-scolaire/retards/<?= $retard['id'] ?>/refuser" class="flex gap-2">
-        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+      <form method="POST" action="<?= BASE_URL ?>/v2/vie-scolaire/retards/<?= $retard['id'] ?>/refuser" class="flex gap-2">
+        <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
         <input type="text" name="motif_refus" required placeholder="Motif de refus..."
                class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400 flex-1 min-w-[200px]">
         <button type="submit"
@@ -186,6 +173,3 @@ $statutLabel = match($retard['statut']) {
   <?php endif; ?>
 
 </div>
-<?php
-$content = ob_get_clean();
-include __DIR__ . '/../../../../Views/layouts/app.php';

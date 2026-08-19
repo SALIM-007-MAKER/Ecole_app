@@ -25,17 +25,20 @@ class CaisseDuJourWidget extends BaseWidget
             $pdo   = Database::getInstance()->getConnection();
             $today = date('Y-m-d');
 
-            $encaisse = $pdo->prepare('SELECT COALESCE(SUM(montant),0) FROM finance_paiements WHERE etablissement_id=? AND DATE(date_paiement)=? AND deleted_at IS NULL');
-            $encaisse->execute([$etab, $today]);
+            $encaisse = $pdo->prepare("SELECT COALESCE(SUM(montant_applique),0) FROM finance_paiements WHERE statut='complete' AND DATE(date_paiement)=?");
+            $encaisse->execute([$today]);
 
-            $mouvements = $pdo->prepare('SELECT type_mouvement, SUM(montant) AS total FROM finance_caisse_mouvements WHERE etablissement_id=? AND DATE(created_at)=? AND deleted_at IS NULL GROUP BY type_mouvement');
-            $mouvements->execute([$etab, $today]);
+            $mouvements = $pdo->prepare(
+                "SELECT sens, SUM(montant) AS total FROM finance_mouvements_caisse
+                 WHERE statut='actif' AND DATE(created_at)=? GROUP BY sens"
+            );
+            $mouvements->execute([$today]);
             $mvts = $mouvements->fetchAll(\PDO::FETCH_KEY_PAIR);
 
             return [
                 'encaisse'   => (float)$encaisse->fetchColumn(),
-                'entrees'    => (float)($mvts['entree'] ?? 0),
-                'sorties'    => (float)($mvts['sortie'] ?? 0),
+                'entrees'    => (float)($mvts['credit'] ?? 0),
+                'sorties'    => (float)($mvts['debit'] ?? 0),
                 'date'       => $today,
             ];
         } catch (\Throwable) {

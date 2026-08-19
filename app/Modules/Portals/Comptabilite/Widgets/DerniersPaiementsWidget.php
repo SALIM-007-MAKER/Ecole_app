@@ -24,16 +24,16 @@ class DerniersPaiementsWidget extends BaseWidget
         try {
             $pdo  = Database::getInstance()->getConnection();
             $stmt = $pdo->prepare(
-                'SELECT p.montant, p.date_paiement, p.mode_paiement,
-                        CONCAT(u.prenom," ",u.nom) AS eleve_nom
+                'SELECT p.montant_applique AS montant, p.date_paiement, mp.nom AS mode_paiement,
+                        CONCAT(e.prenom," ",e.nom) AS eleve_nom
                  FROM finance_paiements p
                  JOIN finance_factures f ON f.id = p.facture_id
                  LEFT JOIN eleves e ON e.id = f.eleve_id
-                 LEFT JOIN users u ON u.id = e.user_id
-                 WHERE p.etablissement_id=? AND p.deleted_at IS NULL
+                 LEFT JOIN finance_modes_paiement mp ON mp.id = p.mode_paiement_id
+                 WHERE p.statut = "complete"
                  ORDER BY p.date_paiement DESC LIMIT 10'
             );
-            $stmt->execute([$etab]);
+            $stmt->execute();
             return ['paiements' => $stmt->fetchAll(\PDO::FETCH_ASSOC)];
         } catch (\Throwable) {
             return ['paiements' => []];

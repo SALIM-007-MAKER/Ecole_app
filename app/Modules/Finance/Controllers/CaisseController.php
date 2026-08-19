@@ -70,14 +70,14 @@ class CaisseController extends Controller
     {
         $user = $this->currentUser();
         if (!$this->policy->canOuvrir($user)) {
-            \Core\Session::setFlash('error', 'Accès refusé.');
+            \Core\Session::flash('error', 'Accès refusé.');
             $this->redirect('/v2/finance/caisse');
             return;
         }
 
         $sessionActive = $this->service->getSessionActive((int)$user['id']);
         if ($sessionActive) {
-            \Core\Session::setFlash('warning', 'Vous avez déjà une session ouverte : ' . $sessionActive->numero);
+            \Core\Session::flash('warning', 'Vous avez déjà une session ouverte : ' . $sessionActive->numero);
             $this->redirect('/v2/finance/caisse/' . $sessionActive->id);
             return;
         }
@@ -112,7 +112,7 @@ class CaisseController extends Controller
 
         try {
             $sessionId = $this->service->ouvrir($dto, (int)$user['id']);
-            \Core\Session::setFlash('success', 'Caisse ouverte avec succès.');
+            \Core\Session::flash('success', 'Caisse ouverte avec succès.');
             $this->redirect('/v2/finance/caisse/' . $sessionId);
         } catch (\Throwable $e) {
             $this->render('Finance::caisse/form', [
@@ -129,7 +129,7 @@ class CaisseController extends Controller
         $user    = $this->currentUser();
         $session = $this->repo->findWithDetails($id);
         if (!$session || !$this->policy->canViewSession($user, $session)) {
-            \Core\Session::setFlash('error', 'Session introuvable ou accès refusé.');
+            \Core\Session::flash('error', 'Session introuvable ou accès refusé.');
             $this->redirect('/v2/finance/caisse');
             return;
         }
@@ -159,12 +159,12 @@ class CaisseController extends Controller
         $user    = $this->currentUser();
         $session = $this->repo->findWithDetails($id);
         if (!$session || !$this->policy->canFermer($user)) {
-            \Core\Session::setFlash('error', 'Accès refusé.');
+            \Core\Session::flash('error', 'Accès refusé.');
             $this->redirect('/v2/finance/caisse/' . $id);
             return;
         }
         if (!in_array($session->statut, ['ouverte', 'en_activite'], true)) {
-            \Core\Session::setFlash('error', 'Cette session ne peut pas être fermée.');
+            \Core\Session::flash('error', 'Cette session ne peut pas être fermée.');
             $this->redirect('/v2/finance/caisse/' . $id);
             return;
         }
@@ -185,7 +185,7 @@ class CaisseController extends Controller
     {
         $user = $this->currentUser();
         if (!$this->policy->canFermer($user)) {
-            \Core\Session::setFlash('error', 'Accès refusé.');
+            \Core\Session::flash('error', 'Accès refusé.');
             $this->redirect('/v2/finance/caisse/' . $id);
             return;
         }
@@ -209,10 +209,10 @@ class CaisseController extends Controller
 
         try {
             $this->service->fermer($id, $soldeReel, $note, (int)$user['id']);
-            \Core\Session::setFlash('success', 'Caisse fermée avec succès.');
+            \Core\Session::flash('success', 'Caisse fermée avec succès.');
             $this->redirect('/v2/finance/caisse/' . $id);
         } catch (\Throwable $e) {
-            \Core\Session::setFlash('error', $e->getMessage());
+            \Core\Session::flash('error', $e->getMessage());
             $this->redirect('/v2/finance/caisse/' . $id . '/fermer');
         }
     }
@@ -222,7 +222,7 @@ class CaisseController extends Controller
     {
         $user = $this->currentUser();
         if (!$this->policy->canEnregistrerMouvement($user)) {
-            \Core\Session::setFlash('error', 'Accès refusé.');
+            \Core\Session::flash('error', 'Accès refusé.');
             $this->redirect('/v2/finance/caisse/' . $id);
             return;
         }
@@ -231,16 +231,16 @@ class CaisseController extends Controller
         $dto    = CashMovementDTO::fromRequest($_POST);
         $errors = $dto->validate();
         if ($errors) {
-            \Core\Session::setFlash('error', implode(' | ', $errors));
+            \Core\Session::flash('error', implode(' | ', $errors));
             $this->redirect('/v2/finance/caisse/' . $id);
             return;
         }
 
         try {
             $this->service->enregistrerMouvement($id, $dto, (int)$user['id']);
-            \Core\Session::setFlash('success', 'Mouvement enregistré.');
+            \Core\Session::flash('success', 'Mouvement enregistré.');
         } catch (\Throwable $e) {
-            \Core\Session::setFlash('error', $e->getMessage());
+            \Core\Session::flash('error', $e->getMessage());
         }
         $this->redirect('/v2/finance/caisse/' . $id);
     }
@@ -250,7 +250,7 @@ class CaisseController extends Controller
     {
         $user = $this->currentUser();
         if (!$this->policy->canAnnulerMouvement($user)) {
-            \Core\Session::setFlash('error', 'Accès refusé.');
+            \Core\Session::flash('error', 'Accès refusé.');
             $this->redirect('/v2/finance/caisse/' . $id);
             return;
         }
@@ -258,16 +258,16 @@ class CaisseController extends Controller
 
         $motif = trim($_POST['motif'] ?? '');
         if (empty($motif)) {
-            \Core\Session::setFlash('error', 'Un motif est requis pour annuler un mouvement.');
+            \Core\Session::flash('error', 'Un motif est requis pour annuler un mouvement.');
             $this->redirect('/v2/finance/caisse/' . $id);
             return;
         }
 
         try {
             $this->service->annulerMouvement($mouvId, $motif, (int)$user['id']);
-            \Core\Session::setFlash('success', 'Mouvement annulé. L\'opération inverse a été enregistrée.');
+            \Core\Session::flash('success', 'Mouvement annulé. L\'opération inverse a été enregistrée.');
         } catch (\Throwable $e) {
-            \Core\Session::setFlash('error', $e->getMessage());
+            \Core\Session::flash('error', $e->getMessage());
         }
         $this->redirect('/v2/finance/caisse/' . $id);
     }
@@ -277,7 +277,7 @@ class CaisseController extends Controller
     {
         $user = $this->currentUser();
         if (!$this->policy->canRapprocher($user)) {
-            \Core\Session::setFlash('error', 'Accès refusé.');
+            \Core\Session::flash('error', 'Accès refusé.');
             $this->redirect('/v2/finance/caisse/' . $id);
             return;
         }
@@ -286,9 +286,9 @@ class CaisseController extends Controller
         $note = trim($_POST['note'] ?? '');
         try {
             $this->service->rapprocher($id, $note, (int)$user['id']);
-            \Core\Session::setFlash('success', 'Journal rapproché et validé.');
+            \Core\Session::flash('success', 'Journal rapproché et validé.');
         } catch (\Throwable $e) {
-            \Core\Session::setFlash('error', $e->getMessage());
+            \Core\Session::flash('error', $e->getMessage());
         }
         $this->redirect('/v2/finance/caisse/' . $id);
     }
@@ -313,6 +313,6 @@ class CaisseController extends Controller
             'totaux'     => $totaux,
             'journal'    => $journal,
             'types'      => \App\Modules\Finance\Models\MouvementCaisseModel::TYPES,
-        ]);
+        ], 'none');
     }
 }

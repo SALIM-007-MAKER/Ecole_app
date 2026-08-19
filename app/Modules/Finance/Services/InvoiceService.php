@@ -14,16 +14,28 @@ use App\Modules\Finance\Events\InvoiceArchived;
 use App\Modules\Finance\Repositories\InvoiceRepository;
 use App\Services\AuditService;
 use Core\EventDispatcher;
+use Core\Tenant\BrandingService;
+use Core\Tenant\SettingsService;
+use Core\Tenant\TenantContext;
 
 class InvoiceService implements FacturationInterface
 {
     private InvoiceRepository $repo;
     private AuditService      $audit;
+    private SettingsService   $settings;
 
     public function __construct()
     {
-        $this->repo  = new InvoiceRepository();
-        $this->audit = new AuditService();
+        $this->repo     = new InvoiceRepository();
+        $this->audit    = new AuditService();
+        $this->settings = SettingsService::make();
+    }
+
+    /** Préfixe de numérotation des factures, configurable par établissement (voir /parametres/documents). */
+    private function prefixeFacture(): string
+    {
+        $etabId = TenantContext::isSet() ? TenantContext::id() : BrandingService::forCurrentRequest()->etablissementId;
+        return $this->settings->get($etabId, 'documents', 'prefixe_facture', 'FCT');
     }
 
     // ----------------------------------------------------------------
@@ -43,7 +55,7 @@ class InvoiceService implements FacturationInterface
         $pdo->beginTransaction();
         try {
             $annee  = (int)substr(date('Y'), 0, 4);
-            $numero = $this->repo->genererNumero('FCT', $annee);
+            $numero = $this->repo->genererNumero($this->prefixeFacture(), $annee);
 
             $factureId = $this->repo->insert([
                 'numero'         => $numero,
@@ -85,7 +97,7 @@ class InvoiceService implements FacturationInterface
         }
 
         $facture = $this->repo->findWithDetails($factureId);
-        $this->audit->logCreate($userId, 'finance', 'facture', $factureId);
+        $this->audit->logCreate($userId, 'finance', 'facture', $factureId, (array)$facture);
 
         EventDispatcher::dispatch(new InvoiceCreated(
             factureId:     $factureId,
@@ -390,7 +402,7 @@ class InvoiceService implements FacturationInterface
         $this->repo->update($factureId, ['statut' => 'annulee']);
         $pdo = $this->repo->getPdo();
         $pdo->exec("DELETE FROM `finance_factures` WHERE `id` = {$factureId}");
-        $this->audit->logDelete($userId, 'finance', 'facture', $factureId);
+        $this->audit->logDelete($userId, 'finance', 'facture', $factureId, (array)$facture);
     }
 
     // ----------------------------------------------------------------

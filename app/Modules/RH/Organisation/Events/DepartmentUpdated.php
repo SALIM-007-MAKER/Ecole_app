@@ -13,7 +13,9 @@ class DepartmentUpdated extends Event
         public readonly string $action,  // 'modification' | 'archivage' | 'restauration'
         public readonly array  $changes,
         public readonly int    $updatedBy
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

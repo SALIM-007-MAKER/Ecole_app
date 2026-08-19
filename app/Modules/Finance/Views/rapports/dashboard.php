@@ -12,37 +12,33 @@
  */
 $fmt = fn(float $v) => number_format($v, 0, ',', ' ') . ' XOF';
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Tableau de bord financier — Finance V2</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
-    <script>tailwind.config={theme:{extend:{colors:{primary:'#7c3aed'}}}}</script>
-</head>
-<body class="bg-slate-50 min-h-screen">
-<?php include BASE_PATH . '/app/Modules/Finance/Views/partials/sidebar.php'; ?>
-
-<main class="ml-64 p-8">
     <!-- En-tête + filtre date -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div>
-            <nav class="text-sm text-slate-400 mb-1">
-                <a href="/v2/finance/rapports" class="hover:text-violet-600">Rapports</a> /
-                <span class="text-slate-700">Tableau de bord</span>
-            </nav>
-            <h1 class="text-3xl font-bold text-slate-800">Tableau de bord financier</h1>
+    <div class="flex items-center gap-2 text-sm text-slate-500 mb-4">
+        <a href="<?= BASE_URL ?>/v2/finance/rapports" class="hover:text-violet-600">Rapports</a>
+        <i data-lucide="chevron-right" class="w-3 h-3"></i>
+        <span class="text-slate-700">Tableau de bord</span>
+    </div>
+
+    <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-8">
+        <div class="flex items-start gap-4">
+            <div class="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="bar-chart-2" class="w-5 h-5 text-violet-600"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">Tableau de bord financier</h1>
+                <p class="text-sm text-slate-500 mt-0.5">Recettes, impayés et trésorerie en un coup d'œil</p>
+            </div>
         </div>
-        <div class="flex gap-2">
+        <div class="flex gap-2 flex-shrink-0">
             <form method="GET" class="flex gap-2">
                 <input type="date" name="date_fin" value="<?= htmlspecialchars($date) ?>"
-                       class="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-300">
-                <button class="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-violet-700">Actualiser</button>
+                       class="form-input">
+                <button class="inline-flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i> Actualiser
+                </button>
             </form>
-            <a href="/v2/finance/rapports/export?type=dashboard&format=pdf"
-               class="border border-slate-200 bg-white text-slate-700 px-4 py-2 rounded-lg text-sm hover:bg-slate-50 flex items-center gap-2">
+            <a href="<?= BASE_URL ?>/v2/finance/rapports/export?type=dashboard&format=pdf"
+               class="inline-flex items-center gap-2 border border-slate-300 bg-white text-slate-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
                 <i data-lucide="printer" class="w-4 h-4"></i> Imprimer
             </a>
         </div>
@@ -105,7 +101,12 @@ $fmt = fn(float $v) => number_format($v, 0, ',', ' ') . ' XOF';
         <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
             <h2 class="font-semibold text-slate-700 mb-4">Répartition par mode de paiement</h2>
             <?php if (empty($statsParMode)): ?>
-                <p class="text-slate-400 text-sm text-center py-10">Aucune donnée</p>
+                <div class="text-center py-10">
+                    <div class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-3">
+                        <i data-lucide="pie-chart" class="w-5 h-5 text-slate-300"></i>
+                    </div>
+                    <p class="text-slate-400 text-sm">Aucune donnée</p>
+                </div>
             <?php else: ?>
                 <div class="space-y-3">
                     <?php
@@ -132,10 +133,18 @@ $fmt = fn(float $v) => number_format($v, 0, ',', ' ') . ' XOF';
     <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 mb-6">
         <div class="flex items-center justify-between mb-4">
             <h2 class="font-semibold text-slate-700">Top 5 débiteurs</h2>
-            <a href="/v2/finance/rapports/impayes" class="text-violet-600 text-sm hover:underline">Voir tous les impayés →</a>
+            <a href="<?= BASE_URL ?>/v2/finance/rapports/impayes"
+               class="inline-flex items-center gap-1 text-violet-600 text-sm font-medium hover:text-violet-800">
+                Voir tous les impayés <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+            </a>
         </div>
         <?php if (empty($topDebiteurs)): ?>
-            <p class="text-slate-400 text-sm text-center py-6">Aucun impayé</p>
+            <div class="text-center py-6">
+                <div class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-3">
+                    <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+                </div>
+                <p class="text-slate-400 text-sm">Aucun impayé</p>
+            </div>
         <?php else: ?>
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
@@ -161,12 +170,8 @@ $fmt = fn(float $v) => number_format($v, 0, ',', ' ') . ' XOF';
         </div>
         <?php endif; ?>
     </div>
-</main>
-
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
-lucide.createIcons();
-
 // Chart évolution mensuelle
 const evoData = <?= json_encode(array_values($evolution)) ?>;
 if (evoData.length > 0) {
@@ -191,5 +196,3 @@ if (evoData.length > 0) {
     });
 }
 </script>
-</body>
-</html>

@@ -51,7 +51,7 @@ class PlatformEtablissementController extends PlatformController
         $etab = $this->etabs->find($id);
         if ($etab === null) {
             http_response_code(404);
-            $this->render('errors/404', [], 'main');
+            $this->render('errors/404', [], 'none');
             return;
         }
 

@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use Core\Tenant\BrandingService;
+
 class EmailService
 {
     private array $config;
@@ -17,7 +19,7 @@ class EmailService
             return false;
         }
 
-        $fromName  = $this->config['from_name']  ?? 'Ecole App';
+        $fromName  = $this->config['from_name']  ?? BrandingService::forCurrentRequest()->appName;
         $fromEmail = $this->config['from_email'] ?? 'noreply@ecole-app.local';
         $replyTo   = $this->config['reply_to']   ?? $fromEmail;
 
@@ -40,6 +42,7 @@ class EmailService
     public function buildHtml(string $titre, string $message, string $lien = ''): string
     {
         $esc      = fn($s) => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
+        $appName  = $esc(BrandingService::forCurrentRequest()->appName);
         $lienHtml = '';
         if ($lien) {
             $lienHtml = '<p style="margin-top:20px">
@@ -55,7 +58,7 @@ class EmailService
 <body style="margin:0;padding:0;background:#f8f9fa;font-family:Arial,Helvetica,sans-serif">
 <div style="max-width:600px;margin:32px auto">
   <div style="background:#0d6efd;color:#ffffff;padding:22px 28px;border-radius:8px 8px 0 0">
-    <h1 style="margin:0;font-size:20px;font-weight:700">🎓 Ecole App</h1>
+    <h1 style="margin:0;font-size:20px;font-weight:700">🎓 ' . $appName . '</h1>
   </div>
   <div style="background:#ffffff;border:1px solid #dee2e6;border-top:none;padding:28px;border-radius:0 0 8px 8px">
     <h2 style="color:#212529;font-size:17px;margin-top:0">' . $esc($titre) . '</h2>
@@ -63,7 +66,7 @@ class EmailService
     ' . $lienHtml . '
     <hr style="border:none;border-top:1px solid #dee2e6;margin:24px 0 16px">
     <p style="color:#adb5bd;font-size:11px;margin:0">
-      Ce message est envoyé automatiquement par Ecole App. Merci de ne pas répondre directement.
+      Ce message est envoyé automatiquement par ' . $appName . '. Merci de ne pas répondre directement.
     </p>
   </div>
 </div>

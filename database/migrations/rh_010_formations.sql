@@ -9,7 +9,7 @@
 
 -- Organismes de formation (internes & externes)
 CREATE TABLE IF NOT EXISTS rh_formations_organismes (
-    id           INT AUTO_INCREMENT PRIMARY KEY,
+    id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     code         VARCHAR(50)  NOT NULL,
     nom          VARCHAR(255) NOT NULL,
     type         ENUM('interne','externe','certifiant','universite') DEFAULT 'externe',
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS rh_formations_organismes (
 
 -- Catalogue de formations
 CREATE TABLE IF NOT EXISTS rh_formations_catalogue (
-    id                   INT AUTO_INCREMENT PRIMARY KEY,
+    id                   INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     code                 VARCHAR(50)  NOT NULL,
     titre                VARCHAR(255) NOT NULL,
     description          TEXT         NULL,
@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS rh_formations_catalogue (
     duree_heures         DECIMAL(6,1) NOT NULL DEFAULT 0,
     niveau               ENUM('debutant','intermediaire','avance','expert') DEFAULT 'debutant',
     modalite             ENUM('presentiel','distanciel','hybride') DEFAULT 'presentiel',
-    organisme_id         INT          NULL,
+    organisme_id         INT UNSIGNED NULL,
     formateur_principal  VARCHAR(120) NULL,
     cout_unitaire        DECIMAL(10,2) DEFAULT 0.00,
     devise               VARCHAR(10)  DEFAULT 'XAF',
@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS rh_formations_catalogue (
     prerequis            TEXT         NULL,
     objectifs            TEXT         NULL,
     actif                TINYINT(1)   DEFAULT 1,
-    created_by           INT          NOT NULL,
+    created_by           INT UNSIGNED NOT NULL,
     created_at           DATETIME     DEFAULT CURRENT_TIMESTAMP,
     updated_at           DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at           DATETIME     NULL,
@@ -53,8 +53,8 @@ CREATE TABLE IF NOT EXISTS rh_formations_catalogue (
 
 -- Sessions de formation
 CREATE TABLE IF NOT EXISTS rh_formations_sessions (
-    id               INT AUTO_INCREMENT PRIMARY KEY,
-    formation_id     INT          NOT NULL,
+    id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    formation_id     INT UNSIGNED NOT NULL,
     code_session     VARCHAR(60)  NOT NULL,
     lieu             VARCHAR(255) NULL,
     date_debut       DATE         NOT NULL,
@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS rh_formations_sessions (
     cout_total       DECIMAL(10,2) DEFAULT 0.00,
     financeur        ENUM('etablissement','organisme','personnel','mixte') DEFAULT 'etablissement',
     commentaire      TEXT         NULL,
-    created_by       INT          NOT NULL,
+    created_by       INT UNSIGNED NOT NULL,
     created_at       DATETIME     DEFAULT CURRENT_TIMESTAMP,
     updated_at       DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at       DATETIME     NULL,
@@ -78,9 +78,9 @@ CREATE TABLE IF NOT EXISTS rh_formations_sessions (
 
 -- Inscriptions aux sessions
 CREATE TABLE IF NOT EXISTS rh_formations_inscriptions (
-    id                    INT AUTO_INCREMENT PRIMARY KEY,
-    session_id            INT          NOT NULL,
-    employe_id            INT          NOT NULL,
+    id                    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    session_id            INT UNSIGNED NOT NULL,
+    employe_id            INT UNSIGNED NOT NULL,
     statut                ENUM('inscrit','confirme','present','absent','valide','annule') DEFAULT 'inscrit',
     date_inscription      DATETIME     DEFAULT CURRENT_TIMESTAMP,
     date_confirmation     DATETIME     NULL,
@@ -88,8 +88,8 @@ CREATE TABLE IF NOT EXISTS rh_formations_inscriptions (
     note_evaluation       DECIMAL(4,2) NULL,
     commentaire_evaluation TEXT         NULL,
     attestation_delivree  TINYINT(1)   DEFAULT 0,
-    created_by            INT          NOT NULL,
-    updated_by            INT          NOT NULL,
+    created_by            INT UNSIGNED NOT NULL,
+    updated_by            INT UNSIGNED NOT NULL,
     created_at            DATETIME     DEFAULT CURRENT_TIMESTAMP,
     updated_at            DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uq_inscription (session_id, employe_id),
@@ -99,8 +99,8 @@ CREATE TABLE IF NOT EXISTS rh_formations_inscriptions (
 
 -- Présences (pour formations multi-jours)
 CREATE TABLE IF NOT EXISTS rh_formations_presences (
-    id             INT AUTO_INCREMENT PRIMARY KEY,
-    inscription_id INT          NOT NULL,
+    id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    inscription_id INT UNSIGNED NOT NULL,
     date           DATE         NOT NULL,
     present        TINYINT(1)   DEFAULT 1,
     commentaire    TEXT         NULL,
@@ -111,14 +111,14 @@ CREATE TABLE IF NOT EXISTS rh_formations_presences (
 
 -- Catalogue certifications
 CREATE TABLE IF NOT EXISTS rh_certifications (
-    id                  INT AUTO_INCREMENT PRIMARY KEY,
+    id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     code                VARCHAR(50)  NOT NULL,
     libelle             VARCHAR(255) NOT NULL,
     description         TEXT         NULL,
-    organisme_id        INT          NULL,
+    organisme_id        INT UNSIGNED NULL,
     duree_validite_mois INT          NULL,
     renouvelable        TINYINT(1)   DEFAULT 1,
-    formation_id        INT          NULL,
+    formation_id        INT UNSIGNED NULL,
     actif               TINYINT(1)   DEFAULT 1,
     created_at          DATETIME     DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uq_certification_code (code),
@@ -128,17 +128,17 @@ CREATE TABLE IF NOT EXISTS rh_certifications (
 
 -- Certifications des employés
 CREATE TABLE IF NOT EXISTS rh_employe_certifications (
-    id                  INT AUTO_INCREMENT PRIMARY KEY,
-    employe_id          INT          NOT NULL,
-    certification_id    INT          NOT NULL,
+    id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    employe_id          INT UNSIGNED NOT NULL,
+    certification_id    INT UNSIGNED NOT NULL,
     date_obtention      DATE         NOT NULL,
     date_expiration     DATE         NULL,
     statut              ENUM('valide','expiree','a_renouveler') DEFAULT 'valide',
-    session_id          INT          NULL,
+    session_id          INT UNSIGNED NULL,
     reference_certificat VARCHAR(100) NULL,
     fichier_certificat  VARCHAR(255) NULL,
     notes               TEXT         NULL,
-    created_by          INT          NOT NULL,
+    created_by          INT UNSIGNED NOT NULL,
     created_at          DATETIME     DEFAULT CURRENT_TIMESTAMP,
     updated_at          DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (employe_id)       REFERENCES rh_employes(id)       ON DELETE RESTRICT,
@@ -148,7 +148,7 @@ CREATE TABLE IF NOT EXISTS rh_employe_certifications (
 
 -- Catalogue de compétences
 CREATE TABLE IF NOT EXISTS rh_competences (
-    id          INT AUTO_INCREMENT PRIMARY KEY,
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     code        VARCHAR(50)  NOT NULL,
     libelle     VARCHAR(255) NOT NULL,
     description TEXT         NULL,
@@ -161,13 +161,13 @@ CREATE TABLE IF NOT EXISTS rh_competences (
 
 -- Compétences des employés
 CREATE TABLE IF NOT EXISTS rh_employe_competences (
-    id              INT AUTO_INCREMENT PRIMARY KEY,
-    employe_id      INT          NOT NULL,
-    competence_id   INT          NOT NULL,
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    employe_id      INT UNSIGNED NOT NULL,
+    competence_id   INT UNSIGNED NOT NULL,
     niveau          ENUM('debutant','intermediaire','avance','expert') DEFAULT 'debutant',
     date_acquisition DATE         NULL,
-    session_id      INT          NULL,
-    valide_par      INT          NULL,
+    session_id      INT UNSIGNED NULL,
+    valide_par      INT UNSIGNED NULL,
     valide_par_nom  VARCHAR(120) NULL,
     notes           TEXT         NULL,
     created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP,
@@ -180,8 +180,8 @@ CREATE TABLE IF NOT EXISTS rh_employe_competences (
 
 -- Lien formation ↔ compétences développées
 CREATE TABLE IF NOT EXISTS rh_formation_competences (
-    formation_id  INT NOT NULL,
-    competence_id INT NOT NULL,
+    formation_id  INT UNSIGNED NOT NULL,
+    competence_id INT UNSIGNED NOT NULL,
     PRIMARY KEY (formation_id, competence_id),
     FOREIGN KEY (formation_id)  REFERENCES rh_formations_catalogue(id) ON DELETE CASCADE,
     FOREIGN KEY (competence_id) REFERENCES rh_competences(id)          ON DELETE CASCADE

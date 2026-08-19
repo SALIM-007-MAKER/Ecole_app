@@ -24,18 +24,18 @@ $titre = htmlspecialchars($document['titre']);
       </p>
     </div>
     <div class="flex gap-2 flex-wrap justify-end">
-      <a href="/v2/documents/<?= $document['id'] ?>/download"
+      <a href="<?= BASE_URL ?>/v2/documents/<?= $document['id'] ?>/download"
          class="px-3 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm hover:bg-slate-50">
         Télécharger
       </a>
       <?php if ($canShare): ?>
-      <a href="/v2/documents/<?= $document['id'] ?>/shares"
+      <a href="<?= BASE_URL ?>/v2/documents/<?= $document['id'] ?>/shares"
          class="px-3 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm hover:bg-slate-50">
         Partager
       </a>
       <?php endif; ?>
       <?php if ($canUpdate): ?>
-      <a href="/v2/documents/<?= $document['id'] ?>/edit"
+      <a href="<?= BASE_URL ?>/v2/documents/<?= $document['id'] ?>/edit"
          class="px-3 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">
         Modifier
       </a>
@@ -69,7 +69,7 @@ $titre = htmlspecialchars($document['titre']);
       <!-- Aperçu -->
       <div class="bg-white border border-slate-200 rounded-xl p-4">
         <h2 class="text-sm font-semibold text-slate-700 mb-3">Aperçu</h2>
-        <a href="/v2/documents/<?= $document['id'] ?>/preview" target="_blank"
+        <a href="<?= BASE_URL ?>/v2/documents/<?= $document['id'] ?>/preview" target="_blank"
            class="block text-center py-12 bg-slate-50 rounded-lg border border-dashed border-slate-300 text-slate-400 hover:text-violet-600 hover:border-violet-300 transition">
           Ouvrir l'aperçu →
         </a>
@@ -150,6 +150,6 @@ function archiver(id) {
 function mettreCorbeille(id) {
   if (!confirm('Mettre ce document à la corbeille ?')) return;
   fetch(`/v2/trash/${id}`, {method:'POST', headers:{'X-CSRF-Token':document.querySelector('meta[name=csrf-token]')?.content}})
-    .then(r=>r.json()).then(d=>{ if(d.success) window.location='/v2/documents'; });
+    .then(r=>r.json()).then(d=>{ if(d.success) window.location='<?= BASE_URL ?>/v2/documents'; });
 }
 </script>

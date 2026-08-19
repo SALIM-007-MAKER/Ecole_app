@@ -1,20 +1,12 @@
 <?php /** @var array $emprunts @var int $page @var string|null $filtre @var string $titre */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title><?= htmlspecialchars($titre ?? 'Emprunts') ?></title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-6xl mx-auto py-8 px-4">
 
   <div class="flex items-center justify-between mb-6">
     <h1 class="text-2xl font-bold text-slate-800"><?= htmlspecialchars($titre ?? '') ?></h1>
     <div class="flex gap-2">
-      <a href="/v2/bibliotheque/emprunts" class="text-sm px-3 py-1.5 rounded-lg border <?= empty($filtre) ? 'bg-violet-600 text-white border-violet-600' : 'bg-white border-slate-200 text-slate-600' ?>">En cours</a>
-      <a href="/v2/bibliotheque/emprunts/en-retard" class="text-sm px-3 py-1.5 rounded-lg border <?= ($filtre ?? '') === 'retard' ? 'bg-red-600 text-white border-red-600' : 'bg-white border-slate-200 text-slate-600' ?>">En retard</a>
-      <a href="/v2/bibliotheque/emprunts/create" class="bg-violet-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-violet-700">+ Nouvel emprunt</a>
+      <a href="<?= BASE_URL ?>/v2/bibliotheque/emprunts" class="text-sm px-3 py-1.5 rounded-lg border <?= empty($filtre) ? 'bg-violet-600 text-white border-violet-600' : 'bg-white border-slate-200 text-slate-600' ?>">En cours</a>
+      <a href="<?= BASE_URL ?>/v2/bibliotheque/emprunts/en-retard" class="text-sm px-3 py-1.5 rounded-lg border <?= ($filtre ?? '') === 'retard' ? 'bg-red-600 text-white border-red-600' : 'bg-white border-slate-200 text-slate-600' ?>">En retard</a>
+      <a href="<?= BASE_URL ?>/v2/bibliotheque/emprunts/create" class="bg-violet-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-violet-700">+ Nouvel emprunt</a>
     </div>
   </div>
 
@@ -60,7 +52,7 @@
             </td>
             <td class="px-4 py-3">
               <div class="flex gap-2 justify-end">
-                <a href="/v2/bibliotheque/emprunts/<?= $e['id'] ?>" class="text-xs text-violet-600 hover:underline">Détail</a>
+                <a href="<?= BASE_URL ?>/v2/bibliotheque/emprunts/<?= $e['id'] ?>" class="text-xs text-violet-600 hover:underline">Détail</a>
                 <button onclick="retour(<?= $e['id'] ?>)" class="text-xs text-green-600 hover:underline">Retour</button>
               </div>
             </td>
@@ -75,8 +67,6 @@
 <script>
 function retour(id) {
   if (!confirm('Enregistrer le retour ?')) return;
-  fetch('/v2/bibliotheque/emprunts/' + id + '/retour', {method:'POST'}).then(()=>location.reload());
+  fetch('<?= BASE_URL ?>/v2/bibliotheque/emprunts/' + id + '/retour', {method:'POST'}).then(()=>location.reload());
 }
 </script>
-</body>
-</html>

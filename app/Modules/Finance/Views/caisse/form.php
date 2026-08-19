@@ -36,17 +36,17 @@ $old_v  = fn(string $k, $def = '') => htmlspecialchars((string)($old[$k] ?? $def
     </div>
 
     <form method="POST" action="<?= BASE_URL ?>/v2/finance/caisse" class="bg-white rounded-xl border border-slate-200 p-6 space-y-5">
-        <?php echo csrf_field() ?? '<input type="hidden" name="csrf_token" value="' . ($_SESSION['csrf_token'] ?? '') . '">'; ?>
+        <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
 
         <!-- Solde initial -->
         <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">
+            <label class="form-label">
                 Fonds d'ouverture (solde initial)
             </label>
             <div class="relative">
                 <input type="number" name="solde_initial" value="<?= $old_v('solde_initial', '0') ?>"
                        min="0" step="0.01"
-                       class="w-full pl-3 pr-16 py-2.5 border <?= isset($errors['solde_initial']) ? 'border-red-400 bg-red-50' : 'border-slate-300' ?> rounded-lg text-sm focus:ring-2 focus:ring-violet-300 focus:border-violet-400">
+                       class="form-input <?= isset($errors['solde_initial']) ? 'is-invalid' : '' ?> pl-3 pr-16">
                 <span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-500">XOF</span>
             </div>
             <?php if (isset($errors['solde_initial'])): ?>
@@ -58,9 +58,9 @@ $old_v  = fn(string $k, $def = '') => htmlspecialchars((string)($old[$k] ?? $def
 
         <!-- Note -->
         <div>
-            <label class="block text-sm font-medium text-slate-700 mb-1">Note d'ouverture (optionnel)</label>
+            <label class="form-label">Note d'ouverture (optionnel)</label>
             <textarea name="note" rows="2"
-                      class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-violet-300"
+                      class="form-textarea"
                       placeholder="Observations…"><?= $old_v('note') ?></textarea>
         </div>
 

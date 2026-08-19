@@ -1,12 +1,4 @@
 <?php /** @var array $queueStats @var array $channelStats @var array $recentLogs @var array $failedJobs */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title><?= htmlspecialchars($titre ?? 'Admin Communication') ?></title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-6xl mx-auto py-8 px-4">
   <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold text-slate-800">Administration — Communication</h1>
@@ -111,7 +103,7 @@
 const csrf = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 
 async function processBatch() {
-  const r = await fetch('/v2/communication/admin/queue/process', { method: 'POST', headers: { 'X-CSRF-Token': csrf } });
+  const r = await fetch('<?= BASE_URL ?>/v2/communication/admin/queue/process', { method: 'POST', headers: { 'X-CSRF-Token': csrf } });
   const j = await r.json();
   const el = document.getElementById('batch-result');
   el.classList.remove('hidden');
@@ -126,9 +118,7 @@ async function retryJob(id) {
 
 async function retryFailed() {
   if (!confirm('Relancer tous les messages en échec ?')) return;
-  await fetch('/v2/communication/admin/queue/retry-failed', { method: 'POST', headers: { 'X-CSRF-Token': csrf } });
+  await fetch('<?= BASE_URL ?>/v2/communication/admin/queue/retry-failed', { method: 'POST', headers: { 'X-CSRF-Token': csrf } });
   location.reload();
 }
 </script>
-</body>
-</html>

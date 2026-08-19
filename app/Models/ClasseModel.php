@@ -9,11 +9,39 @@ class ClasseModel extends Model
     protected string $table = 'classes';
     protected bool $tenantScoped = true;
 
+    // Nomenclature officielle du système éducatif nigérien (Niger) — voir
+    // database/migrations/T019_niveaux_nigeriens.php pour la migration des
+    // données existantes vers cette nomenclature.
     public const NIVEAUX = [
-        'Primaire'    => ['1AP', '2AP', '3AP', '4AP', '5AP'],
-        'Moyen (CEM)' => ['1AM', '2AM', '3AM', '4AM'],
-        'Lycée'       => ['1AS', '2AS', '3AS'],
+        'Préscolaire' => ['PS', 'MS', 'GS'],
+        'Primaire'    => ['CI', 'CP', 'CE1', 'CE2', 'CM1', 'CM2'],
+        'Collège'     => ['6e', '5e', '4e', '3e'],
+        'Lycée'       => ['Seconde', 'Première', 'Terminale'],
     ];
+
+    /**
+     * Ordre pédagogique à plat (Préscolaire → Lycée). Nécessaire car un tri
+     * SQL alphabétique classique (`ORDER BY niveau`) ne correspond PLUS à
+     * l'ordre pédagogique avec cette nomenclature (ex: 'CE1' < 'CI'
+     * alphabétiquement, mais CI précède CE1 pédagogiquement ; '3e' < '6e'
+     * alphabétiquement, inversé par rapport à l'ordre réel). Toute requête
+     * SQL qui trie des classes par niveau doit utiliser {@see ordreNiveauSql()}
+     * au lieu d'un simple `ORDER BY {colonne}` — voir
+     * NIGER_EDUCATION_SYSTEM_STANDARDIZATION_REPORT.md.
+     */
+    public const NIVEAUX_ORDRE = [
+        'PS', 'MS', 'GS',
+        'CI', 'CP', 'CE1', 'CE2', 'CM1', 'CM2',
+        '6e', '5e', '4e', '3e',
+        'Seconde', 'Première', 'Terminale',
+    ];
+
+    /** Fragment SQL `FIELD(...)` imposant l'ordre pédagogique plutôt qu'alphabétique pour un ORDER BY sur la colonne niveau donnée (ex: 'c.niveau'). */
+    public static function ordreNiveauSql(string $colonne = 'niveau'): string
+    {
+        $valeurs = implode(',', array_map(fn(string $n) => "'" . addslashes($n) . "'", self::NIVEAUX_ORDRE));
+        return "FIELD({$colonne},{$valeurs})";
+    }
 
     public function findWithStats(): array
     {
@@ -26,7 +54,7 @@ class ClasseModel extends Model
              LEFT JOIN `enseignements` en ON en.classe_id = c.id
              WHERE c.etablissement_id = ?
              GROUP BY c.id
-             ORDER BY c.niveau, c.nom",
+             ORDER BY " . self::ordreNiveauSql('c.niveau') . ", c.nom",
             [$this->tenantId()]
         );
     }
@@ -37,7 +65,7 @@ class ClasseModel extends Model
             "SELECT id, CONCAT(niveau, ' — ', nom) AS label
              FROM `classes`
              WHERE etablissement_id = ?
-             ORDER BY niveau, nom",
+             ORDER BY " . self::ordreNiveauSql() . ", nom",
             [$this->tenantId()]
         );
     }

@@ -4,20 +4,9 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
 $maxDept = max(array_column($stats['par_departement'], 'nb_employes') ?: [1]);
 $maxCat  = max(array_column($stats['par_categorie'],   'nb')          ?: [1]);
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Statistiques Organisation — EduNova</title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 text-slate-800 min-h-screen">
-<?php include dirname(__DIR__, 2) . '/layouts/sidebar.php'; ?>
-<main class="ml-64 p-8">
 
   <div class="flex items-center gap-2 text-sm text-slate-500 mb-6">
-    <a href="/v2/rh/organisation" class="hover:text-violet-600">Organisation</a>
+    <a href="<?= BASE_URL ?>/v2/rh/organisation" class="hover:text-violet-600">Organisation</a>
     <span>/</span>
     <span>Statistiques</span>
   </div>
@@ -109,7 +98,3 @@ $maxCat  = max(array_column($stats['par_categorie'],   'nb')          ?: [1]);
       </div>
     </div>
   <?php endif; ?>
-
-</main>
-</body>
-</html>

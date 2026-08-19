@@ -9,14 +9,23 @@
  * Préfixe : /v2/finance
  * Namespace contrôleurs : App\Modules\Finance\Controllers\
  *
- * Ces routes coexistent avec les routes V1 :
- *   /comptabilite, /paiements, /depenses (restent actives)
- * La V1 reste active jusqu'à la fin de la migration complète.
+ * Étape 3 (unification V1/V2) : le menu de navigation pointe désormais
+ * exclusivement vers /v2/finance/* pour tous les rôles. Les routes V1
+ * (/comptabilite, /paiements, /depenses) restent techniquement actives
+ * (accès direct par URL) le temps de l'observation post-bascule, mais ne
+ * sont plus atteignables depuis aucune navigation de l'application.
+ * Phase 3.x — Décaissements : domaine V2 natif construit (finance_decaissements,
+ * finance_fournisseurs, finance_categories_depenses, finance_justificatifs),
+ * intégré à la comptabilité (ExpenseValidated → écriture 6010/4010) et à la
+ * caisse (imputation automatique si paiement en espèces).
  */
 
 use Core\Router;
 
 /** @var Router $router */
+
+// ─── Espace parent / élève — scolarité et paiements de l'enfant ─────────────
+$router->get('/v2/finance/mes-paiements', 'Finance\Controllers\FactureController@mesPaiements');
 
 // ─── Phase 3.2 — Référentiel des frais ───────────────────────────────────────
 
@@ -160,3 +169,34 @@ $router->get('/v2/finance/rapports/analytique',                        'Finance\
 
 // Index rapports (en dernier)
 $router->get('/v2/finance/rapports',                                   'Finance\Controllers\RapportController@index');
+
+// ─── Phase 3.8 — Dépenses / Décaissements ────────────────────────────────────
+
+// Fournisseurs (chemin dédié, avant les routes décaissements avec {id})
+$router->get('/v2/finance/fournisseurs',                               'Finance\Controllers\DecaissementController@fournisseurs');
+$router->post('/v2/finance/fournisseurs',                              'Finance\Controllers\DecaissementController@storeFournisseur');
+$router->post('/v2/finance/fournisseurs/{id}',                         'Finance\Controllers\DecaissementController@updateFournisseur');
+$router->post('/v2/finance/fournisseurs/{id}/toggle',                  'Finance\Controllers\DecaissementController@toggleFournisseur');
+
+// Catégories de dépenses (avant /decaissements/{id} pour éviter le conflit)
+$router->get('/v2/finance/decaissements/categories',                   'Finance\Controllers\DecaissementController@categories');
+$router->post('/v2/finance/decaissements/categories',                  'Finance\Controllers\DecaissementController@storeCategorie');
+$router->post('/v2/finance/decaissements/categories/{id}',             'Finance\Controllers\DecaissementController@updateCategorie');
+$router->post('/v2/finance/decaissements/categories/{id}/toggle',      'Finance\Controllers\DecaissementController@toggleCategorie');
+
+// CRUD décaissements
+$router->get('/v2/finance/decaissements',                              'Finance\Controllers\DecaissementController@index');
+$router->get('/v2/finance/decaissements/create',                       'Finance\Controllers\DecaissementController@create');
+$router->post('/v2/finance/decaissements',                             'Finance\Controllers\DecaissementController@store');
+$router->get('/v2/finance/decaissements/{id}',                         'Finance\Controllers\DecaissementController@show');
+
+// Workflow
+$router->post('/v2/finance/decaissements/{id}/valider',                'Finance\Controllers\DecaissementController@valider');
+$router->post('/v2/finance/decaissements/{id}/approuver',              'Finance\Controllers\DecaissementController@approuver');
+$router->post('/v2/finance/decaissements/{id}/rejeter',                'Finance\Controllers\DecaissementController@rejeter');
+$router->post('/v2/finance/decaissements/{id}/payer',                  'Finance\Controllers\DecaissementController@payer');
+$router->post('/v2/finance/decaissements/{id}/annuler',                'Finance\Controllers\DecaissementController@annuler');
+
+// Justificatifs
+$router->post('/v2/finance/decaissements/{id}/justificatifs',          'Finance\Controllers\DecaissementController@uploadJustificatif');
+$router->post('/v2/finance/decaissements/{id}/justificatifs/{jusId}/delete', 'Finance\Controllers\DecaissementController@destroyJustificatif');

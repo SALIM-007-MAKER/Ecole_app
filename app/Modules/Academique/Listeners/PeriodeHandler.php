@@ -73,14 +73,16 @@ class PeriodeHandler implements Listener
 
     private function onLocked(PeriodeLocked $event): void
     {
+        // Le verrouillage est orthogonal au statut (voir PeriodeScolaireService) :
+        // il ne modifie pas `statut`, uniquement `verrouille_par`/`verrouille_le`.
         $this->audit->log(
             $event->lockedById,
             'verrouiller',
             'academique',
             'periode_scolaire',
             $event->periodeId,
-            null,
-            ['nom' => $event->nom, 'statut' => 'verrouillee'],
+            ['verrouille' => false],
+            ['nom' => $event->nom, 'verrouille' => true],
         );
     }
 
@@ -92,8 +94,8 @@ class PeriodeHandler implements Listener
             'academique',
             'periode_scolaire',
             $event->periodeId,
-            ['statut' => 'verrouillee'],
-            ['statut' => 'fermee', 'nom' => $event->nom],
+            ['verrouille' => true],
+            ['nom' => $event->nom, 'verrouille' => false],
         );
     }
 

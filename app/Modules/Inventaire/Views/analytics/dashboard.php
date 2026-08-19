@@ -1,14 +1,4 @@
 <?php /** @var int $nb_articles @var int $nb_alertes_actives @var int $nb_affectations_en_cours @var int $nb_maintenances_dues @var float $valeur_stock @var float $valeur_nette @var array $mouvements_stats @var array $articles_alerte */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Dashboard Inventaire</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-7xl mx-auto px-4 py-6">
     <div class="mb-6">
         <h1 class="text-2xl font-bold text-slate-800">Dashboard Inventaire</h1>
@@ -92,5 +82,3 @@ new Chart(document.getElementById('chartMouvements'), {
     options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
 });
 </script>
-</body>
-</html>

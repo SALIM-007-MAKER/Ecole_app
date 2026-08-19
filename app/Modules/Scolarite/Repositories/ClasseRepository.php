@@ -54,7 +54,7 @@ class ClasseRepository
         $stmt   = $this->pdo->prepare(
             "{$this->baseSelect()} {$this->baseFrom()} $where
              GROUP BY c.id
-             ORDER BY c.niveau, c.nom
+             ORDER BY " . \App\Models\ClasseModel::ordreNiveauSql('c.niveau') . ", c.nom
              LIMIT $perPage OFFSET $offset"
         );
         $stmt->execute($params);
@@ -79,7 +79,7 @@ class ClasseRepository
         $stmt = $this->pdo->prepare(
             "{$this->baseSelect()} {$this->baseFrom()} $where
              GROUP BY c.id
-             ORDER BY c.niveau, c.nom"
+             ORDER BY " . \App\Models\ClasseModel::ordreNiveauSql('c.niveau') . ", c.nom"
         );
         $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_OBJ);
@@ -110,14 +110,14 @@ class ClasseRepository
                 "SELECT id, CONCAT(niveau, ' — ', nom) AS label
                  FROM `classes`
                  WHERE annee_scolaire = ?
-                 ORDER BY niveau, nom"
+                 ORDER BY " . \App\Models\ClasseModel::ordreNiveauSql() . ", nom"
             );
             $stmt->execute([$anneeScolaire]);
         } else {
             $stmt = $this->pdo->query(
                 "SELECT id, CONCAT(niveau, ' — ', nom) AS label
                  FROM `classes`
-                 ORDER BY niveau, nom"
+                 ORDER BY " . \App\Models\ClasseModel::ordreNiveauSql() . ", nom"
             );
         }
         return $stmt->fetchAll(PDO::FETCH_OBJ);
@@ -194,7 +194,7 @@ class ClasseRepository
              WHERE c.annee_scolaire = ? $whereNiveau
              GROUP BY c.id
              HAVING nb_eleves < c.max_eleves
-             ORDER BY c.niveau, c.nom"
+             ORDER BY " . \App\Models\ClasseModel::ordreNiveauSql('c.niveau') . ", c.nom"
         );
         $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_OBJ);
@@ -254,7 +254,7 @@ class ClasseRepository
              FROM `classes`
              WHERE annee_scolaire = ?
              GROUP BY niveau
-             ORDER BY niveau"
+             ORDER BY " . \App\Models\ClasseModel::ordreNiveauSql()
         );
         $stmt->execute([$anneeScolaire]);
         $rows   = $stmt->fetchAll(PDO::FETCH_OBJ);

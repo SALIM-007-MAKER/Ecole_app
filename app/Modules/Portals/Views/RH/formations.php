@@ -1,6 +1,6 @@
 <?php /** @var array $sessions */ ?>
 <div class="space-y-4">
-  <a href="/v2/rh/formations" class="inline-flex items-center gap-2 text-sm text-rose-600 hover:underline">
+  <a href="<?= BASE_URL ?>/v2/rh/formations" class="inline-flex items-center gap-2 text-sm text-rose-600 hover:underline">
     <i data-lucide="book-open" class="w-4 h-4"></i> Voir toutes les formations
   </a>
   <?php if (empty($sessions)): ?>

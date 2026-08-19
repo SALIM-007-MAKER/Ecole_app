@@ -2,8 +2,20 @@
 
 namespace App\Modules\Academique\Policies;
 
+use App\Models\EleveModel;
+use App\Modules\Scolarite\Repositories\FamilleRepository;
+
 class BulletinPolicy
 {
+    private FamilleRepository $familleRepo;
+    private EleveModel $eleveModel;
+
+    public function __construct(?FamilleRepository $familleRepo = null, ?EleveModel $eleveModel = null)
+    {
+        $this->familleRepo = $familleRepo ?? new FamilleRepository();
+        $this->eleveModel  = $eleveModel  ?? new EleveModel();
+    }
+
     /** Peut générer un bulletin (admin, directeur, prof principal). */
     public function canGenerate(array $user): bool
     {
@@ -17,6 +29,40 @@ class BulletinPolicy
         return $this->has($user, 'academique.bulletin.view')
             || $this->has($user, 'academique.bulletin.generate')
             || $this->has($user, 'academique.bulletin.admin');
+    }
+
+    /**
+     * AN-C-002 — Un parent ne peut visualiser que le bulletin de SES
+     * propres enfants (lien direct `eleves.parent_id` ou co-parent via une
+     * famille partagée, cf. FamilleRepository::estParentDe()) ; un élève ne
+     * peut visualiser que SON PROPRE bulletin, via `eleves.user_id`
+     * (M007 — FK 1:1 fiable vers `users.id`, même résolution que
+     * EspaceEleveController::getEleve() ; remplace l'ancien rapprochement
+     * par email, abandonné car `eleves.email` n'était ni UNIQUE ni
+     * synchronisé avec `users.email`).
+     *
+     * Les rôles `parent` et `eleve` reçoivent tous deux `academique.
+     * bulletin.view` en RBAC pour accéder À LA FONCTIONNALITÉ (contrairement
+     * à un rôle sans accès aux bulletins), mais cette permission ne doit
+     * jamais, à elle seule, autoriser l'accès au bulletin d'un élève tiers
+     * — d'où la vérification d'ownership AVANT canView() pour ces deux
+     * rôles précis (l'inverse laisserait la permission large primer et
+     * annulerait la restriction).
+     */
+    public function canViewForParent(array $user, int $eleveId): bool
+    {
+        $role = $user['role'] ?? '';
+
+        if ($role === 'parent') {
+            return $this->familleRepo->estParentDe((int)$user['id'], $eleveId);
+        }
+
+        if ($role === 'eleve') {
+            $eleve = $this->eleveModel->findByUserId((int)($user['id'] ?? 0));
+            return $eleve !== false && (int)$eleve->id === $eleveId;
+        }
+
+        return $this->canView($user);
     }
 
     /** Peut publier un bulletin (le rendre visible aux parents/élèves). */

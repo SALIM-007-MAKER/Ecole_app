@@ -20,9 +20,14 @@ Périmètre : `app/Modules/Academique/` (104 fichiers) + `tests/Unit/` (4 suites
 
 ### **Score global : 8.2 / 10**
 
-### Verdict : ⚠ **NO-GO conditionnel → GO après correction des 3 anomalies critiques**
+### Verdict : ✅ **GO** (mise à jour 2026-07-22 — migration trimestre → semestre, La Persévérance)
 
-Les anomalies critiques AN-C-001, AN-C-002, AN-C-003 (identifiées en Phase 2.9) restent non corrigées. Leur correction est estimée à **moins d'une demi-journée**. Une fois ces 3 points résolus, le module est apte à la mise en production.
+Les 3 anomalies critiques identifiées en Phase 2.9 sont corrigées :
+- **AN-C-003** était déjà résolue avant cette mise à jour (les handlers utilisent `$this->audit->log()`/`logCreate()` en instance, namespace `App\Services\AuditService` correct partout) — seul ce document était resté périmé.
+- **AN-C-002** corrigée : `BulletinPolicy::canViewForParent()` (via `FamilleRepository::estParentDe()`).
+- **AN-C-001** corrigée : validation de l'inscription/année scolaire dans `EvaluationService::creer()` et `NoteService::saisirBatch()` (via `InscriptionRepository`).
+
+Le module est activé (`config/modules.php`, `'academique' => true`) et devient le seul moteur académique vivant, natif semestre (2 semestres/an, La Persévérance).
 
 ---
 
@@ -141,8 +146,8 @@ Les contracts permettent l'injection de dépendances et le mocking dans les test
 | Classes → Classements | `RankingRepository::notesParClasseEtPeriode()` | ✅ |
 | Matières → Évaluations | `evaluations.matiere_id` FK | ✅ |
 | Matières → Notes | Via évaluation (indirectement) | ✅ |
-| Inscriptions → Académique | **Aucun lien** validé au code | ⛔ AN-C-001 |
-| Familles → Bulletins | Ownership parent non implémenté | ⛔ AN-C-002 |
+| Inscriptions → Académique | Validé via `InscriptionRepository` | ✅ AN-C-001 corrigée |
+| Familles → Bulletins | Ownership parent via `FamilleRepository::estParentDe()` | ✅ AN-C-002 corrigée |
 | Années scolaires | String non normalisé | ⚠ AN-M-002 |
 
 ### 2.2 Intégration Core ✅
@@ -265,10 +270,10 @@ Toutes les actions protégées par `requirePermission()` en entrée de controlle
 | Période | PeriodeHandler | ✅ |
 | Type évaluation | TypeEvaluationHandler | ✅ |
 
-### 4.3 Ownership ⚠
+### 4.3 Ownership ✅ (AN-C-002 corrigée) — reste ⚠ sur points mineurs
 
 - **Notes** : pas de vérification élève ∈ classe de l'évaluation (AN-M-001)
-- **Bulletins** : `BulletinPolicy::canView()` ne vérifie pas le lien parent/enfant (AN-C-002)
+- **Bulletins** : `BulletinPolicy::canViewForParent()` vérifie le lien parent/enfant via `FamilleRepository::estParentDe()` — corrigé
 - **Évaluations enseignant** : un enseignant avec `notes.manage` accède à toutes les évaluations (AN-m-004)
 
 ### 4.4 Validation ✅
@@ -430,16 +435,13 @@ Aucun marqueur `TODO`, `FIXME`, `HACK`, `XXX` dans le code source du module. ✅
 
 ## 8. Dette technique restante
 
-### Critique (à corriger avant GO)
+### Critique — toutes corrigées (2026-07-22)
 
-| ID | Composant | Action requise | Effort |
+| ID | Composant | Action requise | Statut |
 |----|-----------|---------------|--------|
-| AN-C-001 | `EvaluationService::creer()`, `NoteService::saisirBatch()` | Ajouter validation `inscription.annee_scolaire` | 2h |
-| AN-C-002 | `BulletinPolicy` | Ajouter `canViewForParent(array $user, int $eleveId)` via `FamilleRepository` | 3h |
-| AN-C-003 | `NoteHandler`, `AverageHandler` | Corriger namespace : `use App\Services\AuditService` | 5 min |
-| AN-C-003 | `BulletinHandler`, `RankingHandler`, `AnalyticsHandler` | Remplacer appels statiques par `(new AuditService())->log(...)` | 30 min |
-
-**Effort total critique : ~6h**
+| AN-C-001 | `EvaluationService::creer()`, `NoteService::saisirBatch()` | Validation `inscription.annee_scolaire` via `InscriptionRepository` | ✅ Corrigée |
+| AN-C-002 | `BulletinPolicy` | `canViewForParent(array $user, int $eleveId)` via `FamilleRepository::estParentDe()` | ✅ Corrigée |
+| AN-C-003 | `NoteHandler`, `AverageHandler`, `BulletinHandler`, `RankingHandler`, `AnalyticsHandler` | Namespace + appels d'instance `AuditService` | ✅ Déjà résolue (constatée lors de cet audit) |
 
 ### Majeure (avant mise en production finale)
 
@@ -501,15 +503,15 @@ Aucun marqueur `TODO`, `FIXME`, `HACK`, `XXX` dans le code source du module. ✅
 
 ```
 MODULE : Academique V2
-VERSION : 2.8.0
-DATE : 2026-06-30
-ÉTAT : GELÉ — NO-GO conditionnel
+VERSION : 2.9.0
+DATE : 2026-07-22 (mise à jour — migration trimestre → semestre, La Persévérance)
+ÉTAT : ACTIVÉ — GO
 
 Conditions de GO :
-  [ ] AN-C-003 — Namespace AuditService corrigé (NoteHandler, AverageHandler)
-  [ ] AN-C-003 — Appels statiques AuditService corrigés (Bulletin/Ranking/Analytics Handler)
-  [ ] AN-C-002 — BulletinPolicy::canViewForParent() implémentée
-  [ ] AN-C-001 — Validation inscription/année scolaire dans EvaluationService
+  [x] AN-C-003 — Namespace AuditService corrigé (NoteHandler, AverageHandler)
+  [x] AN-C-003 — Appels d'instance AuditService (Bulletin/Ranking/Analytics Handler)
+  [x] AN-C-002 — BulletinPolicy::canViewForParent() implémentée
+  [x] AN-C-001 — Validation inscription/année scolaire dans EvaluationService/NoteService
 
 Architecture gelée :
   ✅ AcademicCalculationService — source unique de vérité pour les calculs

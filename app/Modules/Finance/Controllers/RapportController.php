@@ -7,17 +7,20 @@ use App\Modules\Finance\Events\FinancialReportGenerated;
 use App\Modules\Finance\Policies\FinancialReportPolicy;
 use App\Modules\Finance\Services\FinancialReportService;
 use Core\EventDispatcher;
+use Core\Session;
 use Core\View;
 
 class RapportController
 {
     private FinancialReportService $service;
     private FinancialReportPolicy  $policy;
+    private View                   $view;
 
     public function __construct()
     {
         $this->service = new FinancialReportService();
         $this->policy  = new FinancialReportPolicy();
+        $this->view    = new View();
     }
 
     // GET /v2/finance/rapports
@@ -27,7 +30,7 @@ class RapportController
         if (!$this->policy->canView($user)) {
             $this->deny();
         }
-        View::render('Finance::rapports/index', ['user' => $user]);
+        $this->view->render('Finance::rapports/index', ['user' => $user]);
     }
 
     // GET /v2/finance/rapports/dashboard
@@ -40,7 +43,7 @@ class RapportController
         $filters = ReportFiltersDTO::fromRequest(array_merge($_GET, ['type' => 'dashboard']));
         $data    = $this->service->getDashboard($filters);
         $this->dispatchGenerated('dashboard', $filters, $data, $user['id']);
-        View::render('Finance::rapports/dashboard', array_merge($data, ['filters' => $filters, 'user' => $user]));
+        $this->view->render('Finance::rapports/dashboard', array_merge($data, ['filters' => $filters, 'user' => $user]));
     }
 
     // GET /v2/finance/rapports/paiements
@@ -53,7 +56,7 @@ class RapportController
         $filters = ReportFiltersDTO::fromRequest(array_merge($_GET, ['type' => 'paiements']));
         $data    = $this->service->getPaiementsReport($filters);
         $this->dispatchGenerated('paiements', $filters, $data, $user['id']);
-        View::render('Finance::rapports/paiements', array_merge($data, ['user' => $user]));
+        $this->view->render('Finance::rapports/paiements', array_merge($data, ['user' => $user]));
     }
 
     // GET /v2/finance/rapports/factures
@@ -66,7 +69,7 @@ class RapportController
         $filters = ReportFiltersDTO::fromRequest(array_merge($_GET, ['type' => 'factures']));
         $data    = $this->service->getFacturesReport($filters);
         $this->dispatchGenerated('factures', $filters, $data, $user['id']);
-        View::render('Finance::rapports/factures', array_merge($data, ['user' => $user]));
+        $this->view->render('Finance::rapports/factures', array_merge($data, ['user' => $user]));
     }
 
     // GET /v2/finance/rapports/impayes
@@ -79,7 +82,7 @@ class RapportController
         $filters = ReportFiltersDTO::fromRequest(array_merge($_GET, ['type' => 'impayes']));
         $data    = $this->service->getImpayesReport($filters);
         $this->dispatchGenerated('impayes', $filters, $data, $user['id']);
-        View::render('Finance::rapports/impayes', array_merge($data, ['user' => $user]));
+        $this->view->render('Finance::rapports/impayes', array_merge($data, ['user' => $user]));
     }
 
     // GET /v2/finance/rapports/caisse
@@ -92,7 +95,7 @@ class RapportController
         $filters = ReportFiltersDTO::fromRequest(array_merge($_GET, ['type' => 'caisse']));
         $data    = $this->service->getCaisseReport($filters);
         $this->dispatchGenerated('caisse', $filters, $data, $user['id']);
-        View::render('Finance::rapports/caisse', array_merge($data, ['user' => $user]));
+        $this->view->render('Finance::rapports/caisse', array_merge($data, ['user' => $user]));
     }
 
     // GET /v2/finance/rapports/analytique
@@ -105,7 +108,7 @@ class RapportController
         $filters = ReportFiltersDTO::fromRequest(array_merge($_GET, ['type' => 'analytique']));
         $data    = $this->service->getAnalytiqueReport($filters);
         $this->dispatchGenerated('analytique', $filters, $data, $user['id']);
-        View::render('Finance::rapports/analytique', array_merge($data, ['user' => $user]));
+        $this->view->render('Finance::rapports/analytique', array_merge($data, ['user' => $user]));
     }
 
     // GET /v2/finance/rapports/export?type=paiements&format=csv
@@ -123,10 +126,10 @@ class RapportController
         $result = $this->service->exporterRapport($type, $format, $filters, $user['id']);
 
         if ($format === 'pdf') {
-            View::render('Finance::rapports/print', array_merge($result, [
+            $this->view->render('Finance::rapports/print', array_merge($result, [
                 'type'   => $type,
                 'user'   => $user,
-            ]));
+            ]), 'none');
             return;
         }
 
@@ -157,29 +160,37 @@ class RapportController
             default      => $this->service->getDashboard($filters),
         };
 
-        View::render('Finance::rapports/print', array_merge($data, [
+        $this->view->render('Finance::rapports/print', array_merge($data, [
             'type'    => $type,
             'filters' => $filters,
             'user'    => $user,
-        ]));
+        ]), 'none');
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
 
     private function auth(): array
     {
-        $user = $_SESSION['user'] ?? null;
+        $user = Session::getUser();
         if (!$user) {
-            header('Location: /login');
+            $this->redirect('/login');
             exit;
         }
         return $user;
     }
 
+    private function redirect(string $url): void
+    {
+        if ($url !== '' && !preg_match('#^(https?:)?//#i', $url) && !str_starts_with($url, BASE_URL) && $url[0] === '/') {
+            $url = rtrim(BASE_URL, '/') . $url;
+        }
+        header('Location: ' . $url);
+    }
+
     private function deny(): never
     {
         http_response_code(403);
-        View::render('errors/403', []);
+        $this->view->render('errors/403', [], 'none');
         exit;
     }
 

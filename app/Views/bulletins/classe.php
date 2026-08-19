@@ -199,12 +199,8 @@ uasort($eleveInfos, function($a, $b) {
                 <td class="text-right px-3 py-2.5">
                     <div class="flex items-center justify-end gap-1">
                         <a href="<?= BASE_URL ?>/bulletins/<?= $eleveId ?>?classe_id=<?= $classe->id ?>&periode_id=<?= $periode->id ?>"
-                           class="btn btn-ghost btn-icon text-emerald-500" title="Voir le bulletin">
+                           class="btn btn-ghost btn-icon text-emerald-500" title="Voir le bulletin (choix du bulletin officiel S1/S2 sur cette page)">
                             <i data-lucide="eye" class="w-4 h-4"></i>
-                        </a>
-                        <a href="<?= BASE_URL ?>/bulletins/print/<?= $eleveId ?>?classe_id=<?= $classe->id ?>&periode_id=<?= $periode->id ?>"
-                           target="_blank" class="btn btn-ghost btn-icon text-violet-500" title="Imprimer">
-                            <i data-lucide="printer" class="w-4 h-4"></i>
                         </a>
                     </div>
                 </td>

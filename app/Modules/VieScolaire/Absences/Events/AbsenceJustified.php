@@ -12,5 +12,19 @@ class AbsenceJustified extends Event
         public readonly int    $eleveId,
         public readonly int    $classeId,
         public readonly int    $valideParId,
-    ) {}
+    ) {
+        parent::__construct();
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'absence_id'       => $this->absenceId,
+            'justification_id' => $this->justificationId,
+            'eleve_id'         => $this->eleveId,
+            'classe_id'        => $this->classeId,
+            'valide_par_id'    => $this->valideParId,
+            'fired_at'         => $this->getFiredAt(),
+        ];
+    }
 }

@@ -3,17 +3,9 @@
 use App\Modules\Communication\Models\CampagneModel;
 use App\Modules\Communication\Models\MessageModel;
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title><?= htmlspecialchars($titre ?? 'Campagne') ?></title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-5xl mx-auto py-8 px-4">
   <div class="flex items-center gap-3 mb-6">
-    <a href="/v2/communication/campagnes" class="text-slate-400 hover:text-slate-600">←</a>
+    <a href="<?= BASE_URL ?>/v2/communication/campagnes" class="text-slate-400 hover:text-slate-600">←</a>
     <h1 class="text-2xl font-bold text-slate-800"><?= htmlspecialchars($campagne['nom']) ?></h1>
     <span class="text-xs px-2 py-0.5 rounded-full
       <?= match($campagne['statut']) {
@@ -119,5 +111,3 @@ async function annuler() {
   if ((await r.json()).success) location.reload();
 }
 </script>
-</body>
-</html>

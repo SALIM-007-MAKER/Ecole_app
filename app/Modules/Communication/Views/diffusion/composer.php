@@ -1,15 +1,7 @@
 <?php /** @var array $groupes */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title><?= htmlspecialchars($titre ?? 'Diffusion') ?></title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-2xl mx-auto py-8 px-4">
   <div class="flex items-center gap-3 mb-6">
-    <a href="/v2/communication/groupes" class="text-slate-400 hover:text-slate-600">←</a>
+    <a href="<?= BASE_URL ?>/v2/communication/groupes" class="text-slate-400 hover:text-slate-600">←</a>
     <h1 class="text-2xl font-bold text-slate-800">Composer une diffusion</h1>
   </div>
 
@@ -83,7 +75,7 @@ document.getElementById('cible-type').addEventListener('change', (e) => {
 
 document.getElementById('diffusion-form').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const r = await fetch('/v2/communication/diffuser', {
+  const r = await fetch('<?= BASE_URL ?>/v2/communication/diffuser', {
     method: 'POST',
     headers: { 'X-CSRF-Token': csrf },
     body: new URLSearchParams(new FormData(e.target))
@@ -100,5 +92,3 @@ document.getElementById('diffusion-form').addEventListener('submit', async (e) =
   }
 });
 </script>
-</body>
-</html>

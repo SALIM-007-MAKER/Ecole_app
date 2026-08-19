@@ -24,7 +24,7 @@ function photoUrlV2(string $photo): string {
             <i data-lucide="users" class="w-5 h-5 text-violet-600"></i>
             Élèves
         </h2>
-        <p class="text-sm text-slate-500 mt-0.5">Gestion des élèves — Module Scolarité V2</p>
+        <p class="text-sm text-slate-500 mt-0.5">Gestion des élèves</p>
     </div>
     <div class="flex items-center gap-2 flex-wrap">
         <?php if (ep2($perms,'eleves.view')): ?>

@@ -17,9 +17,9 @@ class ActivityController extends Controller
 
     public function __construct()
     {
+        parent::__construct();
         $this->service = new ActivityService();
         $this->policy  = new ActivityPolicy();
-        $this->sendSecurityHeaders();
     }
 
     // ── Index ─────────────────────────────────────────────────────────────────
@@ -98,18 +98,18 @@ class ActivityController extends Controller
         $errors = $dto->validate();
 
         if (!empty($errors)) {
-            $_SESSION['flash_error'] = implode('<br>', $errors);
-            header('Location: /v2/vie-scolaire/activites/create');
+            \Core\Session::flash('error', implode('<br>', $errors));
+            $this->redirect('/v2/vie-scolaire/activites/create');
             exit;
         }
 
         try {
             $activity = $this->service->creerActivite($dto, $user['id']);
-            $_SESSION['flash_success'] = 'Activité créée avec succès.';
-            header("Location: /v2/vie-scolaire/activites/{$activity['id']}");
+            \Core\Session::flash('success', 'Activité créée avec succès.');
+            $this->redirect("/v2/vie-scolaire/activites/{$activity['id']}");
         } catch (\RuntimeException $e) {
-            $_SESSION['flash_error'] = $e->getMessage();
-            header('Location: /v2/vie-scolaire/activites/create');
+            \Core\Session::flash('error', $e->getMessage());
+            $this->redirect('/v2/vie-scolaire/activites/create');
         }
         exit;
     }
@@ -123,8 +123,8 @@ class ActivityController extends Controller
 
         $activity = $this->service->findActivity($id);
         if ($activity === null || !$this->policy->canModifyActivity($user, $activity)) {
-            $_SESSION['flash_error'] = 'Action non autorisée.';
-            header('Location: /v2/vie-scolaire/activites');
+            \Core\Session::flash('error', 'Action non autorisée.');
+            $this->redirect('/v2/vie-scolaire/activites');
             exit;
         }
 
@@ -147,8 +147,8 @@ class ActivityController extends Controller
 
         $activity = $this->service->findActivity($id);
         if ($activity === null || !$this->policy->canModifyActivity($user, $activity)) {
-            $_SESSION['flash_error'] = 'Action non autorisée.';
-            header("Location: /v2/vie-scolaire/activites/{$id}");
+            \Core\Session::flash('error', 'Action non autorisée.');
+            $this->redirect("/v2/vie-scolaire/activites/{$id}");
             exit;
         }
 
@@ -156,18 +156,18 @@ class ActivityController extends Controller
         $errors = $dto->validate();
 
         if (!empty($errors)) {
-            $_SESSION['flash_error'] = implode('<br>', $errors);
-            header("Location: /v2/vie-scolaire/activites/{$id}/edit");
+            \Core\Session::flash('error', implode('<br>', $errors));
+            $this->redirect("/v2/vie-scolaire/activites/{$id}/edit");
             exit;
         }
 
         try {
             $this->service->modifierActivite($id, $dto, $user['id']);
-            $_SESSION['flash_success'] = 'Activité mise à jour.';
+            \Core\Session::flash('success', 'Activité mise à jour.');
         } catch (\RuntimeException $e) {
-            $_SESSION['flash_error'] = $e->getMessage();
+            \Core\Session::flash('error', $e->getMessage());
         }
-        header("Location: /v2/vie-scolaire/activites/{$id}");
+        $this->redirect("/v2/vie-scolaire/activites/{$id}");
         exit;
     }
 
@@ -181,18 +181,18 @@ class ActivityController extends Controller
 
         $activity = $this->service->findActivity($id);
         if ($activity === null || !$this->policy->canPublishActivity($user, $activity)) {
-            $_SESSION['flash_error'] = 'Action non autorisée.';
-            header("Location: /v2/vie-scolaire/activites/{$id}");
+            \Core\Session::flash('error', 'Action non autorisée.');
+            $this->redirect("/v2/vie-scolaire/activites/{$id}");
             exit;
         }
 
         try {
             $this->service->publierActivite($id, $user['id']);
-            $_SESSION['flash_success'] = 'Activité publiée.';
+            \Core\Session::flash('success', 'Activité publiée.');
         } catch (\RuntimeException $e) {
-            $_SESSION['flash_error'] = $e->getMessage();
+            \Core\Session::flash('error', $e->getMessage());
         }
-        header("Location: /v2/vie-scolaire/activites/{$id}");
+        $this->redirect("/v2/vie-scolaire/activites/{$id}");
         exit;
     }
 
@@ -206,8 +206,8 @@ class ActivityController extends Controller
 
         $activity = $this->service->findActivity($id);
         if ($activity === null || !$this->policy->canCancelActivity($user, $activity)) {
-            $_SESSION['flash_error'] = 'Action non autorisée.';
-            header("Location: /v2/vie-scolaire/activites/{$id}");
+            \Core\Session::flash('error', 'Action non autorisée.');
+            $this->redirect("/v2/vie-scolaire/activites/{$id}");
             exit;
         }
 
@@ -215,11 +215,11 @@ class ActivityController extends Controller
 
         try {
             $this->service->annulerActivite($id, $motif, $user['id']);
-            $_SESSION['flash_success'] = 'Activité annulée.';
+            \Core\Session::flash('success', 'Activité annulée.');
         } catch (\RuntimeException $e) {
-            $_SESSION['flash_error'] = $e->getMessage();
+            \Core\Session::flash('error', $e->getMessage());
         }
-        header("Location: /v2/vie-scolaire/activites/{$id}");
+        $this->redirect("/v2/vie-scolaire/activites/{$id}");
         exit;
     }
 
@@ -232,8 +232,8 @@ class ActivityController extends Controller
 
         $activity = $this->service->findActivity($id);
         if ($activity === null) {
-            $_SESSION['flash_error'] = 'Activité introuvable.';
-            header('Location: /v2/vie-scolaire/activites');
+            \Core\Session::flash('error', 'Activité introuvable.');
+            $this->redirect('/v2/vie-scolaire/activites');
             exit;
         }
 
@@ -257,8 +257,8 @@ class ActivityController extends Controller
         $errors = $dto->validate();
 
         if (!empty($errors)) {
-            $_SESSION['flash_error'] = implode('<br>', $errors);
-            header("Location: /v2/vie-scolaire/activites/{$id}/inscrire");
+            \Core\Session::flash('error', implode('<br>', $errors));
+            $this->redirect("/v2/vie-scolaire/activites/{$id}/inscrire");
             exit;
         }
 
@@ -267,11 +267,11 @@ class ActivityController extends Controller
             $msg = $result['statut'] === 'inscrit'
                 ? 'Élève inscrit à l\'activité.'
                 : 'Élève ajouté à la liste d\'attente (capacité atteinte).';
-            $_SESSION['flash_success'] = $msg;
+            \Core\Session::flash('success', $msg);
         } catch (\RuntimeException $e) {
-            $_SESSION['flash_error'] = $e->getMessage();
+            \Core\Session::flash('error', $e->getMessage());
         }
-        header("Location: /v2/vie-scolaire/activites/{$id}");
+        $this->redirect("/v2/vie-scolaire/activites/{$id}");
         exit;
     }
 
@@ -283,13 +283,13 @@ class ActivityController extends Controller
 
         try {
             $this->service->annulerInscription($inscriptionId, $user['id']);
-            $_SESSION['flash_success'] = 'Inscription annulée.';
+            \Core\Session::flash('success', 'Inscription annulée.');
         } catch (\RuntimeException $e) {
-            $_SESSION['flash_error'] = $e->getMessage();
+            \Core\Session::flash('error', $e->getMessage());
         }
 
         $ref = $_SERVER['HTTP_REFERER'] ?? '/v2/vie-scolaire/activites';
-        header("Location: {$ref}");
+        $this->redirect("{$ref}");
         exit;
     }
 
@@ -305,11 +305,11 @@ class ActivityController extends Controller
 
         try {
             $this->service->marquerPresences($id, $presences, $user['id']);
-            $_SESSION['flash_success'] = 'Présences enregistrées.';
+            \Core\Session::flash('success', 'Présences enregistrées.');
         } catch (\RuntimeException $e) {
-            $_SESSION['flash_error'] = $e->getMessage();
+            \Core\Session::flash('error', $e->getMessage());
         }
-        header("Location: /v2/vie-scolaire/activites/{$id}");
+        $this->redirect("/v2/vie-scolaire/activites/{$id}");
         exit;
     }
 
@@ -372,10 +372,5 @@ class ActivityController extends Controller
         $enseignants = $db->query("SELECT u.id, u.nom, u.prenom FROM users u JOIN user_roles ur ON ur.user_id = u.id JOIN roles r ON r.id = ur.role_id WHERE r.nom = 'enseignant' ORDER BY u.nom")->fetchAll(\PDO::FETCH_ASSOC);
         $categories  = $this->service->categories();
         return [$classes, $enseignants, $categories];
-    }
-
-    private function render(string $view, array $data = []): void
-    {
-        \Core\View::render($view, $data);
     }
 }

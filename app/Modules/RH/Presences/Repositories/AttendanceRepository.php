@@ -67,7 +67,7 @@ class AttendanceRepository
                 CONCAT(e.prenom, ' ', e.nom) AS employe_nom,
                 e.matricule                   AS employe_matricule,
                 e.photo                       AS employe_photo,
-                e.type                        AS employe_type,
+                e.type_personnel              AS employe_type,
                 po.intitule                   AS poste_intitule,
                 po.categorie                  AS poste_categorie,
                 d.nom                         AS departement_nom,
@@ -320,7 +320,7 @@ class AttendanceRepository
 
     public function findEmployes(): array
     {
-        $sql = "SELECT id, CONCAT(prenom,' ',nom) AS nom_complet, matricule, type
+        $sql = "SELECT id, CONCAT(prenom,' ',nom) AS nom_complet, matricule, type_personnel AS type
                 FROM rh_employes WHERE deleted_at IS NULL ORDER BY nom ASC, prenom ASC";
         return $this->db->query($sql)->fetchAll(\PDO::FETCH_ASSOC);
     }

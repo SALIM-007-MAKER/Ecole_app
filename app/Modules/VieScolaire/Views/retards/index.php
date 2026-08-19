@@ -1,62 +1,52 @@
 <?php
-$titre = 'Retards — Vie Scolaire V2';
-ob_start();
+$title = 'Retards';
 ?>
 <div class="max-w-7xl mx-auto px-4 py-6">
 
   <!-- En-tête -->
-  <div class="flex items-center justify-between mb-6">
-    <div>
-      <h1 class="text-2xl font-bold text-slate-800">Retards</h1>
-      <p class="text-slate-500 text-sm mt-1">Gestion des retards élèves</p>
+  <div class="flex items-center justify-between gap-4 mb-6">
+    <div class="flex items-start gap-4">
+      <div class="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+        <i data-lucide="clock" class="w-5 h-5 text-violet-600"></i>
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold text-slate-800">Retards</h1>
+        <p class="text-slate-500 text-sm mt-0.5">Gestion des retards élèves</p>
+      </div>
     </div>
-    <div class="flex gap-2">
+    <div class="flex gap-2 flex-shrink-0">
       <?php if ($policy->canExport($user)): ?>
-      <a href="/v2/vie-scolaire/retards/export?<?= http_build_query($_GET) ?>"
-         class="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 text-sm">
+      <a href="<?= BASE_URL ?>/v2/vie-scolaire/retards/export?<?= http_build_query($_GET) ?>"
+         class="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 text-sm transition-colors">
         <i data-lucide="download" class="w-4 h-4"></i> Exporter CSV
       </a>
       <?php endif; ?>
-      <a href="/v2/vie-scolaire/retards/statistiques"
-         class="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 text-sm">
+      <a href="<?= BASE_URL ?>/v2/vie-scolaire/retards/statistiques"
+         class="inline-flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 text-sm transition-colors">
         <i data-lucide="bar-chart-2" class="w-4 h-4"></i> Statistiques
       </a>
       <?php if ($policy->canCreate($user)): ?>
-      <a href="/v2/vie-scolaire/retards/create"
-         class="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 text-sm">
+      <a href="<?= BASE_URL ?>/v2/vie-scolaire/retards/create"
+         class="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 text-sm font-medium transition-colors">
         <i data-lucide="plus" class="w-4 h-4"></i> Saisir un retard
       </a>
       <?php endif; ?>
     </div>
   </div>
 
-  <!-- Flash messages -->
-  <?php if (!empty($_SESSION['flash_success'])): ?>
-  <div class="mb-4 px-4 py-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm">
-    <?= htmlspecialchars($_SESSION['flash_success']) ?>
-    <?php unset($_SESSION['flash_success']); ?>
-  </div>
-  <?php endif; ?>
-  <?php if (!empty($_SESSION['flash_error'])): ?>
-  <div class="mb-4 px-4 py-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-    <?= htmlspecialchars($_SESSION['flash_error']) ?>
-    <?php unset($_SESSION['flash_error']); ?>
-  </div>
-  <?php endif; ?>
-
   <!-- Filtres -->
-  <form method="GET" class="bg-white border border-slate-200 rounded-xl p-4 mb-6">
+  <form method="GET" class="bg-white border border-slate-200 rounded-xl shadow-sm p-4 mb-6">
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
       <input type="text" name="annee_scolaire" placeholder="Année ex: 2024-2025"
              value="<?= htmlspecialchars($filters->anneeScolaire ?? '') ?>"
-             class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+             class="form-input">
       <input type="date" name="date_debut"
              value="<?= htmlspecialchars($filters->dateDebut ?? '') ?>"
-             class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+             class="form-input">
       <input type="date" name="date_fin"
              value="<?= htmlspecialchars($filters->dateFin ?? '') ?>"
-             class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
-      <select name="statut" class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500">
+             class="form-input">
+      <select name="statut" class="form-select">
         <option value="">Tous les statuts</option>
         <option value="non_justifie" <?= $filters->statut === 'non_justifie' ? 'selected' : '' ?>>Non justifié</option>
         <option value="en_attente"   <?= $filters->statut === 'en_attente'   ? 'selected' : '' ?>>En attente</option>
@@ -64,17 +54,22 @@ ob_start();
         <option value="refuse"       <?= $filters->statut === 'refuse'       ? 'selected' : '' ?>>Refusé</option>
       </select>
     </div>
-    <div class="flex justify-end mt-3 gap-2">
-      <a href="/v2/vie-scolaire/retards" class="px-3 py-2 text-sm text-slate-600 hover:text-slate-800">Réinitialiser</a>
-      <button type="submit" class="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">Filtrer</button>
+    <div class="flex justify-end mt-4 gap-4 pt-4 border-t border-slate-100">
+      <a href="<?= BASE_URL ?>/v2/vie-scolaire/retards" class="text-sm text-slate-500 hover:text-slate-700">Réinitialiser</a>
+      <button type="submit"
+              class="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors">
+        <i data-lucide="filter" class="w-4 h-4"></i> Filtrer
+      </button>
     </div>
   </form>
 
   <!-- Tableau -->
-  <div class="bg-white border border-slate-200 rounded-xl overflow-hidden">
+  <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
     <?php if (empty($retards)): ?>
     <div class="py-16 text-center text-slate-400">
-      <i data-lucide="clock" class="w-12 h-12 mx-auto mb-3 opacity-30"></i>
+      <div class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-3">
+        <i data-lucide="clock" class="w-5 h-5"></i>
+      </div>
       <p class="text-sm">Aucun retard trouvé.</p>
     </div>
     <?php else: ?>
@@ -107,9 +102,16 @@ ob_start();
               default        => $r['statut'],
           };
         ?>
-        <tr class="hover:bg-slate-50">
-          <td class="px-4 py-3 font-medium text-slate-800">
-            <?= htmlspecialchars($r['eleve_prenom'] . ' ' . $r['eleve_nom']) ?>
+        <tr class="hover:bg-slate-50 transition-colors">
+          <td class="px-4 py-3">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center text-violet-700 font-semibold text-xs shrink-0">
+                <?= htmlspecialchars(mb_strtoupper(mb_substr(trim($r['eleve_prenom']), 0, 1) . mb_substr(trim($r['eleve_nom']), 0, 1))) ?>
+              </div>
+              <span class="font-medium text-slate-800">
+                <?= htmlspecialchars($r['eleve_prenom'] . ' ' . $r['eleve_nom']) ?>
+              </span>
+            </div>
           </td>
           <td class="px-4 py-3 text-slate-600"><?= htmlspecialchars($r['classe_nom']) ?></td>
           <td class="px-4 py-3 text-slate-600"><?= htmlspecialchars($r['date_retard']) ?></td>
@@ -121,8 +123,10 @@ ob_start();
             </span>
           </td>
           <td class="px-4 py-3">
-            <a href="/v2/vie-scolaire/retards/<?= $r['id'] ?>"
-               class="text-violet-600 hover:text-violet-800 text-sm font-medium">Voir</a>
+            <a href="<?= BASE_URL ?>/v2/vie-scolaire/retards/<?= $r['id'] ?>"
+               class="inline-flex items-center gap-1 text-violet-600 hover:text-violet-800 text-xs font-medium">
+              <i data-lucide="eye" class="w-3.5 h-3.5"></i> Voir
+            </a>
           </td>
         </tr>
         <?php endforeach; ?>
@@ -147,6 +151,3 @@ ob_start();
   <?php endif; ?>
 
 </div>
-<?php
-$content = ob_get_clean();
-include __DIR__ . '/../../../../Views/layouts/app.php';

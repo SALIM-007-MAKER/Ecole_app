@@ -23,14 +23,14 @@ class ComparatifMensuelWidget extends BaseWidget
             $pdo  = Database::getInstance()->getConnection();
             $stmt = $pdo->prepare(
                 'SELECT DATE_FORMAT(date_paiement,"%Y-%m") AS mois,
-                        SUM(montant) AS total, COUNT(*) AS nb
+                        SUM(montant_applique) AS total, COUNT(*) AS nb
                  FROM finance_paiements
-                 WHERE etablissement_id=? AND deleted_at IS NULL
+                 WHERE statut="complete"
                    AND date_paiement >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
                  GROUP BY DATE_FORMAT(date_paiement,"%Y-%m")
                  ORDER BY mois ASC'
             );
-            $stmt->execute([$etab]);
+            $stmt->execute();
             return ['mois' => $stmt->fetchAll(\PDO::FETCH_ASSOC)];
         } catch (\Throwable) {
             return ['mois' => []];

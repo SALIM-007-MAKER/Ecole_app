@@ -11,10 +11,13 @@ function pctBar(float $attendu, float $enc): float {
 }
 ?>
 
-<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
-    <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-        <i data-lucide="tags" class="w-6 h-6 text-violet-600"></i>Types de frais scolaires
-    </h2>
+<div class="flex flex-wrap items-start justify-between gap-3 mb-6">
+    <div class="flex items-start gap-4">
+        <div class="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="tags" class="w-5 h-5 text-violet-600"></i>
+        </div>
+        <h2 class="text-xl font-bold text-slate-800 pt-2">Types de frais scolaires</h2>
+    </div>
     <div class="flex items-center gap-2">
         <a href="<?= BASE_URL ?>/comptabilite/frais/affecter" class="btn btn-primary">
             <i data-lucide="user-plus" class="w-4 h-4"></i>Affecter aux élèves

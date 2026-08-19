@@ -2,14 +2,6 @@
 /** @var array $campagnes @var int $page */
 use App\Modules\Communication\Models\CampagneModel;
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title><?= htmlspecialchars($titre ?? 'Campagnes') ?></title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-5xl mx-auto py-8 px-4">
   <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold text-slate-800">Campagnes de communication</h1>
@@ -53,7 +45,7 @@ use App\Modules\Communication\Models\CampagneModel;
             <?= $c['lance_at'] ? date('d/m/Y', strtotime($c['lance_at'])) : '—' ?>
           </td>
           <td class="px-4 py-3 text-right space-x-2">
-            <a href="/v2/communication/campagnes/<?= $c['id'] ?>" class="text-violet-600 text-xs hover:underline">Détails</a>
+            <a href="<?= BASE_URL ?>/v2/communication/campagnes/<?= $c['id'] ?>" class="text-violet-600 text-xs hover:underline">Détails</a>
             <?php if (CampagneModel::peutEtreModifiee($c['statut'])): ?>
             <button onclick="lancerCampagne(<?= $c['id'] ?>)" class="text-green-600 text-xs hover:underline">Lancer</button>
             <?php endif ?>
@@ -99,7 +91,7 @@ const csrf = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 
 document.getElementById('form-campagne').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const r = await fetch('/v2/communication/campagnes', {
+  const r = await fetch('<?= BASE_URL ?>/v2/communication/campagnes', {
     method: 'POST',
     headers: { 'X-CSRF-Token': csrf },
     body: new URLSearchParams(new FormData(e.target))
@@ -117,5 +109,3 @@ async function lancerCampagne(id) {
   else alert('Erreur lors du lancement.');
 }
 </script>
-</body>
-</html>

@@ -14,7 +14,9 @@ class EmployeeEnrolled extends Event
         public readonly int    $employeId,
         public readonly string $formationTitre,
         public readonly int    $enrolledBy
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

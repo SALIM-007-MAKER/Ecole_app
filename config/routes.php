@@ -34,26 +34,41 @@ $router->get('/profile',           'AuthController@showProfile');
 $router->post('/profile',          'AuthController@updateProfile');
 $router->post('/profile/password', 'AuthController@changePassword');
 
-// ─── Branding établissement (Phase 14.5) ─────────────────────────────────────
-$router->get('/parametres/branding',  'SettingsController@showBranding');
-$router->post('/parametres/branding', 'SettingsController@updateBranding');
+// ─── Paramètres — centre de configuration métier ERP (T026) ──────────────────
+$router->get('/parametres', 'SettingsController@index');
 
-// ─── Domaines personnalisés (Phase 14.7) ──────────────────────────────────────
-$router->get('/parametres/domaines',                  'DomainController@index');
-$router->post('/parametres/domaines',                 'DomainController@store');
-$router->post('/parametres/domaines/{id}/verifier',   'DomainController@verify');
-$router->post('/parametres/domaines/{id}/toggle',     'DomainController@toggle');
-$router->post('/parametres/domaines/{id}/supprimer',  'DomainController@destroy');
+$router->get('/parametres/branding',  'SettingsController@showBranding'); // legacy → redirige vers /parametres/etablissement
 
-// ─── Stockage & Quotas (Phase 14.8) ────────────────────────────────────────────
-$router->get('/parametres/quotas',             'QuotaController@index');
-$router->get('/parametres/quotas/api',         'QuotaController@api');
-$router->post('/parametres/quotas/recalculer', 'QuotaController@recalculate');
+$router->get('/parametres/etablissement',  'SettingsController@showEtablissement');
+$router->get('/parametres/apparence',      'SettingsController@showApparence');
+$router->post('/parametres/branding',      'SettingsController@updateBranding'); // cible POST commune (Établissement + Apparence)
 
-// ─── Cache & Files d'attente (Phase 14.9) ─────────────────────────────────────
-$router->get('/parametres/monitoring',              'MonitoringController@index');
-$router->get('/parametres/monitoring/api',          'MonitoringController@api');
-$router->post('/parametres/monitoring/vider-cache', 'MonitoringController@flushCache');
+$router->get('/parametres/annee-scolaire',  'SettingsController@showAnneeScolaire');
+$router->post('/parametres/annee-scolaire', 'SettingsController@updateAnneeScolaire');
+
+$router->get('/parametres/academique',  'SettingsController@showAcademique');
+$router->post('/parametres/academique', 'SettingsController@updateAcademique');
+
+$router->get('/parametres/notation',  'SettingsController@showNotation');
+$router->post('/parametres/notation', 'SettingsController@updateNotation');
+
+$router->get('/parametres/finances',  'SettingsController@showFinances');
+$router->post('/parametres/finances', 'SettingsController@updateFinances');
+
+$router->get('/parametres/documents',  'SettingsController@showDocuments');
+$router->post('/parametres/documents', 'SettingsController@updateDocuments');
+
+$router->get('/parametres/notifications',  'SettingsController@showNotifications');
+$router->post('/parametres/notifications', 'SettingsController@updateNotifications');
+
+$router->get('/parametres/securite',  'SettingsController@showSecurite');
+$router->post('/parametres/securite', 'SettingsController@updateSecurite');
+
+$router->get('/parametres/sauvegarde',  'SettingsController@showSauvegarde');
+$router->post('/parametres/sauvegarde', 'SettingsController@updateSauvegarde');
+
+$router->get('/parametres/avance',  'SettingsController@showAvance');
+$router->post('/parametres/avance', 'SettingsController@updateAvance');
 
 // ─── Portail Super-Admin SaaS (Phase 14.10) — indépendant des établissements ──
 $router->get('/platform/login',    'PlatformAuthController@showLogin');
@@ -74,6 +89,23 @@ $router->post('/platform/etablissements/{id}/archiver',      'PlatformEtablissem
 $router->post('/platform/etablissements/{id}/restaurer',     'PlatformEtablissementController@restore');
 $router->post('/platform/etablissements/{id}/supprimer',     'PlatformEtablissementController@destroy');
 $router->post('/platform/etablissements/{id}/plan',          'PlatformEtablissementController@assignPlan');
+
+// ─── Administration de la plateforme — infrastructure par établissement (T026) ──
+// Domaines personnalisés, Stockage & Quotas, Monitoring & Cache : retirés du
+// périmètre établissement, réservés aux opérateurs plateforme (admin/super_admin).
+$router->get('/platform/etablissements/{id}/domaines',                  'PlatformDomainController@index');
+$router->post('/platform/etablissements/{id}/domaines',                 'PlatformDomainController@store');
+$router->post('/platform/etablissements/{id}/domaines/{domainId}/verifier',  'PlatformDomainController@verify');
+$router->post('/platform/etablissements/{id}/domaines/{domainId}/toggle',    'PlatformDomainController@toggle');
+$router->post('/platform/etablissements/{id}/domaines/{domainId}/supprimer', 'PlatformDomainController@destroy');
+
+$router->get('/platform/etablissements/{id}/quotas',             'PlatformQuotaController@index');
+$router->get('/platform/etablissements/{id}/quotas/api',         'PlatformQuotaController@api');
+$router->post('/platform/etablissements/{id}/quotas/recalculer', 'PlatformQuotaController@recalculate');
+
+$router->get('/platform/etablissements/{id}/monitoring',              'PlatformMonitoringController@index');
+$router->get('/platform/etablissements/{id}/monitoring/api',          'PlatformMonitoringController@api');
+$router->post('/platform/etablissements/{id}/monitoring/vider-cache', 'PlatformMonitoringController@flushCache');
 
 $router->get('/platform/plans',            'PlatformPlanController@index');
 $router->post('/platform/plans',           'PlatformPlanController@store');
@@ -131,6 +163,12 @@ $router->post('/classes/{id}/retirer-eleve',        'ClasseController@retirerEle
 $router->post('/classes/{id}/affecter-enseignant',  'ClasseController@affecterEnseignant');
 $router->post('/classes/{id}/retirer-enseignant',   'ClasseController@retirerEnseignant');
 
+// ─── Réinscription (passage de classe) ────────────────────────────────────────
+$router->get('/reinscription',          'ReinscriptionController@index');
+$router->get('/reinscription/plan',     'ReinscriptionController@plan');
+$router->post('/reinscription/apercu',  'ReinscriptionController@apercu');
+$router->post('/reinscription/executer','ReinscriptionController@executer');
+
 // ─── Matières (statiques avant paramétrées) ───────────────────────────────────
 $router->get('/matieres',              'MatiereController@index');
 $router->get('/matieres/create',       'MatiereController@create');
@@ -141,27 +179,37 @@ $router->get('/matieres/{id}/edit',    'MatiereController@edit');
 $router->post('/matieres/{id}',        'MatiereController@update');
 $router->post('/matieres/{id}/delete', 'MatiereController@delete');
 
-// ─── Notes & Évaluations (statiques AVANT paramétrées) ───────────────────────
-$router->get('/notes',                          'NoteController@index');
-$router->get('/notes/controles',                'NoteController@controles');
-$router->get('/notes/controles/create',         'NoteController@createControle');
-$router->post('/notes/controles/store',         'NoteController@storeControle');
-$router->get('/notes/moyennes',                 'NoteController@moyennes');
-// Routes paramétrées contrôles
-$router->get('/notes/controles/{id}/edit',      'NoteController@editControle');
-$router->post('/notes/controles/{id}',          'NoteController@updateControle');
-$router->post('/notes/controles/{id}/delete',   'NoteController@deleteControle');
-// Saisie
-$router->get('/notes/saisie/{id}',              'NoteController@saisie');
-$router->post('/notes/saisie/{id}',             'NoteController@storeSaisie');
+// ─── Notes & Évaluations V1 — SUPPRIMÉES (nettoyage final post-migration) ─────
+// App\Controllers\NoteController (V1) et ses vues (app/Views/notes/*) ont été
+// supprimés : le module 'academique' V2 (app/Modules/Academique/routes.php)
+// est l'unique pipeline de saisie de notes, avec parité fonctionnelle
+// complète (saisie/publication/verrouillage/import CSV) et les écrans
+// classement/moyennes reconstruits sous /v2/academique/resultats/*.
+// Confirmé sans référence entrante restante avant suppression.
 
 // ─── Bulletins (statiques AVANT paramétrées) ──────────────────────────────────
 $router->get('/bulletins',                      'BulletinController@index');
 $router->get('/bulletins/classe',               'BulletinController@classe');
 $router->get('/bulletins/classement',           'BulletinController@classement');
 // Routes paramétrées bulletins
-$router->get('/bulletins/print/{id}',           'BulletinController@printBulletin');
 $router->get('/bulletins/{id}',                 'BulletinController@eleve');
+
+// ─── Bulletin V1 papier (moteur Académique V2) ─────────────────────────────────
+// Impression fidèle au bulletin papier + vérification publique par QR code.
+// Restées déclarées ici (et non dans app/Modules/Academique/routes.php) pour
+// conserver leurs URLs historiques même maintenant que le module 'academique'
+// est activé — ce sont les mêmes BulletinController/BulletinGenerator V2.
+$router->get('/v2/academique/bulletins/{eleveId}/{periodeId}/imprimer', 'Academique\Controllers\BulletinController@imprimer');
+$router->get('/v2/academique/bulletins/verify/{token}',                 'Academique\Controllers\BulletinController@verifier');
+
+// Appréciation du chef d'établissement (réservée à academique.bulletin.admin)
+$router->get ('/v2/academique/bulletins/{eleveId}/{periodeId}/appreciation-directeur', 'Academique\Controllers\BulletinController@appreciationForm');
+$router->post('/v2/academique/bulletins/{eleveId}/{periodeId}/appreciation-directeur', 'Academique\Controllers\BulletinController@updateAppreciation');
+
+// ─── Appréciations par matière (moteur Académique V2) ──────────────────────────
+$router->get('/v2/academique/appreciations',                                        'Academique\Controllers\AppreciationController@index');
+$router->get('/v2/academique/classes/{classeId}/matieres/{matiereId}/appreciations', 'Academique\Controllers\AppreciationController@saisie');
+$router->post('/v2/academique/classes/{classeId}/matieres/{matiereId}/appreciations','Academique\Controllers\AppreciationController@store');
 
 // ─── Absences (statiques AVANT paramétrées) ───────────────────────────────────
 $router->get('/absences',                 'AbsenceController@index');
@@ -178,46 +226,16 @@ $router->post('/absences/{id}/delete',    'AbsenceController@delete');
 $router->post('/absences/{id}/justifier', 'AbsenceController@storeJustification');
 $router->post('/absences/{id}/valider',   'AbsenceController@validerJustification');
 
-// ─── Comptabilité (statiques AVANT paramétrées) ───────────────────────────────
-$router->get('/comptabilite',                        'ComptabiliteController@index');
-$router->get('/comptabilite/frais',                  'ComptabiliteController@frais');
-$router->get('/comptabilite/frais/affecter',         'ComptabiliteController@affecter');
-$router->post('/comptabilite/frais/affecter',        'ComptabiliteController@storeAffectation');
-$router->post('/comptabilite/frais/store',           'ComptabiliteController@storeFrais');
-$router->get('/comptabilite/impayes',                'ComptabiliteController@impayes');
-$router->get('/comptabilite/caisse',                 'ComptabiliteController@caisse');
-$router->get('/comptabilite/rapport',                'ComptabiliteController@rapport');
-$router->get('/comptabilite/rapport/print',          'ComptabiliteController@rapportPrint');
-$router->get('/comptabilite/rapport/excel',          'ComptabiliteController@exportExcel');
-// Routes paramétrées comptabilité
-$router->get('/comptabilite/frais/{id}/edit',        'ComptabiliteController@editFrais');
-$router->post('/comptabilite/frais/{id}',            'ComptabiliteController@updateFrais');
-$router->post('/comptabilite/frais/{id}/delete',     'ComptabiliteController@deleteFrais');
-
-// ─── Paiements (statiques AVANT paramétrées) ──────────────────────────────────
-$router->get('/paiements',              'PaiementController@index');
-$router->get('/paiements/create',       'PaiementController@create');
-$router->post('/paiements/store',       'PaiementController@store');
-// Routes paramétrées paiements
-$router->get('/paiements/{id}',         'PaiementController@show');
-$router->get('/paiements/{id}/recu',    'PaiementController@recu');
-$router->post('/paiements/{id}/delete', 'PaiementController@delete');
-
-// ─── Dépenses (statiques AVANT paramétrées) ───────────────────────────────────
-$router->get('/depenses',              'DepenseController@index');
-$router->get('/depenses/create',       'DepenseController@create');
-$router->post('/depenses/store',       'DepenseController@store');
-// Routes paramétrées dépenses
-$router->get('/depenses/{id}/edit',    'DepenseController@edit');
-$router->post('/depenses/{id}',        'DepenseController@update');
-$router->post('/depenses/{id}/delete', 'DepenseController@delete');
+// Comptabilité / Paiements / Dépenses V1 : décommissionnés — toute la Finance
+// (facturation, encaissements, caisse, comptabilité, rapports, décaissements,
+// espace parent) vit désormais exclusivement sous /v2/finance/*.
 
 // ─── Espace Parent ────────────────────────────────────────────────────────────
 $router->get('/parent/dashboard', 'ParentController@dashboard');
 $router->get('/parent/notes',     'ParentController@notes');
 $router->get('/parent/bulletin',  'ParentController@bulletin');
 $router->get('/parent/absences',  'ParentController@absences');
-$router->get('/parent/paiements', 'ParentController@paiements');
+// Paiements : migré vers /v2/finance/mes-paiements (Finance V2)
 // Routes paramétrées parent
 $router->post('/parent/absences/{id}/justifier', 'ParentController@justifier');
 
@@ -299,7 +317,6 @@ $router->post('/utilisateurs/{id}/toggle-actif', 'UtilisateurController@toggleAc
 // ─── API JSON (pour PWA) ──────────────────────────────────────────────────────
 $router->get('/api/eleves',                      'Api\EleveApiController@index');
 $router->get('/api/eleves/{id}',                 'Api\EleveApiController@show');
-$router->get('/api/frais-eleve',                 'Api\FraisEleveApiController@index');
 $router->get('/api/emploi-du-temps/conflits',    'EmploiDuTempsController@checkConflicts');
 $router->get('/api/notifications/unread-count', 'Api\NotificationApiController@unreadCount');
 $router->get('/api/notifications/recent',       'Api\NotificationApiController@recent');

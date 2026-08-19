@@ -70,8 +70,23 @@ class Session
         $_SESSION['_flash'][$key] = $value;
     }
 
-    public static function getFlash(string $key, mixed $default = null): mixed
+    public static function getFlash(?string $key = null, mixed $default = null): mixed
     {
+        if (!isset($_SESSION['_flash']) || empty($_SESSION['_flash'])) {
+            return $default;
+        }
+
+        // If no key provided, return the first flash message as ['type' => key, 'message' => value]
+        if ($key === null) {
+            $firstKey = array_key_first($_SESSION['_flash']);
+            $value = $_SESSION['_flash'][$firstKey] ?? $default;
+            unset($_SESSION['_flash'][$firstKey]);
+            if ($value === $default) {
+                return $default;
+            }
+            return ['type' => (string)$firstKey, 'message' => $value];
+        }
+
         $value = $_SESSION['_flash'][$key] ?? $default;
         unset($_SESSION['_flash'][$key]);
         return $value;

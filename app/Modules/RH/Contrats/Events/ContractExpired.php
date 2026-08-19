@@ -13,7 +13,9 @@ class ContractExpired extends Event
         public readonly string $numeroContrat,
         public readonly int    $employeId,
         public readonly string $dateFin
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+        <title>Connexion — La Persévérance</title>
+    <meta name="description" content="La Persévérance — Gestion scolaire complète.">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#7c3aed">
+
+    <!-- PWA -->
+    <link rel="manifest" href="http://localhost/ecole_app/manifest.json">
+            <link rel="icon" href="http://localhost/ecole_app/assets/img/logo.jpeg">
+    <link rel="apple-touch-icon" href="http://localhost/ecole_app/assets/img/logo.jpeg">
+    
+    <!-- Google Fonts — police du tenant -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+        corePlugins: { preflight: false },
+        theme: { extend: { fontFamily: { sans: ['Inter','ui-sans-serif','system-ui','sans-serif'] } } }
+    }
+    </script>
+
+    <!-- Design System -->
+        <link href="http://localhost/ecole_app/assets/css/app.css?v=1784087291" rel="stylesheet">
+
+    <style>
+    :root {
+        --violet: #7c3aed;
+        --violet-hover: color-mix(in srgb, #7c3aed 85%, black);
+        --violet-light: color-mix(in srgb, #7c3aed 85%, white);
+        --brand-secondary: #0ea5e9;
+    }
+    body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
+    /* Auth-specific layout */
+    .auth-bg {
+        min-height: 100%;
+        background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 40%, #f8fafc 100%);
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        padding: 3rem 1rem;
+    }
+    .auth-card {
+        width: 100%; max-width: 26rem;
+        background: #fff;
+        border-radius: 1.25rem;
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-xl);
+        padding: 2.5rem 2rem;
+    }
+    </style>
+</head>
+<body>
+
+<div class="auth-bg">
+
+    <!-- NOTE: logo moved inside the auth card per request -->
+
+    <!-- Messages flash -->
+        <div class="alert alert-danger" style="width:100%;max-width:26rem;margin-bottom:1rem" role="alert">
+        <i data-lucide="alert-circle" style="width:1rem;height:1rem;flex-shrink:0"></i>
+        <span style="flex:1">Vous devez être connecté pour accéder à cette page.</span>
+    </div>
+    
+    
+    
+    
+    <!-- Carte principale -->
+    <div class="auth-card">
+        
+<div class="text-center mb-8">
+        <img src="http://localhost/ecole_app/assets/img/logo.jpeg" alt="La Persévérance" class="mx-auto mb-4" style="width:80px;height:80px;object-fit:contain;border-radius:1rem;border:1px solid rgba(148,163,184,0.35);padding:0.5rem;background:#fff;" />
+        <h2 class="text-2xl font-bold text-slate-900 mb-2">Connexion</h2>
+    <p class="text-sm text-slate-500">Bienvenue sur l&#039;espace de gestion du Complexe Scolaire Privé La Persévérance.</p>
+</div>
+
+
+<form method="POST" action="http://localhost/ecole_app/login" novalidate class="space-y-4">
+    <input type="hidden" name="_csrf_token" value="3bd147643e1bbefd95913d6fb2125366fb3be6ed8bdb2400aced3d6d8ff91eab">
+
+    <div class="mb-4">
+        <label class="form-label" for="email">Adresse email</label>
+        <div class="relative flex items-stretch">
+            <span class="inline-flex items-center rounded-l-lg border border-r-0 border-slate-300 bg-slate-50 px-3 text-sm text-slate-500"><i data-lucide="mail" class="w-4 h-4"></i></span>
+            <input type="email"
+                   class="form-input pl-10 "
+                   id="email" name="email"
+                   value=""
+                   placeholder="votre@email.com"
+                   required autofocus autocomplete="email">
+        </div>
+            </div>
+
+    <div class="mb-4">
+        <div class="flex items-center justify-between mb-1.5">
+            <label class="form-label mb-0" for="password">Mot de passe</label>
+            <a href="http://localhost/ecole_app/forgot-password"
+               class="text-xs text-violet-600 hover:text-violet-700 font-medium transition-colors">
+                Mot de passe oublié ?
+            </a>
+        </div>
+        <div class="relative flex items-stretch">
+            <span class="inline-flex items-center rounded-l-lg border border-r-0 border-slate-300 bg-slate-50 px-3 text-sm text-slate-500"><i data-lucide="lock" class="w-4 h-4"></i></span>
+            <input type="password"
+                   class="form-input pl-10 pr-10 "
+                   id="password" name="password"
+                   placeholder="••••••••"
+                   required autocomplete="current-password">
+            <button type="button" id="togglePassword"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                    aria-label="Afficher/Masquer">
+                <i data-lucide="eye" class="w-4 h-4"></i>
+            </button>
+        </div>
+            </div>
+
+    <button type="submit" class="btn btn-primary w-full mt-2 h-11 text-sm font-semibold">
+        <i data-lucide="log-in" class="w-4 h-4"></i>
+        Se connecter
+    </button>
+</form>
+
+<details class="mt-6 group">
+    <summary class="text-xs text-slate-400 text-center cursor-pointer hover:text-slate-600 select-none transition-colors">
+        <span class="inline-flex items-center gap-1">
+            <i data-lucide="info" class="w-3 h-3"></i>Comptes de démonstration
+        </span>
+    </summary>
+    <div class="mt-3 p-3 bg-slate-50 rounded-xl border border-slate-100 overflow-x-auto">
+        <table class="w-full text-xs">
+            <thead>
+                <tr class="text-slate-500">
+                    <th class="pb-2 font-semibold text-left">Rôle</th>
+                    <th class="pb-2 font-semibold text-left">Email</th>
+                    <th class="pb-2 font-semibold text-left">Mot de passe</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                                <tr>
+                    <td class="py-1.5"><span class="px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">Admin</span></td>
+                    <td class="py-1.5 text-slate-600 mono">admin@ecole.dz</td>
+                    <td class="py-1.5 text-slate-500 mono">password</td>
+                </tr>
+                                <tr>
+                    <td class="py-1.5"><span class="px-1.5 py-0.5 rounded text-xs font-medium bg-violet-100 text-violet-700">Directeur</span></td>
+                    <td class="py-1.5 text-slate-600 mono">directeur@ecole.dz</td>
+                    <td class="py-1.5 text-slate-500 mono">password</td>
+                </tr>
+                                <tr>
+                    <td class="py-1.5"><span class="px-1.5 py-0.5 rounded text-xs font-medium bg-sky-100 text-sky-700">Secrétaire</span></td>
+                    <td class="py-1.5 text-slate-600 mono">secretaire@ecole.dz</td>
+                    <td class="py-1.5 text-slate-500 mono">password</td>
+                </tr>
+                                <tr>
+                    <td class="py-1.5"><span class="px-1.5 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700">Comptable</span></td>
+                    <td class="py-1.5 text-slate-600 mono">comptable@ecole.dz</td>
+                    <td class="py-1.5 text-slate-500 mono">password</td>
+                </tr>
+                                <tr>
+                    <td class="py-1.5"><span class="px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">Enseignant</span></td>
+                    <td class="py-1.5 text-slate-600 mono">enseignant@ecole.dz</td>
+                    <td class="py-1.5 text-slate-500 mono">password</td>
+                </tr>
+                                <tr>
+                    <td class="py-1.5"><span class="px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700">Parent</span></td>
+                    <td class="py-1.5 text-slate-600 mono">parent@ecole.dz</td>
+                    <td class="py-1.5 text-slate-500 mono">password</td>
+                </tr>
+                                <tr>
+                    <td class="py-1.5"><span class="px-1.5 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-700">Élève</span></td>
+                    <td class="py-1.5 text-slate-600 mono">eleve@ecole.dz</td>
+                    <td class="py-1.5 text-slate-500 mono">password</td>
+                </tr>
+                            </tbody>
+        </table>
+    </div>
+</details>
+    </div>
+
+    <!-- Pied de page -->
+    <p style="margin-top:2rem;font-size:0.75rem;color:var(--txt-3);text-align:center">
+        © 2026 EduNova — Tous droits réservés    </p>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.400.0/dist/umd/lucide.min.js"></script>
+<script>if(window.lucide)lucide.createIcons();</script>
+<script src="http://localhost/ecole_app/assets/js/app.js"></script>
+</body>
+</html>

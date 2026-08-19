@@ -13,5 +13,19 @@ class AttendanceCompleted extends Event
         public readonly string $dateAppel,
         public readonly int    $totalEleves,
         public readonly int    $pointesCount,
-    ) {}
+    ) {
+        parent::__construct();
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'appel_id'      => $this->appelId,
+            'classe_id'     => $this->classeId,
+            'date_appel'    => $this->dateAppel,
+            'total_eleves'  => $this->totalEleves,
+            'pointes_count' => $this->pointesCount,
+            'fired_at'      => $this->getFiredAt(),
+        ];
+    }
 }

@@ -6,17 +6,6 @@ foreach ($enseignements as $en) {
     $annees[$en->annee_scolaire] = ($annees[$en->annee_scolaire] ?? 0) + 1;
 }
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title><?= htmlspecialchars($title) ?></title>
-    <?php include BASE_PATH . '/app/Views/layouts/head_assets.php'; ?>
-</head>
-<body class="bg-slate-50 text-slate-800">
-<?php include BASE_PATH . '/app/Views/layouts/sidebar.php'; ?>
-
-<main class="ml-64 p-6 min-h-screen">
     <div class="max-w-5xl mx-auto">
 
         <!-- Breadcrumb -->
@@ -219,8 +208,6 @@ foreach ($enseignements as $en) {
             </div>
         </div>
     </div>
-</main>
-
 <!-- Modal archivage -->
 <div id="archiveModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40">
     <div class="bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4">
@@ -240,14 +227,13 @@ foreach ($enseignements as $en) {
             <button onclick="document.getElementById('archiveModal').classList.add('hidden')"
                     class="px-4 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50">Annuler</button>
             <form method="POST" action="<?= BASE_URL ?>/v2/scolarite/matieres/<?= $matiere->id ?>/archiver">
-                <input type="hidden" name="csrf_token" value="<?= \Core\Session::getCsrfToken() ?>">
+                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                 <button type="submit"
                         class="px-4 py-2 text-sm bg-amber-600 hover:bg-amber-700 text-white rounded-lg">Archiver</button>
             </form>
         </div>
     </div>
 </div>
-
 <!-- Modal suppression -->
 <div id="deleteModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40">
     <div class="bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4">
@@ -262,14 +248,10 @@ foreach ($enseignements as $en) {
             <button onclick="document.getElementById('deleteModal').classList.add('hidden')"
                     class="px-4 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50">Annuler</button>
             <form method="POST" action="<?= BASE_URL ?>/v2/scolarite/matieres/<?= $matiere->id ?>/delete">
-                <input type="hidden" name="csrf_token" value="<?= \Core\Session::getCsrfToken() ?>">
+                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                 <button type="submit"
                         class="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg">Supprimer</button>
             </form>
         </div>
     </div>
 </div>
-
-<?php include BASE_PATH . '/app/Views/layouts/footer_assets.php'; ?>
-</body>
-</html>

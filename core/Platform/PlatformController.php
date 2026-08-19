@@ -30,7 +30,7 @@ abstract class PlatformController extends Controller
         if (!PlatformAuth::hasLevel(...$levels)) {
             \Core\Logger::security('PLATFORM_ACCESS_DENIED', 'Niveau requis : ' . implode('|', $levels));
             http_response_code(403);
-            $this->render('errors/403', ['title' => 'Niveau opérateur insuffisant'], 'main');
+            $this->render('errors/403', ['title' => 'Niveau opérateur insuffisant'], 'none');
             exit;
         }
     }

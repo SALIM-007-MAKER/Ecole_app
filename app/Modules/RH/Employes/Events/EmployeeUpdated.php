@@ -11,7 +11,9 @@ class EmployeeUpdated extends Event
         public readonly string $matricule,
         public readonly array  $changes,
         public readonly int    $modifieParId,
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

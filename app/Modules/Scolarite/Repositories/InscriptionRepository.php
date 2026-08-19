@@ -168,6 +168,22 @@ class InscriptionRepository
     }
 
     /**
+     * Vrai si au moins un élève est activement inscrit (en_attente ou validee)
+     * dans cette classe pour cette année scolaire.
+     */
+    public function existsForClasseEtAnnee(int $classeId, string $anneeScolaire): bool
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT 1 FROM `inscriptions`
+             WHERE classe_id = ? AND annee_scolaire = ?
+               AND statut IN ('en_attente', 'validee')
+             LIMIT 1"
+        );
+        $stmt->execute([$classeId, $anneeScolaire]);
+        return (bool)$stmt->fetchColumn();
+    }
+
+    /**
      * Années scolaires distinctes présentes dans inscriptions.
      */
     public function listAnneesScolaires(): array

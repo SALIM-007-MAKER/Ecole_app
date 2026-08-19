@@ -1,13 +1,3 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alertes KPI</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-4xl mx-auto px-4 py-8">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-xl font-bold text-slate-800 flex items-center gap-2">
@@ -48,7 +38,7 @@
                 </div>
                 <div class="text-xs text-slate-400 mt-1">Période : <?= htmlspecialchars($a['periode'] ?? '') ?></div>
             </div>
-            <a href="/v2/rapports/kpis/tendance?domaine=<?= urlencode($domaine) ?>&metrique=<?= urlencode($a['metrique'] ?? '') ?>"
+            <a href="<?= BASE_URL ?>/v2/rapports/kpis/tendance?domaine=<?= urlencode($domaine) ?>&metrique=<?= urlencode($a['metrique'] ?? '') ?>"
                class="text-xs text-violet-600 hover:underline flex-shrink-0">Voir tendance →</a>
         </div>
         <?php endforeach; ?>
@@ -56,5 +46,3 @@
     <?php endif; ?>
 </div>
 <script>lucide.createIcons();</script>
-</body>
-</html>

@@ -14,7 +14,9 @@ class EvaluationValidated extends Event
         public readonly float  $scoreFinal,
         public readonly string $mention,
         public readonly int    $validePar
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

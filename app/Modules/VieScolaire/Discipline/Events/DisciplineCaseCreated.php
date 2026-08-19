@@ -20,5 +20,23 @@ class DisciplineCaseCreated extends Event
         public readonly string $anneeScolaire,
         public readonly int    $signaleParId,
         public readonly bool   $premierIncident,
-    ) {}
+    ) {
+        parent::__construct();
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'incident_id'      => $this->incidentId,
+            'dossier_id'       => $this->dossierId,
+            'eleve_id'         => $this->eleveId,
+            'classe_id'        => $this->classeId,
+            'gravite'          => $this->gravite,
+            'categorie_code'   => $this->categorieCode,
+            'annee_scolaire'   => $this->anneeScolaire,
+            'signale_par_id'   => $this->signaleParId,
+            'premier_incident' => $this->premierIncident,
+            'fired_at'         => $this->getFiredAt(),
+        ];
+    }
 }

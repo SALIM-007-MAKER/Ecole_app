@@ -1,16 +1,6 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $planif ? 'Modifier la planification' : 'Nouvelle planification' ?></title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-2xl mx-auto px-4 py-8">
     <div class="flex items-center gap-3 mb-6">
-        <a href="/v2/rapports/planifications" class="text-slate-400 hover:text-violet-600">
+        <a href="<?= BASE_URL ?>/v2/rapports/planifications" class="text-slate-400 hover:text-violet-600">
             <i data-lucide="arrow-left" class="w-5 h-5"></i>
         </a>
         <h1 class="text-xl font-bold text-slate-800">
@@ -22,7 +12,7 @@
         <form method="post"
               action="<?= $planif ? '/v2/rapports/planifications/' . $planif['id'] . '/modifier' : '/v2/rapports/planifications' ?>"
               class="space-y-5">
-            <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
 
             <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1">Nom de la planification *</label>
@@ -81,12 +71,10 @@
                     <i data-lucide="save" class="w-4 h-4"></i>
                     <?= $planif ? 'Enregistrer les modifications' : 'Créer la planification' ?>
                 </button>
-                <a href="/v2/rapports/planifications"
+                <a href="<?= BASE_URL ?>/v2/rapports/planifications"
                    class="px-4 py-2 border border-slate-200 text-slate-700 rounded-lg text-sm hover:bg-slate-50">Annuler</a>
             </div>
         </form>
     </div>
 </div>
 <script>lucide.createIcons();</script>
-</body>
-</html>

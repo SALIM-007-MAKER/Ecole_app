@@ -4,28 +4,14 @@
 /** @var int $classeId */
 /** @var string $annee */
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Statistiques Récompenses</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
-
-<?php include BASE_PATH . '/app/Views/partials/sidebar.php'; ?>
-
-<main class="ml-64 p-8">
     <div class="flex items-center justify-between mb-8">
         <h1 class="text-2xl font-bold text-slate-800">Statistiques Récompenses</h1>
         <div class="flex gap-3">
-            <a href="/v2/vie-scolaire/recompenses/classement<?= $classeId ? '?classe_id=' . $classeId . '&annee_scolaire=' . urlencode($annee) : '' ?>"
+            <a href="<?= BASE_URL ?>/v2/vie-scolaire/recompenses/classement<?= $classeId ? '?classe_id=' . $classeId . '&annee_scolaire=' . urlencode($annee) : '' ?>"
                class="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                 <i data-lucide="trophy" class="w-4 h-4"></i> Voir classement comportemental
             </a>
-            <a href="/v2/vie-scolaire/recompenses" class="text-sm text-slate-500 hover:text-violet-600">← Retour</a>
+            <a href="<?= BASE_URL ?>/v2/vie-scolaire/recompenses" class="text-sm text-slate-500 hover:text-violet-600">← Retour</a>
         </div>
     </div>
 
@@ -113,7 +99,4 @@
             </table>
         </div>
     <?php endif; ?>
-</main>
 <script>lucide.createIcons();</script>
-</body>
-</html>

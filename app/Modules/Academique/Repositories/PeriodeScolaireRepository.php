@@ -147,14 +147,62 @@ class PeriodeScolaireRepository
         return (int)$stmt->fetchColumn() > 0;
     }
 
+    /**
+     * Chevauchement : une période existante [debut,fin] chevauche
+     * [dateDebut,dateFin] si existante.debut <= nouvelle.fin ET
+     * existante.fin >= nouvelle.debut. Les périodes sans dates (NULL)
+     * sont ignorées (rien à comparer).
+     */
+    public function existsOverlap(
+        string $annee,
+        string $dateDebut,
+        string $dateFin,
+        int    $excludeId = 0
+    ): bool {
+        $stmt = $this->pdo->prepare(
+            "SELECT COUNT(*) FROM `periodes_scolaires`
+             WHERE annee_scolaire = ? AND id != ?
+               AND date_debut IS NOT NULL AND date_fin IS NOT NULL
+               AND date_debut <= ? AND date_fin >= ?"
+        );
+        $stmt->execute([$annee, $excludeId, $dateFin, $dateDebut]);
+        return (int)$stmt->fetchColumn() > 0;
+    }
+
+    /** Périodes datées d'une année scolaire, triées chronologiquement — utilisé pour la vérification de couverture. */
+    public function findDatedByAnnee(string $annee): array
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT id, nom, date_debut, date_fin FROM `periodes_scolaires`
+             WHERE annee_scolaire = ? AND date_debut IS NOT NULL AND date_fin IS NOT NULL
+             ORDER BY date_debut ASC"
+        );
+        $stmt->execute([$annee]);
+        return $stmt->fetchAll(PDO::FETCH_OBJ);
+    }
+
+    /** Périodes d'une année scolaire pour un type donné (ex: 'semestre'), triées par numéro. Utilisé par BulletinGenerator pour les résultats 1er/2e semestre + annuelle. */
+    public function findByAnneeEtType(string $annee, string $type): array
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT id, numero, nom, date_debut, date_fin
+             FROM `periodes_scolaires`
+             WHERE annee_scolaire = ? AND type_periode = ?
+             ORDER BY numero ASC"
+        );
+        $stmt->execute([$annee, $type]);
+        return $stmt->fetchAll(PDO::FETCH_OBJ);
+    }
+
     public function countStats(): array
     {
         $row = $this->pdo->query(
             "SELECT
                 COUNT(*)                              AS total,
+                SUM(statut = 'preparation')           AS preparation,
                 SUM(statut = 'ouverte')               AS ouvertes,
-                SUM(statut = 'fermee')                AS fermees,
-                SUM(statut = 'verrouillee')           AS verrouillees,
+                SUM(statut = 'cloturee')               AS cloturees,
+                SUM(verrouille_par IS NOT NULL)       AS verrouillees,
                 SUM(statut = 'archivee')              AS archivees,
                 SUM(is_active = 1)                    AS actives,
                 COUNT(DISTINCT annee_scolaire)        AS nb_annees
@@ -163,8 +211,9 @@ class PeriodeScolaireRepository
 
         return [
             'total'        => (int)($row->total        ?? 0),
+            'preparation'  => (int)($row->preparation   ?? 0),
             'ouvertes'     => (int)($row->ouvertes      ?? 0),
-            'fermees'      => (int)($row->fermees       ?? 0),
+            'cloturees'    => (int)($row->cloturees      ?? 0),
             'verrouillees' => (int)($row->verrouillees  ?? 0),
             'archivees'    => (int)($row->archivees      ?? 0),
             'actives'      => (int)($row->actives        ?? 0),

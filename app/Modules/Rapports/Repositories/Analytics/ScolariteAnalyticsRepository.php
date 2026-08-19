@@ -25,7 +25,7 @@ class ScolariteAnalyticsRepository
                 WHERE c.etablissement_id = :etab
                   AND c.deleted_at IS NULL
                 GROUP BY c.id, c.nom, c.niveau, c.filiere
-                ORDER BY c.niveau, c.nom';
+                ORDER BY ' . \App\Models\ClasseModel::ordreNiveauSql('c.niveau') . ', c.nom';
 
         $params = [':etab' => $etablissementId];
         if ($anneeScolaire) $params[':as'] = $anneeScolaire;

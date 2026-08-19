@@ -17,5 +17,21 @@ class DisciplinaryActionAssigned extends Event
         public readonly string $dateSanction,
         public readonly string $anneeScolaire,
         public readonly int    $prononceParId,
-    ) {}
+    ) {
+        parent::__construct();
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'sanction_id'     => $this->sanctionId,
+            'dossier_id'      => $this->dossierId,
+            'eleve_id'        => $this->eleveId,
+            'type_sanction'   => $this->typeSanction,
+            'date_sanction'   => $this->dateSanction,
+            'annee_scolaire'  => $this->anneeScolaire,
+            'prononce_par_id' => $this->prononceParId,
+            'fired_at'        => $this->getFiredAt(),
+        ];
+    }
 }

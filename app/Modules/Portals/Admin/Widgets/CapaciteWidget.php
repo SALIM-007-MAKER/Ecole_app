@@ -26,7 +26,7 @@ class CapaciteWidget extends BaseWidget
                  FROM classes c
                  LEFT JOIN eleves e ON e.classe_id = c.id AND e.deleted_at IS NULL
                  WHERE c.etablissement_id=? AND c.deleted_at IS NULL
-                 GROUP BY c.id ORDER BY c.niveau, c.nom'
+                 GROUP BY c.id ORDER BY ' . \App\Models\ClasseModel::ordreNiveauSql('c.niveau') . ', c.nom'
             );
             $stmt->execute([$etab]);
             $classes = $stmt->fetchAll(\PDO::FETCH_ASSOC);

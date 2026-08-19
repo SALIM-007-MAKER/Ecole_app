@@ -39,8 +39,8 @@ class OrganizationController extends Controller
         $this->render('RH::organisation/index', [
             'tree'      => $tree,
             'stats'     => $stats,
-            'canCreate' => $this->policy->canCreate($this->user),
-            'canExport' => $this->policy->canExport($this->user),
+            'canCreate' => $this->policy->canCreate($this->currentUser()),
+            'canExport' => $this->policy->canExport($this->currentUser()),
         ]);
     }
 

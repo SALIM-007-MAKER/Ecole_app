@@ -2,7 +2,7 @@
 <div class="space-y-4">
   <div class="flex items-center justify-between">
     <h2 class="text-sm font-semibold text-slate-700">Mes emprunts en cours</h2>
-    <a href="/v2/bibliotheque" class="text-xs text-blue-600 hover:underline">Catalogue complet →</a>
+    <a href="<?= BASE_URL ?>/v2/bibliotheque" class="text-xs text-blue-600 hover:underline">Catalogue complet →</a>
   </div>
   <?php if (empty($emprunts)): ?>
   <div class="text-center py-10 text-slate-400"><i data-lucide="book" class="w-10 h-10 mx-auto mb-2 opacity-30"></i><p>Aucun emprunt en cours.</p></div>

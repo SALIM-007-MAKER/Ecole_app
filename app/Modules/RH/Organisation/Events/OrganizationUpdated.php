@@ -14,7 +14,9 @@ class OrganizationUpdated extends Event
         public readonly string $action,
         public readonly array  $meta,
         public readonly int    $updatedBy
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

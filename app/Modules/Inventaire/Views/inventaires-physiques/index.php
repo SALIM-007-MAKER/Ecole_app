@@ -1,17 +1,8 @@
 <?php /** @var array $inventaires */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Inventaires Physiques</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-5xl mx-auto px-4 py-6">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold text-slate-800">Inventaires Physiques</h1>
-        <a href="/v2/inventaire/inventaires-physiques/creer"
+        <a href="<?= BASE_URL ?>/v2/inventaire/inventaires-physiques/creer"
            class="inline-flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-violet-700">
             <i data-lucide="clipboard-list" class="w-4 h-4"></i> Ouvrir inventaire
         </a>
@@ -41,8 +32,8 @@
                     </td>
                     <td class="px-4 py-3 text-right space-x-2">
                         <?php if ($inv['statut'] === 'en_cours'): ?>
-                        <a href="/v2/inventaire/inventaires-physiques/<?=$inv['id']?>/session" class="text-violet-600 hover:underline text-xs">Saisir</a>
-                        <form method="POST" action="/v2/inventaire/inventaires-physiques/<?=$inv['id']?>/cloture" class="inline">
+                        <a href="<?= BASE_URL ?>/v2/inventaire/inventaires-physiques/<?=$inv['id']?>/session" class="text-violet-600 hover:underline text-xs">Saisir</a>
+                        <form method="POST" action="<?= BASE_URL ?>/v2/inventaire/inventaires-physiques/<?=$inv['id']?>/cloture" class="inline">
                             <input type="hidden" name="_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                             <button type="submit" class="text-green-600 hover:underline text-xs" onclick="return confirm('Clôturer et appliquer les ajustements ?')">Clôturer</button>
                         </form>
@@ -58,5 +49,3 @@
     </div>
 </div>
 <script>lucide.createIcons();</script>
-</body>
-</html>

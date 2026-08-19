@@ -10,7 +10,7 @@ class NoteRepository
 
     public function __construct()
     {
-        $this->pdo = Database::getConnection();
+        $this->pdo = Database::getInstance()->getConnection();
     }
 
     // ─── Lecture ─────────────────────────────────────────────────────────────
@@ -146,11 +146,11 @@ class NoteRepository
 
     public function getHistorique(int $noteId): array
     {
-        $sql = "SELECT h.*, u.name AS modifie_par_nom
-                FROM notes_historique h
-                LEFT JOIN users u ON u.id = h.modifie_par
-                WHERE h.note_id = ?
-                ORDER BY h.modifie_le DESC";
+        $sql = "SELECT h.*, CONCAT(COALESCE(u.prenom,''), ' ', COALESCE(u.nom,'')) AS modifie_par_nom
+            FROM notes_historique h
+            LEFT JOIN users u ON u.id = h.modifie_par
+            WHERE h.note_id = ?
+            ORDER BY h.modifie_le DESC";
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([$noteId]);

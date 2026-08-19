@@ -1,11 +1,11 @@
 <?php $title = 'Nouvel emploi du temps'; ?>
-<?php ob_start(); ?>
 
 <div class="p-6 max-w-2xl mx-auto space-y-6">
 
   <div class="flex items-center gap-3">
-    <a href="/v2/vie-scolaire/emplois-du-temps" class="text-slate-400 hover:text-slate-600">
-      <i data-lucide="arrow-left" class="w-5 h-5"></i>
+    <a href="<?= BASE_URL ?>/v2/vie-scolaire/emplois-du-temps"
+       class="inline-flex items-center gap-2 px-3 py-1.5 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 text-sm transition-colors flex-shrink-0">
+      <i data-lucide="arrow-left" class="w-4 h-4"></i> Retour
     </a>
     <div>
       <h1 class="text-2xl font-bold text-slate-800">Nouvel emploi du temps</h1>
@@ -13,15 +13,9 @@
     </div>
   </div>
 
-  <?php if (!empty($_SESSION['flash_error'])): ?>
-    <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">
-      <?= $_SESSION['flash_error'] ?>
-      <?php unset($_SESSION['flash_error']); ?>
-    </div>
-  <?php endif; ?>
 
-  <form method="POST" action="/v2/vie-scolaire/emplois-du-temps" class="bg-white border border-slate-200 rounded-xl p-6 space-y-5">
-    <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+  <form method="POST" action="<?= BASE_URL ?>/v2/vie-scolaire/emplois-du-temps" class="bg-white border border-slate-200 rounded-xl p-6 space-y-5">
+    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
 
     <div>
       <label class="block text-sm font-medium text-slate-700 mb-1">Classe <span class="text-red-500">*</span></label>
@@ -65,7 +59,7 @@
       <button type="submit" class="bg-violet-600 hover:bg-violet-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition">
         Créer l'EDT
       </button>
-      <a href="/v2/vie-scolaire/emplois-du-temps" class="border border-slate-300 text-slate-600 hover:bg-slate-50 px-6 py-2 rounded-lg text-sm font-medium transition">
+      <a href="<?= BASE_URL ?>/v2/vie-scolaire/emplois-du-temps" class="border border-slate-300 text-slate-600 hover:bg-slate-50 px-6 py-2 rounded-lg text-sm font-medium transition">
         Annuler
       </a>
     </div>
@@ -73,5 +67,3 @@
 
 </div>
 
-<?php $content = ob_get_clean(); ?>
-<?php include base_path('app/Views/layouts/app.php'); ?>

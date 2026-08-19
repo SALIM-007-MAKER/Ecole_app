@@ -26,11 +26,15 @@ $badge = match ($facture->statut) {
 <div class="space-y-6">
 
     <!-- En-tête -->
-    <div class="flex items-start justify-between">
-        <div class="flex items-center gap-4">
-            <a href="<?= BASE_URL ?>/v2/finance/factures" class="text-slate-400 hover:text-slate-600">
-                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+    <div class="flex items-start justify-between gap-4">
+        <div class="flex items-start gap-4">
+            <a href="<?= BASE_URL ?>/v2/finance/factures"
+               class="w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 flex-shrink-0 transition-colors">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
             </a>
+            <div class="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="file-text" class="w-5 h-5 text-violet-600"></i>
+            </div>
             <div>
                 <div class="flex items-center gap-3">
                     <h1 class="text-2xl font-bold text-slate-800 font-mono"><?= htmlspecialchars($facture->numero) ?></h1>
@@ -66,10 +70,10 @@ $badge = match ($facture->statut) {
 
             <?php if ($canEmettre && $facture->statut === 'brouillon'): ?>
             <form method="POST" action="<?= BASE_URL ?>/v2/finance/factures/<?= $facture->id ?>/emettre" class="inline">
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken()) ?>">
+                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                 <button type="submit"
                         onclick="return confirm('Émettre cette facture ? Elle ne pourra plus être modifiée.')"
-                        class="px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">
+                        class="px-3 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700">
                     <i data-lucide="send" class="inline w-4 h-4 mr-1"></i> Émettre
                 </button>
             </form>
@@ -84,7 +88,7 @@ $badge = match ($facture->statut) {
 
             <?php if ($canArchiver && in_array($facture->statut, ['payee','annulee'], true)): ?>
             <form method="POST" action="<?= BASE_URL ?>/v2/finance/factures/<?= $facture->id ?>/archiver" class="inline">
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken()) ?>">
+                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                 <button type="submit"
                         onclick="return confirm('Archiver cette facture ?')"
                         class="px-3 py-2 text-sm text-slate-500 bg-slate-100 rounded-lg hover:bg-slate-200">
@@ -95,7 +99,7 @@ $badge = match ($facture->statut) {
 
             <?php if ($canSupprimer && $facture->statut === 'brouillon'): ?>
             <form method="POST" action="<?= BASE_URL ?>/v2/finance/factures/<?= $facture->id ?>/delete" class="inline">
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken()) ?>">
+                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                 <button type="submit"
                         onclick="return confirm('Supprimer définitivement cette facture brouillon ?')"
                         class="px-3 py-2 text-sm text-red-600 bg-red-50 rounded-lg hover:bg-red-100">
@@ -159,7 +163,7 @@ $badge = match ($facture->statut) {
                             <?php if ($canEdit && $facture->statut === 'brouillon'): ?>
                             <td class="px-3 py-3 text-right">
                                 <form method="POST" action="<?= BASE_URL ?>/v2/finance/factures/<?= $facture->id ?>/ligne/<?= $l->id ?>/delete" class="inline">
-                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken()) ?>">
+                                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                                     <button type="submit" onclick="return confirm('Supprimer cette ligne ?')"
                                             class="p-1 text-slate-300 hover:text-red-500">
                                         <i data-lucide="trash-2" class="w-4 h-4"></i>
@@ -363,9 +367,9 @@ $badge = match ($facture->statut) {
             <?php endif; ?>
         </p>
         <form method="POST" action="<?= BASE_URL ?>/v2/finance/factures/<?= $facture->id ?>/annuler">
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken()) ?>">
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
             <div class="mb-4">
-                <label class="block text-sm font-medium text-slate-700 mb-1">Motif d'annulation <span class="text-red-500">*</span></label>
+                <label class="form-label">Motif d'annulation <span class="form-required">*</span></label>
                 <textarea name="motif" rows="3" required
                           class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                           placeholder="Raison de l'annulation..."></textarea>
@@ -386,22 +390,22 @@ $badge = match ($facture->statut) {
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
         <h3 class="text-lg font-bold text-slate-800 mb-4">Ajouter une ligne</h3>
         <form method="POST" action="<?= BASE_URL ?>/v2/finance/factures/<?= $facture->id ?>/ligne" class="space-y-3">
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken()) ?>">
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
             <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Libellé *</label>
+                <label class="form-label">Libellé *</label>
                 <input type="text" name="libelle" required
-                       class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500">
+                       class="form-input">
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Quantité</label>
+                    <label class="form-label">Quantité</label>
                     <input type="number" name="quantite" value="1" min="0.01" step="0.01"
-                           class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500">
+                           class="form-input">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Prix unitaire *</label>
+                    <label class="form-label">Prix unitaire *</label>
                     <input type="number" name="montant_unitaire" min="0" step="0.01" required
-                           class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500">
+                           class="form-input">
                 </div>
             </div>
             <div class="flex justify-end gap-3 pt-2">
@@ -420,32 +424,32 @@ $badge = match ($facture->statut) {
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
         <h3 class="text-lg font-bold text-slate-800 mb-4">Appliquer une remise</h3>
         <form method="POST" action="<?= BASE_URL ?>/v2/finance/factures/<?= $facture->id ?>/remise" class="space-y-3">
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken()) ?>">
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
             <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Libellé *</label>
+                <label class="form-label">Libellé *</label>
                 <input type="text" name="libelle" required placeholder="Ex: Réduction fratrie"
-                       class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500">
+                       class="form-input">
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Type</label>
+                    <label class="form-label">Type</label>
                     <select name="type_remise"
-                            class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500">
+                            class="form-select">
                         <option value="montant_fixe">Montant fixe</option>
                         <option value="pourcentage">Pourcentage (%)</option>
                         <option value="exoneration">Exonération totale</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Valeur</label>
+                    <label class="form-label">Valeur</label>
                     <input type="number" name="valeur" min="0" step="0.01"
-                           class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500">
+                           class="form-input">
                 </div>
             </div>
             <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Justificatif</label>
+                <label class="form-label">Justificatif</label>
                 <input type="text" name="justificatif" placeholder="Motif optionnel..."
-                       class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500">
+                       class="form-input">
             </div>
             <div class="flex justify-end gap-3 pt-2">
                 <button type="button" onclick="document.getElementById('modal-remise').classList.add('hidden')"
@@ -463,18 +467,18 @@ $badge = match ($facture->statut) {
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 max-h-screen overflow-y-auto">
         <h3 class="text-lg font-bold text-slate-800 mb-4">Créer un échéancier</h3>
         <form method="POST" action="<?= BASE_URL ?>/v2/finance/factures/<?= $facture->id ?>/echeancier" id="form-echeancier">
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken()) ?>">
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
             <div id="echeances-list" class="space-y-3 mb-4">
                 <div class="echeance-row grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-medium text-slate-600 mb-1">Date *</label>
                         <input type="date" name="echeances[0][date]" required
-                               class="w-full px-2 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500">
+                               class="form-input">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-600 mb-1">Montant *</label>
                         <input type="number" name="echeances[0][montant]" min="0" step="0.01" required
-                               class="w-full px-2 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500">
+                               class="form-input">
                     </div>
                 </div>
             </div>
@@ -503,12 +507,12 @@ function ajouterEcheance() {
         <div>
             <label class="block text-xs font-medium text-slate-600 mb-1">Date *</label>
             <input type="date" name="echeances[${i}][date]" required
-                   class="w-full px-2 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500">
+                   class="form-input">
         </div>
         <div>
             <label class="block text-xs font-medium text-slate-600 mb-1">Montant *</label>
             <input type="number" name="echeances[${i}][montant]" min="0" step="0.01" required
-                   class="w-full px-2 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500">
+                   class="form-input">
         </div>
     `;
     document.getElementById('echeances-list').appendChild(div);

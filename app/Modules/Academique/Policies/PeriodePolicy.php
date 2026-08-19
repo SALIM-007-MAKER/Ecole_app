@@ -23,10 +23,16 @@ class PeriodePolicy
             && !$this->hasPermission($user, 'academique.periodes.admin')) {
             return false;
         }
-        if ($periode !== null && $periode->statut === 'verrouillee') {
+        if ($periode !== null && ($periode->verrouille_par ?? null) !== null) {
             return $this->hasPermission($user, 'academique.periodes.admin');
         }
         return true;
+    }
+
+    /** Édition directe et libre du champ `statut` (hors boutons de cycle de vie guidé) — réservée aux administrateurs. */
+    public function canEditStatutDirectement(array $user): bool
+    {
+        return $this->hasPermission($user, 'academique.periodes.admin');
     }
 
     public function canActivate(array $user): bool
@@ -35,10 +41,21 @@ class PeriodePolicy
             || $this->hasPermission($user, 'academique.periodes.admin');
     }
 
-    public function canFermer(array $user): bool
+    public function canOuvrir(array $user): bool
     {
         return $this->hasPermission($user, 'academique.periodes.manage')
             || $this->hasPermission($user, 'academique.periodes.admin');
+    }
+
+    public function canCloturer(array $user): bool
+    {
+        return $this->hasPermission($user, 'academique.periodes.manage')
+            || $this->hasPermission($user, 'academique.periodes.admin');
+    }
+
+    public function canReouvrir(array $user): bool
+    {
+        return $this->hasPermission($user, 'academique.periodes.admin');
     }
 
     public function canVerrouiller(array $user): bool
@@ -58,10 +75,15 @@ class PeriodePolicy
             && !$this->hasPermission($user, 'academique.periodes.admin')) {
             return false;
         }
-        if ($periode !== null && $periode->statut === 'verrouillee') {
+        if ($periode !== null && ($periode->verrouille_par ?? null) !== null) {
             return false;
         }
         return true;
+    }
+
+    public function canGererConfig(array $user): bool
+    {
+        return $this->hasPermission($user, 'academique.periodes.admin');
     }
 
     private function hasPermission(array $user, string $permission): bool

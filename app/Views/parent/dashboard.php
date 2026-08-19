@@ -5,154 +5,159 @@ $annonces      = $annonces      ?? [];
 $user          = \Core\Session::getUser();
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<!-- Page header -->
+<div class="flex flex-wrap items-center justify-between gap-4 mb-6">
     <div>
-        <h4 class="mb-0 fw-bold"><i class="bi bi-house-heart me-2 text-primary"></i>Mon espace parent</h4>
-        <small class="text-muted">Bonjour, <?= htmlspecialchars(($user['prenom'] ?: '') . ' ' . $user['nom'], ENT_QUOTES) ?></small>
+        <h2 class="text-xl font-bold text-slate-900">
+            Bonjour, <?= htmlspecialchars(($user['prenom'] ?: '') . ' ' . $user['nom'], ENT_QUOTES) ?>
+            <span class="wave inline-block">👋</span>
+        </h2>
+        <p class="text-sm text-slate-400 mt-0.5 flex items-center gap-1">
+            <i data-lucide="users" class="w-3.5 h-3.5"></i>
+            <?= count($enfants) ?> enfant<?= count($enfants) > 1 ? 's' : '' ?> suivi<?= count($enfants) > 1 ? 's' : '' ?>
+        </p>
     </div>
-    <a href="<?= BASE_URL ?>/annonces" class="btn btn-outline-primary btn-sm">
-        <i class="bi bi-megaphone me-1"></i>Annonces
+    <a href="<?= BASE_URL ?>/annonces" class="btn btn-outline btn-sm">
+        <i data-lucide="megaphone" class="w-4 h-4"></i>Annonces
     </a>
 </div>
 
 <?php if (empty($enfants)): ?>
-<div class="alert alert-info d-flex align-items-center">
-    <i class="bi bi-info-circle-fill me-3 fs-4"></i>
-    <div>Aucun enfant n'est encore associé à votre compte. Contactez l'administration.</div>
+<div class="flex flex-col items-center justify-center gap-3 text-center text-slate-500 py-16 rounded-xl border border-slate-200 bg-white shadow-sm">
+    <div class="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-1">
+        <i data-lucide="info" class="w-8 h-8 text-slate-300"></i>
+    </div>
+    <p class="text-slate-500 font-medium">Aucun enfant associé à votre compte</p>
+    <p class="text-sm text-slate-400">Contactez l'administration de l'établissement.</p>
 </div>
 <?php else: ?>
 
-<!-- ═ Enfants ══════════════════════════════════════════════════════════════ -->
-<div class="row g-4 mb-4">
-    <?php foreach ($enfants as $enfant): ?>
-    <div class="col-md-6 col-xl-4">
-        <div class="card border-0 shadow-sm h-100" style="border-radius:12px;overflow:hidden">
-            <div class="card-header py-3 d-flex align-items-center gap-3"
-                 style="background:linear-gradient(135deg,#4e73df,#224abe)">
-                <?php if (!empty($enfant->photo)): ?>
-                    <img src="<?= BASE_URL ?>/<?= htmlspecialchars($enfant->photo, ENT_QUOTES) ?>"
-                         class="rounded-circle border border-white border-2"
-                         width="48" height="48" style="object-fit:cover">
-                <?php else: ?>
-                    <div class="rounded-circle bg-white d-flex align-items-center justify-content-center"
-                         style="width:48px;height:48px;flex-shrink:0">
-                        <i class="bi bi-person-fill text-primary fs-4"></i>
-                    </div>
-                <?php endif; ?>
-                <div class="text-white">
-                    <div class="fw-bold"><?= htmlspecialchars($enfant->prenom . ' ' . $enfant->nom, ENT_QUOTES) ?></div>
-                    <small class="opacity-75"><?= htmlspecialchars($enfant->classe_niveau . ' — ' . $enfant->classe_nom, ENT_QUOTES) ?></small>
+<!-- Enfants -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-5">
+    <?php foreach ($enfants as $enfant):
+        $moy   = $enfant->derniere_moyenne;
+        $abs   = (int)$enfant->absences_mois;
+        $solde = (float)$enfant->solde_impaye;
+    ?>
+    <div class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <div class="flex items-center gap-3 px-5 py-4 border-b border-slate-200 bg-slate-50">
+            <?php if (!empty($enfant->photo)): ?>
+                <img src="<?= BASE_URL ?>/<?= htmlspecialchars($enfant->photo, ENT_QUOTES) ?>"
+                     class="w-11 h-11 rounded-full object-cover border border-white shadow-sm flex-shrink-0">
+            <?php else: ?>
+                <div class="w-11 h-11 rounded-full bg-violet-100 flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="user" class="w-5 h-5 text-violet-600"></i>
                 </div>
+            <?php endif; ?>
+            <div class="min-w-0">
+                <p class="font-semibold text-sm text-slate-900 truncate"><?= htmlspecialchars($enfant->prenom . ' ' . $enfant->nom, ENT_QUOTES) ?></p>
+                <p class="text-xs text-slate-400 truncate"><?= htmlspecialchars(($enfant->classe_niveau ?? '') . ' — ' . ($enfant->classe_nom ?? ''), ENT_QUOTES) ?></p>
             </div>
-            <div class="card-body">
-                <div class="row g-2 text-center mb-3">
-                    <div class="col-4">
-                        <div class="p-2 rounded" style="background:#f0f5ff">
-                            <div class="fw-bold fs-5 text-primary">
-                                <?= $enfant->derniere_moyenne !== null
-                                    ? number_format((float)$enfant->derniere_moyenne, 2)
-                                    : '—' ?>
-                            </div>
-                            <div class="text-muted" style="font-size:.72rem">Moyenne</div>
-                        </div>
-                    </div>
-                    <div class="col-4">
-                        <div class="p-2 rounded" style="background:#fff5f5">
-                            <div class="fw-bold fs-5 text-danger"><?= (int)$enfant->absences_mois ?></div>
-                            <div class="text-muted" style="font-size:.72rem">Abs. ce mois</div>
-                        </div>
-                    </div>
-                    <div class="col-4">
-                        <div class="p-2 rounded" style="background:<?= (float)$enfant->solde_impaye > 0 ? '#fff3cd' : '#f0fff4' ?>">
-                            <div class="fw-bold fs-5 <?= (float)$enfant->solde_impaye > 0 ? 'text-warning' : 'text-success' ?>">
-                                <?= number_format((float)$enfant->solde_impaye, 0, ',', ' ') ?>
-                            </div>
-                            <div class="text-muted" style="font-size:.72rem">Impayé (FCFA)</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="d-flex gap-2">
-                    <a href="<?= BASE_URL ?>/parent/notes?eleve_id=<?= $enfant->id ?>"
-                       class="btn btn-sm btn-outline-primary flex-fill">
-                        <i class="bi bi-pencil-square me-1"></i>Notes
-                    </a>
-                    <a href="<?= BASE_URL ?>/parent/absences?eleve_id=<?= $enfant->id ?>"
-                       class="btn btn-sm btn-outline-danger flex-fill">
-                        <i class="bi bi-calendar-x me-1"></i>Absences
-                    </a>
-                    <a href="<?= BASE_URL ?>/parent/paiements?eleve_id=<?= $enfant->id ?>"
-                       class="btn btn-sm btn-outline-success flex-fill">
-                        <i class="bi bi-cash me-1"></i>Scolarité
-                    </a>
-                </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 px-5 py-4">
+            <div class="rounded-lg bg-violet-50 text-center py-2.5">
+                <p class="text-lg font-black text-violet-600"><?= $moy !== null ? number_format((float)$moy, 2) : '—' ?></p>
+                <p class="text-[11px] text-slate-400 mt-0.5">Moyenne</p>
             </div>
+            <div class="rounded-lg bg-red-50 text-center py-2.5">
+                <p class="text-lg font-black text-red-500"><?= $abs ?></p>
+                <p class="text-[11px] text-slate-400 mt-0.5">Abs. ce mois</p>
+            </div>
+            <div class="rounded-lg <?= $solde > 0 ? 'bg-amber-50' : 'bg-emerald-50' ?> text-center py-2.5">
+                <p class="text-lg font-black <?= $solde > 0 ? 'text-amber-600' : 'text-emerald-600' ?>"><?= number_format($solde, 0, ',', ' ') ?></p>
+                <p class="text-[11px] text-slate-400 mt-0.5">Impayé (FCFA)</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 px-5 pb-4">
+            <a href="<?= BASE_URL ?>/parent/notes?eleve_id=<?= $enfant->id ?>" class="btn btn-outline btn-sm flex-1 justify-center">
+                <i data-lucide="file-text" class="w-3.5 h-3.5"></i>Notes
+            </a>
+            <a href="<?= BASE_URL ?>/parent/absences?eleve_id=<?= $enfant->id ?>" class="btn btn-outline-danger btn-sm flex-1 justify-center">
+                <i data-lucide="calendar-x" class="w-3.5 h-3.5"></i>Absences
+            </a>
+            <a href="<?= BASE_URL ?>/v2/finance/mes-paiements?eleve_id=<?= $enfant->id ?>" class="btn btn-outline-success btn-sm flex-1 justify-center">
+                <i data-lucide="wallet" class="w-3.5 h-3.5"></i>Scolarité
+            </a>
         </div>
     </div>
     <?php endforeach; ?>
 </div>
 
-<!-- ═ Ligne du bas : Notifications + Annonces ══════════════════════════════ -->
-<div class="row g-4">
+<!-- Notifications + Annonces -->
+<div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
+
     <!-- Notifications -->
-    <div class="col-lg-5">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
-                <span class="fw-semibold"><i class="bi bi-bell me-2 text-warning"></i>Notifications récentes</span>
-                <a href="<?= BASE_URL ?>/notifications" class="btn btn-sm btn-outline-secondary">Tout voir</a>
+    <div class="lg:col-span-2 rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div class="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-5 py-4 text-sm font-semibold text-slate-900">
+            <div class="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center">
+                <i data-lucide="bell" class="w-3.5 h-3.5 text-amber-500"></i>
             </div>
-            <div class="list-group list-group-flush">
-                <?php if (empty($notifications)): ?>
-                <div class="list-group-item text-center text-muted py-4">
-                    <i class="bi bi-bell-slash fs-2 d-block mb-2 opacity-25"></i>
-                    Aucune notification
-                </div>
-                <?php else: ?>
-                <?php foreach ($notifications as $n):
-                    $typeInfo = \App\Models\NotificationModel::TYPES[$n->type] ?? ['icon'=>'info-circle','color'=>'secondary'];
-                ?>
-                <div class="list-group-item list-group-item-action px-3 py-2">
-                    <div class="d-flex align-items-start gap-2">
-                        <i class="bi bi-<?= $typeInfo['icon'] ?> text-<?= $typeInfo['color'] ?> mt-1"></i>
-                        <div class="flex-fill">
-                            <div class="small fw-semibold"><?= htmlspecialchars($n->titre, ENT_QUOTES) ?></div>
-                            <?php if ($n->message): ?>
-                            <div class="text-muted" style="font-size:.75rem"><?= htmlspecialchars(mb_substr($n->message, 0, 60), ENT_QUOTES) ?>…</div>
-                            <?php endif; ?>
-                            <div class="text-muted" style="font-size:.7rem"><?= date('d/m H:i', strtotime($n->created_at)) ?></div>
-                        </div>
-                    </div>
-                </div>
-                <?php endforeach; ?>
-                <?php endif; ?>
+            <span class="font-semibold text-slate-700">Notifications</span>
+            <a href="<?= BASE_URL ?>/notifications" class="ml-auto text-xs text-violet-600 hover:text-violet-700 font-medium transition-colors">
+                Tout voir →
+            </a>
+        </div>
+        <div class="p-3">
+            <?php if (empty($notifications)): ?>
+            <div class="p-8 text-center">
+                <i data-lucide="bell-off" class="w-8 h-8 text-slate-200 mx-auto mb-2"></i>
+                <p class="text-sm text-slate-400">Aucune notification</p>
             </div>
+            <?php else: ?>
+            <div class="space-y-2">
+            <?php foreach ($notifications as $n):
+                $typeInfo = \App\Models\NotificationModel::TYPES[$n->type] ?? ['icon'=>'info-circle','color'=>'secondary'];
+            ?>
+            <div class="flex items-start gap-3 rounded-lg border border-slate-100 bg-slate-50/60 p-3 hover:bg-slate-50 hover:border-slate-200 transition-colors">
+                <div class="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <i data-lucide="bell" class="w-3.5 h-3.5 text-violet-600"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-xs font-semibold text-slate-800"><?= htmlspecialchars($n->titre, ENT_QUOTES) ?></p>
+                    <?php if ($n->message): ?>
+                    <p class="text-xs text-slate-400 mt-0.5"><?= htmlspecialchars(mb_substr($n->message, 0, 70), ENT_QUOTES) ?>…</p>
+                    <?php endif; ?>
+                    <p class="text-[11px] text-slate-300 mt-1"><?= date('d/m H:i', strtotime($n->created_at)) ?></p>
+                </div>
+            </div>
+            <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
 
     <!-- Annonces -->
-    <div class="col-lg-7">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
-                <span class="fw-semibold"><i class="bi bi-megaphone me-2 text-primary"></i>Annonces de l'école</span>
-                <a href="<?= BASE_URL ?>/annonces" class="btn btn-sm btn-outline-secondary">Tout voir</a>
+    <div class="lg:col-span-3 rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div class="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-5 py-4 text-sm font-semibold text-slate-900">
+            <div class="w-7 h-7 rounded-lg bg-violet-100 flex items-center justify-center">
+                <i data-lucide="megaphone" class="w-3.5 h-3.5 text-violet-600"></i>
             </div>
-            <div class="list-group list-group-flush">
-                <?php if (empty($annonces)): ?>
-                <div class="list-group-item text-center text-muted py-4">
-                    <i class="bi bi-megaphone fs-2 d-block mb-2 opacity-25"></i>
-                    Aucune annonce récente
-                </div>
-                <?php else: ?>
-                <?php foreach ($annonces as $a): ?>
-                <div class="list-group-item px-3 py-3">
-                    <div class="d-flex justify-content-between align-items-start mb-1">
-                        <div class="fw-semibold"><?= htmlspecialchars($a->titre, ENT_QUOTES) ?></div>
-                        <small class="text-muted ms-2 text-nowrap"><?= date('d/m/Y', strtotime($a->published_at)) ?></small>
-                    </div>
-                    <p class="text-muted small mb-0"><?= nl2br(htmlspecialchars(mb_substr($a->contenu, 0, 150), ENT_QUOTES)) ?>…</p>
-                </div>
-                <?php endforeach; ?>
-                <?php endif; ?>
+            <span class="font-semibold text-slate-700">Annonces de l'école</span>
+            <a href="<?= BASE_URL ?>/annonces" class="ml-auto text-xs text-violet-600 hover:text-violet-700 font-medium transition-colors">
+                Tout voir →
+            </a>
+        </div>
+        <div class="p-3">
+            <?php if (empty($annonces)): ?>
+            <div class="p-8 text-center">
+                <i data-lucide="megaphone" class="w-8 h-8 text-slate-200 mx-auto mb-2"></i>
+                <p class="text-sm text-slate-400">Aucune annonce récente</p>
             </div>
+            <?php else: ?>
+            <div class="space-y-2">
+            <?php foreach ($annonces as $a): ?>
+            <div class="rounded-lg border border-slate-100 bg-slate-50/60 p-3 hover:bg-slate-50 hover:border-slate-200 transition-colors">
+                <div class="flex items-start justify-between gap-2 mb-1">
+                    <p class="text-sm font-semibold text-slate-800"><?= htmlspecialchars($a->titre, ENT_QUOTES) ?></p>
+                    <span class="text-[11px] text-slate-300 whitespace-nowrap flex-shrink-0"><?= date('d/m/Y', strtotime($a->published_at)) ?></span>
+                </div>
+                <p class="text-xs text-slate-500"><?= nl2br(htmlspecialchars(mb_substr($a->contenu, 0, 150), ENT_QUOTES)) ?>…</p>
+            </div>
+            <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>

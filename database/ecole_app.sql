@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS `users` (
 CREATE TABLE IF NOT EXISTS `classes` (
     `id`            INT UNSIGNED  NOT NULL AUTO_INCREMENT,
     `nom`           VARCHAR(50)   NOT NULL,
-    `niveau`        VARCHAR(30)   NOT NULL COMMENT 'Ex: 1ère AS, 2ème AM',
+    `niveau`        VARCHAR(30)   NOT NULL COMMENT 'Nomenclature nigerienne — Ex: PS, CM2, 6e, Terminale',
     `annee_scolaire` VARCHAR(9)  NOT NULL COMMENT 'Ex: 2024-2025',
     `max_eleves`    TINYINT UNSIGNED NOT NULL DEFAULT 35,
     `created_at`    TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -134,12 +134,12 @@ INSERT INTO `users` (`nom`, `email`, `password`, `role`) VALUES
 ('Administrateur', 'admin@ecole.dz', '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin');
 -- NOTE: Mot de passe "password" (hash bcrypt). CHANGER EN PRODUCTION !
 
--- Classes
+-- Classes (nomenclature officielle du système éducatif nigérien)
 INSERT INTO `classes` (`nom`, `niveau`, `annee_scolaire`) VALUES
-('A', '1ère AS', '2024-2025'),
-('B', '1ère AS', '2024-2025'),
-('A', '2ème AS', '2024-2025'),
-('A', '3ème AS', '2024-2025');
+('A', 'Seconde', '2024-2025'),
+('B', 'Seconde', '2024-2025'),
+('A', 'Première', '2024-2025'),
+('A', 'Terminale', '2024-2025');
 
 -- Matières
 INSERT INTO `matieres` (`nom`, `coefficient`) VALUES

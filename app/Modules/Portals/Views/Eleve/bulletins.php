@@ -16,7 +16,7 @@
     <div class="text-center">
       <span class="bg-<?= ($b['mention'] ?? '') === 'TB' ? 'green' : (($b['mention'] ?? '') === 'B' ? 'blue' : 'slate') ?>-100 text-<?= ($b['mention'] ?? '') === 'TB' ? 'green' : (($b['mention'] ?? '') === 'B' ? 'blue' : 'slate') ?>-700 text-sm font-medium px-3 py-1 rounded-full"><?= htmlspecialchars($b['mention'] ?? 'N/A') ?></span>
     </div>
-    <a href="/v2/academique/bulletins/<?= (int)$b['id'] ?>/pdf" class="text-blue-600 hover:text-blue-800 transition-colors" title="Télécharger PDF">
+    <a href="<?= BASE_URL ?>/v2/academique/bulletins/<?= (int)$b['id'] ?>/pdf" class="text-blue-600 hover:text-blue-800 transition-colors" title="Télécharger PDF">
       <i data-lucide="download" class="w-5 h-5"></i>
     </a>
   </div>

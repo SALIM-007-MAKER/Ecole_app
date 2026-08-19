@@ -110,7 +110,6 @@ class UserModel extends Model
             'matieres.edit'            => 'matieres.update',
             'emploi_du_temps.edit'     => 'emploi_du_temps.update',
             'enseignants.edit'         => 'enseignants.update',
-            'comptabilite.edit'        => 'comptabilite.update',
             'users.edit'               => 'users.update',
             'annonces.edit'            => 'annonces.update',
             'notes.view_own'           => 'notes.view.own',

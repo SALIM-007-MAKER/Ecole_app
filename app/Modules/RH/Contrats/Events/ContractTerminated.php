@@ -15,7 +15,9 @@ class ContractTerminated extends Event
         public readonly string $motif,
         public readonly string $dateResiliation,
         public readonly int    $terminatedBy
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

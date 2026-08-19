@@ -9,8 +9,8 @@ $tauxColor = $taux >= 80 ? 'emerald' : ($taux >= 60 ? 'amber' : 'red');
 
 <div class="flex items-center gap-4 mb-6">
     <a href="<?= BASE_URL ?>/v2/vie-scolaire/presences/<?= $session['id'] ?>"
-       class="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700">
-        <i data-lucide="arrow-left" class="w-4 h-4"></i>Retour à l'appel
+       class="inline-flex items-center gap-2 px-3 py-1.5 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 text-sm transition-colors flex-shrink-0">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i> Retour à l'appel
     </a>
     <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
         <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600"></i>

@@ -5,21 +5,21 @@ namespace App\Controllers;
 use Core\Controller;
 use Core\Session;
 use App\Models\RapportModel;
-use App\Models\PeriodeModel;
 use App\Models\ClasseModel;
+use App\Modules\Academique\Repositories\PeriodeScolaireRepository;
 
 class RapportController extends Controller
 {
-    private RapportModel $rapport;
-    private PeriodeModel $periodeModel;
-    private ClasseModel  $classeModel;
+    private RapportModel              $rapport;
+    private PeriodeScolaireRepository $periodeRepo;
+    private ClasseModel               $classeModel;
 
     public function __construct()
     {
         parent::__construct();
-        $this->rapport      = new RapportModel();
-        $this->periodeModel = new PeriodeModel();
-        $this->classeModel  = new ClasseModel();
+        $this->rapport     = new RapportModel();
+        $this->periodeRepo = new PeriodeScolaireRepository();
+        $this->classeModel = new ClasseModel();
     }
 
     // ─── Dashboard analytique ────────────────────────────────────────────────
@@ -45,7 +45,7 @@ class RapportController extends Controller
             'title'             => 'Rapports & Analytiques',
             'annee'             => $annee,
             'annees'            => RapportModel::anneesOptions(),
-            'periodes'          => $this->periodeModel->findAll('id'),
+            'periodes'          => $this->periodeRepo->findForSelect(),
             'periodeId'         => $periodeId,
             'kpiGlobal'         => $kpiGlobal,
             'kpiFinance'        => $kpiFinance,
@@ -76,7 +76,7 @@ class RapportController extends Controller
             'title'          => 'Statistiques scolaires',
             'annee'          => $annee,
             'annees'         => RapportModel::anneesOptions(),
-            'periodes'       => $this->periodeModel->findAll('id'),
+            'periodes'       => $this->periodeRepo->findForSelect(),
             'periodeId'      => $periodeId,
             'kpiGlobal'      => $kpiGlobal,
             'elevesParClasse'=> $elevesParClasse,
@@ -146,7 +146,7 @@ class RapportController extends Controller
 
         $this->render('rapports/reussite', [
             'title'               => 'Rapport de réussite',
-            'periodes'            => $this->periodeModel->findAll('id'),
+            'periodes'            => $this->periodeRepo->findForSelect(),
             'periodeId'           => $periodeId,
             'classes'             => $this->classeModel->findAll('niveau'),
             'classeId'            => $classeId,
@@ -167,7 +167,7 @@ class RapportController extends Controller
         $annee     = $this->request->get('annee', RapportModel::currentAnnee());
         $periodeId = (int)$this->request->get('periode_id', 0) ?: null;
 
-        $periode = $periodeId ? $this->periodeModel->findById($periodeId) : null;
+        $periode = $periodeId ? $this->periodeRepo->findWithStats($periodeId) : null;
 
         $this->render('rapports/print', [
             'title'             => 'Rapport — ' . $annee,
@@ -248,10 +248,10 @@ class RapportController extends Controller
         fputcsv($out, [], ';');
 
         fputcsv($out, ['RECOUVREMENT PAR TYPE DE FRAIS'], ';');
-        fputcsv($out, ['Type', 'Catégorie', 'À collecter', 'Collecté', 'Nb élèves', 'Taux (%)'], ';');
+        fputcsv($out, ['Type', 'À collecter', 'Collecté', 'Nb élèves', 'Taux (%)'], ';');
         foreach ($this->tryGet(fn() => $this->rapport->getRecouvrementParFrais($annee), []) as $r) {
             $taux = $r->montant_total > 0 ? round($r->montant_paye / $r->montant_total * 100, 1) : 0;
-            fputcsv($out, [$r->nom, $r->categorie, $r->montant_total, $r->montant_paye, $r->nb_eleves, $taux], ';');
+            fputcsv($out, [$r->nom, $r->montant_total, $r->montant_paye, $r->nb_eleves, $taux], ';');
         }
         fputcsv($out, [], ';');
 

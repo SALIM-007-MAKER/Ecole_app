@@ -28,11 +28,11 @@ class EvaluationController extends Controller
         $this->policy  = new EvaluationPolicy();
     }
 
-    private function currentUser(): array { return Session::getUser() ?? []; }
-    private function userId(): int        { return (int)($this->currentUser()['id'] ?? 0); }
+    private function authUser(): array { return Session::getUser() ?? []; }
+    private function userId(): int        { return (int)($this->authUser()['id'] ?? 0); }
     private function userName(): string
     {
-        $u = $this->currentUser();
+        $u = $this->authUser();
         return trim(($u['prenom'] ?? '') . ' ' . ($u['nom'] ?? '')) ?: 'Système';
     }
 
@@ -55,7 +55,7 @@ class EvaluationController extends Controller
             'pages'     => (int)ceil($total / $filters->perPage),
             'model'     => EvaluationModel::class,
             'policy'    => $this->policy,
-            'user'      => $this->currentUser(),
+            'user'      => $this->authUser(),
         ]);
     }
 
@@ -75,7 +75,7 @@ class EvaluationController extends Controller
             'annee'     => (int)($_GET['annee'] ?? date('Y')),
             'model'     => EvaluationModel::class,
             'policy'    => $this->policy,
-            'user'      => $this->currentUser(),
+            'user'      => $this->authUser(),
         ]);
     }
 
@@ -229,7 +229,7 @@ class EvaluationController extends Controller
             'plans'      => $plans,
             'model'      => EvaluationModel::class,
             'policy'     => $this->policy,
-            'user'       => $this->currentUser(),
+            'user'       => $this->authUser(),
         ]);
     }
 
@@ -239,7 +239,7 @@ class EvaluationController extends Controller
         $this->verifyCsrf();
         $eval = $this->requireEval($id);
 
-        $user = $this->currentUser();
+        $user = $this->authUser();
         if (!$this->policy->canSelfEvaluate($user, $eval) && !$this->policy->canUpdate($user)) {
             Session::flash('error', 'Accès refusé.');
             $this->redirect('/v2/rh/evaluations/' . $id);
@@ -379,7 +379,7 @@ class EvaluationController extends Controller
         $pdo = \Core\Database::getInstance()->getConnection();
         $stmt = $pdo->query(
             'SELECT id, CONCAT(prenom,\' \',nom) AS nom_complet, matricule
-             FROM rh_employes WHERE actif = 1 AND deleted_at IS NULL ORDER BY nom, prenom'
+             FROM rh_employes WHERE statut = \'actif\' AND deleted_at IS NULL ORDER BY nom, prenom'
         );
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }

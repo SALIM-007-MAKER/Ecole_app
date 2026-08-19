@@ -5,30 +5,33 @@ namespace App\Controllers;
 use Core\Controller;
 use Core\Session;
 use App\Models\EleveModel;
-use App\Models\NoteModel;
-use App\Models\PeriodeModel;
 use App\Models\AbsenceModel;
 use App\Models\NotificationModel;
 use App\Models\AnnonceModel;
 use App\Models\EmploiDuTempsModel;
 use App\Models\CreneauModel;
+use App\Modules\Academique\DTO\BulletinData;
+use App\Modules\Academique\Repositories\PeriodeScolaireRepository;
+use App\Modules\Academique\Repositories\BulletinRepository;
+use App\Modules\Academique\Services\BulletinEngineFactory;
 
 class EspaceEleveController extends Controller
 {
-    private EleveModel        $eleveModel;
-    private NoteModel         $noteModel;
-    private PeriodeModel      $periodeModel;
-    private NotificationModel $notifModel;
-    private AnnonceModel      $annonceModel;
+    private EleveModel                $eleveModel;
+    private NotificationModel         $notifModel;
+    private AnnonceModel              $annonceModel;
+    private PeriodeScolaireRepository $periodeRepo;
+    private BulletinRepository        $bulletinRepo;
 
     public function __construct()
     {
         parent::__construct();
         $this->eleveModel   = new EleveModel();
-        $this->noteModel    = new NoteModel();
-        $this->periodeModel = new PeriodeModel();
         $this->notifModel   = new NotificationModel();
         $this->annonceModel = new AnnonceModel();
+
+        $this->periodeRepo  = new PeriodeScolaireRepository();
+        $this->bulletinRepo = new BulletinRepository();
     }
 
     // ─── Dashboard ────────────────────────────────────────────────────────────
@@ -37,9 +40,10 @@ class EspaceEleveController extends Controller
     {
         $user  = $this->requireEleve();
         $eleve = $this->getEleve($user);
+        if (!$eleve) { $this->renderCompteNonLie(); return; }
 
-        $periodes       = $this->periodeModel->findAll('id');
-        $dernierePeriode = end($periodes) ?: null;
+        $periodes        = $this->periodeRepo->findForSelect();
+        $dernierePeriode = $this->periodeRepo->findActive() ?? (end($periodes) ?: null);
         reset($periodes);
 
         $moyennes      = [];
@@ -47,18 +51,16 @@ class EspaceEleveController extends Controller
         $absencesRecentes = [];
 
         if ($eleve && $dernierePeriode) {
-            $data = $this->noteModel->getBulletinData(
-                (int)$eleve->id,
-                (int)$eleve->classe_id,
-                (int)$dernierePeriode->id
-            );
-            $moyennes = $data['matieres'];
-            $moyGen   = [
-                'moyenne'  => $data['moyenne_generale'],
-                'rang'     => $data['rang'],
-                'mention'  => $data['mention'],
-                'total'    => $data['total_eleves'],
-            ];
+            $bulletin = $this->previewBulletinSafe((int)$eleve->id, (int)$dernierePeriode->id);
+            if ($bulletin !== null) {
+                $moyennes = $bulletin->lignesMatieres;
+                $moyGen   = [
+                    'moyenne'  => $bulletin->moyennePeriode,
+                    'rang'     => $bulletin->rang,
+                    'mention'  => $bulletin->mentionLabel,
+                    'total'    => $bulletin->nbEleves,
+                ];
+            }
         }
 
         if ($eleve) {
@@ -102,27 +104,22 @@ class EspaceEleveController extends Controller
     {
         $user     = $this->requireEleve();
         $eleve    = $this->getEleve($user);
-        $periodes = $this->periodeModel->findAll('id');
+        if (!$eleve) { $this->renderCompteNonLie(); return; }
+        $periodes = $this->periodeRepo->findForSelect();
 
         $periodeId = (int)$this->request->get('periode_id', $periodes ? $periodes[0]->id : 0);
-        $periode   = $periodeId ? $this->periodeModel->findById($periodeId) : null;
-        $data      = null;
+        $bulletin  = null;
 
         if ($eleve && $periodeId) {
-            $data = $this->noteModel->getBulletinData(
-                (int)$eleve->id,
-                (int)$eleve->classe_id,
-                $periodeId
-            );
+            $bulletin = $this->previewBulletinSafe((int)$eleve->id, $periodeId);
         }
 
         $this->render('eleve/notes', [
             'title'     => 'Mes notes',
             'eleve'     => $eleve,
             'periodes'  => $periodes,
-            'periode'   => $periode,
             'periodeId' => $periodeId,
-            'data'      => $data,
+            'bulletin'  => $bulletin,
         ]);
     }
 
@@ -132,27 +129,22 @@ class EspaceEleveController extends Controller
     {
         $user     = $this->requireEleve();
         $eleve    = $this->getEleve($user);
-        $periodes = $this->periodeModel->findAll('id');
+        if (!$eleve) { $this->renderCompteNonLie(); return; }
+        $periodes = $this->periodeRepo->findForSelect();
 
         $periodeId = (int)$this->request->get('periode_id', $periodes ? $periodes[0]->id : 0);
-        $periode   = $periodeId ? $this->periodeModel->findById($periodeId) : null;
-        $data      = null;
+        $bulletin  = null;
 
         if ($eleve && $periodeId) {
-            $data = $this->noteModel->getBulletinData(
-                (int)$eleve->id,
-                (int)$eleve->classe_id,
-                $periodeId
-            );
+            $bulletin = $this->previewBulletinSafe((int)$eleve->id, $periodeId);
         }
 
         $this->render('eleve/bulletin', [
             'title'     => 'Mon bulletin',
             'eleve'     => $eleve,
             'periodes'  => $periodes,
-            'periode'   => $periode,
             'periodeId' => $periodeId,
-            'data'      => $data,
+            'bulletin'  => $bulletin,
         ]);
     }
 
@@ -162,6 +154,7 @@ class EspaceEleveController extends Controller
     {
         $user  = $this->requireEleve();
         $eleve = $this->getEleve($user);
+        if (!$eleve) { $this->renderCompteNonLie(); return; }
 
         $annee    = $this->currentAnnee();
         $creneaux = (new CreneauModel())->findAllActifs();
@@ -192,6 +185,7 @@ class EspaceEleveController extends Controller
     {
         $user  = $this->requireEleve();
         $eleve = $this->getEleve($user);
+        if (!$eleve) { $this->renderCompteNonLie(); return; }
 
         $this->render('eleve/profil', [
             'title'  => 'Mon profil',
@@ -217,8 +211,29 @@ class EspaceEleveController extends Controller
 
     private function getEleve(array $user): ?object
     {
-        $eleve = $this->eleveModel->findByEmail($user['email'] ?? '');
+        // M007 — lien fiable eleves.user_id → users(id) (remplace le
+        // rapprochement par email, non fiable : eleves.email n'est ni
+        // UNIQUE ni synchronisé avec users.email).
+        $eleve = $this->eleveModel->findByUserId((int)($user['id'] ?? 0));
         return $eleve ?: null;
+    }
+
+    /** Compte 'eleve' authentifié mais sans dossier `eleves` lié (eleves.user_id). */
+    private function renderCompteNonLie(): void
+    {
+        $this->render('eleve/compte_non_lie', ['title' => 'Compte non lié']);
+    }
+
+    /** Génère un aperçu de bulletin sans persister ; null si aucune donnée exploitable. */
+    private function previewBulletinSafe(int $eleveId, int $periodeId): ?BulletinData
+    {
+        try {
+            $etablissementId = (int)($this->currentUser()['etablissement_id'] ?? 1);
+            $generator = BulletinEngineFactory::make($etablissementId);
+            return $generator->previewBulletin($eleveId, $periodeId);
+        } catch (\RuntimeException) {
+            return null;
+        }
     }
 
     private function getEdtAujourdHui(int $classeId): array

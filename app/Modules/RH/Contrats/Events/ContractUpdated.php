@@ -14,7 +14,9 @@ class ContractUpdated extends Event
         public readonly string $action,    // 'modification'|'suspension'|'reactivation'|'avenant'
         public readonly array  $changes,
         public readonly int    $updatedBy
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

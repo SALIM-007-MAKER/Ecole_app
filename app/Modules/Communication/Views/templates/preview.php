@@ -9,7 +9,7 @@
 <body class="bg-slate-50 min-h-screen">
 <div class="max-w-3xl mx-auto py-8 px-4">
   <div class="flex items-center gap-3 mb-6">
-    <a href="/v2/communication/templates/<?= $template['id'] ?>" class="text-slate-400 hover:text-slate-600">←</a>
+    <a href="<?= BASE_URL ?>/v2/communication/templates/<?= $template['id'] ?>" class="text-slate-400 hover:text-slate-600">←</a>
     <h1 class="text-2xl font-bold text-slate-800">Aperçu : <?= htmlspecialchars($template['nom']) ?></h1>
   </div>
 

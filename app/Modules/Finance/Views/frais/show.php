@@ -24,11 +24,15 @@ $statutLabel = match($frais->statut) {
 <div class="space-y-6">
 
     <!-- En-tête -->
-    <div class="flex items-start justify-between">
-        <div class="flex items-center gap-4">
-            <a href="<?= BASE_URL ?>/v2/finance/frais" class="text-slate-400 hover:text-slate-600">
-                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+    <div class="flex items-start justify-between gap-4">
+        <div class="flex items-start gap-4">
+            <a href="<?= BASE_URL ?>/v2/finance/frais"
+               class="w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 flex-shrink-0 transition-colors">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
             </a>
+            <div class="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="list-checks" class="w-5 h-5 text-violet-600"></i>
+            </div>
             <div>
                 <div class="flex items-center gap-3">
                     <h1 class="text-2xl font-bold text-slate-800"><?= htmlspecialchars($frais->nom) ?></h1>
@@ -55,14 +59,14 @@ $statutLabel = match($frais->statut) {
         <div class="flex items-center gap-2">
             <?php if ($frais->statut === 'actif' && $canUpdate): ?>
             <form method="POST" action="<?= BASE_URL ?>/v2/finance/frais/<?= $frais->id ?>/desactiver">
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken()) ?>">
+                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                 <button type="submit" class="px-3 py-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100">
                     <i data-lucide="pause-circle" class="inline w-4 h-4 mr-1"></i> Désactiver
                 </button>
             </form>
             <?php elseif ($frais->statut === 'inactif' && $canUpdate): ?>
             <form method="POST" action="<?= BASE_URL ?>/v2/finance/frais/<?= $frais->id ?>/activer">
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken()) ?>">
+                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                 <button type="submit" class="px-3 py-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100">
                     <i data-lucide="play-circle" class="inline w-4 h-4 mr-1"></i> Activer
                 </button>
@@ -168,19 +172,19 @@ $statutLabel = match($frais->statut) {
                 <?php if ($canTarifs && $frais->statut !== 'archive'): ?>
                 <form id="form-tarif" class="hidden p-4 bg-slate-50 border-b border-slate-100"
                       method="POST" action="<?= BASE_URL ?>/v2/finance/frais/<?= $frais->id ?>/tarif">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken()) ?>">
+                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                     <div class="grid grid-cols-4 gap-3 items-end">
                         <div>
                             <label class="block text-xs font-medium text-slate-600 mb-1">Année scolaire *</label>
                             <input type="text" name="annee_scolaire" placeholder="2026-2027" required
                                    pattern="\d{4}-\d{4}"
-                                   class="w-full px-2 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500">
+                                   class="form-input">
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-slate-600 mb-1">Niveau</label>
-                            <select name="niveau" class="w-full px-2 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500">
+                            <select name="niveau" class="form-select">
                                 <option value="">Tous niveaux</option>
-                                <?php foreach (['6ème','5ème','4ème','3ème','Seconde','Première','Terminale','BTS 1','BTS 2'] as $n): ?>
+                                <?php foreach (array_merge(...array_values(\App\Models\ClasseModel::NIVEAUX)) as $n): ?>
                                 <option value="<?= $n ?>"><?= $n ?></option>
                                 <?php endforeach; ?>
                             </select>
@@ -188,7 +192,7 @@ $statutLabel = match($frais->statut) {
                         <div>
                             <label class="block text-xs font-medium text-slate-600 mb-1">Montant *</label>
                             <input type="number" name="montant" step="0.01" min="0.01" required
-                                   class="w-full px-2 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500">
+                                   class="form-input">
                         </div>
                         <div>
                             <button type="submit"
@@ -253,7 +257,7 @@ $statutLabel = match($frais->statut) {
                     <i data-lucide="trash-2" class="inline w-4 h-4 mr-1"></i> Supprimer définitivement
                 </button>
                 <form id="form-delete" method="POST" action="<?= BASE_URL ?>/v2/finance/frais/<?= $frais->id ?>/delete">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken()) ?>">
+                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                 </form>
                 <?php endif; ?>
             </div>
@@ -297,11 +301,11 @@ $statutLabel = match($frais->statut) {
             pour de nouvelles factures. Cette action est irréversible.
         </p>
         <form method="POST" action="<?= BASE_URL ?>/v2/finance/frais/<?= $frais->id ?>/archiver">
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken()) ?>">
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
             <div class="mb-4">
-                <label class="block text-sm font-medium text-slate-700 mb-1">Motif d'archivage *</label>
+                <label class="form-label">Motif d'archivage *</label>
                 <textarea name="motif" rows="3" required
-                          class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                          class="form-textarea"
                           placeholder="Ex: Remplacé par le tarif 2027-2028"></textarea>
             </div>
             <div class="flex justify-end gap-3">

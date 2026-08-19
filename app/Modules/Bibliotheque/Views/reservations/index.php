@@ -1,19 +1,11 @@
 <?php /** @var array $reservations @var string|null $statut @var string|null $mode @var int $page @var string $titre */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title><?= htmlspecialchars($titre ?? 'Réservations') ?></title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-5xl mx-auto py-8 px-4">
 
   <div class="flex items-center justify-between mb-6">
     <h1 class="text-2xl font-bold text-slate-800"><?= htmlspecialchars($titre ?? '') ?></h1>
     <div class="flex gap-2">
-      <a href="/v2/bibliotheque/reservations" class="text-sm px-3 py-1.5 rounded-lg border <?= empty($mode) ? 'bg-violet-600 text-white' : 'bg-white border-slate-200 text-slate-600' ?>">Toutes</a>
-      <a href="/v2/bibliotheque/reservations/mes" class="text-sm px-3 py-1.5 rounded-lg border <?= ($mode ?? '') === 'mes' ? 'bg-violet-600 text-white' : 'bg-white border-slate-200 text-slate-600' ?>">Mes réservations</a>
+      <a href="<?= BASE_URL ?>/v2/bibliotheque/reservations" class="text-sm px-3 py-1.5 rounded-lg border <?= empty($mode) ? 'bg-violet-600 text-white' : 'bg-white border-slate-200 text-slate-600' ?>">Toutes</a>
+      <a href="<?= BASE_URL ?>/v2/bibliotheque/reservations/mes" class="text-sm px-3 py-1.5 rounded-lg border <?= ($mode ?? '') === 'mes' ? 'bg-violet-600 text-white' : 'bg-white border-slate-200 text-slate-600' ?>">Mes réservations</a>
     </div>
   </div>
 
@@ -57,12 +49,10 @@
 </div>
 <script>
 function confirmer(id) {
-  fetch('/v2/bibliotheque/reservations/' + id + '/confirmer', {method:'POST'}).then(()=>location.reload());
+  fetch('<?= BASE_URL ?>/v2/bibliotheque/reservations/' + id + '/confirmer', {method:'POST'}).then(()=>location.reload());
 }
 function annuler(id) {
   if (!confirm('Annuler cette réservation ?')) return;
-  fetch('/v2/bibliotheque/reservations/' + id + '/annuler', {method:'POST', body:'raison=annulation_user'}).then(()=>location.reload());
+  fetch('<?= BASE_URL ?>/v2/bibliotheque/reservations/' + id + '/annuler', {method:'POST', body:'raison=annulation_user'}).then(()=>location.reload());
 }
 </script>
-</body>
-</html>

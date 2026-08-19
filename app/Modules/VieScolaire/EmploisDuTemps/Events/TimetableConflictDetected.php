@@ -15,5 +15,22 @@ class TimetableConflictDetected extends Event
         public readonly int    $plageId,
         public readonly string $details,
         public readonly int    $detecteParId,
-    ) {}
+    ) {
+        parent::__construct();
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'type_conflit'   => $this->typeConflit,
+            'edt_id'         => $this->edtId,
+            'classe_id'      => $this->classeId,
+            'annee_scolaire' => $this->anneeScolaire,
+            'jour'           => $this->jour,
+            'plage_id'       => $this->plageId,
+            'details'        => $this->details,
+            'detecte_par_id' => $this->detecteParId,
+            'fired_at'       => $this->getFiredAt(),
+        ];
+    }
 }

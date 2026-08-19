@@ -25,9 +25,9 @@ class TauxRecouvrementWidget extends BaseWidget
                 'SELECT SUM(montant_total) AS total_facture,
                         SUM(COALESCE(montant_paye,0)) AS total_encaisse
                  FROM finance_factures
-                 WHERE etablissement_id=? AND deleted_at IS NULL'
+                 WHERE statut != "brouillon"'
             );
-            $stmt->execute([$etab]);
+            $stmt->execute();
             $row     = $stmt->fetch(\PDO::FETCH_ASSOC);
             $facture = (float)($row['total_facture'] ?? 0);
             $encaisse = (float)($row['total_encaisse'] ?? 0);

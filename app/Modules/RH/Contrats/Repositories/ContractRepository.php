@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\RH\Contrats\Repositories;
 
 use PDO;
-use App\Core\Database;
+use Core\Database;
 use App\Modules\RH\Contrats\DTO\ContractFiltersDTO;
 
 class ContractRepository

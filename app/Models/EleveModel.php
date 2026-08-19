@@ -136,6 +136,16 @@ class EleveModel extends Model
         );
     }
 
+    /** M007 — lien fiable eleves.user_id → users(id), à préférer à findByEmail(). */
+    public function findByUserId(int $userId): object|false
+    {
+        return $this->queryOne(
+            $this->baseSelect() . ' ' . $this->baseFrom() .
+            " WHERE e.user_id = ? AND e.etablissement_id = ? LIMIT 1",
+            [$userId, $this->tenantId()]
+        );
+    }
+
     // ─── Statistiques ─────────────────────────────────────────────────────────
 
     public function countByClasse(): array
@@ -146,7 +156,7 @@ class EleveModel extends Model
              LEFT JOIN `eleves` e ON e.classe_id = c.id AND e.actif = 1 AND e.etablissement_id = ?
              WHERE c.etablissement_id = ?
              GROUP BY c.id
-             ORDER BY c.niveau, c.nom",
+             ORDER BY " . \App\Models\ClasseModel::ordreNiveauSql('c.niveau') . ", c.nom",
             [$this->tenantId(), $this->tenantId()]
         );
     }

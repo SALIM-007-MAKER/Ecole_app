@@ -199,6 +199,7 @@ class MatiereController extends Controller
             'coefficient'    => $this->request->post('coefficient', '2'),
             'volume_horaire' => (int)$this->request->post('volume_horaire', 2),
             'responsable_id' => $this->request->post('responsable_id', '') ?: null,
+            'categorie'      => $this->request->post('categorie', 'autre'),
             'description'    => trim($this->request->post('description', '')) ?: null,
         ];
     }
@@ -210,6 +211,7 @@ class MatiereController extends Controller
             'coefficient'    => (float)str_replace(',', '.', $data['coefficient']),
             'volume_horaire' => $data['volume_horaire'],
             'responsable_id' => $data['responsable_id'] ? (int)$data['responsable_id'] : null,
+            'categorie'      => $data['categorie'],
             'description'    => $data['description'],
         ];
     }

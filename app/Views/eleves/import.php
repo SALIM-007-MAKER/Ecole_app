@@ -156,7 +156,7 @@ $classes = $classes ?? [];
                                 ['prenom',         true,  'Khalid'],
                                 ['sexe',           true,  'M ou F'],
                                 ['date_naissance', true,  '2007-06-15'],
-                                ['classe',         false, '1ère AS'],
+                                ['classe',         false, 'Terminale'],
                                 ['telephone',      false, '0550000001'],
                                 ['email',          false, 'e@edu.dz'],
                                 ['adresse',        false, '1 Rue Alger'],

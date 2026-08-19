@@ -1,23 +1,15 @@
 <?php /** @var array $ouvrages @var object $filters @var array $categories @var array $auteurs @var string $titre */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title><?= htmlspecialchars($titre ?? 'Catalogue') ?></title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-6xl mx-auto py-8 px-4">
 
   <div class="flex items-center justify-between mb-6">
     <h1 class="text-2xl font-bold text-slate-800">Catalogue</h1>
-    <a href="/v2/bibliotheque/catalogue/create" class="bg-violet-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-violet-700">
+    <a href="<?= BASE_URL ?>/v2/bibliotheque/catalogue/create" class="bg-violet-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-violet-700">
       + Ajouter un ouvrage
     </a>
   </div>
 
   <!-- Recherche -->
-  <form method="GET" action="/v2/bibliotheque/catalogue" class="bg-white rounded-xl shadow-sm p-4 mb-6 flex gap-3">
+  <form method="GET" action="<?= BASE_URL ?>/v2/bibliotheque/catalogue" class="bg-white rounded-xl shadow-sm p-4 mb-6 flex gap-3">
     <input type="text" name="terme" value="<?= htmlspecialchars($_GET['terme'] ?? '') ?>"
            placeholder="Titre, auteur, ISBN..."
            class="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-400 focus:outline-none">
@@ -46,7 +38,7 @@
   <?php else: ?>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <?php foreach ($liste as $ouvrage): ?>
-      <a href="/v2/bibliotheque/catalogue/<?= $ouvrage['id'] ?>"
+      <a href="<?= BASE_URL ?>/v2/bibliotheque/catalogue/<?= $ouvrage['id'] ?>"
          class="bg-white rounded-xl shadow-sm p-4 hover:shadow-md transition border border-slate-100 hover:border-violet-200 block">
         <div class="flex items-start gap-3">
           <div class="w-12 h-16 bg-violet-100 rounded flex items-center justify-center text-violet-600 flex-shrink-0 text-xl">📖</div>
@@ -82,5 +74,3 @@
   <?php endif ?>
 
 </div>
-</body>
-</html>

@@ -7,6 +7,8 @@ $facture    = $facture    ?? null;
 $lignes     = $lignes     ?? [];
 $remises    = $remises    ?? [];
 $echeancier = $echeancier ?? null;
+$branding   = $branding   ?? \Core\Tenant\BrandingService::forCurrentRequest();
+$devise     = $devise     ?? 'XOF';
 
 $fmt = fn(float $v): string => number_format($v, 0, ',', ' ');
 ?>
@@ -80,8 +82,14 @@ $fmt = fn(float $v): string => number_format($v, 0, ',', ' ');
     <!-- En-tête -->
     <div class="header">
         <div>
-            <div class="school-name">École / Établissement</div>
-            <div class="school-info">Système de Gestion Scolaire V2</div>
+            <?php if ($branding->logoUrl): ?>
+            <img src="<?= htmlspecialchars($branding->logoUrl, ENT_QUOTES) ?>" alt="" style="height:36px;margin-bottom:4px">
+            <?php endif; ?>
+            <div class="school-name"><?= htmlspecialchars($branding->appName, ENT_QUOTES) ?></div>
+            <div class="school-info">
+                <?= htmlspecialchars($branding->contactAddress ?? 'Système de Gestion Scolaire V2', ENT_QUOTES) ?>
+                <?php if ($branding->contactPhone): ?> · <?= htmlspecialchars($branding->contactPhone, ENT_QUOTES) ?><?php endif; ?>
+            </div>
         </div>
         <div class="invoice-header">
             <div class="invoice-number"><?= htmlspecialchars($facture->numero ?? '') ?></div>
@@ -140,8 +148,8 @@ $fmt = fn(float $v): string => number_format($v, 0, ',', ' ');
                 <td><?= $i + 1 ?></td>
                 <td><?= htmlspecialchars($l->libelle) ?></td>
                 <td class="right"><?= $l->quantite ?></td>
-                <td class="right"><?= $fmt((float)$l->montant_unitaire) ?> XOF</td>
-                <td class="right"><?= $fmt((float)$l->montant_total) ?> XOF</td>
+                <td class="right"><?= $fmt((float)$l->montant_unitaire) ?> <?= htmlspecialchars($devise, ENT_QUOTES) ?></td>
+                <td class="right"><?= $fmt((float)$l->montant_total) ?> <?= htmlspecialchars($devise, ENT_QUOTES) ?></td>
             </tr>
             <?php endforeach; ?>
         </tbody>
@@ -151,23 +159,23 @@ $fmt = fn(float $v): string => number_format($v, 0, ',', ' ');
     <table class="totaux">
         <tr>
             <td>Sous-total</td>
-            <td class="right"><?= $fmt((float)$facture->montant_ht) ?> XOF</td>
+            <td class="right"><?= $fmt((float)$facture->montant_ht) ?> <?= htmlspecialchars($devise, ENT_QUOTES) ?></td>
         </tr>
         <?php if ((float)$facture->montant_remise > 0): ?>
         <tr class="remise">
             <td>Remises</td>
-            <td class="right">- <?= $fmt((float)$facture->montant_remise) ?> XOF</td>
+            <td class="right">- <?= $fmt((float)$facture->montant_remise) ?> <?= htmlspecialchars($devise, ENT_QUOTES) ?></td>
         </tr>
         <?php endif; ?>
         <?php if ((float)$facture->montant_penalite > 0): ?>
         <tr class="penalite">
             <td>Pénalités</td>
-            <td class="right">+ <?= $fmt((float)$facture->montant_penalite) ?> XOF</td>
+            <td class="right">+ <?= $fmt((float)$facture->montant_penalite) ?> <?= htmlspecialchars($devise, ENT_QUOTES) ?></td>
         </tr>
         <?php endif; ?>
         <tr class="bold">
             <td>TOTAL À PAYER</td>
-            <td class="right"><?= $fmt((float)$facture->montant_total) ?> XOF</td>
+            <td class="right"><?= $fmt((float)$facture->montant_total) ?> <?= htmlspecialchars($devise, ENT_QUOTES) ?></td>
         </tr>
     </table>
 
@@ -182,7 +190,7 @@ $fmt = fn(float $v): string => number_format($v, 0, ',', ' ');
                 <?php foreach ($remises as $r): ?>
                 <tr>
                     <td><?= htmlspecialchars($r->libelle) ?></td>
-                    <td class="right" style="color:#059669;">- <?= $fmt((float)$r->montant_calcule) ?> XOF</td>
+                    <td class="right" style="color:#059669;">- <?= $fmt((float)$r->montant_calcule) ?> <?= htmlspecialchars($devise, ENT_QUOTES) ?></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
@@ -209,9 +217,9 @@ $fmt = fn(float $v): string => number_format($v, 0, ',', ' ');
                 <tr>
                     <td><?= $ech->numero_ordre ?></td>
                     <td><?= $ech->date_echeance ?></td>
-                    <td class="right"><?= $fmt((float)$ech->montant_du) ?> XOF</td>
-                    <td class="right"><?= $fmt((float)$ech->montant_paye) ?> XOF</td>
-                    <td class="right"><?= $fmt(max(0, (float)$ech->montant_du - (float)$ech->montant_paye)) ?> XOF</td>
+                    <td class="right"><?= $fmt((float)$ech->montant_du) ?> <?= htmlspecialchars($devise, ENT_QUOTES) ?></td>
+                    <td class="right"><?= $fmt((float)$ech->montant_paye) ?> <?= htmlspecialchars($devise, ENT_QUOTES) ?></td>
+                    <td class="right"><?= $fmt(max(0, (float)$ech->montant_du - (float)$ech->montant_paye)) ?> <?= htmlspecialchars($devise, ENT_QUOTES) ?></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>

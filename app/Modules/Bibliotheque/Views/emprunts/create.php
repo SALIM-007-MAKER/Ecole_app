@@ -1,16 +1,8 @@
 <?php /** @var string $titre */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title><?= htmlspecialchars($titre ?? 'Nouvel emprunt') ?></title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-lg mx-auto py-8 px-4">
 
   <div class="mb-4">
-    <a href="/v2/bibliotheque/emprunts" class="text-sm text-violet-600 hover:underline">← Emprunts</a>
+    <a href="<?= BASE_URL ?>/v2/bibliotheque/emprunts" class="text-sm text-violet-600 hover:underline">← Emprunts</a>
   </div>
 
   <div class="bg-white rounded-xl shadow-sm p-6">
@@ -64,7 +56,7 @@
 function lookupBarcode() {
   const code = document.getElementById('barcode').value.trim();
   if (!code) return;
-  fetch('/v2/bibliotheque/exemplaires/barcode?code=' + encodeURIComponent(code))
+  fetch('<?= BASE_URL ?>/v2/bibliotheque/exemplaires/barcode?code=' + encodeURIComponent(code))
     .then(r => r.json())
     .then(d => {
       if (d && d.id) {
@@ -89,13 +81,11 @@ function creerEmprunt() {
     notes: document.getElementById('notes').value,
     csrf_token: '',
   });
-  fetch('/v2/bibliotheque/emprunts', {method:'POST', body: data})
+  fetch('<?= BASE_URL ?>/v2/bibliotheque/emprunts', {method:'POST', body: data})
     .then(r => r.json())
     .then(d => {
-      if (d.success) window.location.href = '/v2/bibliotheque/emprunts/' + d.id;
+      if (d.success) window.location.href = '<?= BASE_URL ?>/v2/bibliotheque/emprunts/' + d.id;
       else { document.getElementById('error').textContent = d.error || 'Erreur'; document.getElementById('error').classList.remove('hidden'); }
     });
 }
 </script>
-</body>
-</html>

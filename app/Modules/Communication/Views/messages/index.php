@@ -1,17 +1,9 @@
 <?php /** @var array $threads @var int $page @var int $unread */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title><?= htmlspecialchars($titre ?? 'Messagerie') ?></title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-3xl mx-auto py-8 px-4">
 
   <div class="flex items-center justify-between mb-6">
     <h1 class="text-2xl font-bold text-slate-800">Messagerie</h1>
-    <a href="/v2/messages/create" class="bg-violet-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-violet-700">
+    <a href="<?= BASE_URL ?>/v2/messages/create" class="bg-violet-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-violet-700">
       + Nouveau message
     </a>
   </div>
@@ -26,7 +18,7 @@
       <?php
         $isNew = ($t['participant_lu_at'] === null || $t['participant_lu_at'] < ($t['dernier_message_at'] ?? ''));
       ?>
-      <a href="/v2/messages/<?= $t['id'] ?>"
+      <a href="<?= BASE_URL ?>/v2/messages/<?= $t['id'] ?>"
          class="block bg-white rounded-xl p-4 shadow-sm border hover:border-violet-300 transition <?= $isNew ? 'border-violet-200' : 'border-slate-100' ?>">
         <div class="flex justify-between items-start">
           <div class="flex-1 min-w-0">
@@ -47,5 +39,3 @@
     </div>
   <?php endif ?>
 </div>
-</body>
-</html>

@@ -15,7 +15,9 @@ class LeaveCancelled extends Event
         public readonly string $ancienStatut,
         public readonly string $motifAnnulation,
         public readonly int    $cancelledBy
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

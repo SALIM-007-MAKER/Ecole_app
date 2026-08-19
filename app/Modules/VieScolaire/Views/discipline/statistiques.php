@@ -4,23 +4,9 @@
 /** @var int $classeId */
 /** @var string $annee */
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Statistiques Discipline</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
-
-<?php include BASE_PATH . '/app/Views/partials/sidebar.php'; ?>
-
-<main class="ml-64 p-8">
     <div class="flex items-center justify-between mb-8">
         <h1 class="text-2xl font-bold text-slate-800">Statistiques Discipline</h1>
-        <a href="/v2/vie-scolaire/discipline" class="text-sm text-slate-500 hover:text-violet-600">← Retour</a>
+        <a href="<?= BASE_URL ?>/v2/vie-scolaire/discipline" class="text-sm text-slate-500 hover:text-violet-600">← Retour</a>
     </div>
 
     <!-- Filtres -->
@@ -124,7 +110,4 @@
             </div>
         </div>
     <?php endif; ?>
-</main>
 <script>lucide.createIcons();</script>
-</body>
-</html>

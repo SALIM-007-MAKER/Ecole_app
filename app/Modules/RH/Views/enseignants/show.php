@@ -22,10 +22,14 @@ $chargeColor = $chargePct >= 90 ? 'red' : ($chargePct >= 70 ? 'amber' : 'emerald
 ?>
 
 <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
-    <div class="flex items-center gap-3">
-        <a href="<?= BASE_URL ?>/v2/rh/enseignants" class="text-slate-400 hover:text-slate-600 transition-colors">
-            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+    <div class="flex items-start gap-4">
+        <a href="<?= BASE_URL ?>/v2/rh/enseignants"
+           class="w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 flex-shrink-0 transition-colors">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
         </a>
+        <div class="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="graduation-cap" class="w-5 h-5 text-violet-600"></i>
+        </div>
         <div>
             <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
                 <?= hShow2($enseignant['prenom'] . ' ' . $enseignant['nom']) ?>
@@ -44,7 +48,7 @@ $chargeColor = $chargePct >= 90 ? 'red' : ($chargePct >= 70 ? 'amber' : 'emerald
         </a>
         <form method="POST" action="<?= BASE_URL ?>/v2/rh/enseignants/<?= (int)$enseignant['id'] ?>/archive"
               onsubmit="return confirm('Archiver ce profil enseignant ?')">
-            <input type="hidden" name="csrf_token" value="<?= hShow2($_SESSION['csrf_token'] ?? '') ?>">
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
             <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 bg-white text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
                 <i data-lucide="archive" class="w-4 h-4"></i>Archiver
             </button>
@@ -52,7 +56,7 @@ $chargeColor = $chargePct >= 90 ? 'red' : ($chargePct >= 70 ? 'amber' : 'emerald
         <?php endif; ?>
         <?php if ($isArchived && $canUpdate): ?>
         <form method="POST" action="<?= BASE_URL ?>/v2/rh/enseignants/<?= (int)$enseignant['id'] ?>/restore">
-            <input type="hidden" name="csrf_token" value="<?= hShow2($_SESSION['csrf_token'] ?? '') ?>">
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
             <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-colors">
                 <i data-lucide="rotate-ccw" class="w-4 h-4"></i>Restaurer
             </button>
@@ -167,7 +171,7 @@ $chargeColor = $chargePct >= 90 ? 'red' : ($chargePct >= 70 ? 'amber' : 'emerald
             <?php if ($canAssign && !$isArchived): ?>
             <div id="assignForm" class="hidden border-b border-slate-100 p-5 bg-slate-50">
                 <form method="POST" action="<?= BASE_URL ?>/v2/rh/enseignants/<?= (int)$enseignant['id'] ?>/matieres">
-                    <input type="hidden" name="csrf_token" value="<?= hShow2($_SESSION['csrf_token'] ?? '') ?>">
+                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                     <p class="text-xs text-slate-500 mb-3">Sélectionnez les matières et les niveaux pour cet enseignant.</p>
                     <div id="matieresList" class="space-y-2 mb-4">
                         <?php foreach ($matieres as $i => $m): ?>
@@ -184,7 +188,7 @@ $chargeColor = $chargePct >= 90 ? 'red' : ($chargePct >= 70 ? 'amber' : 'emerald
                         <?php endforeach; ?>
                     </div>
                     <div class="flex items-center gap-2 mb-4">
-                        <select id="addMatiereSelect" class="rounded border border-slate-200 text-sm px-3 py-1.5 bg-white focus:ring-2 focus:ring-violet-300 focus:outline-none">
+                        <select id="addMatiereSelect" class="form-select">
                             <option value="">Ajouter une matière…</option>
                             <?php
                             // Import global matieres array via parent controller vars
@@ -246,7 +250,7 @@ $chargeColor = $chargePct >= 90 ? 'red' : ($chargePct >= 70 ? 'amber' : 'emerald
             <?php if ($canUpdate && !$isArchived): ?>
             <div id="qualForm" class="hidden border-b border-slate-100 p-5 bg-slate-50">
                 <form method="POST" action="<?= BASE_URL ?>/v2/rh/enseignants/<?= (int)$enseignant['id'] ?>/qualifications">
-                    <input type="hidden" name="csrf_token" value="<?= hShow2($_SESSION['csrf_token'] ?? '') ?>">
+                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block text-xs font-medium text-slate-500 mb-1">Type *</label>
@@ -322,7 +326,7 @@ $chargeColor = $chargePct >= 90 ? 'red' : ($chargePct >= 70 ? 'amber' : 'emerald
                 <?php if ($canUpdate && !$isArchived): ?>
                 <form method="POST" action="<?= BASE_URL ?>/v2/rh/enseignants/<?= (int)$enseignant['id'] ?>/qualifications/<?= (int)$q['id'] ?>/delete"
                       onsubmit="return confirm('Supprimer cette qualification ?')">
-                    <input type="hidden" name="csrf_token" value="<?= hShow2($_SESSION['csrf_token'] ?? '') ?>">
+                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                     <button type="submit" class="text-slate-300 hover:text-red-400 mt-0.5">
                         <i data-lucide="trash-2" class="w-4 h-4"></i>
                     </button>

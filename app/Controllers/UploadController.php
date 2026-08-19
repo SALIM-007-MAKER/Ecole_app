@@ -67,6 +67,14 @@ class UploadController extends Controller
             http_response_code(403);
             exit('Accès non autorisé.');
         }
+        if ($type === 'retards' && !$this->can('late.validate') && !$this->can('late.justify')) {
+            http_response_code(403);
+            exit('Accès non autorisé.');
+        }
+        if ($type === 'discipline' && !$this->can('discipline.view')) {
+            http_response_code(403);
+            exit('Accès non autorisé.');
+        }
 
         // ── Déterminer le MIME réel ───────────────────────────────────────────
         $mime = mime_content_type($absPath) ?: 'application/octet-stream';
@@ -92,6 +100,8 @@ class UploadController extends Controller
             'professeurs'   => 'photo_professeur',
             'etablissement' => 'logo_etablissement',
             'justifications'=> 'justification',
+            'retards'       => 'justification_retard',
+            'discipline'    => 'piece_jointe_discipline',
             'imports'       => 'import_csv',
         ];
 

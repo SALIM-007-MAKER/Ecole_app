@@ -1,12 +1,4 @@
 <?php /** @var array $penalites @var float|null $total @var string|null $mode @var string $titre */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title><?= htmlspecialchars($titre ?? 'Pénalités') ?></title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-5xl mx-auto py-8 px-4">
 
   <div class="flex items-center justify-between mb-6">
@@ -69,12 +61,10 @@
 <script>
 function payer(id) {
   if (!confirm('Marquer comme payée ?')) return;
-  fetch('/v2/bibliotheque/penalites/' + id + '/payer', {method:'POST'}).then(()=>location.reload());
+  fetch('<?= BASE_URL ?>/v2/bibliotheque/penalites/' + id + '/payer', {method:'POST'}).then(()=>location.reload());
 }
 function annuler(id) {
   if (!confirm('Annuler cette pénalité ?')) return;
-  fetch('/v2/bibliotheque/penalites/' + id + '/annuler', {method:'POST'}).then(()=>location.reload());
+  fetch('<?= BASE_URL ?>/v2/bibliotheque/penalites/' + id + '/annuler', {method:'POST'}).then(()=>location.reload());
 }
 </script>
-</body>
-</html>

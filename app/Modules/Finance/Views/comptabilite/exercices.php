@@ -19,12 +19,12 @@ $statutLabels = ['ouvert'=>'Ouvert','cloture'=>'Clôturé','reouvert'=>'Réouver
     </div>
     <div class="flex gap-2">
       <?php if ($canGerer): ?>
-      <a href="/v2/finance/comptabilite/exercices/create"
+      <a href="<?= BASE_URL ?>/v2/finance/comptabilite/exercices/create"
          class="inline-flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-violet-700">
         <i data-lucide="plus" class="w-4 h-4"></i>Nouvel exercice
       </a>
       <?php endif; ?>
-      <a href="/v2/finance/comptabilite" class="text-sm text-slate-500 hover:text-slate-700">← Retour</a>
+      <a href="<?= BASE_URL ?>/v2/finance/comptabilite" class="text-sm text-slate-500 hover:text-slate-700">← Retour</a>
     </div>
   </div>
 
@@ -34,7 +34,7 @@ $statutLabels = ['ouvert'=>'Ouvert','cloture'=>'Clôturé','reouvert'=>'Réouver
     <p class="text-slate-500 font-medium mb-1">Aucun exercice comptable</p>
     <p class="text-slate-400 text-sm mb-4">Créez votre premier exercice pour commencer à enregistrer des écritures.</p>
     <?php if ($canGerer): ?>
-    <a href="/v2/finance/comptabilite/exercices/create"
+    <a href="<?= BASE_URL ?>/v2/finance/comptabilite/exercices/create"
        class="inline-flex items-center gap-2 bg-violet-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-violet-700">
       <i data-lucide="plus" class="w-4 h-4"></i>Créer un exercice
     </a>
@@ -78,15 +78,15 @@ $statutLabels = ['ouvert'=>'Ouvert','cloture'=>'Clôturé','reouvert'=>'Réouver
           </div>
 
           <div class="flex flex-col gap-2 sm:items-end">
-            <a href="/v2/finance/comptabilite/exercices/<?= $ex->id ?>"
+            <a href="<?= BASE_URL ?>/v2/finance/comptabilite/exercices/<?= $ex->id ?>"
                class="inline-flex items-center gap-1.5 text-sm text-violet-600 hover:text-violet-800 font-medium">
               <i data-lucide="eye" class="w-4 h-4"></i>Détail &amp; périodes
             </a>
 
             <?php if ($canGerer && $isCourant && $nbOpen === 0): ?>
-            <form method="POST" action="/v2/finance/comptabilite/exercices/<?= $ex->id ?>/cloturer"
+            <form method="POST" action="<?= BASE_URL ?>/v2/finance/comptabilite/exercices/<?= $ex->id ?>/cloturer"
                   onsubmit="return confirm('Clôturer définitivement cet exercice ? Cette opération créera une écriture de clôture.')">
-              <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+              <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
               <button class="inline-flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-800 font-medium">
                 <i data-lucide="lock" class="w-4 h-4"></i>Clôturer
               </button>

@@ -4,6 +4,7 @@ namespace App\Controllers\Api;
 
 use Core\Controller;
 use Core\Session;
+use Core\Tenant\BrandingService;
 use App\Models\NotificationModel;
 
 class NotificationApiController extends Controller
@@ -65,13 +66,14 @@ class NotificationApiController extends Controller
             return;
         }
 
-        $user  = Session::getUser();
-        $model = new NotificationModel();
-        $items = $model->findUnreadForUser((int)$user['id'], 1);
+        $user     = Session::getUser();
+        $model    = new NotificationModel();
+        $items    = $model->findUnreadForUser((int)$user['id'], 1);
+        $appName  = BrandingService::forCurrentRequest()->appName;
 
         if (empty($items)) {
             echo json_encode([
-                'title' => 'Ecole App',
+                'title' => $appName,
                 'body'  => 'Vous avez de nouvelles informations.',
                 'url'   => BASE_URL . '/dashboard',
                 'tag'   => 'ecole-generic',
@@ -81,7 +83,7 @@ class NotificationApiController extends Controller
 
         $n = $items[0];
         echo json_encode([
-            'title'     => 'Ecole App',
+            'title'     => $appName,
             'body'      => $n->titre . ($n->message ? ' — ' . $n->message : ''),
             'url'       => $n->lien ?: BASE_URL . '/dashboard',
             'tag'       => 'notif-' . $n->id,

@@ -302,6 +302,19 @@ class LateRepository
             $conditions[] = 'r.eleve_id = :eleve_id';
             $params[':eleve_id'] = $f->eleveId;
         }
+        if ($f->eleveIds !== null) {
+            if (empty($f->eleveIds)) {
+                $conditions[] = '1 = 0';
+            } else {
+                $placeholders = [];
+                foreach (array_values($f->eleveIds) as $i => $eid) {
+                    $key = ":scope_eleve_{$i}";
+                    $placeholders[] = $key;
+                    $params[$key] = $eid;
+                }
+                $conditions[] = 'r.eleve_id IN (' . implode(',', $placeholders) . ')';
+            }
+        }
         if ($f->classeId !== null) {
             $conditions[] = 'r.classe_id = :classe_id';
             $params[':classe_id'] = $f->classeId;

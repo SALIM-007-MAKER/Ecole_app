@@ -39,8 +39,8 @@ class TeacherController extends Controller
             'stats'       => $stats,
             'matieres'    => $matieres,
             'filters'     => $filters,
-            'canCreate'   => $this->policy->canCreate($this->user),
-            'canExport'   => $this->policy->canExport($this->user),
+            'canCreate'   => $this->policy->canCreate($this->currentUser()),
+            'canExport'   => $this->policy->canExport($this->currentUser()),
         ]);
     }
 
@@ -61,8 +61,8 @@ class TeacherController extends Controller
             'enseignant'     => $enseignant,
             'matieres'       => $this->service->matieres($id),
             'qualifications' => $this->service->qualifications($id),
-            'canUpdate'      => $this->policy->canUpdate($this->user),
-            'canAssign'      => $this->policy->canAssign($this->user),
+            'canUpdate'      => $this->policy->canUpdate($this->currentUser()),
+            'canAssign'      => $this->policy->canAssign($this->currentUser()),
         ]);
     }
 
@@ -98,12 +98,12 @@ class TeacherController extends Controller
         }
 
         try {
-            $id = $this->service->creer($dto, (int)$this->user['id']);
+            $id = $this->service->creer($dto, (int)$this->currentUser()['id']);
 
             // Affectation matières si fournies
             $matieres = $_POST['matieres'] ?? [];
             if (!empty($matieres)) {
-                $this->service->assignerMatieres($id, $matieres, (int)$this->user['id']);
+                $this->service->assignerMatieres($id, $matieres, (int)$this->currentUser()['id']);
             }
 
             Session::flash('success', 'Profil enseignant créé avec succès.');
@@ -164,7 +164,7 @@ class TeacherController extends Controller
         }
 
         try {
-            $this->service->modifier($id, $dto, (int)$this->user['id']);
+            $this->service->modifier($id, $dto, (int)$this->currentUser()['id']);
             Session::flash('success', 'Profil enseignant mis à jour.');
             $this->redirect("/v2/rh/enseignants/{$id}");
         } catch (\InvalidArgumentException | \RuntimeException $e) {
@@ -184,7 +184,7 @@ class TeacherController extends Controller
         $matieres = $_POST['matieres'] ?? [];
 
         try {
-            $this->service->assignerMatieres($id, $matieres, (int)$this->user['id']);
+            $this->service->assignerMatieres($id, $matieres, (int)$this->currentUser()['id']);
             Session::flash('success', 'Habilitations matières mises à jour.');
         } catch (\RuntimeException $e) {
             Session::flash('error', $e->getMessage());
@@ -210,7 +210,7 @@ class TeacherController extends Controller
         }
 
         try {
-            $this->service->ajouterQualification($id, $dto, (int)$this->user['id']);
+            $this->service->ajouterQualification($id, $dto, (int)$this->currentUser()['id']);
             Session::flash('success', 'Qualification ajoutée.');
         } catch (\InvalidArgumentException | \RuntimeException $e) {
             Session::flash('error', $e->getMessage());
@@ -225,7 +225,7 @@ class TeacherController extends Controller
         $this->verifyCsrf();
 
         try {
-            $this->service->supprimerQualification($id, $qualId, (int)$this->user['id']);
+            $this->service->supprimerQualification($id, $qualId, (int)$this->currentUser()['id']);
             Session::flash('success', 'Qualification supprimée.');
         } catch (\RuntimeException $e) {
             Session::flash('error', $e->getMessage());
@@ -242,7 +242,7 @@ class TeacherController extends Controller
         $this->verifyCsrf();
 
         try {
-            $this->service->archiver($id, (int)$this->user['id']);
+            $this->service->archiver($id, (int)$this->currentUser()['id']);
             Session::flash('success', 'Profil enseignant archivé.');
         } catch (\RuntimeException $e) {
             Session::flash('error', $e->getMessage());
@@ -259,7 +259,7 @@ class TeacherController extends Controller
         $this->verifyCsrf();
 
         try {
-            $this->service->restaurer($id, (int)$this->user['id']);
+            $this->service->restaurer($id, (int)$this->currentUser()['id']);
             Session::flash('success', 'Profil enseignant restauré.');
             $this->redirect("/v2/rh/enseignants/{$id}");
         } catch (\RuntimeException $e) {

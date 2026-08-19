@@ -9,22 +9,11 @@ $categorieColors = [
     'technique'     => 'bg-green-100 text-green-800',
 ];
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Postes — EduNova</title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 text-slate-800 min-h-screen">
-<?php include dirname(__DIR__, 3) . '/layouts/sidebar.php'; ?>
-<main class="ml-64 p-8">
 
   <div class="flex items-center justify-between mb-8">
     <div>
       <div class="flex items-center gap-2 text-sm text-slate-500 mb-1">
-        <a href="/v2/rh/organisation" class="hover:text-violet-600">Organisation</a>
+        <a href="<?= BASE_URL ?>/v2/rh/organisation" class="hover:text-violet-600">Organisation</a>
         <span>/</span>
         <span>Postes</span>
       </div>
@@ -32,18 +21,18 @@ $categorieColors = [
     </div>
     <div class="flex gap-3">
       <?php if ($canExport): ?>
-        <a href="/v2/rh/organisation/export/postes"
+        <a href="<?= BASE_URL ?>/v2/rh/organisation/export/postes"
            class="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm hover:bg-slate-50">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
           CSV
         </a>
       <?php endif; ?>
-      <a href="/v2/rh/organisation/fonctions"
+      <a href="<?= BASE_URL ?>/v2/rh/organisation/fonctions"
          class="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm hover:bg-slate-50">
         Fonctions
       </a>
       <?php if ($canCreate): ?>
-        <a href="/v2/rh/organisation/postes/create"
+        <a href="<?= BASE_URL ?>/v2/rh/organisation/postes/create"
            class="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
           Nouveau poste
@@ -64,12 +53,12 @@ $categorieColors = [
     <div class="flex-1 min-w-40">
       <label class="block text-xs font-medium text-slate-600 mb-1">Recherche</label>
       <input type="text" name="q" value="<?= e($filters->q) ?>" placeholder="Intitulé ou code..."
-             class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-300">
+             class="form-input">
     </div>
     <div class="min-w-40">
       <label class="block text-xs font-medium text-slate-600 mb-1">Catégorie</label>
       <select name="categorie"
-              class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-300">
+              class="form-select">
         <option value="">Toutes</option>
         <?php foreach ($categories as $cat): ?>
           <option value="<?= e($cat) ?>" <?= $filters->categorie === $cat ? 'selected' : '' ?>>
@@ -81,7 +70,7 @@ $categorieColors = [
     <div class="min-w-48">
       <label class="block text-xs font-medium text-slate-600 mb-1">Département</label>
       <select name="departement_id"
-              class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-300">
+              class="form-select">
         <option value="0">Tous</option>
         <?php foreach ($departements as $d): ?>
           <option value="<?= (int)$d['id'] ?>" <?= $filters->departementId === (int)$d['id'] ? 'selected' : '' ?>>
@@ -95,7 +84,7 @@ $categorieColors = [
       Inclure archivés
     </label>
     <button type="submit" class="px-4 py-2 bg-violet-600 text-white text-sm rounded-lg hover:bg-violet-700">Filtrer</button>
-    <a href="/v2/rh/organisation/postes" class="px-4 py-2 bg-slate-100 text-slate-600 text-sm rounded-lg hover:bg-slate-200">Réinitialiser</a>
+    <a href="<?= BASE_URL ?>/v2/rh/organisation/postes" class="px-4 py-2 bg-slate-100 text-slate-600 text-sm rounded-lg hover:bg-slate-200">Réinitialiser</a>
   </form>
 
   <!-- Table -->
@@ -149,17 +138,17 @@ $categorieColors = [
             <td class="px-4 py-3 text-right">
               <div class="flex justify-end gap-2">
                 <?php if ($canUpdate && !$archived): ?>
-                  <a href="/v2/rh/organisation/postes/<?= (int)$p['id'] ?>/edit"
+                  <a href="<?= BASE_URL ?>/v2/rh/organisation/postes/<?= (int)$p['id'] ?>/edit"
                      class="px-2 py-1 text-xs text-violet-600 bg-violet-50 rounded hover:bg-violet-100">Éditer</a>
                 <?php endif; ?>
                 <?php if ($canArchive && !$archived): ?>
-                  <form method="POST" action="/v2/rh/organisation/postes/<?= (int)$p['id'] ?>/archive"
+                  <form method="POST" action="<?= BASE_URL ?>/v2/rh/organisation/postes/<?= (int)$p['id'] ?>/archive"
                         onsubmit="return confirm('Archiver ce poste ?')">
                     <?php \Core\Csrf::field(); ?>
                     <button type="submit" class="px-2 py-1 text-xs text-amber-600 bg-amber-50 rounded hover:bg-amber-100">Archiver</button>
                   </form>
                 <?php elseif ($canArchive && $archived): ?>
-                  <form method="POST" action="/v2/rh/organisation/postes/<?= (int)$p['id'] ?>/restore">
+                  <form method="POST" action="<?= BASE_URL ?>/v2/rh/organisation/postes/<?= (int)$p['id'] ?>/restore">
                     <?php \Core\Csrf::field(); ?>
                     <button type="submit" class="px-2 py-1 text-xs text-emerald-600 bg-emerald-50 rounded hover:bg-emerald-100">Restaurer</button>
                   </form>
@@ -186,7 +175,3 @@ $categorieColors = [
       </div>
     <?php endif; ?>
   </div>
-
-</main>
-</body>
-</html>

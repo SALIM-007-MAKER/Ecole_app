@@ -39,11 +39,11 @@ class TrainingController extends Controller
         $this->policy      = new TrainingPolicy();
     }
 
-    private function currentUser(): array { return Session::getUser() ?? []; }
-    private function userId(): int        { return (int)($this->currentUser()['id'] ?? 0); }
+    private function authUser(): array { return Session::getUser() ?? []; }
+    private function userId(): int        { return (int)($this->authUser()['id'] ?? 0); }
     private function userName(): string
     {
-        $u = $this->currentUser();
+        $u = $this->authUser();
         return trim(($u['prenom'] ?? '') . ' ' . ($u['nom'] ?? '')) ?: 'Système';
     }
 
@@ -64,7 +64,7 @@ class TrainingController extends Controller
             'pages'     => (int)ceil($total / $filters->perPage),
             'model'     => TrainingModel::class,
             'policy'    => $this->policy,
-            'user'      => $this->currentUser(),
+            'user'      => $this->authUser(),
         ]);
     }
 
@@ -82,7 +82,7 @@ class TrainingController extends Controller
             'type'       => $type,
             'model'      => TrainingModel::class,
             'policy'     => $this->policy,
-            'user'       => $this->currentUser(),
+            'user'       => $this->authUser(),
         ]);
     }
 
@@ -201,7 +201,7 @@ class TrainingController extends Controller
             'competences'  => $competences,
             'model'        => TrainingModel::class,
             'policy'       => $this->policy,
-            'user'         => $this->currentUser(),
+            'user'         => $this->authUser(),
         ]);
     }
 
@@ -347,7 +347,7 @@ class TrainingController extends Controller
             'employeId'  => $employeId,
             'model'      => TrainingModel::class,
             'policy'     => $this->policy,
-            'user'       => $this->currentUser(),
+            'user'       => $this->authUser(),
         ]);
     }
 
@@ -388,7 +388,7 @@ class TrainingController extends Controller
             'employeId'   => $employeId,
             'model'       => TrainingModel::class,
             'policy'      => $this->policy,
-            'user'        => $this->currentUser(),
+            'user'        => $this->authUser(),
         ]);
     }
 
@@ -463,7 +463,7 @@ class TrainingController extends Controller
         $pdo = Database::getInstance()->getConnection();
         return $pdo->query(
             'SELECT id, CONCAT(prenom,\' \',nom) AS nom_complet, matricule
-             FROM rh_employes WHERE actif = 1 AND deleted_at IS NULL ORDER BY nom, prenom'
+             FROM rh_employes WHERE statut = \'actif\' AND deleted_at IS NULL ORDER BY nom, prenom'
         )->fetchAll(PDO::FETCH_ASSOC);
     }
 }

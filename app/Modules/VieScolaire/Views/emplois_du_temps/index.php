@@ -1,5 +1,4 @@
 <?php $title = 'Emplois du temps'; ?>
-<?php ob_start(); ?>
 
 <div class="p-6 space-y-6">
 
@@ -10,7 +9,7 @@
       <p class="text-slate-500 text-sm mt-1">Planification hebdomadaire par classe</p>
     </div>
     <?php if (in_array('timetable.create', $user['permissions'] ?? [])): ?>
-    <a href="/v2/vie-scolaire/emplois-du-temps/create"
+    <a href="<?= BASE_URL ?>/v2/vie-scolaire/emplois-du-temps/create"
        class="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
       <i data-lucide="plus" class="w-4 h-4"></i> Nouvel EDT
     </a>
@@ -18,18 +17,6 @@
   </div>
 
   <!-- Flash -->
-  <?php if (!empty($_SESSION['flash_success'])): ?>
-    <div class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm">
-      <?= htmlspecialchars($_SESSION['flash_success']) ?>
-      <?php unset($_SESSION['flash_success']); ?>
-    </div>
-  <?php endif; ?>
-  <?php if (!empty($_SESSION['flash_error'])): ?>
-    <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">
-      <?= $_SESSION['flash_error'] ?>
-      <?php unset($_SESSION['flash_error']); ?>
-    </div>
-  <?php endif; ?>
 
   <!-- Filtres -->
   <form method="GET" class="bg-white border border-slate-200 rounded-xl p-4 flex flex-wrap gap-3 items-end">
@@ -114,7 +101,7 @@
             </td>
             <td class="px-4 py-3 text-center text-slate-500">v<?= $edt['version'] ?></td>
             <td class="px-4 py-3 text-center">
-              <a href="/v2/vie-scolaire/emplois-du-temps/<?= $edt['id'] ?>"
+              <a href="<?= BASE_URL ?>/v2/vie-scolaire/emplois-du-temps/<?= $edt['id'] ?>"
                  class="inline-flex items-center gap-1 text-violet-600 hover:text-violet-800 text-sm font-medium">
                 <i data-lucide="calendar" class="w-4 h-4"></i> Voir
               </a>
@@ -139,5 +126,3 @@
 
 </div>
 
-<?php $content = ob_get_clean(); ?>
-<?php include base_path('app/Views/layouts/app.php'); ?>

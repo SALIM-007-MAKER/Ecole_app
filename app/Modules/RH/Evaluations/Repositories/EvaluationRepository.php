@@ -387,11 +387,11 @@ class EvaluationRepository
         $stats['par_mention'] = $parMention->fetchAll(PDO::FETCH_ASSOC);
 
         $parStatut = $this->pdo->prepare(
-            'SELECT statut, COUNT(*) AS nb
+            'SELECT e.statut, COUNT(*) AS nb
              FROM rh_evaluations e
              JOIN rh_campagnes_evaluation c ON c.id = e.campagne_id
              WHERE c.annee = :y AND e.deleted_at IS NULL
-             GROUP BY statut'
+             GROUP BY e.statut'
         );
         $parStatut->execute([':y' => $annee]);
         $stats['par_statut'] = $parStatut->fetchAll(PDO::FETCH_ASSOC);

@@ -10,6 +10,13 @@ use App\Services\AuditService;
 
 class AnalyticsHandler implements Listener
 {
+    private AuditService $audit;
+
+    public function __construct()
+    {
+        $this->audit = new AuditService();
+    }
+
     public function handle(Event $event): void
     {
         if ($event instanceof AnalyticsGenerated) {
@@ -21,12 +28,14 @@ class AnalyticsHandler implements Listener
 
     private function onGenerated(AnalyticsGenerated $event): void
     {
-        AuditService::log(
-            action  : 'analytics.generated',
-            entity  : 'analytics',
-            entityId: $event->contextId ?? 0,
-            userId  : $event->generatedById,
-            details : [
+        $this->audit->log(
+            $event->generatedById,
+            'analytics.generated',
+            'academique',
+            'analytics',
+            $event->contextId ?? 0,
+            null,
+            [
                 'dashboard_type' => $event->dashboardType,
                 'periode_id'     => $event->periodeId,
                 'computation_ms' => $event->computationMs,
@@ -36,12 +45,14 @@ class AnalyticsHandler implements Listener
 
     private function onUpdated(StatisticsUpdated $event): void
     {
-        AuditService::log(
-            action  : 'statistics.updated',
-            entity  : 'analytics',
-            entityId: $event->classeId ?? 0,
-            userId  : $event->updatedById,
-            details : [
+        $this->audit->log(
+            $event->updatedById,
+            'statistics.updated',
+            'academique',
+            'analytics',
+            $event->classeId ?? 0,
+            null,
+            [
                 'scope'        => $event->scope,
                 'periode_id'   => $event->periodeId,
                 'triggered_by' => $event->triggeredBy,

@@ -6,27 +6,16 @@
 /** @var bool $canUpdate */
 function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8'); }
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Soldes de congés — EduNova</title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 text-slate-800 min-h-screen">
-<?php include dirname(__DIR__, 2) . '/layouts/sidebar.php'; ?>
-<main class="ml-64 p-8">
 
   <div class="flex items-center justify-between mb-8">
     <div>
       <div class="flex items-center gap-2 text-sm text-slate-500 mb-1">
-        <a href="/v2/rh/conges" class="hover:text-violet-600">Congés</a>
+        <a href="<?= BASE_URL ?>/v2/rh/conges" class="hover:text-violet-600">Congés</a>
         <span>/</span><span>Soldes</span>
       </div>
       <h1 class="text-2xl font-bold text-slate-900">Soldes de congés</h1>
     </div>
-    <a href="/v2/rh/conges" class="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">← Retour</a>
+    <a href="<?= BASE_URL ?>/v2/rh/conges" class="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">← Retour</a>
   </div>
 
   <?php if ($flash = \Core\Session::getFlash('success')): ?>
@@ -41,11 +30,11 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
     <?php if ($canUpdate): ?>
     <div class="bg-white border border-slate-100 rounded-xl p-6 shadow-sm col-span-1">
       <h2 class="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4">Définir un solde</h2>
-      <form method="POST" action="/v2/rh/conges/soldes" class="space-y-4">
+      <form method="POST" action="<?= BASE_URL ?>/v2/rh/conges/soldes" class="space-y-4">
         <?= \Core\Csrf::field() ?>
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Employé *</label>
-          <select name="employe_id" required class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-300 outline-none">
+          <label class="form-label">Employé *</label>
+          <select name="employe_id" required class="form-select">
             <option value="">Sélectionner…</option>
             <?php foreach ($employes as $emp): ?>
               <option value="<?= (int)$emp['id'] ?>" <?= $employeId === (int)$emp['id'] ? 'selected' : '' ?>>
@@ -55,8 +44,8 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
           </select>
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Type de congé *</label>
-          <select name="type_conge_id" required class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-300 outline-none">
+          <label class="form-label">Type de congé *</label>
+          <select name="type_conge_id" required class="form-select">
             <option value="">Sélectionner…</option>
             <?php foreach ($typesConges as $t): ?>
               <?php if ($t['debit_solde']): ?>
@@ -66,14 +55,14 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
           </select>
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Année *</label>
+          <label class="form-label">Année *</label>
           <input type="number" name="annee" value="<?= $annee ?>" min="2020" max="2099"
-                 class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-300 outline-none">
+                 class="form-input">
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Solde initial (jours) *</label>
+          <label class="form-label">Solde initial (jours) *</label>
           <input type="number" name="solde_initial" value="0" min="0" max="365" step="0.5"
-                 class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-300 outline-none">
+                 class="form-input">
         </div>
         <button type="submit" class="w-full py-2.5 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700">
           Enregistrer le solde
@@ -86,7 +75,7 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
     <div class="col-span-<?= $canUpdate ? '2' : '3' ?>">
       <!-- Filtre année / employé -->
       <form method="GET" class="flex gap-3 mb-4">
-        <select name="employe_id" class="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-300 outline-none">
+        <select name="employe_id" class="form-select">
           <option value="">Tous les employés</option>
           <?php foreach ($employes as $emp): ?>
             <option value="<?= (int)$emp['id'] ?>" <?= $employeId === (int)$emp['id'] ? 'selected' : '' ?>>
@@ -144,7 +133,3 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
       </div>
     </div>
   </div>
-
-</main>
-</body>
-</html>

@@ -1,17 +1,8 @@
 <?php /** @var array $mouvements */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Journal des mouvements — Inventaire</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-7xl mx-auto px-4 py-6">
     <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-3">
-            <a href="/v2/inventaire/stocks" class="text-slate-500 hover:text-slate-700">
+            <a href="<?= BASE_URL ?>/v2/inventaire/stocks" class="text-slate-500 hover:text-slate-700">
                 <i data-lucide="arrow-left" class="w-5 h-5"></i>
             </a>
             <h1 class="text-2xl font-bold text-slate-800">Journal des mouvements de stock</h1>
@@ -88,5 +79,3 @@
     </div>
 </div>
 <script>lucide.createIcons();</script>
-</body>
-</html>

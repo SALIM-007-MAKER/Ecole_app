@@ -1,65 +1,155 @@
 {
   "name": "Academique",
   "slug": "academique",
-  "version": "2.1.0",
-  "description": "Gestion académique — périodes, évaluations, notes, moyennes, bulletins",
+  "version": "2.9.0",
+  "description": "Gestion académique — périodes (semestres), types d'évaluations, évaluations, notes, calculs, classements, bulletins, analytics",
   "namespace": "App\\Modules\\Academique",
-  "enabled": false,
+  "enabled": true,
   "routes": "app/Modules/Academique/routes.php",
-  "phase": "2.1",
-  "status": "periodes-implemented",
+  "phase": "2.11",
+  "status": "active-semestre-la-perseverance",
   "depends": ["scolarite"],
-  "migrations_pending": [
-    "Phase 2.1 — migration_periodes_scolaires.sql (CREATE TABLE periodes_scolaires) — À EXÉCUTER AVANT ACTIVATION"
+  "migrations_pending": [],
+  "migrations_done": [
+    "T021_periodes_trimestre_officiel (V1 periodes.type -> ENUM('trimestre'))",
+    "T022_periodes_scolaires_v2_niger (CREATE periodes_scolaires + periodes_scolaires_config, seed initial trimestre)",
+    "T035_periodes_config_semestre (periodes_scolaires_config -> 2 lignes semestre, La Persévérance)",
+    "migration_types_evaluations.sql (CREATE types_evaluations)",
+    "migration_evaluations.sql (CREATE evaluations)",
+    "migration_notes_v2.sql (CREATE notes_v2, notes_historique)",
+    "migration_bulletins.sql (CREATE bulletins_v2)"
   ],
-  "migrations_done": [],
   "controllers": [
-    "Controllers/PeriodeController.php"
+    "Controllers/PeriodeController.php",
+    "Controllers/TypeEvaluationController.php",
+    "Controllers/EvaluationController.php",
+    "Controllers/NoteController.php",
+    "Controllers/BulletinController.php",
+    "Controllers/AppreciationController.php"
   ],
   "models": [
-    "Models/PeriodeScolaireModel.php"
+    "Models/PeriodeScolaireModel.php",
+    "Models/TypeEvaluationModel.php",
+    "Models/EvaluationModel.php",
+    "Models/NoteModel.php"
   ],
   "services": [
-    "Services/PeriodeScolaireService.php"
+    "Services/PeriodeScolaireService.php",
+    "Services/PeriodeConfigService.php",
+    "Services/TypeEvaluationService.php",
+    "Services/EvaluationService.php",
+    "Services/NoteService.php",
+    "Services/AppreciationService.php",
+    "Services/AcademicCalculationService.php",
+    "Services/RankingEngine.php",
+    "Services/BulletinGenerator.php",
+    "Services/AcademicAnalyticsService.php"
   ],
   "repositories": [
-    "Repositories/PeriodeScolaireRepository.php"
+    "Repositories/PeriodeScolaireRepository.php",
+    "Repositories/PeriodeConfigRepository.php",
+    "Repositories/TypeEvaluationRepository.php",
+    "Repositories/EvaluationRepository.php",
+    "Repositories/NoteRepository.php",
+    "Repositories/AppreciationMatiereRepository.php",
+    "Repositories/RankingRepository.php",
+    "Repositories/BulletinRepository.php",
+    "Repositories/AnalyticsRepository.php"
   ],
   "dto": [
     "DTO/PeriodeScolaireDTO.php",
-    "DTO/PeriodeScolaireFiltersDTO.php"
+    "DTO/PeriodeScolaireFiltersDTO.php",
+    "DTO/PeriodeConfigDTO.php",
+    "DTO/TypeEvaluationDTO.php",
+    "DTO/TypeEvaluationFiltersDTO.php",
+    "DTO/EvaluationDTO.php",
+    "DTO/EvaluationFiltersDTO.php",
+    "DTO/NoteDTO.php",
+    "DTO/NoteBatchDTO.php",
+    "DTO/NoteFiltersDTO.php",
+    "DTO/RankingResultDTO.php",
+    "DTO/BulletinData.php",
+    "DTO/BulletinSummary.php",
+    "DTO/AnalyticsResult.php",
+    "DTO/DashboardMetrics.php"
+  ],
+  "valueObjects": [
+    "ValueObjects/NoteValue.php",
+    "ValueObjects/BaremeValue.php",
+    "ValueObjects/CoefficientValue.php",
+    "ValueObjects/AverageValue.php",
+    "ValueObjects/GradeValue.php",
+    "ValueObjects/MentionValue.php"
+  ],
+  "contracts": [
+    "Contracts/BulletinGeneratorInterface.php",
+    "Contracts/AcademicAnalyticsInterface.php"
   ],
   "policies": [
-    "Policies/PeriodePolicy.php"
+    "Policies/PeriodePolicy.php",
+    "Policies/TypeEvaluationPolicy.php",
+    "Policies/EvaluationPolicy.php",
+    "Policies/NotePolicy.php",
+    "Policies/RankingPolicy.php",
+    "Policies/BulletinPolicy.php",
+    "Policies/CalculationPolicy.php"
   ],
   "events": [
-    "Events/PeriodeCreated.php",
-    "Events/PeriodeUpdated.php",
-    "Events/PeriodeActivated.php",
-    "Events/PeriodeLocked.php",
-    "Events/PeriodeUnlocked.php",
-    "Events/PeriodeArchived.php"
+    "Events/PeriodeCreated.php", "Events/PeriodeUpdated.php", "Events/PeriodeActivated.php",
+    "Events/PeriodeLocked.php", "Events/PeriodeUnlocked.php", "Events/PeriodeArchived.php",
+    "Events/EvaluationTypeCreated.php", "Events/EvaluationTypeUpdated.php", "Events/EvaluationTypeActivated.php",
+    "Events/EvaluationTypeDeactivated.php", "Events/EvaluationTypeArchived.php",
+    "Events/EvaluationCreated.php", "Events/EvaluationUpdated.php", "Events/EvaluationPublished.php",
+    "Events/EvaluationLocked.php", "Events/EvaluationArchived.php",
+    "Events/NoteCreated.php", "Events/NoteUpdated.php", "Events/NotePublished.php",
+    "Events/NoteLocked.php", "Events/NoteImported.php",
+    "Events/AverageCalculated.php", "Events/ClassAverageUpdated.php",
+    "Events/RankingGenerated.php", "Events/RankingUpdated.php",
+    "Events/BulletinGenerated.php", "Events/BulletinPublished.php", "Events/BulletinArchived.php",
+    "Events/AnalyticsGenerated.php", "Events/StatisticsUpdated.php"
   ],
   "listeners": [
-    "Listeners/PeriodeHandler.php"
+    "Listeners/PeriodeHandler.php",
+    "Listeners/TypeEvaluationHandler.php",
+    "Listeners/EvaluationHandler.php",
+    "Listeners/NoteHandler.php",
+    "Listeners/AverageHandler.php",
+    "Listeners/RankingHandler.php",
+    "Listeners/BulletinHandler.php",
+    "Listeners/AnalyticsHandler.php",
+    "Listeners/AppreciationHandler.php"
   ],
   "permissions": [
-    "academique.periodes.view",
-    "academique.periodes.manage",
-    "academique.periodes.admin"
+    "academique.periodes.view", "academique.periodes.manage", "academique.periodes.admin",
+    "academique.types.view", "academique.types.manage",
+    "academique.evaluations.view", "academique.evaluations.manage",
+    "academique.notes.view", "academique.notes.manage",
+    "academique.classement.view",
+    "academique.bulletin.view", "academique.bulletin.generate", "academique.bulletin.publish",
+    "academique.bulletin.archive", "academique.bulletin.export", "academique.bulletin.admin",
+    "academique.analytics.view"
   ],
   "views_periodes": {
-    "index": "Views/periodes/index.php",
-    "show":  "Views/periodes/show.php",
-    "form":  "Views/periodes/form.php"
+    "index":  "Views/periodes/index.php",
+    "show":   "Views/periodes/show.php",
+    "form":   "Views/periodes/form.php",
+    "config": "Views/periodes/config.php"
   },
   "sql_migrations": [
-    "migration_periodes_scolaires.sql"
+    "migration_periodes_scolaires.sql",
+    "migration_types_evaluations.sql",
+    "migration_evaluations.sql",
+    "migration_notes_v2.sql",
+    "migration_bulletins.sql"
   ],
   "author": "SCOLARIS V2",
   "created_at": "2026-06-30",
-  "updated_at": "2026-06-30",
+  "updated_at": "2026-07-22",
   "phase_history": {
-    "2.1": "Domaine Périodes Scolaires"
+    "2.1": "Domaine Périodes Scolaires",
+    "2.1-niger": "Configuration des périodes scolaires — modèle par défaut configurable, cycle de vie preparation/ouverte/cloturee/archivee, verrouillage orthogonal, validations (chevauchement, bornes, doublons, couverture)",
+    "2.2-2.9": "Types d'évaluations, Évaluations, Notes, Calculs, Classements, Bulletins, Analytics — voir ACADEMIQUE_MODULE_FREEZE.md",
+    "2.10": "Gel du module — NO-GO conditionnel (AN-C-001/002/003)",
+    "2.11": "Migration trimestre → semestre (La Persévérance) — AN-C-001/002/003 corrigées, module activé (GO)"
   }
 }

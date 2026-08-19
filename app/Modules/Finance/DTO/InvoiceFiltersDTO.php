@@ -13,6 +13,7 @@ class InvoiceFiltersDTO
         public readonly ?string $niveau         = null,
         public readonly ?string $dateDebut      = null,
         public readonly ?string $dateFin        = null,
+        public readonly ?string $origine        = null,
         public readonly int     $page           = 1,
         public readonly int     $perPage        = 20,
         public readonly string  $sortBy         = 'date_emission',
@@ -30,6 +31,8 @@ class InvoiceFiltersDTO
             niveau:        !empty($data['niveau'])         ? trim($data['niveau'])        : null,
             dateDebut:     !empty($data['date_debut'])     ? trim($data['date_debut'])    : null,
             dateFin:       !empty($data['date_fin'])       ? trim($data['date_fin'])      : null,
+            origine:       in_array($data['origine'] ?? '', ['operationnelle', 'migration_v1'], true)
+                               ? $data['origine'] : null,
             page:          max(1, (int)($data['page']     ?? 1)),
             perPage:       min(100, max(10, (int)($data['per_page'] ?? 20))),
             sortBy:        in_array($data['sort_by'] ?? '', ['numero','date_emission','date_echeance','montant_total','statut'])

@@ -16,7 +16,9 @@ class ContractRenewed extends Event
         public readonly string $nouvelleDateDebut,
         public readonly ?string $nouvelleDateFin,
         public readonly int    $renewedBy
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

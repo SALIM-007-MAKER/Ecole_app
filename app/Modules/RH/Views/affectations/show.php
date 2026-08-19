@@ -4,51 +4,45 @@
 /** @var bool $canUpdate, $canArchive */
 function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8'); }
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Affectation — EduNova</title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 text-slate-800 min-h-screen">
-<?php include dirname(__DIR__, 2) . '/layouts/sidebar.php'; ?>
-<main class="ml-64 p-8">
 
   <!-- En-tête -->
-  <div class="flex items-start justify-between mb-8">
-    <div>
-      <div class="flex items-center gap-2 text-sm text-slate-500 mb-1">
-        <a href="/v2/rh/affectations" class="hover:text-violet-600">Affectations</a>
-        <span>/</span>
-        <span><?= e($affectation['employe_nom']) ?></span>
+  <div class="flex items-center gap-2 text-sm text-slate-500 mb-4">
+    <a href="<?= BASE_URL ?>/v2/rh/affectations" class="hover:text-violet-600">Affectations</a>
+    <i data-lucide="chevron-right" class="w-3 h-3"></i>
+    <span class="text-slate-700"><?= e($affectation['employe_nom']) ?></span>
+  </div>
+  <div class="flex items-start justify-between gap-4 mb-8">
+    <div class="flex items-start gap-4">
+      <div class="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+        <i data-lucide="shuffle" class="w-5 h-5 text-violet-600"></i>
       </div>
+      <div>
       <h1 class="text-2xl font-bold text-slate-900 flex items-center gap-3">
         <?= e($affectation['employe_nom']) ?>
         <span class="px-2 py-0.5 text-sm rounded-full <?= $model::typeColor($affectation['type']) ?>"><?= e($model::typeLabel($affectation['type'])) ?></span>
         <span class="px-2 py-0.5 text-sm rounded-full <?= $model::statutColor($affectation['statut']) ?>"><?= e($model::statutLabel($affectation['statut'])) ?></span>
       </h1>
       <p class="text-sm text-slate-400 mt-1"><?= e($affectation['employe_matricule'] ?? '') ?></p>
+      </div>
     </div>
-    <div class="flex gap-2">
+    <div class="flex gap-2 flex-shrink-0">
       <?php if ($canUpdate && $affectation['statut'] !== 'terminee'): ?>
-        <a href="/v2/rh/affectations/<?= (int)$affectation['id'] ?>/edit"
+        <a href="<?= BASE_URL ?>/v2/rh/affectations/<?= (int)$affectation['id'] ?>/edit"
            class="px-4 py-2 bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-sm hover:bg-slate-200">Modifier</a>
         <button onclick="document.getElementById('modal-transferer').classList.remove('hidden')"
-                class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">Transfert</button>
+                class="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">Transfert</button>
       <?php endif; ?>
       <?php if ($canUpdate && $affectation['statut'] === 'active'): ?>
-        <form method="POST" action="/v2/rh/affectations/<?= (int)$affectation['id'] ?>/suspendre">
+        <form method="POST" action="<?= BASE_URL ?>/v2/rh/affectations/<?= (int)$affectation['id'] ?>/suspendre">
           <?= \Core\Csrf::field() ?>
           <button onclick="return confirm('Suspendre cette affectation ?')"
                   class="px-4 py-2 bg-amber-500 text-white rounded-lg text-sm hover:bg-amber-600">Suspendre</button>
         </form>
         <button onclick="document.getElementById('modal-clore').classList.remove('hidden')"
-                class="px-4 py-2 bg-slate-600 text-white rounded-lg text-sm hover:bg-slate-700">Clôturer</button>
+                class="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors">Clôturer</button>
       <?php endif; ?>
       <?php if ($canUpdate && $affectation['statut'] === 'suspendue'): ?>
-        <form method="POST" action="/v2/rh/affectations/<?= (int)$affectation['id'] ?>/reactiver">
+        <form method="POST" action="<?= BASE_URL ?>/v2/rh/affectations/<?= (int)$affectation['id'] ?>/reactiver">
           <?= \Core\Csrf::field() ?>
           <button onclick="return confirm('Réactiver cette affectation ?')"
                   class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700">Réactiver</button>
@@ -96,7 +90,7 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
             <dt class="text-slate-400">Contrat lié</dt>
             <dd class="mt-0.5">
               <?php if ($affectation['contrat_numero']): ?>
-                <a href="/v2/rh/contrats/<?= (int)$affectation['contrat_id'] ?>" class="font-mono text-violet-600 hover:underline text-xs"><?= e($affectation['contrat_numero']) ?></a>
+                <a href="<?= BASE_URL ?>/v2/rh/contrats/<?= (int)$affectation['contrat_id'] ?>" class="font-mono text-violet-600 hover:underline text-xs"><?= e($affectation['contrat_numero']) ?></a>
                 <span class="ml-1 px-1.5 py-0.5 text-xs rounded bg-emerald-100 text-emerald-700"><?= e($affectation['contrat_statut']) ?></span>
               <?php else: ?>
                 <span class="text-slate-400">—</span>
@@ -157,7 +151,7 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
                     <td class="px-3 py-2 text-xs"><?= $m['date_fin'] ? e(date('d/m/Y', strtotime($m['date_fin']))) : '<span class="text-slate-400">∞</span>' ?></td>
                     <?php if ($canUpdate && $affectation['statut'] === 'active' && !($m['date_fin'] && $m['date_fin'] < date('Y-m-d'))): ?>
                       <td class="px-3 py-2">
-                        <form method="POST" action="/v2/rh/affectations/<?= (int)$affectation['id'] ?>/matieres/<?= (int)$m['id'] ?>/remove">
+                        <form method="POST" action="<?= BASE_URL ?>/v2/rh/affectations/<?= (int)$affectation['id'] ?>/matieres/<?= (int)$m['id'] ?>/remove">
                           <?= \Core\Csrf::field() ?>
                           <button onclick="return confirm('Clôturer cette affectation matière ?')"
                                   class="text-xs text-red-500 hover:text-red-700">Clôturer</button>
@@ -239,19 +233,17 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
     </div>
   </div>
 
-</main>
-
 <!-- Modal Transfert -->
 <div id="modal-transferer" class="hidden fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50">
   <div class="bg-white rounded-xl w-full max-w-lg shadow-xl p-6">
     <h2 class="text-lg font-bold text-blue-700 mb-4">Enregistrer un transfert</h2>
-    <form method="POST" action="/v2/rh/affectations/<?= (int)$affectation['id'] ?>/transferer">
+    <form method="POST" action="<?= BASE_URL ?>/v2/rh/affectations/<?= (int)$affectation['id'] ?>/transferer">
       <?= \Core\Csrf::field() ?>
       <div class="space-y-3">
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Motif *</label>
+          <label class="form-label">Motif *</label>
           <input type="text" name="motif" required maxlength="500" placeholder="Ex : Réorganisation, mobilité interne..."
-                 class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-300">
+                 class="form-input">
         </div>
         <p class="text-xs text-slate-500">Renseignez uniquement les champs qui changent :</p>
         <?php
@@ -316,20 +308,19 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
       <div class="flex justify-end gap-3 mt-6">
         <button type="button" onclick="document.getElementById('modal-transferer').classList.add('hidden')"
                 class="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm">Annuler</button>
-        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">Enregistrer le transfert</button>
+        <button type="submit" class="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">Enregistrer le transfert</button>
       </div>
     </form>
   </div>
 </div>
-
 <!-- Modal Clôture -->
 <div id="modal-clore" class="hidden fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50">
   <div class="bg-white rounded-xl w-full max-w-md shadow-xl p-6">
     <h2 class="text-lg font-bold text-slate-800 mb-4">Clôturer l'affectation</h2>
-    <form method="POST" action="/v2/rh/affectations/<?= (int)$affectation['id'] ?>/clore">
+    <form method="POST" action="<?= BASE_URL ?>/v2/rh/affectations/<?= (int)$affectation['id'] ?>/clore">
       <?= \Core\Csrf::field() ?>
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1">Motif de clôture</label>
+        <label class="form-label">Motif de clôture</label>
         <textarea name="motif" rows="2" placeholder="Ex : Fin de mission, départ..."
                   class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-300"></textarea>
       </div>
@@ -337,21 +328,20 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
       <div class="flex justify-end gap-3 mt-6">
         <button type="button" onclick="document.getElementById('modal-clore').classList.add('hidden')"
                 class="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm">Annuler</button>
-        <button type="submit" class="px-4 py-2 bg-slate-700 text-white rounded-lg text-sm hover:bg-slate-800">Clôturer</button>
+        <button type="submit" class="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors">Clôturer</button>
       </div>
     </form>
   </div>
 </div>
-
 <!-- Modal Ajout matière -->
 <div id="modal-matiere" class="hidden fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50">
   <div class="bg-white rounded-xl w-full max-w-lg shadow-xl p-6">
     <h2 class="text-lg font-bold text-slate-900 mb-4">Ajouter une matière / classe</h2>
-    <form method="POST" action="/v2/rh/affectations/<?= (int)$affectation['id'] ?>/matieres">
+    <form method="POST" action="<?= BASE_URL ?>/v2/rh/affectations/<?= (int)$affectation['id'] ?>/matieres">
       <?= \Core\Csrf::field() ?>
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Matière</label>
+          <label class="form-label">Matière</label>
           <select name="matiere_id" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg">
             <option value="">— Non spécifiée —</option>
             <?php
@@ -363,7 +353,7 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
           </select>
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Classe</label>
+          <label class="form-label">Classe</label>
           <select name="classe_id" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg">
             <option value="">— Non spécifiée —</option>
             <?php
@@ -375,22 +365,22 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
           </select>
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Niveau</label>
-          <input type="text" name="niveau" maxlength="50" placeholder="Ex : 3ème, Terminale S"
+          <label class="form-label">Niveau</label>
+          <input type="text" name="niveau" maxlength="50" placeholder="Ex : 3e, Terminale"
                  class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg">
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Heures/semaine</label>
+          <label class="form-label">Heures/semaine</label>
           <input type="number" name="heures_hebdo" step="0.5" min="0" max="40"
                  class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg">
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Date début *</label>
+          <label class="form-label">Date début *</label>
           <input type="date" name="date_debut" required value="<?= e(date('Y-m-d')) ?>"
                  class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg">
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Date fin</label>
+          <label class="form-label">Date fin</label>
           <input type="date" name="date_fin" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg">
         </div>
       </div>
@@ -402,15 +392,14 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
     </form>
   </div>
 </div>
-
 <!-- Modal Archivage -->
 <div id="modal-archiver" class="hidden fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50">
   <div class="bg-white rounded-xl w-full max-w-md shadow-xl p-6">
     <h2 class="text-lg font-bold text-red-700 mb-4">Archiver l'affectation</h2>
-    <form method="POST" action="/v2/rh/affectations/<?= (int)$affectation['id'] ?>/archive">
+    <form method="POST" action="<?= BASE_URL ?>/v2/rh/affectations/<?= (int)$affectation['id'] ?>/archive">
       <?= \Core\Csrf::field() ?>
       <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1">Motif</label>
+        <label class="form-label">Motif</label>
         <input type="text" name="motif" value="Archivage manuel" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg">
       </div>
       <div class="flex justify-end gap-3 mt-6">
@@ -421,6 +410,3 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
     </form>
   </div>
 </div>
-
-</body>
-</html>

@@ -9,11 +9,11 @@ $isPdf   = $mime === 'application/pdf';
 
   <div class="flex items-center justify-between">
     <div>
-      <a href="/v2/documents/<?= $document['id'] ?>" class="text-sm text-violet-600 hover:text-violet-800 font-medium">← Retour</a>
+      <a href="<?= BASE_URL ?>/v2/documents/<?= $document['id'] ?>" class="text-sm text-violet-600 hover:text-violet-800 font-medium">← Retour</a>
       <h1 class="text-xl font-bold text-slate-800 mt-1"><?= htmlspecialchars($document['titre']) ?></h1>
       <p class="text-xs text-slate-400 mt-0.5"><?= htmlspecialchars($mime) ?> · v<?= $document['version_courante'] ?></p>
     </div>
-    <a href="/v2/documents/<?= $document['id'] ?>/download"
+    <a href="<?= BASE_URL ?>/v2/documents/<?= $document['id'] ?>/download"
        class="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700">
       Télécharger
     </a>

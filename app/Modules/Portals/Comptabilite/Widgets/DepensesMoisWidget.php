@@ -26,11 +26,11 @@ class DepensesMoisWidget extends BaseWidget
             $month = date('Y-m');
             $stmt  = $pdo->prepare(
                 'SELECT COALESCE(SUM(montant),0) AS total, COUNT(*) AS nb
-                 FROM finance_caisse_mouvements
-                 WHERE etablissement_id=? AND type_mouvement="sortie"
-                   AND DATE_FORMAT(created_at,"%Y-%m")=? AND deleted_at IS NULL'
+                 FROM finance_decaissements
+                 WHERE statut="paye" AND deleted_at IS NULL
+                   AND DATE_FORMAT(date_depense,"%Y-%m")=?'
             );
-            $stmt->execute([$etab, $month]);
+            $stmt->execute([$month]);
             $row = $stmt->fetch(\PDO::FETCH_ASSOC);
             return ['total' => (float)($row['total'] ?? 0), 'nb' => (int)($row['nb'] ?? 0), 'mois' => $month];
         } catch (\Throwable) {

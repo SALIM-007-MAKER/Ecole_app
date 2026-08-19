@@ -53,7 +53,7 @@ class EvaluationRepository
              JOIN `classes` cl            ON cl.id = ev.classe_id
              LEFT JOIN `professeurs` pr   ON pr.id = ev.enseignant_id
              {$where}
-             ORDER BY ev.date_evaluation DESC, cl.niveau ASC, m.nom ASC, ev.id DESC
+             ORDER BY ev.date_evaluation DESC, " . \App\Models\ClasseModel::ordreNiveauSql('cl.niveau') . " ASC, m.nom ASC, ev.id DESC
              LIMIT {$perPage} OFFSET {$offset}"
         );
         $stmt->execute($params);
@@ -183,7 +183,7 @@ class EvaluationRepository
         $stmt = $this->pdo->query(
             "SELECT id, nom, niveau
              FROM `classes`
-             ORDER BY niveau ASC, nom ASC"
+             ORDER BY " . \App\Models\ClasseModel::ordreNiveauSql() . " ASC, nom ASC"
         );
         return $stmt->fetchAll(PDO::FETCH_OBJ);
     }

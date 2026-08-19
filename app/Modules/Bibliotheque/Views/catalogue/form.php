@@ -1,16 +1,8 @@
 <?php /** @var array|null $ouvrage @var array $categories @var array $auteurs @var array $editeurs @var string $titre */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title><?= htmlspecialchars($titre ?? 'Ouvrage') ?></title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-2xl mx-auto py-8 px-4">
 
   <div class="mb-4">
-    <a href="/v2/bibliotheque/catalogue" class="text-sm text-violet-600 hover:underline">← Catalogue</a>
+    <a href="<?= BASE_URL ?>/v2/bibliotheque/catalogue" class="text-sm text-violet-600 hover:underline">← Catalogue</a>
   </div>
 
   <div class="bg-white rounded-xl shadow-sm p-6">
@@ -18,7 +10,7 @@
 
     <?php $action = $ouvrage ? '/v2/bibliotheque/catalogue/' . $ouvrage['id'] . '/update' : '/v2/bibliotheque/catalogue'; ?>
     <form method="POST" action="<?= $action ?>" class="space-y-4">
-      <input type="hidden" name="csrf_token" value="">
+      <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
 
       <div class="grid grid-cols-2 gap-4">
         <div class="col-span-2">
@@ -113,11 +105,9 @@
         <button type="submit" class="bg-violet-600 text-white px-6 py-2 rounded-lg text-sm hover:bg-violet-700">
           <?= $ouvrage ? 'Enregistrer' : 'Ajouter' ?>
         </button>
-        <a href="/v2/bibliotheque/catalogue" class="text-sm text-slate-600 px-4 py-2 rounded-lg border hover:border-slate-400">Annuler</a>
+        <a href="<?= BASE_URL ?>/v2/bibliotheque/catalogue" class="text-sm text-slate-600 px-4 py-2 rounded-lg border hover:border-slate-400">Annuler</a>
       </div>
     </form>
   </div>
 
 </div>
-</body>
-</html>

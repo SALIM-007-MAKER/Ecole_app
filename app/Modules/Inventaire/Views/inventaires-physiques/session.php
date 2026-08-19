@@ -1,17 +1,8 @@
 <?php /** @var array $inventaire @var array $lignes */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Session comptage — <?= htmlspecialchars($inventaire['libelle'] ?? '') ?></title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-6xl mx-auto px-4 py-6">
     <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-3">
-            <a href="/v2/inventaire/inventaires-physiques" class="text-slate-500 hover:text-slate-700">
+            <a href="<?= BASE_URL ?>/v2/inventaire/inventaires-physiques" class="text-slate-500 hover:text-slate-700">
                 <i data-lucide="arrow-left" class="w-5 h-5"></i>
             </a>
             <div>
@@ -19,7 +10,7 @@
                 <p class="text-sm text-slate-500"><?= date('d/m/Y', strtotime($inventaire['date_inventaire'])) ?></p>
             </div>
         </div>
-        <form method="POST" action="/v2/inventaire/inventaires-physiques/<?=$inventaire['id']?>/cloture"
+        <form method="POST" action="<?= BASE_URL ?>/v2/inventaire/inventaires-physiques/<?=$inventaire['id']?>/cloture"
               onsubmit="return confirm('Clôturer et appliquer les ajustements de stock ?')">
             <input type="hidden" name="_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
             <button type="submit"
@@ -120,7 +111,7 @@ function saisir(ligneId) {
     const qte = parseFloat(qteInput.value);
     if (isNaN(qte) || qte < 0) { alert('Quantité invalide'); return; }
 
-    fetch('/v2/inventaire/inventaires-physiques/<?=$inventaire['id']?>/saisir', {
+    fetch('<?= BASE_URL ?>/v2/inventaire/inventaires-physiques/<?=$inventaire['id']?>/saisir', {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: '_token=<?= urlencode($_SESSION['csrf_token'] ?? '') ?>&ligne_id=' + ligneId + '&quantite_comptee=' + qte,
@@ -131,5 +122,3 @@ function saisir(ligneId) {
 }
 lucide.createIcons();
 </script>
-</body>
-</html>

@@ -1,17 +1,8 @@
 <?php /** @var array $maintenances @var array $dues */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Maintenances — Inventaire</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-7xl mx-auto px-4 py-6">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold text-slate-800">Maintenances</h1>
-        <a href="/v2/inventaire/maintenances/creer"
+        <a href="<?= BASE_URL ?>/v2/inventaire/maintenances/creer"
            class="inline-flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-lg hover:bg-violet-700 text-sm font-medium">
             <i data-lucide="plus" class="w-4 h-4"></i> Planifier maintenance
         </a>
@@ -55,13 +46,13 @@
                     </td>
                     <td class="px-4 py-3 text-right space-x-1">
                         <?php if ($m['statut'] === 'planifiee'): ?>
-                        <form method="POST" action="/v2/inventaire/maintenances/<?=$m['id']?>/demarrer" class="inline">
+                        <form method="POST" action="<?= BASE_URL ?>/v2/inventaire/maintenances/<?=$m['id']?>/demarrer" class="inline">
                             <input type="hidden" name="_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                             <button type="submit" class="text-blue-600 hover:underline text-xs">Démarrer</button>
                         </form>
                         <?php endif; ?>
                         <?php if (in_array($m['statut'], ['planifiee','en_cours'], true)): ?>
-                        <form method="POST" action="/v2/inventaire/maintenances/<?=$m['id']?>/annuler" class="inline">
+                        <form method="POST" action="<?= BASE_URL ?>/v2/inventaire/maintenances/<?=$m['id']?>/annuler" class="inline">
                             <input type="hidden" name="_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                             <button type="submit" class="text-red-500 hover:underline text-xs">Annuler</button>
                         </form>
@@ -74,5 +65,3 @@
     </div>
 </div>
 <script>lucide.createIcons();</script>
-</body>
-</html>

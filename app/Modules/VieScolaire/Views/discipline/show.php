@@ -6,9 +6,6 @@
 /** @var array $appels */
 /** @var \App\Modules\VieScolaire\Discipline\Policies\DisciplinePolicy $policy */
 
-$flash_success = $_SESSION['flash_success'] ?? null;
-$flash_error   = $_SESSION['flash_error']   ?? null;
-unset($_SESSION['flash_success'], $_SESSION['flash_error']);
 
 $graviteClasses = [
     'mineur'     => 'bg-yellow-100 text-yellow-800',
@@ -24,24 +21,14 @@ $sanctionStatutClass = [
     'appelee'   => 'bg-purple-100 text-purple-800',
 ];
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dossier Discipline #<?= $dossier['id'] ?></title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
-
-<?php include BASE_PATH . '/app/Views/partials/sidebar.php'; ?>
-
-<main class="ml-64 p-8">
     <div class="flex items-center gap-3 mb-6">
-        <a href="/v2/vie-scolaire/discipline" class="text-slate-400 hover:text-slate-600">
-            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+        <a href="<?= BASE_URL ?>/v2/vie-scolaire/discipline"
+           class="inline-flex items-center gap-2 px-3 py-1.5 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 text-sm transition-colors flex-shrink-0">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Retour
         </a>
+        <div class="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="shield-alert" class="w-5 h-5 text-violet-600"></i>
+        </div>
         <h1 class="text-2xl font-bold text-slate-800">
             Dossier — <?= htmlspecialchars($dossier['eleve_prenom'] . ' ' . $dossier['eleve_nom']) ?>
         </h1>
@@ -54,12 +41,6 @@ $sanctionStatutClass = [
         <?php endif; ?>
     </div>
 
-    <?php if ($flash_success): ?>
-        <div class="mb-4 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg"><?= htmlspecialchars($flash_success) ?></div>
-    <?php endif; ?>
-    <?php if ($flash_error): ?>
-        <div class="mb-4 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg"><?= htmlspecialchars($flash_error) ?></div>
-    <?php endif; ?>
 
     <!-- Infos dossier -->
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -84,22 +65,26 @@ $sanctionStatutClass = [
     </div>
 
     <!-- Actions dossier -->
-    <?php if ($policy->canModifyDossier($user, $dossier)): ?>
+    <?php if ($policy->canAddIncident($user, $dossier) || $policy->canProposeSanction($user, $dossier) || $policy->canValidate($user)): ?>
         <div class="flex flex-wrap gap-3 mb-6">
-            <a href="/v2/vie-scolaire/discipline/create?eleve_id=<?= $dossier['eleve_id'] ?>&classe_id=<?= $dossier['classe_id'] ?>&annee=<?= $dossier['annee_scolaire'] ?>"
+            <?php if ($policy->canAddIncident($user, $dossier)): ?>
+            <a href="<?= BASE_URL ?>/v2/vie-scolaire/discipline/create?eleve_id=<?= $dossier['eleve_id'] ?>&classe_id=<?= $dossier['classe_id'] ?>&annee=<?= $dossier['annee_scolaire'] ?>"
                class="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                 <i data-lucide="alert-triangle" class="w-4 h-4"></i> Signaler incident
             </a>
-            <a href="/v2/vie-scolaire/discipline/<?= $dossier['id'] ?>/sanctionner"
+            <?php endif; ?>
+            <?php if ($policy->canProposeSanction($user, $dossier)): ?>
+            <a href="<?= BASE_URL ?>/v2/vie-scolaire/discipline/<?= $dossier['id'] ?>/sanctionner"
                class="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                 <i data-lucide="gavel" class="w-4 h-4"></i> Prononcer sanction
             </a>
+            <?php endif; ?>
             <?php if ($policy->canValidate($user)): ?>
-                <form method="POST" action="/v2/vie-scolaire/discipline/<?= $dossier['id'] ?>/cloturer"
+                <form method="POST" action="<?= BASE_URL ?>/v2/vie-scolaire/discipline/<?= $dossier['id'] ?>/cloturer"
                       onsubmit="return confirm('Clôturer définitivement ce dossier ?')">
-                    <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                     <button type="submit"
-                            class="inline-flex items-center gap-2 bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                            class="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                         <i data-lucide="lock" class="w-4 h-4"></i> Clôturer dossier
                     </button>
                 </form>
@@ -139,8 +124,8 @@ $sanctionStatutClass = [
                                 </span>
                             </div>
                             <?php if ($inc['statut'] === 'ouvert' && $policy->canUpdate($user)): ?>
-                                <form method="POST" action="/v2/vie-scolaire/discipline/incidents/<?= $inc['id'] ?>/traiter" class="mt-2">
-                                    <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+                                <form method="POST" action="<?= BASE_URL ?>/v2/vie-scolaire/discipline/incidents/<?= $inc['id'] ?>/traiter" class="mt-2">
+                                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                                     <button type="submit" class="text-xs text-blue-600 hover:underline">Marquer traité</button>
                                 </form>
                             <?php endif; ?>
@@ -176,8 +161,8 @@ $sanctionStatutClass = [
                             </div>
                             <div class="flex gap-4 mt-2">
                                 <?php if ($s['statut'] === 'prononcee' && $policy->canValidate($user)): ?>
-                                    <form method="POST" action="/v2/vie-scolaire/discipline/sanctions/<?= $s['id'] ?>/valider">
-                                        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+                                    <form method="POST" action="<?= BASE_URL ?>/v2/vie-scolaire/discipline/sanctions/<?= $s['id'] ?>/valider">
+                                        <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                                         <button type="submit" class="text-xs text-green-600 hover:underline">Valider</button>
                                     </form>
                                 <?php endif; ?>
@@ -190,7 +175,7 @@ $sanctionStatutClass = [
                                         }
                                     } ?>
                                     <?php if ($existingAppel === null): ?>
-                                        <a href="/v2/vie-scolaire/discipline/sanctions/<?= $s['id'] ?>/appel"
+                                        <a href="<?= BASE_URL ?>/v2/vie-scolaire/discipline/sanctions/<?= $s['id'] ?>/appel"
                                            class="text-xs text-purple-600 hover:underline">Faire appel</a>
                                     <?php else: ?>
                                         <span class="text-xs text-slate-400">Appel: <?= $existingAppel['statut'] ?></span>
@@ -199,9 +184,9 @@ $sanctionStatutClass = [
                                 <?php if ($policy->canValidate($user) && in_array($s['statut'], ['prononcee','effective','executee'])): ?>
                                     <button onclick="document.getElementById('lever-<?= $s['id'] ?>').classList.toggle('hidden')"
                                             class="text-xs text-red-600 hover:underline">Lever</button>
-                                    <form method="POST" action="/v2/vie-scolaire/discipline/sanctions/<?= $s['id'] ?>/lever"
+                                    <form method="POST" action="<?= BASE_URL ?>/v2/vie-scolaire/discipline/sanctions/<?= $s['id'] ?>/lever"
                                           id="lever-<?= $s['id'] ?>" class="hidden mt-1 flex items-center gap-2">
-                                        <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+                                        <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                                         <input type="text" name="motif" placeholder="Motif de levée" required
                                                class="border border-slate-200 rounded px-2 py-1 text-xs w-48">
                                         <button type="submit" class="bg-red-600 text-white text-xs px-2 py-1 rounded">OK</button>
@@ -239,9 +224,9 @@ $sanctionStatutClass = [
                             </span>
                         </div>
                         <?php if ($ap['statut'] === 'depose' && $policy->canValidate($user)): ?>
-                            <form method="POST" action="/v2/vie-scolaire/discipline/appels/<?= $ap['id'] ?>/traiter"
+                            <form method="POST" action="<?= BASE_URL ?>/v2/vie-scolaire/discipline/appels/<?= $ap['id'] ?>/traiter"
                                   class="mt-3 grid grid-cols-2 gap-2">
-                                <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+                                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                                 <input type="hidden" name="dossier_id" value="<?= $dossier['id'] ?>">
                                 <input type="text" name="decision" placeholder="Décision motivée" required
                                        class="col-span-2 border border-slate-200 rounded-lg px-3 py-2 text-sm">
@@ -256,7 +241,4 @@ $sanctionStatutClass = [
             </ul>
         </div>
     <?php endif; ?>
-</main>
 <script>lucide.createIcons();</script>
-</body>
-</html>

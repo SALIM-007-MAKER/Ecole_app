@@ -43,13 +43,15 @@ $joursNoms = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
 ?>
 
 <!-- Header -->
-<div class="flex flex-wrap items-center justify-between gap-4 mb-5">
-    <div>
-        <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+<div class="flex flex-wrap items-start justify-between gap-4 mb-5">
+    <div class="flex items-start gap-4">
+        <div class="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
             <i data-lucide="calendar" class="w-5 h-5 text-violet-600"></i>
-            <?= htmlspecialchars($moisNom, ENT_QUOTES) ?> <?= $year ?>
-        </h2>
-        <p class="text-sm text-slate-400 mt-0.5">Vue mensuelle — Année <?= htmlspecialchars($annee, ENT_QUOTES) ?></p>
+        </div>
+        <div>
+            <h2 class="text-lg font-bold text-slate-900"><?= htmlspecialchars($moisNom, ENT_QUOTES) ?> <?= $year ?></h2>
+            <p class="text-sm text-slate-400 mt-0.5">Vue mensuelle — Année <?= htmlspecialchars($annee, ENT_QUOTES) ?></p>
+        </div>
     </div>
     <div class="flex items-center gap-2 flex-wrap">
         <a href="?mois=<?= $prevMonth['mois'] ?>&annee_num=<?= $prevMonth['annee_num'] ?>&annee=<?= urlencode($annee) ?><?= $cf.$pf ?>"

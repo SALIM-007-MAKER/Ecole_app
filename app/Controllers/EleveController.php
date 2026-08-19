@@ -42,7 +42,7 @@ class EleveController extends Controller
         $classes    = $this->classeModel->findForSelect();
 
         $this->render('eleves/index', [
-            'title'      => 'Gestion des élèves',
+            'title'      => 'Élèves',
             'pagination' => $pagination,
             'filters'    => $filters,
             'classes'    => $classes,
@@ -524,8 +524,8 @@ class EleveController extends Controller
         $out = fopen('php://output', 'w');
         fprintf($out, "\xEF\xBB\xBF");
         fputcsv($out, ['matricule', 'nom', 'prenom', 'sexe', 'date_naissance', 'classe', 'telephone', 'email', 'adresse'], ';');
-        fputcsv($out, ['2024-0100', 'Dupont', 'Ahmed', 'M', '2007-06-15', '1ère AS', '0550000001', 'ahmed@edu.dz', '1 Rue Exemple, Alger'], ';');
-        fputcsv($out, ['2024-0101', 'Kaci',   'Lina',  'F', '2007-09-20', '2ème AS', '0550000002', 'lina@edu.dz',  '2 Rue Exemple, Blida'], ';');
+        fputcsv($out, ['2024-0100', 'Dupont', 'Ahmed', 'M', '2007-06-15', 'Seconde', '0550000001', 'ahmed@edu.dz', '1 Rue Exemple, Alger'], ';');
+        fputcsv($out, ['2024-0101', 'Kaci',   'Lina',  'F', '2007-09-20', 'Première', '0550000002', 'lina@edu.dz',  '2 Rue Exemple, Blida'], ';');
         fclose($out);
         exit;
     }

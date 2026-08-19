@@ -6,6 +6,7 @@ namespace App\Controllers\Api;
 
 use Core\Controller;
 use Core\Session;
+use Core\Tenant\BrandingService;
 use Core\WebPush;
 use Core\Logger;
 use App\Models\PushSubscriptionModel;
@@ -84,7 +85,7 @@ class PushController extends Controller
         $this->verifyCsrfHeader();
 
         $body  = $this->readJsonBody();
-        $title = $this->safe($body['title'] ?? 'Ecole App');
+        $title = $this->safe($body['title'] ?? BrandingService::forCurrentRequest()->appName);
         $msg   = $this->safe($body['message'] ?? '');
         $role  = $body['role'] ?? null; // null = tous les utilisateurs
         $url   = $body['url']  ?? BASE_URL . '/dashboard';

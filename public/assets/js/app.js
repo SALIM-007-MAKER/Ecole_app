@@ -15,7 +15,6 @@ const EcoleApp = {
         if (window.lucide) lucide.createIcons();
 
         this.initSidebar();
-        this.initNavGroups();
         this.initDropdowns();
         this.initTogglePassword();
         this.initAutoAlerts();
@@ -29,24 +28,77 @@ const EcoleApp = {
         this.initPushNotifications();
     },
 
-    // ─── Sidebar (mobile drawer) ──────────────────────────────────────────
+    // ─── Sidebar (drawer mobile + réduction desktop + accordéon) ──────────
+    // Contrôleur unique : c'est la source de vérité pour l'état "collapsed"
+    // (icônes seules) ET pour l'état des groupes/sous-menus, car les deux
+    // sont interdépendants (un sous-menu ouvert n'a pas de sens en mode
+    // icônes seules — le laisser vivre indépendamment causait l'affichage
+    // cassé en mode réduit).
     initSidebar() {
-        const sidebar  = document.getElementById('sidebar');
-        const overlay  = document.getElementById('sidebar-overlay');
-        const openBtn  = document.getElementById('openSidebar');
-        const closeBtn = document.getElementById('closeSidebar');
+        const sidebar   = document.getElementById('sidebar');
+        const overlay   = document.getElementById('sidebar-overlay');
+        const openBtn   = document.getElementById('openSidebar');
+        const closeBtn  = document.getElementById('closeSidebar');
         const toggleBtn = document.getElementById('toggleSidebar');
-        const wrapper = document.querySelector('.main-wrapper');
+        const wrapper   = document.querySelector('.main-wrapper');
         if (!sidebar) return;
 
-        const syncCollapsedState = () => {
-            const collapsed = sidebar.classList.contains('collapsed');
-            wrapper?.classList.toggle('sidebar-collapsed', collapsed && window.innerWidth >= 1024);
+        const STORAGE_KEY = 'ecole_sidebar_collapsed';
+        const isDesktop = () => window.innerWidth >= 1024;
+        const groupButtons = () => Array.from(sidebar.querySelectorAll('[data-group]'));
+        const groupContent = (btn) => document.getElementById('sg-' + btn.dataset.group);
+
+        // ── Accordéon des groupes ──
+        const closeGroup = (btn) => {
+            btn.classList.remove('group-open');
+            btn.setAttribute('aria-expanded', 'false');
+            const content = groupContent(btn);
+            if (content) content.style.maxHeight = '0';
+        };
+        const openGroup = (btn) => {
+            groupButtons().forEach(b => { if (b !== btn) closeGroup(b); });
+            btn.classList.add('group-open');
+            btn.setAttribute('aria-expanded', 'true');
+            const content = groupContent(btn);
+            if (content) content.style.maxHeight = content.scrollHeight + 'px';
+        };
+        const closeAllGroups = () => groupButtons().forEach(closeGroup);
+
+        // ── Mode réduit (icônes seules) ──
+        const applyCollapsed = (collapsed) => {
+            sidebar.classList.toggle('collapsed', collapsed);
+            wrapper?.classList.toggle('sidebar-collapsed', collapsed && isDesktop());
             toggleBtn?.setAttribute('aria-pressed', collapsed ? 'true' : 'false');
+            toggleBtn?.setAttribute('title', collapsed ? 'Étendre la navigation' : 'Réduire la navigation');
             const icon = toggleBtn?.querySelector('i');
             if (icon) icon.style.transform = collapsed ? 'rotate(180deg)' : 'rotate(0deg)';
+
+            if (collapsed) {
+                // Aucun sous-menu ne doit rester ouvert derrière des icônes seules.
+                closeAllGroups();
+            } else {
+                // Restaure le groupe actif par défaut (celui de la page courante).
+                const defaultBtn = groupButtons().find(b => b.dataset.defaultOpen === 'true');
+                if (defaultBtn) openGroup(defaultBtn);
+            }
+        };
+        const setCollapsed = (collapsed) => {
+            applyCollapsed(collapsed);
+            if (isDesktop()) localStorage.setItem(STORAGE_KEY, collapsed ? '1' : '0');
         };
 
+        groupButtons().forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (sidebar.classList.contains('collapsed') && isDesktop()) {
+                    // Pas de sous-menu visible en mode réduit : on ré-étend
+                    // la sidebar d'abord, puis on ouvre le groupe demandé.
+                    setCollapsed(false);
+                }
+                btn.classList.contains('group-open') ? closeGroup(btn) : openGroup(btn);
+            });
+        });
+
+        // ── Drawer mobile ──
         const open  = () => {
             sidebar.classList.add('open');
             overlay?.classList.add('visible');
@@ -61,14 +113,10 @@ const EcoleApp = {
         };
 
         openBtn?.addEventListener('click', () => {
-            const isOpen = sidebar.classList.contains('open');
-            isOpen ? close() : open();
+            sidebar.classList.contains('open') ? close() : open();
         });
         closeBtn?.addEventListener('click', close);
-        toggleBtn?.addEventListener('click', () => {
-            sidebar.classList.toggle('collapsed');
-            syncCollapsedState();
-        });
+        toggleBtn?.addEventListener('click', () => setCollapsed(!sidebar.classList.contains('collapsed')));
         overlay?.addEventListener('click', close);
 
         document.addEventListener('keydown', e => {
@@ -76,36 +124,13 @@ const EcoleApp = {
         });
 
         window.addEventListener('resize', () => {
-            if (window.innerWidth >= 1024) close();
-            syncCollapsedState();
+            if (isDesktop()) close();
+            wrapper?.classList.toggle('sidebar-collapsed', sidebar.classList.contains('collapsed') && isDesktop());
         });
 
-        syncCollapsedState();
-    },
-
-    // ─── Nav groups (accordion) ───────────────────────────────────────────
-    initNavGroups() {
-        document.querySelectorAll('[data-group]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const id      = 'sg-' + btn.dataset.group;
-                const content = document.getElementById(id);
-                const isOpen  = btn.classList.contains('group-open');
-
-                // Fermer tous les autres groupes
-                document.querySelectorAll('[data-group]').forEach(b => {
-                    if (b !== btn) {
-                        b.classList.remove('group-open');
-                        const c = document.getElementById('sg-' + b.dataset.group);
-                        if (c) c.style.maxHeight = '0';
-                    }
-                });
-
-                btn.classList.toggle('group-open', !isOpen);
-                if (content) {
-                    content.style.maxHeight = isOpen ? '0' : content.scrollHeight + 'px';
-                }
-            });
-        });
+        // ── État initial (persisté sur desktop uniquement) ──
+        const stored = isDesktop() ? localStorage.getItem(STORAGE_KEY) : null;
+        applyCollapsed(stored === '1');
     },
 
     initThemeToggle() {
@@ -368,9 +393,10 @@ const EcoleApp = {
         if (!('serviceWorker' in navigator)) return;
 
         try {
+            const base = window.APP_BASE_URL || '';
             this.sw = await navigator.serviceWorker.register(
-                '/ecole_app/sw.js',
-                { scope: '/ecole_app/', updateViaCache: 'none' }
+                base + '/sw.js',
+                { scope: base + '/', updateViaCache: 'none' }
             );
 
             this.sw.addEventListener('updatefound', () => {
@@ -446,7 +472,7 @@ const EcoleApp = {
         banner.className = 'fixed bottom-6 right-6 z-[9997] flex translate-y-[calc(100%+2rem)] items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 text-sm shadow-2xl transition-transform';
         banner.innerHTML = `
             <div class="flex items-center gap-3">
-                <img src="/ecole_app/assets/images/icon-72.png" width="40" height="40"
+                <img src="${window.APP_BASE_URL || ''}/assets/images/icon-72.png" width="40" height="40"
                      alt="EduNova" class="rounded-xl shrink-0">
                 <div>
                     <div class="font-semibold text-sm">Installer EduNova</div>
@@ -523,7 +549,7 @@ const EcoleApp = {
     async subscribePush(btn) {
         try {
             btn.disabled = true;
-            const keyResp = await fetch('/ecole_app/api/push/vapid-key');
+            const keyResp = await fetch((window.APP_BASE_URL || '') + '/api/push/vapid-key');
             if (!keyResp.ok) throw new Error('Clé VAPID indisponible');
             const { publicKey } = await keyResp.json();
 
@@ -533,7 +559,7 @@ const EcoleApp = {
             });
 
             const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
-            const resp = await fetch('/ecole_app/api/push/subscribe', {
+            const resp = await fetch((window.APP_BASE_URL || '') + '/api/push/subscribe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
                 body: JSON.stringify(sub.toJSON()),
@@ -557,7 +583,7 @@ const EcoleApp = {
             const sub = await this.sw.pushManager.getSubscription();
             if (sub) {
                 const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
-                await fetch('/ecole_app/api/push/unsubscribe', {
+                await fetch((window.APP_BASE_URL || '') + '/api/push/unsubscribe', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
                     body: JSON.stringify({ endpoint: sub.endpoint }),

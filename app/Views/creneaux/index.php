@@ -19,10 +19,13 @@ function crTypeBadge(string $type, array $types): string {
 }
 ?>
 
-<div class="flex items-center justify-between gap-4 mb-5">
-    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-        <i data-lucide="clock" class="w-5 h-5 text-violet-600"></i>Créneaux horaires
-    </h2>
+<div class="flex items-start justify-between gap-4 mb-5">
+    <div class="flex items-start gap-4">
+        <div class="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="clock" class="w-5 h-5 text-violet-600"></i>
+        </div>
+        <h2 class="text-lg font-bold text-slate-900 pt-2">Créneaux horaires</h2>
+    </div>
     <a href="<?= BASE_URL ?>/emplois-du-temps" class="btn btn-secondary">
         <i data-lucide="arrow-left" class="w-4 h-4"></i>Emploi du temps
     </a>

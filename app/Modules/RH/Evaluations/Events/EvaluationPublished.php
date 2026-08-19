@@ -14,7 +14,9 @@ class EvaluationPublished extends Event
         public readonly float  $scoreFinal,
         public readonly string $mention,
         public readonly int    $publiePar
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

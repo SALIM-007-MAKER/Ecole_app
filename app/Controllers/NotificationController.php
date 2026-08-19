@@ -30,7 +30,11 @@ class NotificationController extends Controller
         $this->requireAuth();
         $user = $this->currentUser();
 
-        $this->notifModel->markAllRead((int)$user['id']);
+        // Ne PAS marquer automatiquement comme lu ici : la page doit pouvoir
+        // afficher ce qui est réellement non lu (mise en avant visuelle +
+        // compteur de la cloche). Le marquage se fait explicitement via
+        // markRead()/markAllRead() (clic sur une notification ou bouton
+        // "Tout marquer lu").
         $notifications = $this->notifModel->findForUser((int)$user['id'], 50);
 
         $this->render('notifications/index', [
@@ -104,25 +108,42 @@ class NotificationController extends Controller
     {
         $this->requirePermission('notifications.manage');
 
-        $page    = max(1, (int)$this->request->get('page', 1));
+        $page = max(1, (int)$this->request->get('page', 1));
+
+        // Le formulaire de la vue soumet "type" (lisible) — traduit en "trigger"
+        // pour NotificationLogModel::buildWhere(), qui filtre sur trigger_type.
+        $typeFilter   = $this->request->get('type', '');
+        $canalFilter  = $this->request->get('canal', '');
+        $statutFilter = $this->request->get('statut', '');
+
         $filters = [
             'q'          => $this->request->get('q', ''),
-            'canal'      => $this->request->get('canal', ''),
-            'trigger'    => $this->request->get('trigger', ''),
-            'statut'     => $this->request->get('statut', ''),
+            'canal'      => $canalFilter,
+            'trigger'    => $typeFilter,
+            'statut'     => $statutFilter,
             'date_debut' => $this->request->get('date_debut', ''),
             'date_fin'   => $this->request->get('date_fin', ''),
         ];
 
-        $result  = $this->logModel->paginateFiltered($page, 30, $filters);
-        $stats   = $this->trySafe(fn() => $this->logModel->getStats(), []);
+        $result = $this->logModel->paginateFiltered($page, 30, $filters);
+        $stats  = $this->trySafe(fn() => $this->logModel->getStats(), []);
+
+        $types = array_map(fn(array $t) => $t['label'] ?? '', NotificationService::TRIGGERS);
 
         $this->render('notifications/history', [
-            'title'    => 'Historique des notifications',
-            'result'   => $result,
-            'stats'    => $stats,
-            'filters'  => $filters,
-            'triggers' => NotificationService::TRIGGERS,
+            'title'        => 'Historique des notifications',
+            'logs'         => $result['items'] ?? [],
+            'pagination'   => $result,
+            'stats'        => [
+                'total'      => $stats['total']   ?? 0,
+                'envoyees'   => $stats['ok']       ?? 0,
+                'echecs'     => $stats['ko']       ?? 0,
+                'en_attente' => $stats['attente']  ?? 0,
+            ],
+            'types'        => $types,
+            'typeFilter'   => $typeFilter,
+            'canalFilter'  => $canalFilter,
+            'statutFilter' => $statutFilter,
         ]);
     }
 
@@ -133,10 +154,11 @@ class NotificationController extends Controller
 
         $user    = $this->currentUser();
         $canal   = $this->request->post('canal', 'interne');
+        $type    = $this->request->post('type', 'annonce');
         $message = trim($this->request->post('message', 'Ceci est un test de notification.'));
 
         $svc = new NotificationService();
-        $ok  = $svc->sendTest((int)$user['id'], $canal, $message);
+        $ok  = $svc->sendTest((int)$user['id'], $canal, $message, $type);
 
         Session::flash($ok ? 'success' : 'error',
             $ok ? "Notification test envoyée via canal « {$canal} »."

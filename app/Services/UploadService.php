@@ -35,6 +35,24 @@ class UploadService
             'max_size' => 5242880,
             'resize'   => null,
         ],
+        'justification_retard' => [
+            'dir'      => 'storage/uploads/retards/',
+            'mimes'    => ['image/jpeg', 'image/png', 'application/pdf'],
+            'max_size' => 5242880,
+            'resize'   => null,
+        ],
+        'piece_jointe_discipline' => [
+            'dir'      => 'storage/uploads/discipline/',
+            'mimes'    => ['image/jpeg', 'image/png', 'application/pdf'],
+            'max_size' => 5242880,
+            'resize'   => null,
+        ],
+        'piece_jointe_recompense' => [
+            'dir'      => 'storage/uploads/recompenses/',
+            'mimes'    => ['image/jpeg', 'image/png', 'application/pdf'],
+            'max_size' => 5242880,
+            'resize'   => null,
+        ],
         'import_csv' => [
             'dir'      => 'storage/uploads/imports/',
             'mimes'    => ['text/csv', 'text/plain', 'application/vnd.ms-excel'],

@@ -1,5 +1,4 @@
 <?php $title = 'EDT Enseignant — ' . ($enseignant['nom'] ?? ''); ?>
-<?php ob_start(); ?>
 
 <?php $joursLabels = ['', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']; ?>
 
@@ -7,8 +6,9 @@
 
   <div class="flex items-start justify-between gap-4">
     <div class="flex items-center gap-3">
-      <a href="/v2/vie-scolaire/emplois-du-temps" class="text-slate-400 hover:text-slate-600">
-        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+      <a href="<?= BASE_URL ?>/v2/vie-scolaire/emplois-du-temps"
+         class="inline-flex items-center gap-2 px-3 py-1.5 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 text-sm transition-colors flex-shrink-0">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i> Retour
       </a>
       <div>
         <h1 class="text-2xl font-bold text-slate-800">
@@ -105,5 +105,3 @@
 
 </div>
 
-<?php $content = ob_get_clean(); ?>
-<?php include base_path('app/Views/layouts/app.php'); ?>

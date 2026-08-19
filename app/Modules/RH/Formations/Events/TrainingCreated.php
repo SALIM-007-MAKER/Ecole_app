@@ -14,7 +14,9 @@ class TrainingCreated extends Event
         public readonly string $titre,
         public readonly string $type,
         public readonly int    $createdBy
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

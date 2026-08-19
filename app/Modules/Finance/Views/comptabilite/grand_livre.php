@@ -17,7 +17,7 @@ $fmt = fn(float $v): string => number_format($v, 0, ',', ' ') . ' XOF';
         — <?= count($parCompte) ?> compte(s)
       </p>
     </div>
-    <a href="/v2/finance/comptabilite" class="text-sm text-slate-500 hover:text-slate-700">← Retour</a>
+    <a href="<?= BASE_URL ?>/v2/finance/comptabilite" class="text-sm text-slate-500 hover:text-slate-700">← Retour</a>
   </div>
 
   <!-- Filtres -->
@@ -56,7 +56,7 @@ $fmt = fn(float $v): string => number_format($v, 0, ',', ' ') . ' XOF';
 
       <div class="flex gap-2 col-span-2 md:col-span-1">
         <button class="flex-1 bg-violet-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-violet-700">Filtrer</button>
-        <a href="/v2/finance/comptabilite/grand-livre" class="flex-1 bg-slate-100 text-slate-600 rounded-lg py-2 text-sm font-medium hover:bg-slate-200 text-center">Reset</a>
+        <a href="<?= BASE_URL ?>/v2/finance/comptabilite/grand-livre" class="flex-1 bg-slate-100 text-slate-600 rounded-lg py-2 text-sm font-medium hover:bg-slate-200 text-center">Reset</a>
       </div>
     </form>
   </div>

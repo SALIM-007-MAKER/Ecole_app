@@ -7,25 +7,20 @@ function val(string $k, string $def = ''): string {
     return htmlspecialchars($old[$k] ?? $conge[$k] ?? $def, ENT_QUOTES, 'UTF-8');
 }
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Modifier la demande — EduNova</title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 text-slate-800 min-h-screen">
-<?php include dirname(__DIR__, 2) . '/layouts/sidebar.php'; ?>
-<main class="ml-64 p-8 max-w-3xl">
 
-  <div class="flex items-center gap-2 text-sm text-slate-500 mb-2">
-    <a href="/v2/rh/conges" class="hover:text-violet-600">Congés</a>
-    <span>/</span>
-    <a href="/v2/rh/conges/<?= (int)$conge['id'] ?>" class="hover:text-violet-600"><?= e($conge['type_libelle'] ?? '') ?></a>
-    <span>/</span><span>Modifier</span>
+  <div class="flex items-center gap-2 text-sm text-slate-500 mb-4">
+    <a href="<?= BASE_URL ?>/v2/rh/conges" class="hover:text-violet-600">Congés</a>
+    <i data-lucide="chevron-right" class="w-3 h-3"></i>
+    <a href="<?= BASE_URL ?>/v2/rh/conges/<?= (int)$conge['id'] ?>" class="hover:text-violet-600"><?= e($conge['type_libelle'] ?? '') ?></a>
+    <i data-lucide="chevron-right" class="w-3 h-3"></i>
+    <span class="text-slate-700">Modifier</span>
   </div>
-  <h1 class="text-2xl font-bold text-slate-900 mb-6">Modifier la demande</h1>
+  <div class="flex items-start gap-4 mb-6">
+    <div class="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+      <i data-lucide="pencil" class="w-5 h-5 text-violet-600"></i>
+    </div>
+    <h1 class="text-2xl font-bold text-slate-900 pt-2">Modifier la demande</h1>
+  </div>
 
   <?php if (!empty($errors['global'])): ?>
   <div class="mb-6 p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg text-sm"><?= e($errors['global']) ?></div>
@@ -38,7 +33,7 @@ function val(string $k, string $def = ''): string {
   </div>
   <?php endif; ?>
 
-  <form method="POST" action="/v2/rh/conges/<?= (int)$conge['id'] ?>" class="space-y-6">
+  <form method="POST" action="<?= BASE_URL ?>/v2/rh/conges/<?= (int)$conge['id'] ?>" class="space-y-6">
     <?= \Core\Csrf::field() ?>
 
     <!-- Employé (lecture seule) -->
@@ -57,9 +52,9 @@ function val(string $k, string $def = ''): string {
       <h2 class="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4">Type & Période</h2>
       <div class="grid grid-cols-3 gap-4">
         <div class="col-span-3 md:col-span-1">
-          <label class="block text-sm font-medium text-slate-700 mb-1">Type de congé *</label>
+          <label class="form-label">Type de congé *</label>
           <select name="type_conge_id" required
-                  class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-300 outline-none">
+                  class="form-select">
             <?php foreach ($refs['typesConges'] as $t): ?>
               <option value="<?= (int)$t['id'] ?>"
                       <?= (int)val('type_conge_id') === (int)$t['id'] ? 'selected' : '' ?>>
@@ -69,14 +64,14 @@ function val(string $k, string $def = ''): string {
           </select>
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Date de début *</label>
+          <label class="form-label">Date de début *</label>
           <input type="date" name="date_debut" required value="<?= val('date_debut') ?>" id="d-debut"
-                 class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-300 outline-none">
+                 class="form-input">
         </div>
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Date de fin *</label>
+          <label class="form-label">Date de fin *</label>
           <input type="date" name="date_fin" required value="<?= val('date_fin') ?>" id="d-fin"
-                 class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-300 outline-none">
+                 class="form-input">
         </div>
       </div>
       <div class="mt-3 p-3 bg-slate-50 rounded-lg text-xs text-slate-500">
@@ -89,7 +84,7 @@ function val(string $k, string $def = ''): string {
     <div class="bg-white border border-slate-100 rounded-xl p-6 shadow-sm">
       <h2 class="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-4">Motif</h2>
       <textarea name="motif" rows="3"
-                class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-300 outline-none"
+                class="form-textarea"
                 placeholder="Motif (optionnel)"><?= val('motif') ?></textarea>
     </div>
 
@@ -98,12 +93,9 @@ function val(string $k, string $def = ''): string {
               class="px-6 py-2.5 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors">
         Enregistrer les modifications
       </button>
-      <a href="/v2/rh/conges/<?= (int)$conge['id'] ?>"
+      <a href="<?= BASE_URL ?>/v2/rh/conges/<?= (int)$conge['id'] ?>"
          class="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50 transition-colors">
         Annuler
       </a>
     </div>
   </form>
-</main>
-</body>
-</html>

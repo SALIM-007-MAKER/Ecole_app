@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\RH\Organisation\Repositories;
 
 use PDO;
-use App\Core\Database;
+use Core\Database;
 use App\Modules\RH\Organisation\DTO\OrganizationFiltersDTO;
 
 class OrganizationRepository
@@ -120,7 +120,7 @@ class OrganizationRepository
              FROM rh_departements d
              LEFT JOIN rh_employes e ON e.id = d.responsable_id AND e.deleted_at IS NULL
              WHERE d.deleted_at IS NULL
-             ORDER BY d.ordre_affichage ASC, d.parent_id ASC NULLS FIRST, d.nom ASC"
+             ORDER BY d.ordre_affichage ASC, (d.parent_id IS NULL) DESC, d.parent_id ASC, d.nom ASC"
         );
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         return $this->buildTree($rows);

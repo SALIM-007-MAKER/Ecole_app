@@ -19,15 +19,18 @@ function statutBadge(string $s): string {
 $csrfToken = \Core\Session::getCsrfToken();
 ?>
 
-<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
-    <div>
-        <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-            <i data-lucide="alert-circle" class="w-6 h-6 text-amber-500"></i>Impayés
-        </h2>
+<div class="flex flex-wrap items-start justify-between gap-3 mb-6">
+    <div class="flex items-start gap-4">
+        <div class="w-11 h-11 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="alert-circle" class="w-5 h-5 text-red-600"></i>
+        </div>
+        <div>
+        <h2 class="text-xl font-bold text-slate-800">Impayés</h2>
         <p class="text-sm text-slate-500 mt-0.5">
             <?= count($impayes) ?> frais en attente — Reste dû :
             <strong class="text-red-600"><?= fmtFCFA((float)$totalReste) ?></strong>
         </p>
+        </div>
     </div>
     <div class="flex items-center gap-2">
         <a href="<?= BASE_URL ?>/comptabilite/frais/affecter" class="btn btn-primary">

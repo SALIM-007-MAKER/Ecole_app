@@ -4,28 +4,17 @@
 /** @var bool $canApprove, $canReject */
 function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8'); }
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>File d'approbation — EduNova</title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 text-slate-800 min-h-screen">
-<?php include dirname(__DIR__, 2) . '/layouts/sidebar.php'; ?>
-<main class="ml-64 p-8">
 
   <div class="flex items-center justify-between mb-8">
     <div>
       <div class="flex items-center gap-2 text-sm text-slate-500 mb-1">
-        <a href="/v2/rh/conges" class="hover:text-violet-600">Congés</a>
+        <a href="<?= BASE_URL ?>/v2/rh/conges" class="hover:text-violet-600">Congés</a>
         <span>/</span><span>File d'approbation</span>
       </div>
       <h1 class="text-2xl font-bold text-slate-900">Demandes en attente d'approbation</h1>
       <p class="text-sm text-slate-500 mt-1"><?= count($conges) ?> demande<?= count($conges) > 1 ? 's' : '' ?> en attente</p>
     </div>
-    <a href="/v2/rh/conges" class="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">← Retour</a>
+    <a href="<?= BASE_URL ?>/v2/rh/conges" class="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">← Retour</a>
   </div>
 
   <?php if ($flash = \Core\Session::getFlash('success')): ?>
@@ -85,7 +74,7 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
         <!-- Actions -->
         <div class="flex-shrink-0 flex flex-col gap-2 min-w-[160px]">
           <?php if ($canApprove): ?>
-          <form method="POST" action="/v2/rh/conges/<?= (int)$c['id'] ?>/approuver"
+          <form method="POST" action="<?= BASE_URL ?>/v2/rh/conges/<?= (int)$c['id'] ?>/approuver"
                 onsubmit="return confirm('Approuver ce congé de <?= e($c['employe_nom_complet']) ?> ?')">
             <?= \Core\Csrf::field() ?>
             <button type="submit" class="w-full px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700">
@@ -99,7 +88,7 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
             Rejeter
           </button>
           <?php endif; ?>
-          <a href="/v2/rh/conges/<?= (int)$c['id'] ?>"
+          <a href="<?= BASE_URL ?>/v2/rh/conges/<?= (int)$c['id'] ?>"
              class="w-full px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm text-center hover:bg-slate-200">
             Détail
           </a>
@@ -108,9 +97,9 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
 
       <!-- Formulaire de rejet inline -->
       <div id="form-rejet-<?= (int)$c['id'] ?>" class="hidden mt-4 border-t border-slate-100 pt-4">
-        <form method="POST" action="/v2/rh/conges/<?= (int)$c['id'] ?>/rejeter">
+        <form method="POST" action="<?= BASE_URL ?>/v2/rh/conges/<?= (int)$c['id'] ?>/rejeter">
           <?= \Core\Csrf::field() ?>
-          <label class="block text-sm font-medium text-slate-700 mb-1">Motif de rejet *</label>
+          <label class="form-label">Motif de rejet *</label>
           <textarea name="motif_rejet" rows="2" required
                     class="w-full border border-red-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-300 outline-none mb-3"
                     placeholder="Motif obligatoire…"></textarea>
@@ -130,8 +119,6 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
   </div>
 
   <?php endif; ?>
-</main>
-
 <script>
 function toggleRejet(id) {
     const el = document.getElementById('form-rejet-' + id);
@@ -139,5 +126,3 @@ function toggleRejet(id) {
     if (!el.classList.contains('hidden')) el.querySelector('textarea').focus();
 }
 </script>
-</body>
-</html>

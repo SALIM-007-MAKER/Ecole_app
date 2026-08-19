@@ -1,21 +1,13 @@
 <?php /** @var array $emprunts_en_cours @var array $reservations @var array $penalites @var int $nb_impayees @var array|null $historique @var string|null $mode @var string $titre */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title><?= htmlspecialchars($titre ?? 'Mon compte') ?></title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-4xl mx-auto py-8 px-4">
 
   <h1 class="text-2xl font-bold text-slate-800 mb-6">Mon compte bibliothèque</h1>
 
   <!-- Nav -->
   <div class="flex gap-2 mb-6">
-    <a href="/v2/bibliotheque/mon-compte" class="text-sm px-4 py-2 rounded-lg border <?= empty($mode) ? 'bg-violet-600 text-white border-violet-600' : 'bg-white border-slate-200 text-slate-600' ?>">Tableau de bord</a>
-    <a href="/v2/bibliotheque/mon-compte/historique" class="text-sm px-4 py-2 rounded-lg border <?= ($mode ?? '') === 'historique' ? 'bg-violet-600 text-white border-violet-600' : 'bg-white border-slate-200 text-slate-600' ?>">Historique</a>
-    <a href="/v2/bibliotheque/mon-compte/penalites" class="text-sm px-4 py-2 rounded-lg border <?= ($mode ?? '') === 'penalites' ? 'bg-violet-600 text-white border-violet-600' : 'bg-white border-slate-200 text-slate-600' ?>">
+    <a href="<?= BASE_URL ?>/v2/bibliotheque/mon-compte" class="text-sm px-4 py-2 rounded-lg border <?= empty($mode) ? 'bg-violet-600 text-white border-violet-600' : 'bg-white border-slate-200 text-slate-600' ?>">Tableau de bord</a>
+    <a href="<?= BASE_URL ?>/v2/bibliotheque/mon-compte/historique" class="text-sm px-4 py-2 rounded-lg border <?= ($mode ?? '') === 'historique' ? 'bg-violet-600 text-white border-violet-600' : 'bg-white border-slate-200 text-slate-600' ?>">Historique</a>
+    <a href="<?= BASE_URL ?>/v2/bibliotheque/mon-compte/penalites" class="text-sm px-4 py-2 rounded-lg border <?= ($mode ?? '') === 'penalites' ? 'bg-violet-600 text-white border-violet-600' : 'bg-white border-slate-200 text-slate-600' ?>">
       Mes pénalités
       <?php if (($nb_impayees ?? 0) > 0): ?><span class="ml-1 bg-red-500 text-white text-xs rounded-full px-1.5"><?= $nb_impayees ?></span><?php endif ?>
     </a>
@@ -60,7 +52,7 @@
     <?php if (!empty($nb_impayees) && $nb_impayees > 0): ?>
     <div class="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center justify-between">
       <p class="text-red-700 font-medium"><?= $nb_impayees ?> pénalité(s) impayée(s)</p>
-      <a href="/v2/bibliotheque/mon-compte/penalites" class="text-sm text-red-700 underline">Voir →</a>
+      <a href="<?= BASE_URL ?>/v2/bibliotheque/mon-compte/penalites" class="text-sm text-red-700 underline">Voir →</a>
     </div>
     <?php endif ?>
 
@@ -124,8 +116,6 @@
 </div>
 <script>
 function confirmerResa(id) {
-  fetch('/v2/bibliotheque/reservations/' + id + '/confirmer', {method:'POST'}).then(()=>location.reload());
+  fetch('<?= BASE_URL ?>/v2/bibliotheque/reservations/' + id + '/confirmer', {method:'POST'}).then(()=>location.reload());
 }
 </script>
-</body>
-</html>

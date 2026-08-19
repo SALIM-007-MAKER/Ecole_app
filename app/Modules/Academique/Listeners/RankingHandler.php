@@ -10,6 +10,13 @@ use App\Services\AuditService;
 
 class RankingHandler implements Listener
 {
+    private AuditService $audit;
+
+    public function __construct()
+    {
+        $this->audit = new AuditService();
+    }
+
     public function handle(Event $event): void
     {
         if ($event instanceof RankingGenerated) {
@@ -21,12 +28,14 @@ class RankingHandler implements Listener
 
     private function onGenerated(RankingGenerated $event): void
     {
-        AuditService::log(
-            action : 'ranking.generated',
-            entity : 'classement',
-            entityId: $event->classeId ?? 0,
-            userId  : $event->generatedById,
-            details : [
+        $this->audit->log(
+            $event->generatedById,
+            'ranking.generated',
+            'academique',
+            'classement',
+            $event->classeId ?? 0,
+            null,
+            [
                 'type'          => $event->type,
                 'periode_id'    => $event->periodeId,
                 'classe_id'     => $event->classeId,
@@ -40,12 +49,14 @@ class RankingHandler implements Listener
 
     private function onUpdated(RankingUpdated $event): void
     {
-        AuditService::log(
-            action : 'ranking.updated',
-            entity : 'classement',
-            entityId: $event->classeId ?? 0,
-            userId  : $event->updatedById,
-            details : [
+        $this->audit->log(
+            $event->updatedById,
+            'ranking.updated',
+            'academique',
+            'classement',
+            $event->classeId ?? 0,
+            null,
+            [
                 'type'       => $event->type,
                 'periode_id' => $event->periodeId,
                 'motif'      => $event->motif,

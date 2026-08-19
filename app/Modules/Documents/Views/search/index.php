@@ -40,7 +40,7 @@ $dMax   = htmlspecialchars($_GET['date_emission_max'] ?? '');
 
   <div class="space-y-3">
     <?php foreach ($results as $doc): ?>
-    <a href="/v2/documents/<?= $doc['id'] ?>"
+    <a href="<?= BASE_URL ?>/v2/documents/<?= $doc['id'] ?>"
        class="block bg-white border border-slate-200 rounded-xl p-4 hover:border-violet-300 hover:shadow-sm transition">
       <div class="flex items-start justify-between">
         <div>

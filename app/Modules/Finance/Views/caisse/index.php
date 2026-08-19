@@ -22,21 +22,32 @@ $badgeStatut = fn(string $s): string => match ($s) {
 <div class="space-y-6">
 
     <!-- En-tête -->
-    <div class="flex items-center justify-between">
-        <div>
-            <h1 class="text-2xl font-bold text-slate-800">Caisse</h1>
-            <p class="text-sm text-slate-500 mt-1"><?= $result['total'] ?> session(s) trouvée(s)</p>
+    <div class="flex items-center gap-2 text-sm text-slate-500">
+        <a href="<?= BASE_URL ?>/v2/finance/rapports/dashboard" class="hover:text-violet-600">Finance</a>
+        <i data-lucide="chevron-right" class="w-3 h-3"></i>
+        <span class="text-slate-700">Caisse</span>
+    </div>
+
+    <div class="flex flex-wrap items-start justify-between gap-4">
+        <div class="flex items-start gap-4">
+            <div class="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="vault" class="w-5 h-5 text-violet-600"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">Caisse</h1>
+                <p class="text-sm text-slate-500 mt-0.5"><?= $result['total'] ?> session(s) trouvée(s)</p>
+            </div>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-shrink-0">
             <?php if ($maSession): ?>
             <a href="<?= BASE_URL ?>/v2/finance/caisse/<?= $maSession->id ?>"
-               class="px-4 py-2 text-sm font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100">
-                <i data-lucide="circle-dot" class="inline w-4 h-4 mr-1"></i> Ma caisse active
+               class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors">
+                <i data-lucide="circle-dot" class="w-4 h-4"></i> Ma caisse active
             </a>
             <?php elseif ($canOuvrir): ?>
             <a href="<?= BASE_URL ?>/v2/finance/caisse/create"
-               class="px-4 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700">
-                <i data-lucide="unlock" class="inline w-4 h-4 mr-1"></i> Ouvrir la caisse
+               class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700 transition-colors">
+                <i data-lucide="unlock" class="w-4 h-4"></i> Ouvrir la caisse
             </a>
             <?php endif; ?>
         </div>
@@ -83,19 +94,31 @@ $badgeStatut = fn(string $s): string => match ($s) {
     <!-- Stats -->
     <?php if ($stats): ?>
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div class="bg-white rounded-xl border border-slate-200 p-4">
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+            <div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center mb-2">
+                <i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i>
+            </div>
             <div class="text-xs font-medium text-slate-500 uppercase tracking-wide">Total recettes</div>
             <div class="text-xl font-bold text-emerald-700 mt-1"><?= $fmtMontant((float)$stats->total_recettes) ?></div>
         </div>
-        <div class="bg-white rounded-xl border border-slate-200 p-4">
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+            <div class="w-8 h-8 rounded-lg bg-rose-100 flex items-center justify-center mb-2">
+                <i data-lucide="trending-down" class="w-4 h-4 text-rose-600"></i>
+            </div>
             <div class="text-xs font-medium text-slate-500 uppercase tracking-wide">Total décaissements</div>
             <div class="text-xl font-bold text-rose-600 mt-1"><?= $fmtMontant((float)$stats->total_decaissements) ?></div>
         </div>
-        <div class="bg-white rounded-xl border border-slate-200 p-4">
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+            <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center mb-2">
+                <i data-lucide="activity" class="w-4 h-4 text-blue-600"></i>
+            </div>
             <div class="text-xs font-medium text-slate-500 uppercase tracking-wide">Sessions actives</div>
             <div class="text-xl font-bold text-blue-600 mt-1"><?= (int)$stats->sessions_actives ?></div>
         </div>
-        <div class="bg-white rounded-xl border border-slate-200 p-4">
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+            <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center mb-2">
+                <i data-lucide="lock" class="w-4 h-4 text-slate-600"></i>
+            </div>
             <div class="text-xs font-medium text-slate-500 uppercase tracking-wide">Sessions fermées</div>
             <div class="text-xl font-bold text-slate-700 mt-1"><?= (int)$stats->sessions_fermees ?></div>
         </div>
@@ -103,15 +126,15 @@ $badgeStatut = fn(string $s): string => match ($s) {
     <?php endif; ?>
 
     <!-- Filtres -->
-    <div class="bg-white rounded-xl border border-slate-200 p-4">
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
         <form method="GET" class="grid grid-cols-1 sm:grid-cols-5 gap-3 items-end">
             <div class="sm:col-span-1">
                 <input type="text" name="q" value="<?= htmlspecialchars($filters->q ?? '') ?>"
                        placeholder="Nº session, caissier…"
-                       class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-300">
+                       class="form-input">
             </div>
             <div>
-                <select name="statut" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-300">
+                <select name="statut" class="form-select">
                     <option value="">Tous statuts</option>
                     <?php foreach ($statuts as $k => $v): ?>
                     <option value="<?= $k ?>" <?= ($filters->statut ?? '') === $k ? 'selected' : '' ?>><?= $v ?></option>
@@ -119,7 +142,7 @@ $badgeStatut = fn(string $s): string => match ($s) {
                 </select>
             </div>
             <div>
-                <select name="caissier_id" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-300">
+                <select name="caissier_id" class="form-select">
                     <option value="">Tous caissiers</option>
                     <?php foreach ($caissiers as $c): ?>
                     <option value="<?= $c->id ?>" <?= ($filters->caissierId ?? 0) == $c->id ? 'selected' : '' ?>><?= htmlspecialchars($c->nom) ?></option>
@@ -128,7 +151,7 @@ $badgeStatut = fn(string $s): string => match ($s) {
             </div>
             <div>
                 <input type="date" name="date_debut" value="<?= htmlspecialchars($filters->dateDebut ?? '') ?>"
-                       class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-300">
+                       class="form-input">
             </div>
             <div class="flex gap-2">
                 <button type="submit" class="flex-1 px-3 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700">
@@ -142,7 +165,7 @@ $badgeStatut = fn(string $s): string => match ($s) {
     </div>
 
     <!-- Table sessions -->
-    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <table class="min-w-full divide-y divide-slate-200 text-sm">
             <thead class="bg-slate-50">
                 <tr>
@@ -160,9 +183,13 @@ $badgeStatut = fn(string $s): string => match ($s) {
             <tbody class="divide-y divide-slate-100">
                 <?php if (empty($result['data'])): ?>
                 <tr>
-                    <td colspan="9" class="px-4 py-12 text-center text-slate-400">
-                        <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
-                        <p>Aucune session de caisse</p>
+                    <td colspan="9" class="py-14">
+                        <div class="flex flex-col items-center gap-2 text-slate-400">
+                            <div class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center">
+                                <i data-lucide="vault" class="w-5 h-5"></i>
+                            </div>
+                            <p class="text-sm">Aucune session de caisse</p>
+                        </div>
                     </td>
                 </tr>
                 <?php else: ?>

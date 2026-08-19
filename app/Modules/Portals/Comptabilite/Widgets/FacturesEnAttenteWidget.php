@@ -26,10 +26,10 @@ class FacturesEnAttenteWidget extends BaseWidget
             $stmt = $pdo->prepare(
                 'SELECT statut, COUNT(*) AS nb, SUM(montant_total - COALESCE(montant_paye,0)) AS montant
                  FROM finance_factures
-                 WHERE etablissement_id=? AND statut IN ("emise","partielle") AND deleted_at IS NULL
+                 WHERE statut IN ("emise","partiellement_payee","en_retard")
                  GROUP BY statut'
             );
-            $stmt->execute([$etab]);
+            $stmt->execute();
             $rows  = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             $total = ['nb' => 0, 'montant' => 0];
             foreach ($rows as $r) {

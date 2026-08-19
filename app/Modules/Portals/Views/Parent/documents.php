@@ -10,7 +10,7 @@
       <p class="font-medium text-slate-800 truncate"><?= htmlspecialchars($d['titre'] ?? $d['nom_fichier'] ?? '') ?></p>
       <p class="text-xs text-slate-400"><?= htmlspecialchars($d['created_at'] ?? '') ?></p>
     </div>
-    <a href="/v2/documents/<?= (int)$d['id'] ?>/download" class="text-slate-400 hover:text-emerald-600 transition-colors">
+    <a href="<?= BASE_URL ?>/v2/documents/<?= (int)$d['id'] ?>/download" class="text-slate-400 hover:text-emerald-600 transition-colors">
       <i data-lucide="download" class="w-5 h-5"></i>
     </a>
   </div>

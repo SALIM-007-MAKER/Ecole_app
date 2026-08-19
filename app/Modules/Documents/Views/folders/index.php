@@ -6,7 +6,7 @@ function renderFolderNode(array $node, bool $canCreate, bool $canDelete): void {
     $hasChildren = !empty($node['children']); ?>
     <div class="pl-4 border-l border-slate-200 mt-1">
       <div class="flex items-center justify-between group py-1">
-        <a href="/v2/documents?folder_id=<?= $node['id'] ?>"
+        <a href="<?= BASE_URL ?>/v2/documents?folder_id=<?= $node['id'] ?>"
            class="flex items-center gap-2 text-sm text-slate-700 hover:text-violet-700 font-medium">
           <svg class="w-4 h-4 text-<?= htmlspecialchars($node['couleur'] ?? 'slate') ?>-500 shrink-0"
                fill="currentColor" viewBox="0 0 20 20">
@@ -45,7 +45,7 @@ function renderFolderNode(array $node, bool $canCreate, bool $canDelete): void {
     <?php endif; ?>
   </div>
 
-  <a href="/v2/documents<?= $moduleSource ? '?module_source=' . urlencode($moduleSource) : '' ?>"
+  <a href="<?= BASE_URL ?>/v2/documents<?= $moduleSource ? '?module_source=' . urlencode($moduleSource) : '' ?>"
      class="text-sm text-violet-600 hover:text-violet-800 font-medium">← Documents</a>
 </div>
 
@@ -77,7 +77,7 @@ function renderFolderNode(array $node, bool $canCreate, bool $canDelete): void {
 document.getElementById('form-folder').addEventListener('submit', async function(e) {
   e.preventDefault();
   const csrf = document.querySelector('meta[name=csrf-token]')?.content ?? '';
-  const r = await fetch('/v2/folders', {
+  const r = await fetch('<?= BASE_URL ?>/v2/folders', {
     method: 'POST',
     headers: {'X-CSRF-Token': csrf},
     body: new FormData(this),

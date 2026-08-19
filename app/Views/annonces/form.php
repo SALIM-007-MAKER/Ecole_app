@@ -1,6 +1,8 @@
 <?php
 $annonce   = $annonce   ?? null;
 $audiences = $audiences ?? [];
+$classes   = $classes   ?? [];
+$users     = $users     ?? [];
 $errors    = $errors    ?? [];
 $old       = $old       ?? [];
 $isEdit    = $annonce !== null;
@@ -12,6 +14,17 @@ $action    = $isEdit
 
 $val = fn(string $k, string $fallback = '') =>
     htmlspecialchars($old[$k] ?? ($annonce?->$k ?? $fallback), ENT_QUOTES);
+
+$currentAudience = $old['audience'] ?? ($annonce?->audience ?? 'tous');
+$currentClasseId = (int)($old['classe_id'] ?? ($annonce?->classe_id ?? 0));
+$currentDestIds  = $old['destinataires_ids']
+    ?? (!empty($annonce?->destinataires_ids) ? (json_decode($annonce->destinataires_ids, true) ?: []) : []);
+$currentDestIds  = array_map('intval', (array)$currentDestIds);
+
+$roleLabels = [
+    'admin' => 'Admin', 'directeur' => 'Directeur', 'secretaire' => 'Secrétaire',
+    'comptable' => 'Comptable', 'enseignant' => 'Enseignant', 'parent' => 'Parent', 'eleve' => 'Élève',
+];
 ?>
 
 <!-- Header -->
@@ -134,15 +147,56 @@ $val = fn(string $k, string $fallback = '') =>
                         <label class="form-label" for="audience">
                             Audience <span class="text-red-500">*</span>
                         </label>
-                        <select id="audience" name="audience" class="form-select" required>
+                        <select id="audience" name="audience" class="form-select" required onchange="toggleAudienceFields()">
                             <?php foreach ($audiences as $k => $aud): ?>
                             <option value="<?= htmlspecialchars($k, ENT_QUOTES) ?>"
-                                    <?= ($old['audience'] ?? ($annonce?->audience ?? 'tous')) === $k ? 'selected' : '' ?>>
+                                    <?= $currentAudience === $k ? 'selected' : '' ?>>
                                 <?= htmlspecialchars(is_array($aud) ? ($aud['label'] ?? $k) : $aud, ENT_QUOTES) ?>
                             </option>
                             <?php endforeach; ?>
                         </select>
                         <p class="text-xs text-slate-400 mt-1">Qui peut voir cette annonce</p>
+                    </div>
+
+                    <!-- Ciblage : une classe -->
+                    <div id="audienceClasseField" style="display:none">
+                        <label class="form-label" for="classe_id">
+                            Classe <span class="text-red-500">*</span>
+                        </label>
+                        <select id="classe_id" name="classe_id" class="form-select <?= isset($errors['classe_id']) ? 'border-red-400' : '' ?>">
+                            <option value="">— Choisir une classe —</option>
+                            <?php foreach ($classes as $c): ?>
+                            <option value="<?= (int)$c->id ?>" <?= $currentClasseId === (int)$c->id ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($c->label, ENT_QUOTES) ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <?php if (!empty($errors['classe_id'])): ?>
+                        <p class="text-xs text-red-500 mt-1"><?= htmlspecialchars(implode(', ', (array)$errors['classe_id']), ENT_QUOTES) ?></p>
+                        <?php endif; ?>
+                        <p class="text-xs text-slate-400 mt-1">Élèves de cette classe et leurs parents</p>
+                    </div>
+
+                    <!-- Ciblage : utilisateurs précis -->
+                    <div id="audienceUtilisateursField" style="display:none">
+                        <label class="form-label">
+                            Destinataires <span class="text-red-500">*</span>
+                        </label>
+                        <div class="rounded-lg border border-slate-200 max-h-64 overflow-y-auto divide-y divide-slate-100 <?= isset($errors['destinataires_ids']) ? 'border-red-400' : '' ?>">
+                            <?php foreach ($users as $u): ?>
+                            <label class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-slate-50 cursor-pointer">
+                                <input type="checkbox" name="destinataires_ids[]" value="<?= (int)$u->id ?>"
+                                       <?= in_array((int)$u->id, $currentDestIds, true) ? 'checked' : '' ?>
+                                       class="accent-violet-600">
+                                <span class="flex-1 truncate"><?= htmlspecialchars(trim(($u->prenom ?? '') . ' ' . ($u->nom ?? '')), ENT_QUOTES) ?></span>
+                                <span class="text-xs text-slate-400"><?= htmlspecialchars($roleLabels[$u->role] ?? $u->role, ENT_QUOTES) ?></span>
+                            </label>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php if (!empty($errors['destinataires_ids'])): ?>
+                        <p class="text-xs text-red-500 mt-1"><?= htmlspecialchars(implode(', ', (array)$errors['destinataires_ids']), ENT_QUOTES) ?></p>
+                        <?php endif; ?>
+                        <p class="text-xs text-slate-400 mt-1">Sélectionnez un ou plusieurs destinataires</p>
                     </div>
 
                 </div>
@@ -195,6 +249,11 @@ $val = fn(string $k, string $fallback = '') =>
 </form>
 
 <script>
+function toggleAudienceFields() {
+    var audience = document.getElementById('audience').value;
+    document.getElementById('audienceClasseField').style.display       = (audience === 'classe')       ? '' : 'none';
+    document.getElementById('audienceUtilisateursField').style.display = (audience === 'utilisateurs') ? '' : 'none';
+}
 function updateCharCount() {
     var txt = document.getElementById('contenu').value;
     document.getElementById('charCount').textContent = txt.length + ' caractère(s)';
@@ -213,4 +272,5 @@ function updatePreview() {
 }
 updateCharCount();
 updatePreview();
+toggleAudienceFields();
 </script>

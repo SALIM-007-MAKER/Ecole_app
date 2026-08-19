@@ -1,20 +1,11 @@
 <?php /** @var array $articles @var array $pagination @var array $categories @var object $filters */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Articles — Inventaire</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-7xl mx-auto px-4 py-6">
     <div class="flex items-center justify-between mb-6">
         <div>
             <h1 class="text-2xl font-bold text-slate-800">Articles</h1>
             <p class="text-slate-500 text-sm"><?= $pagination['total'] ?? 0 ?> article(s) au catalogue</p>
         </div>
-        <a href="/v2/inventaire/articles/creer"
+        <a href="<?= BASE_URL ?>/v2/inventaire/articles/creer"
            class="inline-flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-lg hover:bg-violet-700 text-sm font-medium">
             <i data-lucide="plus" class="w-4 h-4"></i> Nouvel article
         </a>
@@ -74,8 +65,8 @@
                         <?php endif; ?>
                     </td>
                     <td class="px-4 py-3 text-right">
-                        <a href="/v2/inventaire/articles/<?= $a['id'] ?>" class="text-violet-600 hover:underline text-xs mr-2">Voir</a>
-                        <a href="/v2/inventaire/articles/<?= $a['id'] ?>/modifier" class="text-slate-500 hover:underline text-xs">Modifier</a>
+                        <a href="<?= BASE_URL ?>/v2/inventaire/articles/<?= $a['id'] ?>" class="text-violet-600 hover:underline text-xs mr-2">Voir</a>
+                        <a href="<?= BASE_URL ?>/v2/inventaire/articles/<?= $a['id'] ?>/modifier" class="text-slate-500 hover:underline text-xs">Modifier</a>
                     </td>
                 </tr>
             <?php endforeach; ?>
@@ -87,5 +78,3 @@
     </div>
 </div>
 <script>lucide.createIcons();</script>
-</body>
-</html>

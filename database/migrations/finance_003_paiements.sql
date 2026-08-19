@@ -92,7 +92,7 @@ CREATE TABLE IF NOT EXISTS `finance_paiements` (
     KEY `idx_fp_date`      (`date_paiement`, `statut`),
     KEY `idx_fp_mode`      (`mode_paiement_id`),
     KEY `idx_fp_echeance`  (`echeance_id`),
-    CONSTRAINT `fk_fp_facture`   FOREIGN KEY (`facture_id`)       REFERENCES `finance_factures`(`id`)         ON DELETE RESTRICT,
+    CONSTRAINT `fk_fpaie_facture` FOREIGN KEY (`facture_id`)      REFERENCES `finance_factures`(`id`)         ON DELETE RESTRICT,
     CONSTRAINT `fk_fp_mode`      FOREIGN KEY (`mode_paiement_id`) REFERENCES `finance_modes_paiement`(`id`)   ON DELETE SET NULL,
     CONSTRAINT `fk_fp_echeance`  FOREIGN KEY (`echeance_id`)      REFERENCES `finance_echeances`(`id`)        ON DELETE SET NULL,
     CONSTRAINT `fk_fp_avoir`     FOREIGN KEY (`avoir_id`)         REFERENCES `finance_avoirs`(`id`)           ON DELETE SET NULL,

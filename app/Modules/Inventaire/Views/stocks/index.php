@@ -1,18 +1,9 @@
 <?php /** @var array $stocks @var array $alertes @var array $emplacements */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>État du Stock — Inventaire</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-7xl mx-auto px-4 py-6">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold text-slate-800">État du Stock</h1>
         <div class="flex gap-2">
-            <a href="/v2/inventaire/stocks/mouvements" class="border px-4 py-2 rounded-lg text-sm text-slate-600 hover:bg-white flex items-center gap-1">
+            <a href="<?= BASE_URL ?>/v2/inventaire/stocks/mouvements" class="border px-4 py-2 rounded-lg text-sm text-slate-600 hover:bg-white flex items-center gap-1">
                 <i data-lucide="activity" class="w-4 h-4"></i> Journal
             </a>
         </div>
@@ -32,7 +23,7 @@
     <div class="grid grid-cols-2 gap-4 mb-6">
         <div class="bg-white rounded-xl shadow-sm p-5">
             <h3 class="font-semibold text-slate-700 mb-3 text-sm flex items-center gap-2"><i data-lucide="sliders" class="w-4 h-4 text-violet-500"></i> Ajustement de stock</h3>
-            <form method="POST" action="/v2/inventaire/stocks/ajuster" class="space-y-3">
+            <form method="POST" action="<?= BASE_URL ?>/v2/inventaire/stocks/ajuster" class="space-y-3">
                 <input type="hidden" name="_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                 <select name="article_id" required class="w-full border rounded-lg px-3 py-2 text-sm">
                     <option value="">— Article —</option>
@@ -52,7 +43,7 @@
         </div>
         <div class="bg-white rounded-xl shadow-sm p-5">
             <h3 class="font-semibold text-slate-700 mb-3 text-sm flex items-center gap-2"><i data-lucide="arrow-right-left" class="w-4 h-4 text-violet-500"></i> Transfert entre emplacements</h3>
-            <form method="POST" action="/v2/inventaire/stocks/transferer" class="space-y-3">
+            <form method="POST" action="<?= BASE_URL ?>/v2/inventaire/stocks/transferer" class="space-y-3">
                 <input type="hidden" name="_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                 <select name="article_id" required class="w-full border rounded-lg px-3 py-2 text-sm">
                     <option value="">— Article —</option>
@@ -108,5 +99,3 @@
     </div>
 </div>
 <script>lucide.createIcons();</script>
-</body>
-</html>

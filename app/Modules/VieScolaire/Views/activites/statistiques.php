@@ -1,5 +1,4 @@
 <?php $title = 'Statistiques — Activités'; ?>
-<?php ob_start(); ?>
 
 <div class="p-6 space-y-6">
 
@@ -111,5 +110,3 @@
 
 </div>
 
-<?php $content = ob_get_clean(); ?>
-<?php include base_path('app/Views/layouts/app.php'); ?>

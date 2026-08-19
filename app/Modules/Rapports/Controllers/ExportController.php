@@ -79,6 +79,6 @@ class ExportController extends Controller
         $userId  = (int)($this->user['id']               ?? 0);
         $filters = ReportFiltersDTO::fromRequest(array_merge($_GET, $_POST));
         $rapport = $this->generator->generer($filters, $etab, $userId);
-        $this->render('Rapports::exports/apercu', ['rapport' => $rapport, 'filters' => $filters]);
+        $this->render('Rapports::exports/apercu', ['rapport' => $rapport, 'filters' => $filters], 'none');
     }
 }

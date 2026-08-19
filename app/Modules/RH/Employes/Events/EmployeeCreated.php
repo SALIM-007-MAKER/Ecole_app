@@ -13,7 +13,9 @@ class EmployeeCreated extends Event
         public readonly string $nom,
         public readonly string $prenom,
         public readonly int    $creeParId,
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

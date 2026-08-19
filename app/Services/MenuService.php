@@ -100,6 +100,40 @@ class MenuService
             'comments', 'messages' => 'fa-comments',
             'palette' => 'fa-palette',
             'home' => 'fa-house',
+            'globe' => 'fa-globe',
+            'database' => 'fa-database',
+            'activity' => 'fa-chart-line',
+            'school' => 'fa-school',
+            'layers' => 'fa-layer-group',
+            'pencil-ruler' => 'fa-ruler-combined',
+            'coins' => 'fa-coins',
+            'database-backup' => 'fa-clock-rotate-left',
+            'sliders-horizontal' => 'fa-sliders',
+            'hash' => 'fa-hashtag',
+            'shield' => 'fa-shield-halved',
+            'shield-check' => 'fa-shield-halved',
+            'gavel' => 'fa-gavel',
+            'award' => 'fa-award',
+            'key' => 'fa-key',
+            'info' => 'fa-circle-info',
+            'lock' => 'fa-lock',
+            'users-round' => 'fa-user-group',
+            'network' => 'fa-sitemap',
+            'file-signature' => 'fa-file-signature',
+            'shuffle' => 'fa-shuffle',
+            'calendar-off' => 'fa-calendar-xmark',
+            'star' => 'fa-star',
+            'folder' => 'fa-folder',
+            'calculator' => 'fa-calculator',
+            'list-checks' => 'fa-list-check',
+            'layout-grid' => 'fa-table-cells',
+            'trending-up' => 'fa-arrow-trend-up',
+            'calendar-check' => 'fa-calendar-check',
+            'trophy' => 'fa-trophy',
+            'users-2' => 'fa-users',
+            'arrow-down-circle' => 'fa-circle-down',
+            'calendar-range' => 'fa-calendar-week',
+            'repeat' => 'fa-arrows-rotate',
             default => 'fa-circle',
         };
     }
@@ -149,30 +183,72 @@ class MenuService
                     ['label' => 'Enseignants', 'icon' => 'user-check', 'url' => '/professeurs', 'permissions' => ['enseignants.view']],
                     ['label' => 'Classes', 'icon' => 'building', 'url' => '/classes', 'permissions' => ['classes.view']],
                     ['label' => 'Matières', 'icon' => 'book', 'url' => '/matieres', 'permissions' => ['matieres.view']],
+                    ['label' => 'Réinscription', 'icon' => 'repeat', 'url' => '/reinscription', 'permissions' => ['classes.edit']],
                 ],
             ],
             [
                 'id' => 'academique',
                 'label' => 'Académique',
                 'icon' => 'book-open-check',
-                'permissions' => ['notes.view', 'bulletins.view', 'absences.view'],
+                'permissions' => ['notes.view', 'academique.evaluations.view', 'bulletins.view', 'absences.view'],
                 'children' => [
-                    ['label' => 'Notes', 'icon' => 'pencil-line', 'url' => '/notes', 'permissions' => ['notes.view']],
+                    ['label' => 'Notes', 'icon' => 'pencil-line', 'url' => '/v2/academique/evaluations', 'permissions' => ['academique.evaluations.view']],
                     ['label' => 'Bulletins', 'icon' => 'file-text', 'url' => '/bulletins', 'permissions' => ['bulletins.view']],
                     ['label' => 'Absences', 'icon' => 'calendar-x', 'url' => '/absences', 'permissions' => ['absences.view']],
+                ],
+            ],
+            [
+                'id' => 'vie_scolaire',
+                'label' => 'Vie scolaire',
+                'icon' => 'shield-check',
+                'permissions' => ['late.view', 'discipline.view', 'reward.view'],
+                'children' => [
+                    ['label' => 'Retards', 'icon' => 'clock', 'url' => '/v2/vie-scolaire/retards', 'permissions' => ['late.view']],
+                    ['label' => 'Discipline', 'icon' => 'gavel', 'url' => '/v2/vie-scolaire/discipline', 'permissions' => ['discipline.view']],
+                    ['label' => 'Récompenses', 'icon' => 'award', 'url' => '/v2/vie-scolaire/recompenses', 'permissions' => ['reward.view']],
+                ],
+            ],
+            [
+                'id' => 'rh',
+                'label' => 'Ressources Humaines',
+                'icon' => 'users-round',
+                'permissions' => [
+                    'employee.view', 'teacher.view', 'organization.view', 'contract.view',
+                    'assignment.view', 'rh.presence.view', 'leave.view', 'evaluation.view',
+                    'training.view', 'hr_document.view',
+                ],
+                'children' => [
+                    ['label' => 'Employés', 'icon' => 'users-round', 'url' => '/v2/rh/employes', 'permissions' => ['employee.view']],
+                    ['label' => 'Fiches enseignants (RH)', 'icon' => 'graduation-cap', 'url' => '/v2/rh/enseignants', 'permissions' => ['teacher.view']],
+                    ['label' => 'Organisation', 'icon' => 'network', 'url' => '/v2/rh/organisation', 'permissions' => ['organization.view']],
+                    ['label' => 'Contrats', 'icon' => 'file-signature', 'url' => '/v2/rh/contrats', 'permissions' => ['contract.view']],
+                    ['label' => 'Affectations', 'icon' => 'shuffle', 'url' => '/v2/rh/affectations', 'permissions' => ['assignment.view']],
+                    ['label' => 'Présences RH', 'icon' => 'clock', 'url' => '/v2/rh/presences', 'permissions' => ['rh.presence.view']],
+                    ['label' => 'Congés', 'icon' => 'calendar-off', 'url' => '/v2/rh/conges', 'permissions' => ['leave.view']],
+                    ['label' => 'Évaluations', 'icon' => 'star', 'url' => '/v2/rh/evaluations', 'permissions' => ['evaluation.view']],
+                    ['label' => 'Formations', 'icon' => 'book-open', 'url' => '/v2/rh/formations', 'permissions' => ['training.view']],
+                    ['label' => 'Documents RH', 'icon' => 'folder', 'url' => '/v2/rh/documents', 'permissions' => ['hr_document.view']],
                 ],
             ],
             [
                 'id' => 'finance',
                 'label' => 'Finance',
                 'icon' => 'wallet',
-                'permissions' => ['comptabilite.view'],
+                'permissions' => [
+                    'finance.dashboard.view', 'finance.frais.view', 'finance.factures.view',
+                    'finance.paiements.view', 'finance.rapports.view', 'finance.caisse.view',
+                    'finance.comptabilite.view', 'finance.decaissements.view',
+                ],
                 'children' => [
-                    ['label' => 'Vue d\'ensemble', 'icon' => 'bar-chart-2', 'url' => '/comptabilite'],
-                    ['label' => 'Paiements', 'icon' => 'banknote', 'url' => '/paiements', 'permissions' => ['comptabilite.view']],
-                    ['label' => 'Dépenses', 'icon' => 'arrow-down-circle', 'url' => '/depenses', 'permissions' => ['comptabilite.view']],
-                    ['label' => 'Impayés', 'icon' => 'alert-circle', 'url' => '/comptabilite/impayes', 'permissions' => ['comptabilite.view']],
-                    ['label' => 'Caisse du jour', 'icon' => 'vault', 'url' => '/comptabilite/caisse', 'permissions' => ['comptabilite.view']],
+                    ['label' => 'Vue d\'ensemble', 'icon' => 'bar-chart-2', 'url' => '/v2/finance/rapports/dashboard', 'permissions' => ['finance.dashboard.view']],
+                    ['label' => 'Frais scolaires', 'icon' => 'list-checks', 'url' => '/v2/finance/frais', 'permissions' => ['finance.frais.view']],
+                    ['label' => 'Factures', 'icon' => 'file-text', 'url' => '/v2/finance/factures', 'permissions' => ['finance.factures.view']],
+                    ['label' => 'Paiements', 'icon' => 'banknote', 'url' => '/v2/finance/paiements', 'permissions' => ['finance.paiements.view']],
+                    ['label' => 'Impayés', 'icon' => 'alert-circle', 'url' => '/v2/finance/rapports/impayes', 'permissions' => ['finance.rapports.view']],
+                    ['label' => 'Décaissements', 'icon' => 'arrow-down-circle', 'url' => '/v2/finance/decaissements', 'permissions' => ['finance.decaissements.view']],
+                    ['label' => 'Caisse du jour', 'icon' => 'vault', 'url' => '/v2/finance/caisse', 'permissions' => ['finance.caisse.view']],
+                    ['label' => 'Comptabilité', 'icon' => 'calculator', 'url' => '/v2/finance/comptabilite', 'permissions' => ['finance.comptabilite.view']],
+                    ['label' => 'Rapports financiers', 'icon' => 'trending-up', 'url' => '/v2/finance/rapports', 'permissions' => ['finance.rapports.view']],
                 ],
             ],
             [
@@ -202,11 +278,27 @@ class MenuService
                 ],
             ],
             [
-                'id' => 'branding',
-                'label' => 'Branding',
-                'icon' => 'palette',
-                'url' => '/parametres/branding',
-                'permissions' => ['branding.view'],
+                'id' => 'parametres',
+                'label' => 'Paramètres',
+                'icon' => 'settings',
+                'permissions' => [
+                    'branding.view', 'settings.general.view', 'settings.academique.view',
+                    'settings.notation.view', 'settings.finances.view', 'settings.documents.view',
+                    'settings.notifications.view', 'settings.securite.view', 'settings.sauvegarde.view', 'settings.avance.view',
+                ],
+                'children' => [
+                    ['label' => 'Établissement', 'icon' => 'school', 'url' => '/parametres/etablissement', 'permissions' => ['branding.view']],
+                    ['label' => 'Année scolaire', 'icon' => 'calendar-range', 'url' => '/parametres/annee-scolaire', 'permissions' => ['settings.general.view']],
+                    ['label' => 'Organisation académique', 'icon' => 'layers', 'url' => '/parametres/academique', 'permissions' => ['settings.academique.view']],
+                    ['label' => 'Système de notation', 'icon' => 'pencil-ruler', 'url' => '/parametres/notation', 'permissions' => ['settings.notation.view']],
+                    ['label' => 'Finances', 'icon' => 'coins', 'url' => '/parametres/finances', 'permissions' => ['settings.finances.view']],
+                    ['label' => 'Documents', 'icon' => 'file-text', 'url' => '/parametres/documents', 'permissions' => ['settings.documents.view']],
+                    ['label' => 'Notifications', 'icon' => 'bell', 'url' => '/parametres/notifications', 'permissions' => ['settings.notifications.view']],
+                    ['label' => 'Apparence', 'icon' => 'palette', 'url' => '/parametres/apparence', 'permissions' => ['branding.view']],
+                    ['label' => 'Sécurité', 'icon' => 'shield', 'url' => '/parametres/securite', 'permissions' => ['settings.securite.view']],
+                    ['label' => 'Sauvegarde & restauration', 'icon' => 'database-backup', 'url' => '/parametres/sauvegarde', 'permissions' => ['settings.sauvegarde.view']],
+                    ['label' => 'Paramètres avancés', 'icon' => 'sliders-horizontal', 'url' => '/parametres/avance', 'permissions' => ['settings.avance.view']],
+                ],
             ],
             [
                 'id' => 'announcements',
@@ -255,28 +347,72 @@ class MenuService
                     ['label' => 'Enseignants', 'icon' => 'user-check', 'url' => '/professeurs', 'permissions' => ['enseignants.view']],
                     ['label' => 'Classes', 'icon' => 'building', 'url' => '/classes', 'permissions' => ['classes.view']],
                     ['label' => 'Matières', 'icon' => 'book', 'url' => '/matieres', 'permissions' => ['matieres.view']],
+                    ['label' => 'Réinscription', 'icon' => 'repeat', 'url' => '/reinscription', 'permissions' => ['classes.edit']],
                 ],
             ],
             [
                 'id' => 'academique',
                 'label' => 'Académique',
                 'icon' => 'book-open-check',
-                'permissions' => ['notes.view', 'bulletins.view', 'absences.view'],
+                'permissions' => ['notes.view', 'academique.evaluations.view', 'bulletins.view', 'absences.view'],
                 'children' => [
-                    ['label' => 'Notes', 'icon' => 'pencil-line', 'url' => '/notes', 'permissions' => ['notes.view']],
+                    ['label' => 'Notes', 'icon' => 'pencil-line', 'url' => '/v2/academique/evaluations', 'permissions' => ['academique.evaluations.view']],
                     ['label' => 'Bulletins', 'icon' => 'file-text', 'url' => '/bulletins', 'permissions' => ['bulletins.view']],
                     ['label' => 'Absences', 'icon' => 'calendar-x', 'url' => '/absences', 'permissions' => ['absences.view']],
+                ],
+            ],
+            [
+                'id' => 'vie_scolaire',
+                'label' => 'Vie scolaire',
+                'icon' => 'shield-check',
+                'permissions' => ['late.view', 'discipline.view', 'reward.view'],
+                'children' => [
+                    ['label' => 'Retards', 'icon' => 'clock', 'url' => '/v2/vie-scolaire/retards', 'permissions' => ['late.view']],
+                    ['label' => 'Discipline', 'icon' => 'gavel', 'url' => '/v2/vie-scolaire/discipline', 'permissions' => ['discipline.view']],
+                    ['label' => 'Récompenses', 'icon' => 'award', 'url' => '/v2/vie-scolaire/recompenses', 'permissions' => ['reward.view']],
+                ],
+            ],
+            [
+                'id' => 'rh',
+                'label' => 'Ressources Humaines',
+                'icon' => 'users-round',
+                'permissions' => [
+                    'employee.view', 'teacher.view', 'organization.view', 'contract.view',
+                    'assignment.view', 'rh.presence.view', 'leave.view', 'evaluation.view',
+                    'training.view', 'hr_document.view',
+                ],
+                'children' => [
+                    ['label' => 'Employés', 'icon' => 'users-round', 'url' => '/v2/rh/employes', 'permissions' => ['employee.view']],
+                    ['label' => 'Fiches enseignants (RH)', 'icon' => 'graduation-cap', 'url' => '/v2/rh/enseignants', 'permissions' => ['teacher.view']],
+                    ['label' => 'Organisation', 'icon' => 'network', 'url' => '/v2/rh/organisation', 'permissions' => ['organization.view']],
+                    ['label' => 'Contrats', 'icon' => 'file-signature', 'url' => '/v2/rh/contrats', 'permissions' => ['contract.view']],
+                    ['label' => 'Affectations', 'icon' => 'shuffle', 'url' => '/v2/rh/affectations', 'permissions' => ['assignment.view']],
+                    ['label' => 'Présences RH', 'icon' => 'clock', 'url' => '/v2/rh/presences', 'permissions' => ['rh.presence.view']],
+                    ['label' => 'Congés', 'icon' => 'calendar-off', 'url' => '/v2/rh/conges', 'permissions' => ['leave.view']],
+                    ['label' => 'Évaluations', 'icon' => 'star', 'url' => '/v2/rh/evaluations', 'permissions' => ['evaluation.view']],
+                    ['label' => 'Formations', 'icon' => 'book-open', 'url' => '/v2/rh/formations', 'permissions' => ['training.view']],
+                    ['label' => 'Documents RH', 'icon' => 'folder', 'url' => '/v2/rh/documents', 'permissions' => ['hr_document.view']],
                 ],
             ],
             [
                 'id' => 'finance',
                 'label' => 'Finance',
                 'icon' => 'wallet',
-                'permissions' => ['comptabilite.view'],
+                'permissions' => [
+                    'finance.dashboard.view', 'finance.frais.view', 'finance.factures.view',
+                    'finance.paiements.view', 'finance.rapports.view', 'finance.caisse.view',
+                    'finance.comptabilite.view', 'finance.decaissements.view',
+                ],
                 'children' => [
-                    ['label' => 'Vue d\'ensemble', 'icon' => 'bar-chart-2', 'url' => '/comptabilite'],
-                    ['label' => 'Paiements', 'icon' => 'banknote', 'url' => '/paiements', 'permissions' => ['comptabilite.view']],
-                    ['label' => 'Rapports financiers', 'icon' => 'trending-up', 'url' => '/rapports/financier', 'permissions' => ['rapports.view']],
+                    ['label' => 'Vue d\'ensemble', 'icon' => 'bar-chart-2', 'url' => '/v2/finance/rapports/dashboard', 'permissions' => ['finance.dashboard.view']],
+                    ['label' => 'Frais scolaires', 'icon' => 'list-checks', 'url' => '/v2/finance/frais', 'permissions' => ['finance.frais.view']],
+                    ['label' => 'Factures', 'icon' => 'file-text', 'url' => '/v2/finance/factures', 'permissions' => ['finance.factures.view']],
+                    ['label' => 'Paiements', 'icon' => 'banknote', 'url' => '/v2/finance/paiements', 'permissions' => ['finance.paiements.view']],
+                    ['label' => 'Impayés', 'icon' => 'alert-circle', 'url' => '/v2/finance/rapports/impayes', 'permissions' => ['finance.rapports.view']],
+                    ['label' => 'Décaissements', 'icon' => 'arrow-down-circle', 'url' => '/v2/finance/decaissements', 'permissions' => ['finance.decaissements.view']],
+                    ['label' => 'Caisse du jour', 'icon' => 'vault', 'url' => '/v2/finance/caisse', 'permissions' => ['finance.caisse.view']],
+                    ['label' => 'Comptabilité', 'icon' => 'calculator', 'url' => '/v2/finance/comptabilite', 'permissions' => ['finance.comptabilite.view']],
+                    ['label' => 'Rapports financiers', 'icon' => 'trending-up', 'url' => '/v2/finance/rapports', 'permissions' => ['finance.rapports.view']],
                 ],
             ],
             [
@@ -302,11 +438,27 @@ class MenuService
                 ],
             ],
             [
-                'id' => 'branding',
-                'label' => 'Branding',
-                'icon' => 'palette',
-                'url' => '/parametres/branding',
-                'permissions' => ['branding.view'],
+                'id' => 'parametres',
+                'label' => 'Paramètres',
+                'icon' => 'settings',
+                'permissions' => [
+                    'branding.view', 'settings.general.view', 'settings.academique.view',
+                    'settings.notation.view', 'settings.finances.view', 'settings.documents.view',
+                    'settings.notifications.view', 'settings.securite.view', 'settings.sauvegarde.view', 'settings.avance.view',
+                ],
+                'children' => [
+                    ['label' => 'Établissement', 'icon' => 'school', 'url' => '/parametres/etablissement', 'permissions' => ['branding.view']],
+                    ['label' => 'Année scolaire', 'icon' => 'calendar-range', 'url' => '/parametres/annee-scolaire', 'permissions' => ['settings.general.view']],
+                    ['label' => 'Organisation académique', 'icon' => 'layers', 'url' => '/parametres/academique', 'permissions' => ['settings.academique.view']],
+                    ['label' => 'Système de notation', 'icon' => 'pencil-ruler', 'url' => '/parametres/notation', 'permissions' => ['settings.notation.view']],
+                    ['label' => 'Finances', 'icon' => 'coins', 'url' => '/parametres/finances', 'permissions' => ['settings.finances.view']],
+                    ['label' => 'Documents', 'icon' => 'file-text', 'url' => '/parametres/documents', 'permissions' => ['settings.documents.view']],
+                    ['label' => 'Notifications', 'icon' => 'bell', 'url' => '/parametres/notifications', 'permissions' => ['settings.notifications.view']],
+                    ['label' => 'Apparence', 'icon' => 'palette', 'url' => '/parametres/apparence', 'permissions' => ['branding.view']],
+                    ['label' => 'Sécurité', 'icon' => 'shield', 'url' => '/parametres/securite', 'permissions' => ['settings.securite.view']],
+                    ['label' => 'Sauvegarde & restauration', 'icon' => 'database-backup', 'url' => '/parametres/sauvegarde', 'permissions' => ['settings.sauvegarde.view']],
+                    ['label' => 'Paramètres avancés', 'icon' => 'sliders-horizontal', 'url' => '/parametres/avance', 'permissions' => ['settings.avance.view']],
+                ],
             ],
             [
                 'id' => 'announcements',
@@ -347,13 +499,56 @@ class MenuService
                 'permissions' => ['eleves.view'],
             ],
             [
+                'id' => 'vie_scolaire',
+                'label' => 'Vie scolaire',
+                'icon' => 'shield-check',
+                'permissions' => ['late.view', 'discipline.view', 'reward.view'],
+                'children' => [
+                    ['label' => 'Retards', 'icon' => 'clock', 'url' => '/v2/vie-scolaire/retards', 'permissions' => ['late.view']],
+                    ['label' => 'Discipline', 'icon' => 'gavel', 'url' => '/v2/vie-scolaire/discipline', 'permissions' => ['discipline.view']],
+                    ['label' => 'Récompenses', 'icon' => 'award', 'url' => '/v2/vie-scolaire/recompenses', 'permissions' => ['reward.view']],
+                ],
+            ],
+            [
+                'id' => 'rh',
+                'label' => 'Ressources Humaines',
+                'icon' => 'users-round',
+                'permissions' => [
+                    'employee.view', 'teacher.view', 'organization.view', 'contract.view',
+                    'assignment.view', 'rh.presence.view', 'leave.view', 'evaluation.view',
+                    'training.view', 'hr_document.view',
+                ],
+                'children' => [
+                    ['label' => 'Employés', 'icon' => 'users-round', 'url' => '/v2/rh/employes', 'permissions' => ['employee.view']],
+                    ['label' => 'Fiches enseignants (RH)', 'icon' => 'graduation-cap', 'url' => '/v2/rh/enseignants', 'permissions' => ['teacher.view']],
+                    ['label' => 'Organisation', 'icon' => 'network', 'url' => '/v2/rh/organisation', 'permissions' => ['organization.view']],
+                    ['label' => 'Contrats', 'icon' => 'file-signature', 'url' => '/v2/rh/contrats', 'permissions' => ['contract.view']],
+                    ['label' => 'Affectations', 'icon' => 'shuffle', 'url' => '/v2/rh/affectations', 'permissions' => ['assignment.view']],
+                    ['label' => 'Présences RH', 'icon' => 'clock', 'url' => '/v2/rh/presences', 'permissions' => ['rh.presence.view']],
+                    ['label' => 'Congés', 'icon' => 'calendar-off', 'url' => '/v2/rh/conges', 'permissions' => ['leave.view']],
+                    ['label' => 'Évaluations', 'icon' => 'star', 'url' => '/v2/rh/evaluations', 'permissions' => ['evaluation.view']],
+                    ['label' => 'Formations', 'icon' => 'book-open', 'url' => '/v2/rh/formations', 'permissions' => ['training.view']],
+                    ['label' => 'Documents RH', 'icon' => 'folder', 'url' => '/v2/rh/documents', 'permissions' => ['hr_document.view']],
+                ],
+            ],
+            [
                 'id' => 'finance',
                 'label' => 'Gestion financière',
                 'icon' => 'wallet',
-                'permissions' => ['comptabilite.view'],
+                'permissions' => [
+                    'finance.dashboard.view', 'finance.frais.view', 'finance.factures.view',
+                    'finance.paiements.view', 'finance.rapports.view', 'finance.caisse.view',
+                    'finance.decaissements.view',
+                ],
                 'children' => [
-                    ['label' => 'Paiements', 'icon' => 'banknote', 'url' => '/paiements'],
-                    ['label' => 'Impayés', 'icon' => 'alert-circle', 'url' => '/comptabilite/impayes'],
+                    ['label' => 'Vue d\'ensemble', 'icon' => 'bar-chart-2', 'url' => '/v2/finance/rapports/dashboard', 'permissions' => ['finance.dashboard.view']],
+                    ['label' => 'Frais scolaires', 'icon' => 'list-checks', 'url' => '/v2/finance/frais', 'permissions' => ['finance.frais.view']],
+                    ['label' => 'Factures', 'icon' => 'file-text', 'url' => '/v2/finance/factures', 'permissions' => ['finance.factures.view']],
+                    ['label' => 'Paiements', 'icon' => 'banknote', 'url' => '/v2/finance/paiements', 'permissions' => ['finance.paiements.view']],
+                    ['label' => 'Impayés', 'icon' => 'alert-circle', 'url' => '/v2/finance/rapports/impayes', 'permissions' => ['finance.rapports.view']],
+                    ['label' => 'Décaissements', 'icon' => 'arrow-down-circle', 'url' => '/v2/finance/decaissements', 'permissions' => ['finance.decaissements.view']],
+                    ['label' => 'Caisse du jour', 'icon' => 'vault', 'url' => '/v2/finance/caisse', 'permissions' => ['finance.caisse.view']],
+                    ['label' => 'Rapports financiers', 'icon' => 'trending-up', 'url' => '/v2/finance/rapports', 'permissions' => ['finance.rapports.view']],
                 ],
             ],
             [
@@ -391,10 +586,21 @@ class MenuService
                 'id' => 'academique',
                 'label' => 'Académique',
                 'icon' => 'book-open-check',
-                'permissions' => ['notes.view', 'absences.view'],
+                'permissions' => ['notes.view', 'academique.evaluations.view', 'absences.view'],
                 'children' => [
-                    ['label' => 'Mes notes', 'icon' => 'pencil-line', 'url' => '/notes', 'permissions' => ['notes.view']],
+                    ['label' => 'Mes notes', 'icon' => 'pencil-line', 'url' => '/v2/academique/evaluations', 'permissions' => ['academique.evaluations.view']],
                     ['label' => 'Mes absences', 'icon' => 'calendar-x', 'url' => '/absences', 'permissions' => ['absences.view']],
+                ],
+            ],
+            [
+                'id' => 'vie_scolaire',
+                'label' => 'Vie scolaire',
+                'icon' => 'shield-check',
+                'permissions' => ['late.view', 'discipline.view', 'reward.view'],
+                'children' => [
+                    ['label' => 'Retards', 'icon' => 'clock', 'url' => '/v2/vie-scolaire/retards', 'permissions' => ['late.view']],
+                    ['label' => 'Discipline', 'icon' => 'gavel', 'url' => '/v2/vie-scolaire/discipline', 'permissions' => ['discipline.view']],
+                    ['label' => 'Récompenses', 'icon' => 'award', 'url' => '/v2/vie-scolaire/recompenses', 'permissions' => ['reward.view']],
                 ],
             ],
             [
@@ -442,21 +648,41 @@ class MenuService
                 'id' => 'finance',
                 'label' => 'Finance',
                 'icon' => 'wallet',
-                'permissions' => ['comptabilite.view'],
+                'permissions' => [
+                    'finance.dashboard.view', 'finance.frais.view', 'finance.factures.view',
+                    'finance.paiements.view', 'finance.rapports.view', 'finance.caisse.view',
+                    'finance.comptabilite.view', 'finance.decaissements.view',
+                ],
                 'children' => [
-                    ['label' => 'Vue d\'ensemble', 'icon' => 'bar-chart-2', 'url' => '/comptabilite'],
-                    ['label' => 'Paiements', 'icon' => 'banknote', 'url' => '/paiements'],
-                    ['label' => 'Dépenses', 'icon' => 'arrow-down-circle', 'url' => '/depenses'],
-                    ['label' => 'Impayés', 'icon' => 'alert-circle', 'url' => '/comptabilite/impayes'],
-                    ['label' => 'Caisse du jour', 'icon' => 'vault', 'url' => '/comptabilite/caisse'],
+                    ['label' => 'Vue d\'ensemble', 'icon' => 'bar-chart-2', 'url' => '/v2/finance/rapports/dashboard', 'permissions' => ['finance.dashboard.view']],
+                    ['label' => 'Frais scolaires', 'icon' => 'list-checks', 'url' => '/v2/finance/frais', 'permissions' => ['finance.frais.view']],
+                    ['label' => 'Factures', 'icon' => 'file-text', 'url' => '/v2/finance/factures', 'permissions' => ['finance.factures.view']],
+                    ['label' => 'Paiements', 'icon' => 'banknote', 'url' => '/v2/finance/paiements', 'permissions' => ['finance.paiements.view']],
+                    ['label' => 'Impayés', 'icon' => 'alert-circle', 'url' => '/v2/finance/rapports/impayes', 'permissions' => ['finance.rapports.view']],
+                    ['label' => 'Décaissements', 'icon' => 'arrow-down-circle', 'url' => '/v2/finance/decaissements', 'permissions' => ['finance.decaissements.view']],
+                    ['label' => 'Caisse du jour', 'icon' => 'vault', 'url' => '/v2/finance/caisse', 'permissions' => ['finance.caisse.view']],
+                    ['label' => 'Comptabilité', 'icon' => 'calculator', 'url' => '/v2/finance/comptabilite', 'permissions' => ['finance.comptabilite.view']],
+                ],
+            ],
+            [
+                'id' => 'rh',
+                'label' => 'Ressources Humaines',
+                'icon' => 'users-round',
+                'permissions' => ['rh.presence.view', 'leave.view', 'evaluation.view', 'training.view', 'hr_document.view'],
+                'children' => [
+                    ['label' => 'Présences RH', 'icon' => 'clock', 'url' => '/v2/rh/presences', 'permissions' => ['rh.presence.view']],
+                    ['label' => 'Congés', 'icon' => 'calendar-off', 'url' => '/v2/rh/conges', 'permissions' => ['leave.view']],
+                    ['label' => 'Évaluations', 'icon' => 'star', 'url' => '/v2/rh/evaluations', 'permissions' => ['evaluation.view']],
+                    ['label' => 'Formations', 'icon' => 'book-open', 'url' => '/v2/rh/formations', 'permissions' => ['training.view']],
+                    ['label' => 'Documents RH', 'icon' => 'folder', 'url' => '/v2/rh/documents', 'permissions' => ['hr_document.view']],
                 ],
             ],
             [
                 'id' => 'reporting',
                 'label' => 'Rapports financiers',
                 'icon' => 'trending-up',
-                'permissions' => ['rapports.view'],
-                'url' => '/rapports/financier',
+                'permissions' => ['finance.rapports.view'],
+                'url' => '/v2/finance/rapports',
             ],
             [
                 'id' => 'notifications',
@@ -507,8 +733,36 @@ class MenuService
                 'id' => 'absences',
                 'label' => 'Mes absences',
                 'icon' => 'calendar-x',
-                'url' => '/eleve/absences',
+                'url' => '/absences',
                 'permissions' => [],
+            ],
+            [
+                'id' => 'scolarite',
+                'label' => 'Scolarité et paiements',
+                'icon' => 'credit-card',
+                'url' => '/v2/finance/mes-paiements',
+                'permissions' => ['finance.paiements.view.own'],
+            ],
+            [
+                'id' => 'retards',
+                'label' => 'Mes retards',
+                'icon' => 'clock',
+                'url' => '/v2/vie-scolaire/retards',
+                'permissions' => ['late.view'],
+            ],
+            [
+                'id' => 'discipline',
+                'label' => 'Discipline',
+                'icon' => 'gavel',
+                'url' => '/v2/vie-scolaire/discipline',
+                'permissions' => ['discipline.view'],
+            ],
+            [
+                'id' => 'recompenses',
+                'label' => 'Mes récompenses',
+                'icon' => 'award',
+                'url' => '/v2/vie-scolaire/recompenses',
+                'permissions' => ['reward.view'],
             ],
             [
                 'id' => 'announcements',
@@ -570,11 +824,32 @@ class MenuService
                 'permissions' => [],
             ],
             [
+                'id' => 'retards',
+                'label' => 'Retards',
+                'icon' => 'clock',
+                'url' => '/v2/vie-scolaire/retards',
+                'permissions' => ['late.view'],
+            ],
+            [
+                'id' => 'discipline',
+                'label' => 'Discipline',
+                'icon' => 'gavel',
+                'url' => '/v2/vie-scolaire/discipline',
+                'permissions' => ['discipline.view'],
+            ],
+            [
+                'id' => 'recompenses',
+                'label' => 'Récompenses',
+                'icon' => 'award',
+                'url' => '/v2/vie-scolaire/recompenses',
+                'permissions' => ['reward.view'],
+            ],
+            [
                 'id' => 'scolarite',
-                'label' => 'Scolarité',
+                'label' => 'Scolarité et paiements',
                 'icon' => 'credit-card',
-                'url' => '/parent/paiements',
-                'permissions' => [],
+                'url' => '/v2/finance/mes-paiements',
+                'permissions' => ['finance.paiements.view.own'],
             ],
             [
                 'id' => 'announcements',
@@ -760,5 +1035,45 @@ class MenuService
         }
 
         return $bestGroupId;
+    }
+
+    /**
+     * Résout le libellé du menu (top-level ou enfant de groupe) correspondant
+     * le mieux à l'URL courante — sert de titre de page par défaut quand une
+     * vue ne définit pas explicitement $title, pour que le header reste
+     * toujours synchronisé avec la navigation.
+     */
+    public static function resolveActiveLabel(array $menus, string $currentUri): ?string
+    {
+        $current = self::normalizePath($currentUri);
+
+        $bestLabel = null;
+        $bestPrefixLength = -1;
+
+        foreach ($menus as $item) {
+            $candidates = (!empty($item['children']) && is_array($item['children']))
+                ? $item['children']
+                : [$item];
+
+            foreach ($candidates as $candidate) {
+                $candidatePath = self::normalizePath($candidate['url'] ?? '');
+                $label = $candidate['label'] ?? null;
+                if ($candidatePath === '' || $candidatePath === '/' || $label === null) {
+                    continue;
+                }
+
+                if ($current === $candidatePath) {
+                    // Correspondance exacte : priorité absolue.
+                    return $label;
+                }
+
+                if (str_starts_with($current, $candidatePath . '/') && strlen($candidatePath) > $bestPrefixLength) {
+                    $bestPrefixLength = strlen($candidatePath);
+                    $bestLabel = $label;
+                }
+            }
+        }
+
+        return $bestLabel;
     }
 }

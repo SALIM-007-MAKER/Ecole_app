@@ -1,18 +1,9 @@
 <?php /** @var array $stats @var string $titre */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title><?= htmlspecialchars($titre ?? 'Analytique') ?></title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-6xl mx-auto py-8 px-4">
 
   <div class="flex items-center justify-between mb-6">
     <h1 class="text-2xl font-bold text-slate-800">Analytique Bibliothèque</h1>
-    <a href="/v2/bibliotheque/analytics/export?format=json" class="text-sm border border-slate-200 bg-white px-4 py-2 rounded-lg hover:border-violet-400">Exporter</a>
+    <a href="<?= BASE_URL ?>/v2/bibliotheque/analytics/export?format=json" class="text-sm border border-slate-200 bg-white px-4 py-2 rounded-lg hover:border-violet-400">Exporter</a>
   </div>
 
   <!-- KPIs -->
@@ -103,5 +94,3 @@ new Chart(document.getElementById('chartStatut'), {
   options: { responsive: true }
 });
 </script>
-</body>
-</html>

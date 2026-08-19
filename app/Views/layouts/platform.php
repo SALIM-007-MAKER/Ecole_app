@@ -1,4 +1,13 @@
-<?php $operator = \Core\Platform\PlatformAuth::current(); ?>
+<?php
+use Core\Tenant\BrandingService;
+$operator = \Core\Platform\PlatformAuth::current();
+
+/* Branding (aligné avec layout/main) */
+$__sessionForBranding = \Core\Session::getUser();
+$__etabIdForBranding = $__sessionForBranding['etablissement_id']
+    ?? (int)((require ROOT_PATH . '/config/tenant.php')['default_id'] ?? 1);
+$branding = BrandingService::make()->get((int)$__etabIdForBranding);
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -9,11 +18,14 @@
     <meta name="theme-color" content="#0f172a">
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>tailwind.config = { corePlugins: { preflight: false } }</script>
+    <script>
+        tailwind.config = { corePlugins: { preflight: false }, theme: { extend: { fontFamily: { sans: ['<?= addslashes($branding->fontFamily) ?>','ui-sans-serif','system-ui','sans-serif'] } } } }
+    </script>
     <?php $cssV = @filemtime($_SERVER['DOCUMENT_ROOT'] . '/ecole_app/public/assets/css/app.css') ?: '1'; ?>
+    <link href="https://fonts.googleapis.com/css2?family=<?= urlencode($branding->fontFamily) ?>:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="<?= BASE_URL ?>/assets/css/app.css?v=<?= $cssV ?>" rel="stylesheet">
     <style>
-        body { font-family: ui-sans-serif, system-ui, sans-serif; background: #0f172a; }
+        body { font-family: '<?= addslashes($branding->fontFamily) ?>', ui-sans-serif, system-ui, sans-serif; background: #0f172a; }
         .platform-header {
             background: #0f172a; border-bottom: 1px solid #1e293b; padding: 0 1.5rem;
             display: flex; align-items: center; gap: 2rem; height: 3.75rem;

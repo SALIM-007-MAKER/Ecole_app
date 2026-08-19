@@ -64,7 +64,7 @@ $canManage = $canManage ?? false;
             <?php if ($canManage): ?>
             <div class="flex flex-col gap-1">
                 <form method="POST" action="<?= BASE_URL ?>/v2/finance/frais/categories/<?= $cat->id ?>/toggle">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken()) ?>">
+                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                     <button type="submit"
                             class="p-1.5 text-slate-400 hover:text-<?= $cat->actif ? 'amber' : 'emerald' ?>-600 rounded"
                             title="<?= $cat->actif ? 'Désactiver' : 'Activer' ?>">
@@ -90,33 +90,33 @@ $canManage = $canManage ?? false;
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
         <h3 class="text-lg font-bold text-slate-800 mb-4">Nouvelle catégorie</h3>
         <form method="POST" action="<?= BASE_URL ?>/v2/finance/frais/categories" class="space-y-4">
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken()) ?>">
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
 
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Code <span class="text-red-500">*</span></label>
+                    <label class="form-label">Code <span class="form-required">*</span></label>
                     <input type="text" name="code" required placeholder="EX: SCOL"
-                           class="w-full px-3 py-2 text-sm font-mono border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500">
+                           class="form-input font-mono">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Nom <span class="text-red-500">*</span></label>
+                    <label class="form-label">Nom <span class="form-required">*</span></label>
                     <input type="text" name="nom" required placeholder="Frais scolaires"
-                           class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500">
+                           class="form-input">
                 </div>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Couleur</label>
-                    <select name="couleur" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500">
+                    <label class="form-label">Couleur</label>
+                    <select name="couleur" class="form-select">
                         <?php foreach ($couleurs as $hex => $label): ?>
                         <option value="<?= $hex ?>"><?= $label ?> (<?= $hex ?>)</option>
                         <?php endforeach; ?>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Icône</label>
-                    <select name="icone" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500">
+                    <label class="form-label">Icône</label>
+                    <select name="icone" class="form-select">
                         <?php foreach ($icones as $key => $label): ?>
                         <option value="<?= $key ?>"><?= $label ?></option>
                         <?php endforeach; ?>

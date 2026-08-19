@@ -40,10 +40,10 @@ class DepartmentController extends Controller
             'departements' => $result['items'],
             'pagination'   => $result,
             'filters'      => $filters,
-            'canCreate'    => $this->policy->canCreate($this->user),
-            'canUpdate'    => $this->policy->canUpdate($this->user),
-            'canArchive'   => $this->policy->canArchive($this->user),
-            'canExport'    => $this->policy->canExport($this->user),
+            'canCreate'    => $this->policy->canCreate($this->currentUser()),
+            'canUpdate'    => $this->policy->canUpdate($this->currentUser()),
+            'canArchive'   => $this->policy->canArchive($this->currentUser()),
+            'canExport'    => $this->policy->canExport($this->currentUser()),
         ]);
     }
 
@@ -67,8 +67,8 @@ class DepartmentController extends Controller
             'dept'      => $dept,
             'services'  => $services,
             'historique'=> $historique,
-            'canUpdate' => $this->policy->canUpdate($this->user),
-            'canArchive'=> $this->policy->canArchive($this->user),
+            'canUpdate' => $this->policy->canUpdate($this->currentUser()),
+            'canArchive'=> $this->policy->canArchive($this->currentUser()),
         ]);
     }
 
@@ -105,7 +105,7 @@ class DepartmentController extends Controller
         }
 
         try {
-            $id = $this->service->creer($dto, (int)$this->user['id']);
+            $id = $this->service->creer($dto, (int)$this->currentUser()['id']);
             Session::flash('success', 'Département créé avec succès.');
             $this->redirect('/v2/rh/organisation/departements/' . $id);
         } catch (\RuntimeException $e) {
@@ -171,7 +171,7 @@ class DepartmentController extends Controller
         }
 
         try {
-            $this->service->modifier($id, $dto, (int)$this->user['id']);
+            $this->service->modifier($id, $dto, (int)$this->currentUser()['id']);
             Session::flash('success', 'Département mis à jour.');
             $this->redirect('/v2/rh/organisation/departements/' . $id);
         } catch (\RuntimeException $e) {
@@ -188,7 +188,7 @@ class DepartmentController extends Controller
         $this->verifyCsrf();
 
         try {
-            $this->service->archiver($id, (int)$this->user['id']);
+            $this->service->archiver($id, (int)$this->currentUser()['id']);
             Session::flash('success', 'Département archivé.');
         } catch (\RuntimeException $e) {
             Session::flash('error', $e->getMessage());
@@ -202,7 +202,7 @@ class DepartmentController extends Controller
         $this->verifyCsrf();
 
         try {
-            $this->service->restaurer($id, (int)$this->user['id']);
+            $this->service->restaurer($id, (int)$this->currentUser()['id']);
             Session::flash('success', 'Département restauré.');
         } catch (\RuntimeException $e) {
             Session::flash('error', $e->getMessage());
@@ -228,7 +228,7 @@ class DepartmentController extends Controller
         }
 
         try {
-            $this->service->creerService($dto, (int)$this->user['id']);
+            $this->service->creerService($dto, (int)$this->currentUser()['id']);
             Session::flash('success', 'Service ajouté au département.');
         } catch (\RuntimeException|\InvalidArgumentException $e) {
             Session::flash('error', $e->getMessage());
@@ -242,7 +242,7 @@ class DepartmentController extends Controller
         $this->verifyCsrf();
 
         try {
-            $this->service->archiverService($serviceId, (int)$this->user['id']);
+            $this->service->archiverService($serviceId, (int)$this->currentUser()['id']);
             Session::flash('success', 'Service archivé.');
         } catch (\RuntimeException $e) {
             Session::flash('error', $e->getMessage());

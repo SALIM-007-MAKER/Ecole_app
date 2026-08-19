@@ -156,7 +156,7 @@ class EnseignantPortalController extends PortalBaseController
                  JOIN users u ON u.linked_id = emp.id AND u.role = "enseignant"
                  JOIN matieres m ON m.id = am.matiere_id
                  WHERE c.etablissement_id = :etab AND u.id = :uid AND c.deleted_at IS NULL
-                 ORDER BY c.niveau, c.nom'
+                 ORDER BY ' . \App\Models\ClasseModel::ordreNiveauSql('c.niveau') . ', c.nom'
             );
             $stmt->execute([':etab' => $etab, ':uid' => $userId]);
             return $stmt->fetchAll(\PDO::FETCH_ASSOC);

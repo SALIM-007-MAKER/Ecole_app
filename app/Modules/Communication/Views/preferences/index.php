@@ -16,14 +16,6 @@ $types = [
 ];
 $canaux = ['internal', 'email', 'push'];
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title><?= htmlspecialchars($titre ?? 'Préférences') ?></title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-3xl mx-auto py-8 px-4">
   <h1 class="text-2xl font-bold text-slate-800 mb-2">Préférences de notification</h1>
   <p class="text-sm text-slate-500 mb-6">Choisissez les notifications que vous souhaitez recevoir et sur quels canaux.</p>
@@ -96,7 +88,7 @@ document.getElementById('save-btn').addEventListener('click', async () => {
     prefs[type] = { actif: cb.checked ? 1 : 0, canaux };
   });
 
-  const r = await fetch('/v2/notifications/preferences', {
+  const r = await fetch('<?= BASE_URL ?>/v2/notifications/preferences', {
     method: 'POST',
     headers: { 'X-CSRF-Token': csrf, 'Content-Type': 'application/json' },
     body: JSON.stringify({ preferences: prefs })
@@ -107,5 +99,3 @@ document.getElementById('save-btn').addEventListener('click', async () => {
   }
 });
 </script>
-</body>
-</html>

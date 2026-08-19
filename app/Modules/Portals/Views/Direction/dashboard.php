@@ -11,7 +11,7 @@
       ['RH','briefcase','direction/rh','bg-rose-50 text-rose-700'],
       ['Rapports','bar-chart-2','direction/rapports','bg-indigo-50 text-indigo-700'],
     ] as [$label, $icon, $path, $colors]): ?>
-    <a href="/v2/portals/<?= $path ?>"
+    <a href="<?= BASE_URL ?>/v2/portals/<?= $path ?>"
        class="flex flex-col items-center gap-2 p-3 rounded-xl border border-slate-200 hover:shadow-md transition-shadow <?= $colors ?>">
       <i data-lucide="<?= $icon ?>" class="w-5 h-5"></i>
       <span class="text-xs font-medium"><?= $label ?></span>

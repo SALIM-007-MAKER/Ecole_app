@@ -12,7 +12,9 @@ class EmployeeArchived extends Event
         public readonly string $nom,
         public readonly string $prenom,
         public readonly int    $archiveParId,
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

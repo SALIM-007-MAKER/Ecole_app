@@ -87,10 +87,10 @@ try {
                 VALUES ('test-backup-b', 'École Backup Test B', 'Backup B', 'lycee', 'DZ', 'active')");
     $etabB = (int)$pdo->lastInsertId();
 
-    $pdo->exec("INSERT INTO classes (nom, niveau, annee_scolaire, max_eleves, etablissement_id) VALUES ('ClasseA1', '1AS', '2025-2026', 30, {$etabA})");
+    $pdo->exec("INSERT INTO classes (nom, niveau, annee_scolaire, max_eleves, etablissement_id) VALUES ('ClasseA1', 'Seconde', '2025-2026', 30, {$etabA})");
     $classeA = (int)$pdo->lastInsertId();
-    $pdo->exec("INSERT INTO classes (nom, niveau, annee_scolaire, max_eleves, etablissement_id) VALUES ('ClasseB1', '2AS', '2025-2026', 25, {$etabB})");
-    $pdo->exec("INSERT INTO classes (nom, niveau, annee_scolaire, max_eleves, etablissement_id) VALUES ('ClasseB2', '3AS', '2025-2026', 20, {$etabB})");
+    $pdo->exec("INSERT INTO classes (nom, niveau, annee_scolaire, max_eleves, etablissement_id) VALUES ('ClasseB1', 'Première', '2025-2026', 25, {$etabB})");
+    $pdo->exec("INSERT INTO classes (nom, niveau, annee_scolaire, max_eleves, etablissement_id) VALUES ('ClasseB2', 'Terminale', '2025-2026', 20, {$etabB})");
 
     echo "Établissement A = {$etabA} (1 classe), Établissement B = {$etabB} (2 classes)\n";
 
@@ -220,7 +220,7 @@ try {
     // Garde d'isolation : un dump falsifié avec des lignes d'un AUTRE etablissement_id ne doit jamais être appliqué
     $poisonedDump = $dumpForRestore;
     $poisonedDump['tables']['classes']['rows'][] = [
-        'id' => 999999, 'nom' => 'INJECTION-MALVEILLANTE', 'niveau' => '1AS',
+        'id' => 999999, 'nom' => 'INJECTION-MALVEILLANTE', 'niveau' => 'Seconde',
         'annee_scolaire' => '2025-2026', 'max_eleves' => 1, 'etablissement_id' => $etabB,
     ];
     $poisonedResult = $restorer->restoreTenantLive($poisonedDump, $etabA, $pdo);

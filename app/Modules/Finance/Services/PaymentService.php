@@ -13,16 +13,28 @@ use App\Modules\Finance\Events\ReceiptGenerated;
 use App\Modules\Finance\Repositories\PaymentRepository;
 use App\Services\AuditService;
 use Core\EventDispatcher;
+use Core\Tenant\BrandingService;
+use Core\Tenant\SettingsService;
+use Core\Tenant\TenantContext;
 
 class PaymentService
 {
     private PaymentRepository $repo;
     private AuditService      $audit;
+    private SettingsService   $settings;
 
     public function __construct()
     {
-        $this->repo  = new PaymentRepository();
-        $this->audit = new AuditService();
+        $this->repo     = new PaymentRepository();
+        $this->audit    = new AuditService();
+        $this->settings = SettingsService::make();
+    }
+
+    /** Préfixe de numérotation des reçus, configurable par établissement (voir /parametres/documents). */
+    private function prefixeRecu(): string
+    {
+        $etabId = TenantContext::isSet() ? TenantContext::id() : BrandingService::forCurrentRequest()->etablissementId;
+        return $this->settings->get($etabId, 'documents', 'prefixe_recu', 'REC');
     }
 
     // ----------------------------------------------------------------
@@ -114,7 +126,7 @@ class PaymentService
         }
 
         // Audit
-        $this->audit->logCreate($userId, 'finance', 'paiement', $paiementId);
+        $this->audit->logCreate($userId, 'finance', 'paiement', $paiementId, $dto->toArray());
 
         // Events
         $estPartiel = $nouveauStatut === 'partiellement_payee';
@@ -177,7 +189,7 @@ class PaymentService
             'encaisse_par'      => $userId,
         ]);
 
-        $this->audit->logCreate($userId, 'finance', 'paiement', $paiementId);
+        $this->audit->logCreate($userId, 'finance', 'paiement', $paiementId, $dto->toArray());
 
         EventDispatcher::dispatch(new PaymentInitiated(
             paiementId:    $paiementId,
@@ -457,7 +469,7 @@ class PaymentService
             return (int)$existant->id;
         }
 
-        $numero = $this->repo->genererNumero('REC', (int)date('Y'));
+        $numero = $this->repo->genererNumero($this->prefixeRecu(), (int)date('Y'));
         $recuId = $this->repo->insertRecu([
             'numero'        => $numero,
             'paiement_id'   => $paiementId,

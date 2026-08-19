@@ -7,20 +7,27 @@ use App\Modules\VieScolaire\Recompenses\DTO\RewardFiltersDTO;
 use App\Modules\VieScolaire\Recompenses\Policies\RewardPolicy;
 use App\Modules\VieScolaire\Recompenses\Repositories\RewardRepository;
 use App\Modules\VieScolaire\Recompenses\Services\RewardService;
+use App\Services\UploadService;
+use App\Shared\Auth\EleveScopeTrait;
 use Core\Controller;
 use Core\View;
 
 class RewardController extends Controller
 {
+    use EleveScopeTrait;
+
     private RewardService    $service;
     private RewardRepository $repo;
     private RewardPolicy     $policy;
+    private UploadService    $uploadService;
 
     public function __construct()
     {
-        $this->service = new RewardService();
-        $this->repo    = new RewardRepository();
-        $this->policy  = new RewardPolicy();
+        parent::__construct();
+        $this->service       = new RewardService();
+        $this->repo          = new RewardRepository();
+        $this->policy        = new RewardPolicy();
+        $this->uploadService = new UploadService();
     }
 
     // ── Liste ─────────────────────────────────────────────────────────────────
@@ -32,9 +39,15 @@ class RewardController extends Controller
         $this->requirePermission('reward.view');
 
         $filters = RewardFiltersDTO::fromRequest($_GET);
+
+        $scope = $this->myEleveIds();
+        if ($scope !== null) {
+            $filters = $filters->withEleveIds($scope);
+        }
+
         $result  = $this->service->paginate($filters);
 
-        View::render('VieScolaire::recompenses/index', [
+        $this->view->render('VieScolaire::recompenses/index', [
             'user'       => $user,
             'recompenses'=> $result['data'],
             'total'      => $result['total'],
@@ -58,7 +71,7 @@ class RewardController extends Controller
         $annee    = $_GET['annee_scolaire'] ?? date('Y') . '-' . (date('Y') + 1);
         $stats    = $classeId ? $this->service->statistiquesClasse($classeId, $annee) : [];
 
-        View::render('VieScolaire::recompenses/statistiques', [
+        $this->view->render('VieScolaire::recompenses/statistiques', [
             'user'    => $user,
             'stats'   => $stats,
             'classeId'=> $classeId,
@@ -111,12 +124,14 @@ class RewardController extends Controller
         $classeId = (int)($_GET['classe_id'] ?? 0);
         $annee    = $_GET['annee_scolaire'] ?? date('Y') . '-' . (date('Y') + 1);
         $data     = $classeId ? $this->service->classementComportemental($classeId, $annee) : [];
+        $classes  = (new \App\Models\ClasseModel())->findAll();
 
-        View::render('VieScolaire::recompenses/classement', [
-            'user'    => $user,
-            'data'    => $data,
-            'classeId'=> $classeId,
-            'annee'   => $annee,
+        $this->view->render('VieScolaire::recompenses/classement', [
+            'user'       => $user,
+            'classement' => $data,
+            'classeId'   => $classeId,
+            'annee'      => $annee,
+            'classes'    => $classes,
         ]);
     }
 
@@ -128,9 +143,11 @@ class RewardController extends Controller
         $user = $this->currentUser();
         $this->requirePermission('reward.create');
 
-        View::render('VieScolaire::recompenses/create', [
+        $this->view->render('VieScolaire::recompenses/create', [
             'user'      => $user,
             'categories'=> $this->service->categories(),
+            'classes'   => (new \App\Models\ClasseModel())->findAll(),
+            'eleves'    => (new \App\Models\EleveModel())->findAll('nom', 'ASC'),
         ]);
     }
 
@@ -143,13 +160,15 @@ class RewardController extends Controller
 
         $uploadedFile = null;
         if (!empty($_FILES['piece_jointe']['tmp_name'])) {
-            $ext  = pathinfo($_FILES['piece_jointe']['name'], PATHINFO_EXTENSION);
-            $dest = 'uploads/recompenses/' . uniqid('rw_', true) . '.' . $ext;
-            if (!is_dir('uploads/recompenses')) {
-                mkdir('uploads/recompenses', 0755, true);
-            }
-            if (move_uploaded_file($_FILES['piece_jointe']['tmp_name'], $dest)) {
-                $uploadedFile = $dest;
+            $validation = $this->uploadService->validate($_FILES['piece_jointe'], 'piece_jointe_recompense');
+            if (!$validation['ok']) {
+                \Core\Session::flash('error', implode(' ', $validation['errors']));
+            } else {
+                try {
+                    $uploadedFile = $this->uploadService->upload($_FILES['piece_jointe'], 'piece_jointe_recompense', 'rw_');
+                } catch (\Throwable $e) {
+                    \Core\Session::flash('error', $e->getMessage());
+                }
             }
         }
 
@@ -157,18 +176,18 @@ class RewardController extends Controller
             $dto    = RewardDTO::fromRequest($_POST, $uploadedFile);
             $errors = $dto->validate();
             if (!empty($errors)) {
-                $_SESSION['flash_error'] = implode('<br>', $errors);
-                header('Location: /v2/vie-scolaire/recompenses/create');
+                \Core\Session::flash('error', implode('<br>', $errors));
+                $this->redirect('/v2/vie-scolaire/recompenses/create');
                 exit;
             }
 
             $reward = $this->service->attribuerRecompense($dto, (int)$user['id']);
-            $_SESSION['flash_success'] = 'Récompense attribuée avec succès.';
-            header('Location: /v2/vie-scolaire/recompenses/' . $reward['id']);
+            \Core\Session::flash('success', 'Récompense attribuée avec succès.');
+            $this->redirect('/v2/vie-scolaire/recompenses/' . $reward['id']);
             exit;
         } catch (\Throwable $e) {
-            $_SESSION['flash_error'] = $e->getMessage();
-            header('Location: /v2/vie-scolaire/recompenses/create');
+            \Core\Session::flash('error', $e->getMessage());
+            $this->redirect('/v2/vie-scolaire/recompenses/create');
             exit;
         }
     }
@@ -184,13 +203,14 @@ class RewardController extends Controller
         $reward = $this->service->findById($id);
         if ($reward === null) {
             http_response_code(404);
-            View::render('errors/404', ['user' => $user]);
+            $this->view->render('errors/404', ['user' => $user], 'none');
             return;
         }
+        $this->assertOwnEleve((int)$reward['eleve_id']);
 
         $historique = $this->service->historique($id);
 
-        View::render('VieScolaire::recompenses/show', [
+        $this->view->render('VieScolaire::recompenses/show', [
             'user'      => $user,
             'reward'    => $reward,
             'historique'=> $historique,
@@ -209,17 +229,17 @@ class RewardController extends Controller
         $reward = $this->service->findById($id);
         if ($reward === null) {
             http_response_code(404);
-            View::render('errors/404', ['user' => $user]);
+            $this->view->render('errors/404', ['user' => $user], 'none');
             return;
         }
 
         if (!$this->policy->canModify($user, $reward)) {
-            $_SESSION['flash_error'] = 'Cette récompense ne peut plus être modifiée.';
-            header('Location: /v2/vie-scolaire/recompenses/' . $id);
+            \Core\Session::flash('error', 'Cette récompense ne peut plus être modifiée.');
+            $this->redirect('/v2/vie-scolaire/recompenses/' . $id);
             exit;
         }
 
-        View::render('VieScolaire::recompenses/edit', [
+        $this->view->render('VieScolaire::recompenses/edit', [
             'user'      => $user,
             'reward'    => $reward,
             'categories'=> $this->service->categories(),
@@ -237,18 +257,18 @@ class RewardController extends Controller
             $dto    = RewardDTO::fromRequest($_POST);
             $errors = $dto->validate();
             if (!empty($errors)) {
-                $_SESSION['flash_error'] = implode('<br>', $errors);
-                header('Location: /v2/vie-scolaire/recompenses/' . $id . '/edit');
+                \Core\Session::flash('error', implode('<br>', $errors));
+                $this->redirect('/v2/vie-scolaire/recompenses/' . $id . '/edit');
                 exit;
             }
 
             $this->service->mettreAJour($id, $dto, (int)$user['id']);
-            $_SESSION['flash_success'] = 'Récompense mise à jour.';
-            header('Location: /v2/vie-scolaire/recompenses/' . $id);
+            \Core\Session::flash('success', 'Récompense mise à jour.');
+            $this->redirect('/v2/vie-scolaire/recompenses/' . $id);
             exit;
         } catch (\Throwable $e) {
-            $_SESSION['flash_error'] = $e->getMessage();
-            header('Location: /v2/vie-scolaire/recompenses/' . $id . '/edit');
+            \Core\Session::flash('error', $e->getMessage());
+            $this->redirect('/v2/vie-scolaire/recompenses/' . $id . '/edit');
             exit;
         }
     }
@@ -264,12 +284,12 @@ class RewardController extends Controller
 
         try {
             $this->service->validerRecompense($id, (int)$user['id']);
-            $_SESSION['flash_success'] = 'Récompense validée.';
+            \Core\Session::flash('success', 'Récompense validée.');
         } catch (\Throwable $e) {
-            $_SESSION['flash_error'] = $e->getMessage();
+            \Core\Session::flash('error', $e->getMessage());
         }
 
-        header('Location: /v2/vie-scolaire/recompenses/' . $id);
+        $this->redirect('/v2/vie-scolaire/recompenses/' . $id);
         exit;
     }
 
@@ -285,12 +305,12 @@ class RewardController extends Controller
 
         try {
             $this->service->revoquerRecompense($id, $motif, (int)$user['id']);
-            $_SESSION['flash_success'] = 'Récompense révoquée.';
+            \Core\Session::flash('success', 'Récompense révoquée.');
         } catch (\Throwable $e) {
-            $_SESSION['flash_error'] = $e->getMessage();
+            \Core\Session::flash('error', $e->getMessage());
         }
 
-        header('Location: /v2/vie-scolaire/recompenses/' . $id);
+        $this->redirect('/v2/vie-scolaire/recompenses/' . $id);
         exit;
     }
 }

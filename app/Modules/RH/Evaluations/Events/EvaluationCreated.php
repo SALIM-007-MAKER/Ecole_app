@@ -14,7 +14,9 @@ class EvaluationCreated extends Event
         public readonly int    $employeId,
         public readonly string $campagneCode,
         public readonly int    $createdBy
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

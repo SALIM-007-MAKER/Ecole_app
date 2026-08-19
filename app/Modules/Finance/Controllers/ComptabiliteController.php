@@ -18,6 +18,7 @@ class ComptabiliteController extends Controller
 
     public function __construct()
     {
+        parent::__construct();
         $this->repo    = new AccountingRepository();
         $this->service = new AccountingService();
         $this->policy  = new AccountingPolicy();

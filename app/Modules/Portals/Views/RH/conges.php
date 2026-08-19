@@ -21,8 +21,8 @@
       </div>
       <?php if ($statut === 'en_attente'): ?>
       <div class="flex gap-2">
-        <a href="/v2/rh/conges/<?= (int)$c['id'] ?>/approuver" class="text-xs bg-green-600 text-white px-3 py-1 rounded-lg hover:bg-green-700 transition-colors">Approuver</a>
-        <a href="/v2/rh/conges/<?= (int)$c['id'] ?>/refuser" class="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-lg hover:bg-red-200 transition-colors">Refuser</a>
+        <a href="<?= BASE_URL ?>/v2/rh/conges/<?= (int)$c['id'] ?>/approuver" class="text-xs bg-green-600 text-white px-3 py-1 rounded-lg hover:bg-green-700 transition-colors">Approuver</a>
+        <a href="<?= BASE_URL ?>/v2/rh/conges/<?= (int)$c['id'] ?>/refuser" class="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-lg hover:bg-red-200 transition-colors">Refuser</a>
       </div>
       <?php endif; ?>
     </div>

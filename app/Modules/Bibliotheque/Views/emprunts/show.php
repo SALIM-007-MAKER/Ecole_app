@@ -1,16 +1,8 @@
 <?php /** @var array $emprunt @var string $titre */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title><?= htmlspecialchars($titre ?? 'Emprunt') ?></title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-2xl mx-auto py-8 px-4">
 
   <div class="mb-4">
-    <a href="/v2/bibliotheque/emprunts" class="text-sm text-violet-600 hover:underline">← Emprunts</a>
+    <a href="<?= BASE_URL ?>/v2/bibliotheque/emprunts" class="text-sm text-violet-600 hover:underline">← Emprunts</a>
   </div>
 
   <div class="bg-white rounded-xl shadow-sm p-6">
@@ -82,16 +74,14 @@
 const id = <?= (int)$emprunt['id'] ?>;
 function retour() {
   if (!confirm('Confirmer le retour ?')) return;
-  fetch('/v2/bibliotheque/emprunts/' + id + '/retour', {method:'POST'}).then(()=>location.reload());
+  fetch('<?= BASE_URL ?>/v2/bibliotheque/emprunts/' + id + '/retour', {method:'POST'}).then(()=>location.reload());
 }
 function prolonger() {
-  fetch('/v2/bibliotheque/emprunts/' + id + '/prolonger', {method:'POST'})
+  fetch('<?= BASE_URL ?>/v2/bibliotheque/emprunts/' + id + '/prolonger', {method:'POST'})
     .then(r=>r.json()).then(d=>{ if(d.success) location.reload(); else alert(d.error); });
 }
 function declarerPerdu() {
   if (!confirm('Déclarer cet exemplaire perdu ? Une pénalité sera créée.')) return;
-  fetch('/v2/bibliotheque/emprunts/' + id + '/perdu', {method:'POST'}).then(()=>location.reload());
+  fetch('<?= BASE_URL ?>/v2/bibliotheque/emprunts/' + id + '/perdu', {method:'POST'}).then(()=>location.reload());
 }
 </script>
-</body>
-</html>

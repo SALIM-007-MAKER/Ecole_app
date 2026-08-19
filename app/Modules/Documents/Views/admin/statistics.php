@@ -51,7 +51,7 @@ $fmt = function(int $o): string {
   <?php endif; ?>
 
   <div class="flex gap-4 text-sm">
-    <a href="/v2/documents/admin/quotas" class="text-violet-600 hover:text-violet-800 font-medium">← Quotas</a>
-    <a href="/v2/documents/admin/expirations" class="text-violet-600 hover:text-violet-800 font-medium">Expirations →</a>
+    <a href="<?= BASE_URL ?>/v2/documents/admin/quotas" class="text-violet-600 hover:text-violet-800 font-medium">← Quotas</a>
+    <a href="<?= BASE_URL ?>/v2/documents/admin/expirations" class="text-violet-600 hover:text-violet-800 font-medium">Expirations →</a>
   </div>
 </div>

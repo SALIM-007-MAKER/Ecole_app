@@ -1,17 +1,9 @@
 <?php /** @var array $templates @var string|null $filtre_canal */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title><?= htmlspecialchars($titre ?? 'Templates') ?></title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-5xl mx-auto py-8 px-4">
 
   <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold text-slate-800">Templates de communication</h1>
-    <a href="/v2/communication/templates/create" class="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-violet-700">
+    <a href="<?= BASE_URL ?>/v2/communication/templates/create" class="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-violet-700">
       + Nouveau template
     </a>
   </div>
@@ -56,7 +48,7 @@
           </td>
           <td class="px-4 py-3 text-slate-500"><?= htmlspecialchars($t['module_source'] ?? '—') ?></td>
           <td class="px-4 py-3 text-right space-x-2">
-            <a href="/v2/communication/templates/<?= $t['id'] ?>" class="text-violet-600 text-xs hover:underline">Modifier</a>
+            <a href="<?= BASE_URL ?>/v2/communication/templates/<?= $t['id'] ?>" class="text-violet-600 text-xs hover:underline">Modifier</a>
             <button onclick="supprimer(<?= $t['id'] ?>)" class="text-red-400 text-xs hover:text-red-600">Supprimer</button>
           </td>
         </tr>
@@ -77,5 +69,3 @@ async function supprimer(id) {
   location.reload();
 }
 </script>
-</body>
-</html>

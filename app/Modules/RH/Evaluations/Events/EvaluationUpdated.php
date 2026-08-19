@@ -15,7 +15,9 @@ class EvaluationUpdated extends Event
         public readonly string $ancienStatut,
         public readonly string $nouveauStatut,
         public readonly int    $updatedBy
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

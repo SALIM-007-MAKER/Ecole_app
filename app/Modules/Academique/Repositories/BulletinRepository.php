@@ -3,6 +3,8 @@
 namespace App\Modules\Academique\Repositories;
 
 use Core\Database;
+use Core\Tenant\BrandingService;
+use Core\Tenant\TenantContext;
 use App\Modules\Academique\DTO\BulletinData;
 
 /**
@@ -33,13 +35,15 @@ class BulletinRepository
                 m.id           AS matiere_id,
                 m.nom          AS matiere_nom,
                 m.coefficient  AS coeff_matiere,
+                m.categorie    AS matiere_categorie,
                 ev.id          AS evaluation_id,
                 ev.note_max,
                 ev.coefficient AS coeff_eval,
                 n.valeur,
                 COALESCE(n.est_absent, 0)        AS est_absent,
                 COALESCE(te.est_eliminatoire, 0) AS est_eliminatoire,
-                te.seuil_eliminatoire
+                te.seuil_eliminatoire,
+                te.code                          AS type_evaluation_code
             FROM evaluations ev
             JOIN matieres m ON m.id = ev.matiere_id
             LEFT JOIN notes_v2 n
@@ -116,30 +120,47 @@ class BulletinRepository
      * Informations de l'établissement depuis la table des paramètres.
      * Retourne un tableau avec clés 'nom', 'adresse', 'logo'.
      */
+    /**
+     * Identité de l'établissement pour l'en-tête des bulletins — lit le
+     * branding par établissement (Core\Tenant\BrandingService), qui est la
+     * source unique de nom/logo/adresse en base (voir NIGER_APP_
+     * CONFIGURATION_AUDIT.md). L'ancienne implémentation lisait une table
+     * `parametres` qui n'a jamais existé et retombait donc toujours sur
+     * des valeurs par défaut génériques — corrigé.
+     */
     public function infoEtablissement(): array
     {
-        $defaults = [
-            'nom'     => 'Établissement Scolaire',
-            'adresse' => null,
-            'logo'    => null,
+        $etablissementId = TenantContext::isSet()
+            ? TenantContext::id()
+            : (int)((require ROOT_PATH . '/config/tenant.php')['default_id'] ?? 1);
+
+        $branding = BrandingService::make()->get($etablissementId);
+
+        return [
+            'nom'       => $branding->appName,
+            'adresse'   => $branding->contactAddress,
+            'logo'      => $branding->logoUrl,
+            'telephone' => $branding->contactPhone,
+            'email'     => $branding->contactEmail,
         ];
+    }
+
+    /**
+     * Effectif réel de la classe (tous les élèves actifs), indépendant du
+     * nombre d'élèves notés/classés pour une période donnée — évite qu'un
+     * bulletin affiche "0" tant qu'aucune évaluation n'a été publiée.
+     */
+    public function effectifClasse(int $classeId): int
+    {
         try {
             $stmt = $this->db->prepare(
-                "SELECT cle, valeur FROM parametres
-                  WHERE cle IN ('ecole.nom', 'ecole.adresse', 'ecole.logo')"
+                "SELECT COUNT(*) FROM eleves WHERE classe_id = :cid AND actif = 1"
             );
-            $stmt->execute();
-            $rows = $stmt->fetchAll(\PDO::FETCH_OBJ);
-            foreach ($rows as $row) {
-                $key = str_replace('ecole.', '', $row->cle);
-                if (isset($defaults[$key])) {
-                    $defaults[$key] = $row->valeur;
-                }
-            }
+            $stmt->execute([':cid' => $classeId]);
+            return (int)$stmt->fetchColumn();
         } catch (\PDOException) {
-            // table parametres absente ou clés inexistantes → defaults
+            return 0;
         }
-        return $defaults;
     }
 
     /**
@@ -186,6 +207,29 @@ class BulletinRepository
             $stmt->execute([':e' => $eleveId, ':p' => $periodeId]);
             $row = $stmt->fetch(\PDO::FETCH_ASSOC);
             return $row ?: null;
+        } catch (\PDOException) {
+            return null;
+        }
+    }
+
+    /**
+     * Moyenne du bulletin le plus récent d'un élève (toutes périodes/années
+     * confondues), pour les cartes-résumé des portails parent/élève.
+     */
+    public function derniereMoyenne(int $eleveId): ?float
+    {
+        try {
+            $stmt = $this->db->prepare(
+                "SELECT b.moyenne
+                   FROM bulletins_v2 b
+                   JOIN periodes_scolaires ps ON ps.id = b.periode_id
+                  WHERE b.eleve_id = :e
+                  ORDER BY ps.date_fin DESC, b.generated_at DESC
+                  LIMIT 1"
+            );
+            $stmt->execute([':e' => $eleveId]);
+            $val = $stmt->fetchColumn();
+            return $val !== false && $val !== null ? (float)$val : null;
         } catch (\PDOException) {
             return null;
         }
@@ -306,6 +350,26 @@ class BulletinRepository
             return $stmt->rowCount() > 0;
         } catch (\PDOException $e) {
             throw new \RuntimeException('Erreur mise à jour statut: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Met à jour uniquement l'appréciation du chef d'établissement — ne touche
+     * pas `data_json` : BulletinController::imprimer() fait déjà primer cette
+     * colonne sur le snapshot au moment de l'affichage.
+     */
+    public function updateAppreciationDirecteur(string $token, ?string $appreciation): bool
+    {
+        try {
+            $stmt = $this->db->prepare(
+                "UPDATE bulletins_v2
+                    SET appreciation_directeur = :app_dir, updated_at = NOW()
+                  WHERE verification_token = :token"
+            );
+            $stmt->execute([':app_dir' => $appreciation, ':token' => $token]);
+            return $stmt->rowCount() > 0;
+        } catch (\PDOException $e) {
+            throw new \RuntimeException("Erreur mise à jour de l'appréciation direction: " . $e->getMessage());
         }
     }
 }

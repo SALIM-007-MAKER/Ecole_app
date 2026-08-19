@@ -62,6 +62,11 @@ class Router
         $method = $request->getMethod();
         $uri    = $this->stripBasePath($request->getUri());
 
+        // Tolérer un slash final (ex: /retards/create/) — évite un 404 sur une simple faute de frappe.
+        if ($uri !== '/' && str_ends_with($uri, '/')) {
+            $uri = rtrim($uri, '/');
+        }
+
         foreach ($this->routes as $route) {
             if ($route['method'] !== $method) {
                 continue;
@@ -93,6 +98,14 @@ class Router
         // et corrigé Phase 15.1 (RC1), voir RELEASE_CANDIDATE_RC1_REPORT.md.
         if (str_starts_with($controllerName, 'App\\')) {
             $class = $controllerName;
+        } elseif (str_starts_with($controllerName, 'Api\\')) {
+            // Sous-namespace V1 App\Controllers\Api\ (ex: Api\NotificationApiController,
+            // Api\PushController) — contient un backslash comme un handler de module V2,
+            // mais ne référence PAS un module sous App\Modules\. Sans cette garde, ces
+            // 10 routes (/api/eleves, /api/notifications/*, /api/push/*) résolvaient à
+            // tort vers 'App\Modules\Api\...' (inexistant) → 404 permanent, masqué côté
+            // client par le fetch().catch() silencieux du badge de notifications.
+            $class = 'App\\Controllers\\' . $controllerName;
         } else {
             // Les handlers de modules V2 contiennent un backslash (ex: Finance\Controllers\FraisController)
             // Les handlers V1 sont de simples noms de classe (ex: ComptabiliteController) — INF-C-002
@@ -130,7 +143,7 @@ class Router
     {
         http_response_code(404);
         $view = new View();
-        $view->render('errors/404', [], 'main');
+        $view->render('errors/404', [], 'none');
     }
 
     public function url(string $name, array $params = []): string

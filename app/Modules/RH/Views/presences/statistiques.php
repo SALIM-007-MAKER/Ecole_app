@@ -22,28 +22,16 @@ $totalMens  = (int)($mensuel['total']    ?? 0);
 $presentsMens = (int)($mensuel['presents'] ?? 0);
 $tauxPresence = $totalMens > 0 ? round($presentsMens / $totalMens * 100, 1) : 0;
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Statistiques Présences — EduNova</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
-</head>
-<body class="bg-slate-50 text-slate-800 min-h-screen">
-<?php include dirname(__DIR__, 2) . '/layouts/sidebar.php'; ?>
-<main class="ml-64 p-8">
 
   <div class="flex items-center justify-between mb-8">
     <div>
       <div class="flex items-center gap-2 text-sm text-slate-500 mb-1">
-        <a href="/v2/rh/presences" class="hover:text-violet-600">Présences</a>
+        <a href="<?= BASE_URL ?>/v2/rh/presences" class="hover:text-violet-600">Présences</a>
         <span>/</span><span>Statistiques</span>
       </div>
       <h1 class="text-2xl font-bold text-slate-900">Statistiques de présence</h1>
     </div>
-    <a href="/v2/rh/presences" class="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">
+    <a href="<?= BASE_URL ?>/v2/rh/presences" class="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">
       ← Retour à la liste
     </a>
   </div>
@@ -77,7 +65,7 @@ $tauxPresence = $totalMens > 0 ? round($presentsMens / $totalMens * 100, 1) : 0;
     <div class="bg-amber-50 border border-amber-100 rounded-xl p-5">
       <div class="text-xs text-amber-600 font-medium uppercase tracking-wide mb-1">En attente validation</div>
       <div class="text-3xl font-bold text-amber-700"><?= (int)($aujtd['en_attente'] ?? 0) ?></div>
-      <a href="/v2/rh/presences/validation" class="text-xs text-amber-600 underline hover:text-amber-800">Traiter →</a>
+      <a href="<?= BASE_URL ?>/v2/rh/presences/validation" class="text-xs text-amber-600 underline hover:text-amber-800">Traiter →</a>
     </div>
   </div>
 
@@ -148,8 +136,6 @@ $tauxPresence = $totalMens > 0 ? round($presentsMens / $totalMens * 100, 1) : 0;
     </div>
   </div>
 
-</main>
-
 <script>
 // Chart 7 jours — barres groupées
 new Chart(document.getElementById('chart-7j'), {
@@ -164,7 +150,6 @@ new Chart(document.getElementById('chart-7j'), {
     },
     options: { responsive: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
 });
-
 // Chart par statut — doughnut
 new Chart(document.getElementById('chart-statut'), {
     type: 'doughnut',
@@ -175,7 +160,6 @@ new Chart(document.getElementById('chart-statut'), {
     },
     options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
 });
-
 // Chart modes — barres horizontales
 new Chart(document.getElementById('chart-mode'), {
     type: 'bar',
@@ -187,5 +171,3 @@ new Chart(document.getElementById('chart-mode'), {
     options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } }
 });
 </script>
-</body>
-</html>

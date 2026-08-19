@@ -51,9 +51,11 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 11pt; color: #1e293
 </div>
 
 <?php
-$recu = $recu ?? null;
+$recu     = $recu ?? null;
 if (!$recu) { echo '<p style="padding:20px;color:red;">Reçu introuvable.</p>'; exit; }
-$fmtMontant = fn(float $v): string => number_format($v, 0, ',', ' ') . ' XOF';
+$branding = $branding ?? \Core\Tenant\BrandingService::forCurrentRequest();
+$devise   = $devise   ?? 'XOF';
+$fmtMontant = fn(float $v): string => number_format($v, 0, ',', ' ') . ' ' . $devise;
 ?>
 
 <div style="padding: 10mm;" class="no-print-padding">
@@ -72,6 +74,18 @@ $fmtMontant = fn(float $v): string => number_format($v, 0, ',', ' ') . ' XOF';
     </div>
 
     <div class="receipt-body">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+            <?php if ($branding->logoUrl): ?>
+            <img src="<?= htmlspecialchars($branding->logoUrl, ENT_QUOTES) ?>" alt="" style="height:28px">
+            <?php endif; ?>
+            <div>
+                <div style="font-weight:bold;font-size:11pt;color:#1e293b;"><?= htmlspecialchars($branding->appName, ENT_QUOTES) ?></div>
+                <?php if ($branding->contactAddress): ?>
+                <div style="font-size:8pt;color:#64748b;"><?= htmlspecialchars($branding->contactAddress, ENT_QUOTES) ?></div>
+                <?php endif; ?>
+            </div>
+        </div>
+        <hr class="separator">
 
         <div class="grid2">
             <div>

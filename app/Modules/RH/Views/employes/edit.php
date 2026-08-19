@@ -24,19 +24,18 @@ function hasErrEdit(string $key, array $errors): bool { return isset($errors[$ke
 $f    = fn(string $k) => oldEdit($k, $old);
 $e    = fn(string $k) => errEdit($k, $errors);
 $hasE = fn(string $k) => hasErrEdit($k, $errors);
-$ringErr = 'ring-2 ring-red-300 border-red-300';
-$ringOk  = 'border-slate-200 focus:ring-2 focus:ring-violet-300';
 ?>
 
-<div class="flex items-center gap-3 mb-6">
-    <a href="<?= BASE_URL ?>/v2/rh/employes/<?= (int)$employe['id'] ?>" class="text-slate-400 hover:text-slate-600 transition-colors">
-        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+<div class="flex items-start gap-4 mb-6">
+    <a href="<?= BASE_URL ?>/v2/rh/employes/<?= (int)$employe['id'] ?>"
+       class="w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 flex-shrink-0 transition-colors">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
     </a>
+    <div class="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+        <i data-lucide="pencil" class="w-5 h-5 text-violet-600"></i>
+    </div>
     <div>
-        <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
-            <i data-lucide="pencil" class="w-5 h-5 text-violet-600"></i>
-            Modifier — <?= hEdit($employe['prenom'] . ' ' . $employe['nom']) ?>
-        </h2>
+        <h2 class="text-xl font-bold text-slate-900">Modifier — <?= hEdit($employe['prenom'] . ' ' . $employe['nom']) ?></h2>
         <p class="text-sm text-slate-500 font-mono mt-0.5"><?= hEdit($employe['matricule']) ?></p>
     </div>
 </div>
@@ -50,7 +49,7 @@ $ringOk  = 'border-slate-200 focus:ring-2 focus:ring-violet-300';
 <?php endif; ?>
 
 <form method="POST" action="<?= BASE_URL ?>/v2/rh/employes/<?= (int)$employe['id'] ?>" class="space-y-6">
-    <input type="hidden" name="csrf_token" value="<?= hEdit($_SESSION['csrf_token'] ?? '') ?>">
+    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
     <input type="hidden" name="_method" value="PUT">
 
     <!-- Informations personnelles -->
@@ -61,20 +60,20 @@ $ringOk  = 'border-slate-200 focus:ring-2 focus:ring-violet-300';
         </div>
         <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-                <label class="block text-xs font-medium text-slate-600 mb-1">Nom <span class="text-red-500">*</span></label>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Nom <span class="form-required">*</span></label>
                 <input type="text" name="nom" value="<?= $f('nom') ?>" required
-                       class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none <?= $hasE('nom') ? $ringErr : $ringOk ?>">
+                       class="form-input <?= $hasE('nom') ? 'is-invalid' : '' ?>">
                 <?= $e('nom') ?>
             </div>
             <div>
-                <label class="block text-xs font-medium text-slate-600 mb-1">Prénom <span class="text-red-500">*</span></label>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Prénom <span class="form-required">*</span></label>
                 <input type="text" name="prenom" value="<?= $f('prenom') ?>" required
-                       class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none <?= $hasE('prenom') ? $ringErr : $ringOk ?>">
+                       class="form-input <?= $hasE('prenom') ? 'is-invalid' : '' ?>">
                 <?= $e('prenom') ?>
             </div>
             <div>
-                <label class="block text-xs font-medium text-slate-600 mb-1">Genre <span class="text-red-500">*</span></label>
-                <select name="genre" class="w-full rounded-lg border text-sm px-3 py-2 bg-white focus:outline-none <?= $hasE('genre') ? $ringErr : $ringOk ?>">
+                <label class="block text-xs font-medium text-slate-600 mb-1">Genre <span class="form-required">*</span></label>
+                <select name="genre" class="form-select <?= $hasE('genre') ? 'is-invalid' : '' ?>">
                     <?php foreach ($genres as $g): ?>
                     <option value="<?= hEdit($g) ?>" <?= $f('genre') === $g ? 'selected' : '' ?>>
                         <?= $g === 'M' ? 'Masculin' : ($g === 'F' ? 'Féminin' : 'Autre') ?>
@@ -86,33 +85,33 @@ $ringOk  = 'border-slate-200 focus:ring-2 focus:ring-violet-300';
             <div>
                 <label class="block text-xs font-medium text-slate-600 mb-1">Date de naissance</label>
                 <input type="date" name="date_naissance" value="<?= $f('date_naissance') ?>"
-                       class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none <?= $hasE('date_naissance') ? $ringErr : $ringOk ?>">
+                       class="form-input <?= $hasE('date_naissance') ? 'is-invalid' : '' ?>">
                 <?= $e('date_naissance') ?>
             </div>
             <div>
                 <label class="block text-xs font-medium text-slate-600 mb-1">Lieu de naissance</label>
                 <input type="text" name="lieu_naissance" value="<?= $f('lieu_naissance') ?>"
-                       class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none <?= $ringOk ?>">
+                       class="form-input">
             </div>
             <div>
                 <label class="block text-xs font-medium text-slate-600 mb-1">Nationalité</label>
                 <input type="text" name="nationalite" value="<?= $f('nationalite') ?>"
-                       class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none <?= $ringOk ?>">
+                       class="form-input">
             </div>
             <div>
                 <label class="block text-xs font-medium text-slate-600 mb-1">N° CNI</label>
                 <input type="text" name="cni_numero" value="<?= $f('cni_numero') ?>"
-                       class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none <?= $ringOk ?>">
+                       class="form-input">
             </div>
             <div>
                 <label class="block text-xs font-medium text-slate-600 mb-1">Expiration CNI</label>
                 <input type="date" name="cni_expiration" value="<?= $f('cni_expiration') ?>"
-                       class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none <?= $ringOk ?>">
+                       class="form-input">
             </div>
             <div class="sm:col-span-2">
                 <label class="block text-xs font-medium text-slate-600 mb-1">Adresse</label>
                 <textarea name="adresse" rows="2"
-                          class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none resize-none <?= $ringOk ?>"><?= $f('adresse') ?></textarea>
+                          class="form-textarea"><?= $f('adresse') ?></textarea>
             </div>
         </div>
     </div>
@@ -127,18 +126,18 @@ $ringOk  = 'border-slate-200 focus:ring-2 focus:ring-violet-300';
             <div>
                 <label class="block text-xs font-medium text-slate-600 mb-1">Téléphone</label>
                 <input type="tel" name="telephone" value="<?= $f('telephone') ?>"
-                       class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none <?= $ringOk ?>">
+                       class="form-input">
             </div>
             <div>
                 <label class="block text-xs font-medium text-slate-600 mb-1">E-mail professionnel</label>
                 <input type="email" name="email_pro" value="<?= $f('email_pro') ?>"
-                       class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none <?= $hasE('email_pro') ? $ringErr : $ringOk ?>">
+                       class="form-input <?= $hasE('email_pro') ? 'is-invalid' : '' ?>">
                 <?= $e('email_pro') ?>
             </div>
             <div>
                 <label class="block text-xs font-medium text-slate-600 mb-1">E-mail personnel</label>
                 <input type="email" name="email_perso" value="<?= $f('email_perso') ?>"
-                       class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none <?= $hasE('email_perso') ? $ringErr : $ringOk ?>">
+                       class="form-input <?= $hasE('email_perso') ? 'is-invalid' : '' ?>">
                 <?= $e('email_perso') ?>
             </div>
         </div>
@@ -152,8 +151,8 @@ $ringOk  = 'border-slate-200 focus:ring-2 focus:ring-violet-300';
         </div>
         <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-                <label class="block text-xs font-medium text-slate-600 mb-1">Type de personnel <span class="text-red-500">*</span></label>
-                <select name="type_personnel" class="w-full rounded-lg border text-sm px-3 py-2 bg-white focus:outline-none <?= $hasE('type_personnel') ? $ringErr : $ringOk ?>">
+                <label class="block text-xs font-medium text-slate-600 mb-1">Type de personnel <span class="form-required">*</span></label>
+                <select name="type_personnel" class="form-select <?= $hasE('type_personnel') ? 'is-invalid' : '' ?>">
                     <option value="">— Choisir —</option>
                     <?php foreach ($types as $val => $lbl): ?>
                     <option value="<?= hEdit($val) ?>" <?= $f('type_personnel') === $val ? 'selected' : '' ?>>
@@ -164,8 +163,8 @@ $ringOk  = 'border-slate-200 focus:ring-2 focus:ring-violet-300';
                 <?= $e('type_personnel') ?>
             </div>
             <div>
-                <label class="block text-xs font-medium text-slate-600 mb-1">Statut <span class="text-red-500">*</span></label>
-                <select name="statut" class="w-full rounded-lg border text-sm px-3 py-2 bg-white focus:outline-none <?= $hasE('statut') ? $ringErr : $ringOk ?>">
+                <label class="block text-xs font-medium text-slate-600 mb-1">Statut <span class="form-required">*</span></label>
+                <select name="statut" class="form-select <?= $hasE('statut') ? 'is-invalid' : '' ?>">
                     <?php foreach ($statuts as $val => $lbl): ?>
                     <option value="<?= hEdit($val) ?>" <?= $f('statut') === $val ? 'selected' : '' ?>>
                         <?= hEdit($lbl) ?>
@@ -176,7 +175,7 @@ $ringOk  = 'border-slate-200 focus:ring-2 focus:ring-violet-300';
             </div>
             <div>
                 <label class="block text-xs font-medium text-slate-600 mb-1">Département</label>
-                <select name="departement_id" class="w-full rounded-lg border text-sm px-3 py-2 bg-white focus:outline-none <?= $ringOk ?>">
+                <select name="departement_id" class="form-select">
                     <option value="">— Aucun —</option>
                     <?php foreach ($departements as $d): ?>
                     <option value="<?= (int)$d['id'] ?>" <?= $f('departement_id') == $d['id'] ? 'selected' : '' ?>>
@@ -187,7 +186,7 @@ $ringOk  = 'border-slate-200 focus:ring-2 focus:ring-violet-300';
             </div>
             <div>
                 <label class="block text-xs font-medium text-slate-600 mb-1">Poste</label>
-                <select name="poste_id" class="w-full rounded-lg border text-sm px-3 py-2 bg-white focus:outline-none <?= $ringOk ?>">
+                <select name="poste_id" class="form-select">
                     <option value="">— Aucun —</option>
                     <?php foreach ($postes as $p): ?>
                     <option value="<?= (int)$p['id'] ?>" <?= $f('poste_id') == $p['id'] ? 'selected' : '' ?>>
@@ -197,26 +196,26 @@ $ringOk  = 'border-slate-200 focus:ring-2 focus:ring-violet-300';
                 </select>
             </div>
             <div>
-                <label class="block text-xs font-medium text-slate-600 mb-1">Date d'entrée <span class="text-red-500">*</span></label>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Date d'entrée <span class="form-required">*</span></label>
                 <input type="date" name="date_entree" value="<?= $f('date_entree') ?>" required
-                       class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none <?= $hasE('date_entree') ? $ringErr : $ringOk ?>">
+                       class="form-input <?= $hasE('date_entree') ? 'is-invalid' : '' ?>">
                 <?= $e('date_entree') ?>
             </div>
             <div>
                 <label class="block text-xs font-medium text-slate-600 mb-1">Date de sortie</label>
                 <input type="date" name="date_sortie" value="<?= $f('date_sortie') ?>"
-                       class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none <?= $ringOk ?>">
+                       class="form-input">
             </div>
             <div class="sm:col-span-2">
                 <label class="block text-xs font-medium text-slate-600 mb-1">Motif de sortie</label>
                 <input type="text" name="motif_sortie" value="<?= $f('motif_sortie') ?>"
                        placeholder="Requis si statut inactif, retraité ou démissionnaire"
-                       class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none <?= $hasE('motif_sortie') ? $ringErr : $ringOk ?>">
+                       class="form-input <?= $hasE('motif_sortie') ? 'is-invalid' : '' ?>">
                 <?= $e('motif_sortie') ?>
             </div>
             <div>
                 <label class="block text-xs font-medium text-slate-600 mb-1">Compte utilisateur lié</label>
-                <select name="user_id" class="w-full rounded-lg border text-sm px-3 py-2 bg-white focus:outline-none <?= $ringOk ?>">
+                <select name="user_id" class="form-select">
                     <option value="">— Aucun —</option>
                     <?php foreach ($users as $u): ?>
                     <option value="<?= (int)$u['id'] ?>" <?= $f('user_id') == $u['id'] ? 'selected' : '' ?>>
@@ -228,17 +227,17 @@ $ringOk  = 'border-slate-200 focus:ring-2 focus:ring-violet-300';
             <div>
                 <label class="block text-xs font-medium text-slate-600 mb-1">Diplôme</label>
                 <input type="text" name="diplome" value="<?= $f('diplome') ?>"
-                       class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none <?= $ringOk ?>">
+                       class="form-input">
             </div>
             <div>
                 <label class="block text-xs font-medium text-slate-600 mb-1">Spécialité</label>
                 <input type="text" name="specialite" value="<?= $f('specialite') ?>"
-                       class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none <?= $ringOk ?>">
+                       class="form-input">
             </div>
             <div class="sm:col-span-2">
                 <label class="block text-xs font-medium text-slate-600 mb-1">Notes internes</label>
                 <textarea name="notes" rows="2"
-                          class="w-full rounded-lg border text-sm px-3 py-2 focus:outline-none resize-none <?= $ringOk ?>"><?= $f('notes') ?></textarea>
+                          class="form-textarea"><?= $f('notes') ?></textarea>
             </div>
         </div>
     </div>
@@ -263,27 +262,27 @@ $ringOk  = 'border-slate-200 focus:ring-2 focus:ring-violet-300';
                     <div class="sm:col-span-2">
                         <label class="block text-xs font-medium text-slate-500 mb-1">Nom complet</label>
                         <input type="text" name="contacts[0][nom_complet]"
-                               class="w-full rounded-lg border border-slate-200 text-sm px-3 py-1.5 focus:ring-2 focus:ring-violet-300 focus:outline-none">
+                               class="form-input">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-500 mb-1">Lien</label>
                         <input type="text" name="contacts[0][lien]"
-                               class="w-full rounded-lg border border-slate-200 text-sm px-3 py-1.5 focus:ring-2 focus:ring-violet-300 focus:outline-none">
+                               class="form-input">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-500 mb-1">Téléphone</label>
                         <input type="tel" name="contacts[0][telephone]"
-                               class="w-full rounded-lg border border-slate-200 text-sm px-3 py-1.5 focus:ring-2 focus:ring-violet-300 focus:outline-none">
+                               class="form-input">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-500 mb-1">Téléphone 2</label>
                         <input type="tel" name="contacts[0][telephone2]"
-                               class="w-full rounded-lg border border-slate-200 text-sm px-3 py-1.5 focus:ring-2 focus:ring-violet-300 focus:outline-none">
+                               class="form-input">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-500 mb-1">E-mail</label>
                         <input type="email" name="contacts[0][email]"
-                               class="w-full rounded-lg border border-slate-200 text-sm px-3 py-1.5 focus:ring-2 focus:ring-violet-300 focus:outline-none">
+                               class="form-input">
                     </div>
                 </div>
             </div>
@@ -300,27 +299,27 @@ $ringOk  = 'border-slate-200 focus:ring-2 focus:ring-violet-300';
                     <div class="sm:col-span-2">
                         <label class="block text-xs font-medium text-slate-500 mb-1">Nom complet</label>
                         <input type="text" name="contacts[<?= $i ?>][nom_complet]" value="<?= hEdit($c['nom_complet'] ?? '') ?>"
-                               class="w-full rounded-lg border border-slate-200 text-sm px-3 py-1.5 focus:ring-2 focus:ring-violet-300 focus:outline-none">
+                               class="form-input">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-500 mb-1">Lien</label>
                         <input type="text" name="contacts[<?= $i ?>][lien]" value="<?= hEdit($c['lien'] ?? '') ?>"
-                               class="w-full rounded-lg border border-slate-200 text-sm px-3 py-1.5 focus:ring-2 focus:ring-violet-300 focus:outline-none">
+                               class="form-input">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-500 mb-1">Téléphone</label>
                         <input type="tel" name="contacts[<?= $i ?>][telephone]" value="<?= hEdit($c['telephone'] ?? '') ?>"
-                               class="w-full rounded-lg border border-slate-200 text-sm px-3 py-1.5 focus:ring-2 focus:ring-violet-300 focus:outline-none">
+                               class="form-input">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-500 mb-1">Téléphone 2</label>
                         <input type="tel" name="contacts[<?= $i ?>][telephone2]" value="<?= hEdit($c['telephone2'] ?? '') ?>"
-                               class="w-full rounded-lg border border-slate-200 text-sm px-3 py-1.5 focus:ring-2 focus:ring-violet-300 focus:outline-none">
+                               class="form-input">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-500 mb-1">E-mail</label>
                         <input type="email" name="contacts[<?= $i ?>][email]" value="<?= hEdit($c['email'] ?? '') ?>"
-                               class="w-full rounded-lg border border-slate-200 text-sm px-3 py-1.5 focus:ring-2 focus:ring-violet-300 focus:outline-none">
+                               class="form-input">
                     </div>
                 </div>
             </div>
@@ -354,23 +353,23 @@ $ringOk  = 'border-slate-200 focus:ring-2 focus:ring-violet-300';
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div class="sm:col-span-2">
                     <label class="block text-xs font-medium text-slate-500 mb-1">Nom complet</label>
-                    <input type="text" name="contacts[${idx}][nom_complet]" class="w-full rounded-lg border border-slate-200 text-sm px-3 py-1.5 focus:ring-2 focus:ring-violet-300 focus:outline-none">
+                    <input type="text" name="contacts[${idx}][nom_complet]" class="form-input">
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-slate-500 mb-1">Lien</label>
-                    <input type="text" name="contacts[${idx}][lien]" class="w-full rounded-lg border border-slate-200 text-sm px-3 py-1.5 focus:ring-2 focus:ring-violet-300 focus:outline-none">
+                    <input type="text" name="contacts[${idx}][lien]" class="form-input">
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-slate-500 mb-1">Téléphone</label>
-                    <input type="tel" name="contacts[${idx}][telephone]" class="w-full rounded-lg border border-slate-200 text-sm px-3 py-1.5 focus:ring-2 focus:ring-violet-300 focus:outline-none">
+                    <input type="tel" name="contacts[${idx}][telephone]" class="form-input">
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-slate-500 mb-1">Téléphone 2</label>
-                    <input type="tel" name="contacts[${idx}][telephone2]" class="w-full rounded-lg border border-slate-200 text-sm px-3 py-1.5 focus:ring-2 focus:ring-violet-300 focus:outline-none">
+                    <input type="tel" name="contacts[${idx}][telephone2]" class="form-input">
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-slate-500 mb-1">E-mail</label>
-                    <input type="email" name="contacts[${idx}][email]" class="w-full rounded-lg border border-slate-200 text-sm px-3 py-1.5 focus:ring-2 focus:ring-violet-300 focus:outline-none">
+                    <input type="email" name="contacts[${idx}][email]" class="form-input">
                 </div>
             </div>
         </div>`;

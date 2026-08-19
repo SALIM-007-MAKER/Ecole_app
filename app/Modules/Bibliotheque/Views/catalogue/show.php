@@ -1,16 +1,8 @@
 <?php /** @var array $ouvrage @var array $similaires @var string $titre */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title><?= htmlspecialchars($titre ?? '') ?></title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-4xl mx-auto py-8 px-4">
 
   <div class="mb-4">
-    <a href="/v2/bibliotheque/catalogue" class="text-sm text-violet-600 hover:underline">← Retour au catalogue</a>
+    <a href="<?= BASE_URL ?>/v2/bibliotheque/catalogue" class="text-sm text-violet-600 hover:underline">← Retour au catalogue</a>
   </div>
 
   <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
@@ -46,7 +38,7 @@
           <?php else: ?>
             <button onclick="reserver()" class="bg-amber-500 text-white text-sm px-4 py-1.5 rounded-lg hover:bg-amber-600">Réserver</button>
           <?php endif ?>
-          <a href="/v2/bibliotheque/exemplaires/<?= $ouvrage['id'] ?>" class="text-sm text-violet-600 hover:underline">Voir exemplaires</a>
+          <a href="<?= BASE_URL ?>/v2/bibliotheque/exemplaires/<?= $ouvrage['id'] ?>" class="text-sm text-violet-600 hover:underline">Voir exemplaires</a>
         </div>
       </div>
     </div>
@@ -68,22 +60,20 @@
   </div>
 
   <div class="flex gap-3 mb-4">
-    <a href="/v2/bibliotheque/catalogue/<?= $ouvrage['id'] ?>/edit" class="text-sm bg-white border border-slate-200 px-3 py-1.5 rounded-lg hover:border-violet-400">Modifier</a>
+    <a href="<?= BASE_URL ?>/v2/bibliotheque/catalogue/<?= $ouvrage['id'] ?>/edit" class="text-sm bg-white border border-slate-200 px-3 py-1.5 rounded-lg hover:border-violet-400">Modifier</a>
     <button onclick="archiver()" class="text-sm bg-white border border-red-200 text-red-600 px-3 py-1.5 rounded-lg hover:border-red-400">Archiver</button>
   </div>
 
 </div>
 <script>
-function emprunter() { window.location.href = '/v2/bibliotheque/emprunts/create?ouvrage_id=<?= $ouvrage['id'] ?>'; }
+function emprunter() { window.location.href = '<?= BASE_URL ?>/v2/bibliotheque/emprunts/create?ouvrage_id=<?= $ouvrage['id'] ?>'; }
 function reserver() {
-  fetch('/v2/bibliotheque/reservations', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+  fetch('<?= BASE_URL ?>/v2/bibliotheque/reservations', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
     body:'ouvrage_id=<?= $ouvrage['id'] ?>&csrf_token=' + document.querySelector('meta[name=csrf]')?.content})
     .then(r=>r.json()).then(d=>alert(d.success ? 'Réservation créée' : d.error));
 }
 function archiver() {
   if (!confirm('Archiver cet ouvrage ?')) return;
-  fetch('/v2/bibliotheque/catalogue/<?= $ouvrage['id'] ?>/archive', {method:'POST'}).then(()=>window.location.href='/v2/bibliotheque/catalogue');
+  fetch('<?= BASE_URL ?>/v2/bibliotheque/catalogue/<?= $ouvrage['id'] ?>/archive', {method:'POST'}).then(()=>window.location.href='<?= BASE_URL ?>/v2/bibliotheque/catalogue');
 }
 </script>
-</body>
-</html>

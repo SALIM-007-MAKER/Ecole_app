@@ -15,7 +15,9 @@ class LeaveFinished extends Event
         public readonly float  $dureeJours,
         public readonly string $dateRetourEffectif,
         public readonly int    $finishedBy
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

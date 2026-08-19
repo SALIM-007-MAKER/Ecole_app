@@ -113,7 +113,7 @@ class MatiereRepository
              INNER JOIN `professeurs` p ON p.id = e.professeur_id
              INNER JOIN `classes`     c ON c.id = e.classe_id
              WHERE e.matiere_id = ?
-             ORDER BY e.annee_scolaire DESC, c.niveau, c.nom, p.nom"
+             ORDER BY e.annee_scolaire DESC, " . \App\Models\ClasseModel::ordreNiveauSql('c.niveau') . ", c.nom, p.nom"
         );
         $stmt->execute([$matiereId]);
         return $stmt->fetchAll(PDO::FETCH_OBJ);

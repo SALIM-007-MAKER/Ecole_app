@@ -30,6 +30,9 @@ $badgeStatut = function(string $s): string {
                class="p-2 text-slate-500 hover:text-violet-600 rounded-lg hover:bg-violet-50">
                 <i data-lucide="arrow-left" class="w-5 h-5"></i>
             </a>
+            <div class="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="banknote" class="w-5 h-5 text-violet-600"></i>
+            </div>
             <div>
                 <div class="flex items-center gap-3">
                     <h1 class="text-2xl font-bold text-slate-800"><?= htmlspecialchars($paiement->numero) ?></h1>
@@ -59,7 +62,7 @@ $badgeStatut = function(string $s): string {
             <?php endif; ?>
             <?php if ($canValider && $paiement->statut === 'initie'): ?>
             <form method="POST" action="<?= BASE_URL ?>/v2/finance/paiements/<?= $paiement->id ?>/valider" class="inline">
-                <?php echo csrf_field() ?? '<input type="hidden" name="csrf_token" value="' . ($_SESSION['csrf_token'] ?? '') . '">'; ?>
+                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                 <button class="px-3 py-2 text-sm font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100">
                     <i data-lucide="check-circle" class="inline w-4 h-4 mr-1"></i> Valider
                 </button>
@@ -212,7 +215,7 @@ $badgeStatut = function(string $s): string {
         <div class="flex gap-2">
             <?php foreach (['restituer' => 'Restituer', 'imputer' => 'Imputer', 'annuler' => 'Annuler'] as $action => $label): ?>
             <form method="POST" action="<?= BASE_URL ?>/v2/finance/paiements/<?= $paiement->id ?>/trop-percu/<?= $trop_percu->id ?>/<?= $action ?>">
-                <?php echo csrf_field() ?? '<input type="hidden" name="csrf_token" value="' . ($_SESSION['csrf_token'] ?? '') . '">'; ?>
+                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                 <button type="submit" class="px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-100 rounded-lg hover:bg-amber-200"
                         onclick="return confirm('Confirmer : <?= $label ?> ce trop-perçu ?')">
                     <?= $label ?>
@@ -314,9 +317,9 @@ $badgeStatut = function(string $s): string {
     <div class="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full mx-4">
         <h3 class="text-lg font-bold text-slate-800 mb-4">Annuler le paiement</h3>
         <form method="POST" action="<?= BASE_URL ?>/v2/finance/paiements/<?= $paiement->id ?>/annuler">
-            <?php echo csrf_field() ?? '<input type="hidden" name="csrf_token" value="' . ($_SESSION['csrf_token'] ?? '') . '">'; ?>
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
             <div class="mb-4">
-                <label class="block text-sm font-medium text-slate-700 mb-1">Motif <span class="text-red-500">*</span></label>
+                <label class="form-label">Motif <span class="form-required">*</span></label>
                 <textarea name="motif" rows="3" required
                           class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-rose-300"
                           placeholder="Raison de l'annulation…"></textarea>
@@ -339,16 +342,16 @@ $badgeStatut = function(string $s): string {
     <div class="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full mx-4">
         <h3 class="text-lg font-bold text-slate-800 mb-4">Initier un remboursement</h3>
         <form method="POST" action="<?= BASE_URL ?>/v2/finance/paiements/<?= $paiement->id ?>/rembourser">
-            <?php echo csrf_field() ?? '<input type="hidden" name="csrf_token" value="' . ($_SESSION['csrf_token'] ?? '') . '">'; ?>
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Montant à rembourser <span class="text-red-500">*</span></label>
+                    <label class="form-label">Montant à rembourser <span class="form-required">*</span></label>
                     <input type="number" name="montant" step="0.01" min="0.01"
                            value="<?= htmlspecialchars((string)$paiement->montant_applique) ?>" required
                            class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-300">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Mode de remboursement</label>
+                    <label class="form-label">Mode de remboursement</label>
                     <select name="mode_remboursement" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-300">
                         <?php foreach ($modesRemboursement as $code): ?>
                         <option value="<?= $code ?>"><?= $code ?></option>
@@ -356,13 +359,13 @@ $badgeStatut = function(string $s): string {
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Motif <span class="text-red-500">*</span></label>
+                    <label class="form-label">Motif <span class="form-required">*</span></label>
                     <textarea name="motif" rows="2" required
                               class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-300"
                               placeholder="Raison du remboursement…"></textarea>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Référence remboursement</label>
+                    <label class="form-label">Référence remboursement</label>
                     <input type="text" name="reference_remboursement"
                            class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-300"
                            placeholder="N° virement…">

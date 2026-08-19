@@ -17,7 +17,9 @@ class AssignmentUpdated extends Event
         public readonly string $action,
         public readonly array  $changes,
         public readonly int    $updatedBy
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

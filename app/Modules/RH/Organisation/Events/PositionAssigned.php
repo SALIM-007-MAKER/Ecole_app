@@ -13,7 +13,9 @@ class PositionAssigned extends Event
         public readonly int    $posteId,
         public readonly string $posteIntitule,
         public readonly int    $assignedBy
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

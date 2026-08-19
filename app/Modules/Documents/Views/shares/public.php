@@ -24,13 +24,13 @@
 
     <div class="flex flex-col gap-3">
       <?php if (in_array($partage['permission'], ['telechargement', 'lecture'], true)): ?>
-      <a href="/v2/documents/<?= $document['id'] ?>/download?token=<?= htmlspecialchars($partage['token_acces']) ?>"
+      <a href="<?= BASE_URL ?>/v2/documents/<?= $document['id'] ?>/download?token=<?= htmlspecialchars($partage['token_acces']) ?>"
          class="block px-5 py-3 bg-violet-600 text-white rounded-xl font-medium hover:bg-violet-700 transition">
         Télécharger
       </a>
       <?php endif; ?>
       <?php if ($partage['permission'] === 'lecture'): ?>
-      <a href="/v2/documents/<?= $document['id'] ?>/preview?token=<?= htmlspecialchars($partage['token_acces']) ?>"
+      <a href="<?= BASE_URL ?>/v2/documents/<?= $document['id'] ?>/preview?token=<?= htmlspecialchars($partage['token_acces']) ?>"
          target="_blank"
          class="block px-5 py-3 border border-slate-300 text-slate-700 rounded-xl font-medium hover:bg-slate-50 transition">
         Aperçu

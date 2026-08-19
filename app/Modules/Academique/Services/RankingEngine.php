@@ -24,10 +24,18 @@ class RankingEngine
         'seuil_exclusion_notes'=> 0,      // exclure si nbNotes < seuil (0 = pas de seuil)
     ];
 
+    /** Options par défaut effectivement utilisées, fusion de OPTIONS_DEFAULTS et
+     *  des overrides passés au constructeur (ex : note_passage configurée par
+     *  établissement) — voir BulletinEngineFactory. */
+    private array $optionsDefaults;
+
     public function __construct(
         private AcademicCalculationService $calculator,
         private RankingRepository          $repo,
-    ) {}
+        array                               $optionsDefaults = [],
+    ) {
+        $this->optionsDefaults = array_merge(self::OPTIONS_DEFAULTS, $optionsDefaults);
+    }
 
     // ─────────────────────────────────────────────────────────────────────────
     //  API publique
@@ -100,7 +108,7 @@ class RankingEngine
         }
 
         // Calculer la moyenne générale par élève
-        $opts    = array_merge(self::OPTIONS_DEFAULTS, $options);
+        $opts    = array_merge($this->optionsDefaults, $options);
         $defaultPoids = 1.0 / count($periodeIds);
 
         $eleveMoyennes = [];
@@ -161,7 +169,7 @@ class RankingEngine
             return $this->emptyResult($type, $periodeId, $classeId, $matiereId, $niveau);
         }
 
-        $opts       = array_merge(self::OPTIONS_DEFAULTS, $options);
+        $opts       = array_merge($this->optionsDefaults, $options);
         $eleveInfo  = [];
         $grouped    = $this->groupRowsByEleve($rows, $eleveInfo);
 

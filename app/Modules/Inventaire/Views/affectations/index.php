@@ -1,17 +1,8 @@
 <?php /** @var array $affectations @var string|null $statut */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Affectations — Inventaire</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-7xl mx-auto px-4 py-6">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold text-slate-800">Affectations</h1>
-        <a href="/v2/inventaire/affectations/creer"
+        <a href="<?= BASE_URL ?>/v2/inventaire/affectations/creer"
            class="inline-flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-lg hover:bg-violet-700 text-sm font-medium">
             <i data-lucide="user-plus" class="w-4 h-4"></i> Nouvelle affectation
         </a>
@@ -19,7 +10,7 @@
 
     <div class="flex gap-2 mb-6">
         <?php foreach (['' => 'Toutes', 'en_cours' => 'En cours', 'retournee' => 'Retournée', 'perdue' => 'Perdue'] as $s => $label): ?>
-        <a href="/v2/inventaire/affectations<?= $s ? "?statut={$s}" : '' ?>"
+        <a href="<?= BASE_URL ?>/v2/inventaire/affectations<?= $s ? "?statut={$s}" : '' ?>"
            class="px-3 py-1.5 rounded-full text-xs border <?= $statut === ($s ?: null) ? 'bg-violet-600 text-white border-violet-600' : 'bg-white text-slate-600' ?>">
             <?= $label ?>
         </a>
@@ -58,12 +49,12 @@
                     </td>
                     <td class="px-4 py-3 text-right space-x-2">
                         <?php if ($a['statut'] === 'en_cours'): ?>
-                        <form method="POST" action="/v2/inventaire/affectations/<?=$a['id']?>/retourner" class="inline">
+                        <form method="POST" action="<?= BASE_URL ?>/v2/inventaire/affectations/<?=$a['id']?>/retourner" class="inline">
                             <input type="hidden" name="_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                             <input type="hidden" name="etat" value="bon">
                             <button type="submit" class="text-green-600 hover:underline text-xs">Retour</button>
                         </form>
-                        <form method="POST" action="/v2/inventaire/affectations/<?=$a['id']?>/perdu" class="inline">
+                        <form method="POST" action="<?= BASE_URL ?>/v2/inventaire/affectations/<?=$a['id']?>/perdu" class="inline">
                             <input type="hidden" name="_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                             <button type="submit" class="text-red-500 hover:underline text-xs" onclick="return confirm('Déclarer perdu ?')">Perdu</button>
                         </form>
@@ -79,5 +70,3 @@
     </div>
 </div>
 <script>lucide.createIcons();</script>
-</body>
-</html>

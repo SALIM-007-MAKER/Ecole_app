@@ -39,7 +39,7 @@ class EnseignementModel extends Model
              INNER JOIN `professeurs` p ON p.id = e.professeur_id
              INNER JOIN `classes`     c ON c.id = e.classe_id
              WHERE e.matiere_id = ? AND e.etablissement_id = ?
-             ORDER BY c.niveau, c.nom, p.nom",
+             ORDER BY " . \App\Models\ClasseModel::ordreNiveauSql('c.niveau') . ", c.nom, p.nom",
             [$matiereId, $this->tenantId()]
         );
     }
@@ -51,7 +51,7 @@ class EnseignementModel extends Model
              WHERE professeur_id = ? AND matiere_id = ? AND classe_id = ? AND annee_scolaire = ? AND etablissement_id = ?",
             [$profId, $matId, $classeId, $annee, $this->tenantId()]
         );
-        return $row !== null;
+        return $row !== false;
     }
 
     public function findByProfesseurId(int $profId, ?string $annee = null): array
@@ -73,7 +73,7 @@ class EnseignementModel extends Model
              LEFT JOIN  `eleves`   el ON el.classe_id = c.id
              WHERE e.professeur_id = ? $where AND e.etablissement_id = ?
              GROUP BY e.id
-             ORDER BY e.annee_scolaire DESC, c.niveau, c.nom, m.nom",
+             ORDER BY e.annee_scolaire DESC, " . \App\Models\ClasseModel::ordreNiveauSql('c.niveau') . ", c.nom, m.nom",
             $params
         );
     }

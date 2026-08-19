@@ -18,9 +18,9 @@ class TimetableController extends Controller
 
     public function __construct()
     {
+        parent::__construct();
         $this->service = new TimetableService();
         $this->policy  = new TimetablePolicy();
-        $this->sendSecurityHeaders();
     }
 
     // ── Index ─────────────────────────────────────────────────────────────────
@@ -73,18 +73,18 @@ class TimetableController extends Controller
         $errors = $dto->validate();
 
         if (!empty($errors)) {
-            $_SESSION['flash_error'] = implode('<br>', $errors);
-            header('Location: /v2/vie-scolaire/emplois-du-temps/create');
+            \Core\Session::flash('error', implode('<br>', $errors));
+            $this->redirect('/v2/vie-scolaire/emplois-du-temps/create');
             exit;
         }
 
         try {
             $edt = $this->service->findOrCreateEdt($dto, $user['id']);
-            $_SESSION['flash_success'] = 'Emploi du temps créé.';
-            header("Location: /v2/vie-scolaire/emplois-du-temps/{$edt['id']}");
+            \Core\Session::flash('success', 'Emploi du temps créé.');
+            $this->redirect("/v2/vie-scolaire/emplois-du-temps/{$edt['id']}");
         } catch (\RuntimeException $e) {
-            $_SESSION['flash_error'] = $e->getMessage();
-            header('Location: /v2/vie-scolaire/emplois-du-temps/create');
+            \Core\Session::flash('error', $e->getMessage());
+            $this->redirect('/v2/vie-scolaire/emplois-du-temps/create');
         }
         exit;
     }
@@ -126,8 +126,8 @@ class TimetableController extends Controller
 
         $edt = $this->service->findEdt($edtId);
         if ($edt === null || !$this->policy->canModifyEdt($user, $edt)) {
-            $_SESSION['flash_error'] = 'Action non autorisée.';
-            header("Location: /v2/vie-scolaire/emplois-du-temps/{$edtId}");
+            \Core\Session::flash('error', 'Action non autorisée.');
+            $this->redirect("/v2/vie-scolaire/emplois-du-temps/{$edtId}");
             exit;
         }
 
@@ -153,8 +153,8 @@ class TimetableController extends Controller
 
         $edt = $this->service->findEdt($edtId);
         if ($edt === null || !$this->policy->canModifyEdt($user, $edt)) {
-            $_SESSION['flash_error'] = 'Action non autorisée.';
-            header("Location: /v2/vie-scolaire/emplois-du-temps/{$edtId}");
+            \Core\Session::flash('error', 'Action non autorisée.');
+            $this->redirect("/v2/vie-scolaire/emplois-du-temps/{$edtId}");
             exit;
         }
 
@@ -162,18 +162,18 @@ class TimetableController extends Controller
         $errors = $dto->validate();
 
         if (!empty($errors)) {
-            $_SESSION['flash_error'] = implode('<br>', $errors);
-            header("Location: /v2/vie-scolaire/emplois-du-temps/{$edtId}/creneaux/ajouter");
+            \Core\Session::flash('error', implode('<br>', $errors));
+            $this->redirect("/v2/vie-scolaire/emplois-du-temps/{$edtId}/creneaux/ajouter");
             exit;
         }
 
         try {
             $this->service->ajouterCreneau($dto, $user['id']);
-            $_SESSION['flash_success'] = 'Créneau ajouté.';
+            \Core\Session::flash('success', 'Créneau ajouté.');
         } catch (\RuntimeException $e) {
-            $_SESSION['flash_error'] = $e->getMessage();
+            \Core\Session::flash('error', $e->getMessage());
         }
-        header("Location: /v2/vie-scolaire/emplois-du-temps/{$edtId}");
+        $this->redirect("/v2/vie-scolaire/emplois-du-temps/{$edtId}");
         exit;
     }
 
@@ -191,15 +191,15 @@ class TimetableController extends Controller
         $creneau = $stmt->fetch(\PDO::FETCH_ASSOC);
 
         if (!$creneau) {
-            $_SESSION['flash_error'] = 'Créneau introuvable.';
-            header('Location: /v2/vie-scolaire/emplois-du-temps');
+            \Core\Session::flash('error', 'Créneau introuvable.');
+            $this->redirect('/v2/vie-scolaire/emplois-du-temps');
             exit;
         }
 
         $edt = $this->service->findEdt($creneau['emploi_du_temps_id']);
         if (!$this->policy->canModifyEdt($user, $edt)) {
-            $_SESSION['flash_error'] = 'Action non autorisée.';
-            header("Location: /v2/vie-scolaire/emplois-du-temps/{$edt['id']}");
+            \Core\Session::flash('error', 'Action non autorisée.');
+            $this->redirect("/v2/vie-scolaire/emplois-du-temps/{$edt['id']}");
             exit;
         }
 
@@ -211,18 +211,18 @@ class TimetableController extends Controller
         $errors = $dto->validate();
 
         if (!empty($errors)) {
-            $_SESSION['flash_error'] = implode('<br>', $errors);
-            header("Location: /v2/vie-scolaire/emplois-du-temps/{$edt['id']}");
+            \Core\Session::flash('error', implode('<br>', $errors));
+            $this->redirect("/v2/vie-scolaire/emplois-du-temps/{$edt['id']}");
             exit;
         }
 
         try {
             $this->service->modifierCreneau($creneauId, $dto, $user['id']);
-            $_SESSION['flash_success'] = 'Créneau modifié.';
+            \Core\Session::flash('success', 'Créneau modifié.');
         } catch (\RuntimeException $e) {
-            $_SESSION['flash_error'] = $e->getMessage();
+            \Core\Session::flash('error', $e->getMessage());
         }
-        header("Location: /v2/vie-scolaire/emplois-du-temps/{$edt['id']}");
+        $this->redirect("/v2/vie-scolaire/emplois-du-temps/{$edt['id']}");
         exit;
     }
 
@@ -243,11 +243,11 @@ class TimetableController extends Controller
 
         try {
             $this->service->supprimerCreneau($creneauId, $user['id']);
-            $_SESSION['flash_success'] = 'Créneau supprimé.';
+            \Core\Session::flash('success', 'Créneau supprimé.');
         } catch (\RuntimeException $e) {
-            $_SESSION['flash_error'] = $e->getMessage();
+            \Core\Session::flash('error', $e->getMessage());
         }
-        header("Location: /v2/vie-scolaire/emplois-du-temps/{$edtId}");
+        $this->redirect("/v2/vie-scolaire/emplois-du-temps/{$edtId}");
         exit;
     }
 
@@ -261,18 +261,18 @@ class TimetableController extends Controller
 
         $edt = $this->service->findEdt($id);
         if ($edt === null || !$this->policy->canPublishEdt($user, $edt)) {
-            $_SESSION['flash_error'] = 'Action non autorisée.';
-            header("Location: /v2/vie-scolaire/emplois-du-temps/{$id}");
+            \Core\Session::flash('error', 'Action non autorisée.');
+            $this->redirect("/v2/vie-scolaire/emplois-du-temps/{$id}");
             exit;
         }
 
         try {
             $this->service->publierEdt($id, $user['id']);
-            $_SESSION['flash_success'] = 'Emploi du temps publié.';
+            \Core\Session::flash('success', 'Emploi du temps publié.');
         } catch (\RuntimeException $e) {
-            $_SESSION['flash_error'] = $e->getMessage();
+            \Core\Session::flash('error', $e->getMessage());
         }
-        header("Location: /v2/vie-scolaire/emplois-du-temps/{$id}");
+        $this->redirect("/v2/vie-scolaire/emplois-du-temps/{$id}");
         exit;
     }
 
@@ -344,18 +344,18 @@ class TimetableController extends Controller
         $errors = $dto->validate();
 
         if (!empty($errors)) {
-            $_SESSION['flash_error'] = implode('<br>', $errors);
-            header('Location: /v2/vie-scolaire/emplois-du-temps/remplacements');
+            \Core\Session::flash('error', implode('<br>', $errors));
+            $this->redirect('/v2/vie-scolaire/emplois-du-temps/remplacements');
             exit;
         }
 
         try {
             $this->service->assignerRemplacement($dto, $user['id']);
-            $_SESSION['flash_success'] = 'Remplacement enregistré.';
+            \Core\Session::flash('success', 'Remplacement enregistré.');
         } catch (\RuntimeException $e) {
-            $_SESSION['flash_error'] = $e->getMessage();
+            \Core\Session::flash('error', $e->getMessage());
         }
-        header('Location: /v2/vie-scolaire/emplois-du-temps/remplacements');
+        $this->redirect('/v2/vie-scolaire/emplois-du-temps/remplacements');
         exit;
     }
 
@@ -370,7 +370,7 @@ class TimetableController extends Controller
         $annee    = $_GET['annee'] ?? date('Y') . '-' . (date('Y') + 1);
 
         if (!$classeId) {
-            header('Location: /v2/vie-scolaire/emplois-du-temps');
+            $this->redirect('/v2/vie-scolaire/emplois-du-temps');
             exit;
         }
 
@@ -418,10 +418,4 @@ class TimetableController extends Controller
         ]);
     }
 
-    // ── Helper ────────────────────────────────────────────────────────────────
-
-    private function render(string $view, array $data = []): void
-    {
-        \Core\View::render($view, $data);
-    }
 }

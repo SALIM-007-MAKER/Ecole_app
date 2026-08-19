@@ -1,5 +1,4 @@
 <?php $title = htmlspecialchars($activity['titre']); ?>
-<?php ob_start(); ?>
 
 <?php
 $statutCls = match($activity['statut']) {
@@ -26,8 +25,9 @@ $marquageOuvert = in_array($activity['statut'], ['publie', 'en_cours'], true);
   <!-- En-tête -->
   <div class="flex items-start justify-between gap-4">
     <div class="flex items-center gap-3">
-      <a href="/v2/vie-scolaire/activites" class="text-slate-400 hover:text-slate-600">
-        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+      <a href="<?= BASE_URL ?>/v2/vie-scolaire/activites"
+         class="inline-flex items-center gap-2 px-3 py-1.5 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 text-sm transition-colors flex-shrink-0">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i> Retour
       </a>
       <div>
         <div class="flex items-center gap-2 mb-1">
@@ -44,22 +44,22 @@ $marquageOuvert = in_array($activity['statut'], ['publie', 'en_cours'], true);
     </div>
     <div class="flex gap-2 flex-wrap">
       <?php if ($policy->canModifyActivity($user, $activity)): ?>
-        <a href="/v2/vie-scolaire/activites/<?= $activity['id'] ?>/edit"
+        <a href="<?= BASE_URL ?>/v2/vie-scolaire/activites/<?= $activity['id'] ?>/edit"
            class="inline-flex items-center gap-1 border border-slate-300 text-slate-600 hover:bg-slate-50 px-3 py-1.5 rounded-lg text-sm transition">
           <i data-lucide="pencil" class="w-4 h-4"></i> Modifier
         </a>
       <?php endif; ?>
       <?php if ($policy->canPublishActivity($user, $activity)): ?>
-        <form method="POST" action="/v2/vie-scolaire/activites/<?= $activity['id'] ?>/publier"
+        <form method="POST" action="<?= BASE_URL ?>/v2/vie-scolaire/activites/<?= $activity['id'] ?>/publier"
               onsubmit="return confirm('Publier cette activité ?')">
-          <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+          <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
           <button type="submit" class="inline-flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition">
             <i data-lucide="send" class="w-4 h-4"></i> Publier
           </button>
         </form>
       <?php endif; ?>
       <?php if ($policy->canRegisterStudent($user) && in_array($activity['statut'], ['publie','en_cours'])): ?>
-        <a href="/v2/vie-scolaire/activites/<?= $activity['id'] ?>/inscrire"
+        <a href="<?= BASE_URL ?>/v2/vie-scolaire/activites/<?= $activity['id'] ?>/inscrire"
            class="inline-flex items-center gap-1 bg-violet-600 hover:bg-violet-700 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition">
           <i data-lucide="user-plus" class="w-4 h-4"></i> Inscrire
         </a>
@@ -68,16 +68,6 @@ $marquageOuvert = in_array($activity['statut'], ['publie', 'en_cours'], true);
   </div>
 
   <!-- Flash -->
-  <?php if (!empty($_SESSION['flash_success'])): ?>
-    <div class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm">
-      <?= htmlspecialchars($_SESSION['flash_success']) ?> <?php unset($_SESSION['flash_success']); ?>
-    </div>
-  <?php endif; ?>
-  <?php if (!empty($_SESSION['flash_error'])): ?>
-    <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">
-      <?= $_SESSION['flash_error'] ?> <?php unset($_SESSION['flash_error']); ?>
-    </div>
-  <?php endif; ?>
 
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
@@ -157,8 +147,8 @@ $marquageOuvert = in_array($activity['statut'], ['publie', 'en_cours'], true);
       <?php if ($marquageOuvert && $policy->canUpdate($user) && !empty($inscrits)): ?>
       <div class="bg-white border border-slate-200 rounded-xl p-5">
         <h2 class="font-semibold text-slate-800 mb-3">Marquer les présences</h2>
-        <form method="POST" action="/v2/vie-scolaire/activites/<?= $activity['id'] ?>/presences">
-          <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+        <form method="POST" action="<?= BASE_URL ?>/v2/vie-scolaire/activites/<?= $activity['id'] ?>/presences">
+          <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
           <div class="space-y-2">
             <?php foreach ($inscrits as $ins): ?>
               <div class="flex items-center justify-between py-1.5 border-b border-slate-100 last:border-0">
@@ -212,9 +202,9 @@ $marquageOuvert = in_array($activity['statut'], ['publie', 'en_cours'], true);
                   </td>
                   <?php if ($policy->canRegisterStudent($user) && $ins['statut'] === 'inscrit'): ?>
                   <td class="px-4 py-2.5 text-right">
-                    <form method="POST" action="/v2/vie-scolaire/activites/inscriptions/<?= $ins['id'] ?>/annuler"
+                    <form method="POST" action="<?= BASE_URL ?>/v2/vie-scolaire/activites/inscriptions/<?= $ins['id'] ?>/annuler"
                           onsubmit="return confirm('Annuler cette inscription ?')">
-                      <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+                      <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                       <button type="submit" class="text-red-500 hover:text-red-700 text-xs">Annuler</button>
                     </form>
                   </td>
@@ -259,9 +249,9 @@ $marquageOuvert = in_array($activity['statut'], ['publie', 'en_cours'], true);
       <?php if ($policy->canCancelActivity($user, $activity)): ?>
       <div class="bg-white border border-red-200 rounded-xl p-4">
         <h3 class="font-semibold text-red-700 mb-3 text-sm">Annuler l'activité</h3>
-        <form method="POST" action="/v2/vie-scolaire/activites/<?= $activity['id'] ?>/annuler"
+        <form method="POST" action="<?= BASE_URL ?>/v2/vie-scolaire/activites/<?= $activity['id'] ?>/annuler"
               onsubmit="return confirm('Annuler définitivement cette activité ?')">
-          <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+          <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
           <textarea name="motif_annulation" rows="3" required minlength="10"
                     placeholder="Motif (minimum 10 caractères)…"
                     class="w-full border border-red-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-300 mb-2"></textarea>
@@ -296,5 +286,3 @@ $marquageOuvert = in_array($activity['statut'], ['publie', 'en_cours'], true);
   </div>
 </div>
 
-<?php $content = ob_get_clean(); ?>
-<?php include base_path('app/Views/layouts/app.php'); ?>

@@ -14,7 +14,9 @@ class TeacherCreated extends Event
         public readonly string $prenom,
         public readonly string $statutPedagogique,
         public readonly int    $creeParId,
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

@@ -31,7 +31,7 @@ class MesClassesWidget extends BaseWidget
                  JOIN matieres m ON m.id = am.matiere_id
                  LEFT JOIN eleves e ON e.classe_id = c.id AND e.deleted_at IS NULL
                  WHERE c.etablissement_id=? AND u.id=? AND c.deleted_at IS NULL
-                 GROUP BY c.id, m.id ORDER BY c.niveau, c.nom'
+                 GROUP BY c.id, m.id ORDER BY ' . \App\Models\ClasseModel::ordreNiveauSql('c.niveau') . ', c.nom'
             );
             $stmt->execute([$etab, $userId]);
             $classes = $stmt->fetchAll(\PDO::FETCH_ASSOC);

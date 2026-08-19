@@ -33,7 +33,7 @@ class NoteModel extends Model
         return $this->queryOne(
             "SELECT * FROM {$this->table} WHERE evaluation_id = ? AND eleve_id = ? LIMIT 1",
             [$evaluationId, $eleveId]
-        );
+        ) ?: null;
     }
 
     public function findByEvaluation(int $evaluationId): array

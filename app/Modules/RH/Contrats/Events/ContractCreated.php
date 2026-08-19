@@ -15,7 +15,9 @@ class ContractCreated extends Event
         public readonly string $type,
         public readonly string $dateDebut,
         public readonly int    $createdBy
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

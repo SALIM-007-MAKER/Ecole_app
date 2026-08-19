@@ -5,20 +5,21 @@ $filters    = $filters    ?? null;
 $annees     = $annees     ?? [];
 $types      = $types      ?? [];
 $statuts    = $statuts    ?? [];
+$couverture = $couverture ?? null;
 $perms      = $perms      ?? [];
 $policy     = $policy     ?? null;
 $user       = $user       ?? [];
 
 $statutColors = [
+    'preparation' => 'sky',
     'ouverte'     => 'emerald',
-    'fermee'      => 'amber',
-    'verrouillee' => 'red',
+    'cloturee'    => 'amber',
     'archivee'    => 'slate',
 ];
 $statutIcons = [
+    'preparation' => 'circle-dashed',
     'ouverte'     => 'unlock',
-    'fermee'      => 'clock',
-    'verrouillee' => 'lock',
+    'cloturee'    => 'clock',
     'archivee'    => 'archive',
 ];
 ?>
@@ -34,12 +35,59 @@ $statutIcons = [
             <?= $stats['total'] ?? 0 ?> période(s) · <?= $stats['nb_annees'] ?? 0 ?> année(s) scolaire(s)
         </p>
     </div>
-    <?php if ($policy && $policy->canCreate($user)): ?>
-    <a href="<?= BASE_URL ?>/v2/academique/periodes/create" class="btn btn-primary">
-        <i data-lucide="plus" class="w-4 h-4"></i>Nouvelle période
-    </a>
+    <div class="flex flex-wrap gap-2">
+        <?php if ($policy && $policy->canGererConfig($user)): ?>
+        <a href="<?= BASE_URL ?>/v2/academique/periodes/config" class="btn btn-secondary">
+            <i data-lucide="settings" class="w-4 h-4"></i>Modèle par défaut
+        </a>
+        <?php endif; ?>
+        <?php if ($policy && $policy->canCreate($user)): ?>
+        <a href="<?= BASE_URL ?>/v2/academique/periodes/create" class="btn btn-primary">
+            <i data-lucide="plus" class="w-4 h-4"></i>Nouvelle période
+        </a>
+        <?php endif; ?>
+    </div>
+</div>
+
+<!-- Génération automatique (modèle par défaut Niger) -->
+<?php if ($policy && $policy->canCreate($user)): ?>
+<div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 mb-6">
+    <form method="POST" action="<?= BASE_URL ?>/v2/academique/periodes/generer" class="flex flex-wrap items-end gap-3">
+        <input type="hidden" name="_csrf_token" value="<?= \Core\Session::getCsrfToken() ?>">
+        <div>
+            <label class="block text-xs font-medium text-slate-500 mb-1">Année scolaire</label>
+            <input type="text" name="annee_scolaire" placeholder="2025-2026" pattern="\d{4}-\d{4}"
+                   value="<?= htmlspecialchars($filters?->anneeScolaire ?? '', ENT_QUOTES) ?>"
+                   class="form-input w-40" required>
+        </div>
+        <button type="submit" class="btn btn-secondary">
+            <i data-lucide="wand-2" class="w-4 h-4"></i>Générer les 2 semestres (modèle par défaut)
+        </button>
+    </form>
+</div>
+<?php endif; ?>
+
+<!-- Vérification de couverture -->
+<?php if ($couverture !== null): ?>
+<div class="rounded-xl border shadow-sm p-4 mb-6 <?= $couverture['couverte'] ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200' ?>">
+    <div class="flex items-center gap-2 mb-1">
+        <i data-lucide="<?= $couverture['couverte'] ? 'check-circle' : 'alert-triangle' ?>"
+           class="w-4 h-4 <?= $couverture['couverte'] ? 'text-emerald-600' : 'text-amber-600' ?>"></i>
+        <span class="text-sm font-semibold <?= $couverture['couverte'] ? 'text-emerald-700' : 'text-amber-700' ?>">
+            <?= $couverture['couverte']
+                ? 'L\'année scolaire ' . htmlspecialchars($filters->anneeScolaire, ENT_QUOTES) . ' est entièrement couverte.'
+                : 'Couverture incomplète pour ' . htmlspecialchars($filters->anneeScolaire, ENT_QUOTES) . ' :' ?>
+        </span>
+    </div>
+    <?php if (!$couverture['couverte']): ?>
+    <ul class="text-xs text-amber-700 mt-2 space-y-0.5 pl-6 list-disc">
+        <?php foreach ($couverture['gaps'] as $gap): ?>
+        <li>Trou non couvert : <?= date('d/m/Y', strtotime($gap['debut'])) ?> → <?= date('d/m/Y', strtotime($gap['fin'])) ?></li>
+        <?php endforeach; ?>
+    </ul>
     <?php endif; ?>
 </div>
+<?php endif; ?>
 
 <?php $flash = \Core\Session::getFlash(); ?>
 <?php if ($flash): ?>
@@ -63,8 +111,8 @@ $statutIcons = [
         <p class="text-xs text-slate-500 mt-0.5">Ouvertes</p>
     </div>
     <div class="rounded-xl bg-white border border-slate-200 shadow-sm p-4 text-center">
-        <p class="text-2xl font-bold text-red-600"><?= $stats['verrouillees'] ?? 0 ?></p>
-        <p class="text-xs text-slate-500 mt-0.5">Verrouillées</p>
+        <p class="text-2xl font-bold text-amber-600"><?= $stats['cloturees'] ?? 0 ?></p>
+        <p class="text-xs text-slate-500 mt-0.5">Clôturées <span class="text-red-500">(<?= $stats['verrouillees'] ?? 0 ?> verr.)</span></p>
     </div>
     <div class="rounded-xl bg-white border border-slate-200 shadow-sm p-4 text-center">
         <p class="text-2xl font-bold text-slate-500"><?= $stats['archivees'] ?? 0 ?></p>

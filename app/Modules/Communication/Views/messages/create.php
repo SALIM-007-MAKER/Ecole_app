@@ -1,16 +1,8 @@
 <?php /** @var string $titre */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title><?= htmlspecialchars($titre ?? 'Nouveau message') ?></title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-2xl mx-auto py-8 px-4">
 
   <div class="flex items-center gap-3 mb-6">
-    <a href="/v2/messages" class="text-slate-400 hover:text-slate-600">←</a>
+    <a href="<?= BASE_URL ?>/v2/messages" class="text-slate-400 hover:text-slate-600">←</a>
     <h1 class="text-2xl font-bold text-slate-800">Nouveau message</h1>
   </div>
 
@@ -43,18 +35,16 @@ const csrf = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 document.getElementById('create-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const data = new FormData(e.target);
-  const r = await fetch('/v2/messages', {
+  const r = await fetch('<?= BASE_URL ?>/v2/messages', {
     method: 'POST',
     headers: { 'X-CSRF-Token': csrf },
     body: new URLSearchParams(data)
   });
   const j = await r.json();
   if (j.success) {
-    window.location.href = '/v2/messages/' + j.thread_id;
+    window.location.href = '<?= BASE_URL ?>/v2/messages/' + j.thread_id;
   } else {
     alert('Erreur : ' + (j.errors || []).join(', '));
   }
 });
 </script>
-</body>
-</html>

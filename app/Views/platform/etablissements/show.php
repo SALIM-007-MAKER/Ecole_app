@@ -15,6 +15,17 @@ $statutBadge = [
         </h2>
         <p class="text-sm text-slate-500 font-mono"><?= htmlspecialchars($etab['slug'], ENT_QUOTES) ?></p>
     </div>
+    <div class="flex flex-wrap gap-2">
+        <a href="<?= BASE_URL ?>/platform/etablissements/<?= (int)$etab['id'] ?>/domaines" class="btn btn-secondary btn-sm">
+            <i data-lucide="globe" class="w-4 h-4"></i>Domaines
+        </a>
+        <a href="<?= BASE_URL ?>/platform/etablissements/<?= (int)$etab['id'] ?>/quotas" class="btn btn-secondary btn-sm">
+            <i data-lucide="database" class="w-4 h-4"></i>Quotas
+        </a>
+        <a href="<?= BASE_URL ?>/platform/etablissements/<?= (int)$etab['id'] ?>/monitoring" class="btn btn-secondary btn-sm">
+            <i data-lucide="activity" class="w-4 h-4"></i>Monitoring
+        </a>
+    </div>
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">

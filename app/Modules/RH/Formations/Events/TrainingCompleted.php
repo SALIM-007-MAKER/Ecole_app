@@ -15,7 +15,9 @@ class TrainingCompleted extends Event
         public readonly string $statut,
         public readonly ?float $noteEvaluation,
         public readonly int    $validatedBy
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

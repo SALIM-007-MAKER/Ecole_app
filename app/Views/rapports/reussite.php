@@ -16,10 +16,13 @@ $moy     = (float)($kpiReussite['moy_generale']  ?? 0);
 ?>
 
 <!-- Header -->
-<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
-    <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-        <i data-lucide="trophy" class="w-6 h-6 text-amber-500"></i>Rapport de réussite
-    </h2>
+<div class="flex flex-wrap items-start justify-between gap-3 mb-6">
+    <div class="flex items-start gap-4">
+        <div class="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="trophy" class="w-5 h-5 text-violet-600"></i>
+        </div>
+        <h2 class="text-xl font-bold text-slate-800 pt-2">Rapport de réussite</h2>
+    </div>
     <a href="<?= BASE_URL ?>/rapports/export/excel/reussite?periode_id=<?= (int)$periodeId ?>" class="btn btn-outline text-emerald-600 border-emerald-200 hover:bg-emerald-50">
         <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>Excel
     </a>

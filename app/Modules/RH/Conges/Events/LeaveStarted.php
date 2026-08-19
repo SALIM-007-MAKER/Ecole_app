@@ -16,7 +16,9 @@ class LeaveStarted extends Event
         public readonly string $dateFin,
         public readonly float  $dureeJours,
         public readonly int    $startedBy
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

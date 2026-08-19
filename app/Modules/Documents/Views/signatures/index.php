@@ -6,7 +6,7 @@ $titre = 'Signatures — ' . htmlspecialchars($document['titre']);
 
   <div class="flex items-center justify-between">
     <div>
-      <a href="/v2/documents/<?= $document['id'] ?>" class="text-sm text-violet-600 hover:text-violet-800 font-medium">← Retour</a>
+      <a href="<?= BASE_URL ?>/v2/documents/<?= $document['id'] ?>" class="text-sm text-violet-600 hover:text-violet-800 font-medium">← Retour</a>
       <h1 class="text-2xl font-bold text-slate-800 mt-1">Signatures</h1>
       <p class="text-sm text-slate-500"><?= htmlspecialchars($document['titre']) ?></p>
     </div>
@@ -102,7 +102,7 @@ document.getElementById('form-sign').addEventListener('submit', async function(e
   const fd = new FormData(this);
   const csrf = document.querySelector('meta[name=csrf-token]')?.content ?? '';
   const signataires = [{ email: fd.get('signataire_email'), nom: fd.get('signataire_nom'), type: 'externe' }];
-  const r = await fetch('/v2/signatures/<?= $document['id'] ?>/request', {
+  const r = await fetch('<?= BASE_URL ?>/v2/signatures/<?= $document['id'] ?>/request', {
     method: 'POST',
     headers: {'Content-Type':'application/json','X-CSRF-Token': csrf},
     body: JSON.stringify({ signataires }),

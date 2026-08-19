@@ -8,6 +8,8 @@ class PeriodeScolaireModel extends Model
 {
     protected string $table = 'periodes_scolaires';
 
+    /** Types historiques/techniques (incl. 'trimestre', conservé uniquement comme point
+     *  d'extension future — non proposé par défaut, voir TYPES_OFFICIELS). */
     public const TYPES = ['trimestre', 'semestre', 'custom'];
 
     public const TYPE_LABELS = [
@@ -16,19 +18,35 @@ class PeriodeScolaireModel extends Model
         'custom'    => 'Période personnalisée',
     ];
 
-    public const STATUTS = ['ouverte', 'fermee', 'verrouillee', 'archivee'];
+    /** Système officiel du Complexe Scolaire Privé La Persévérance : découpage
+     *  semestriel (2 semestres/an). 'trimestre' est délibérément exclu de la
+     *  sélection par défaut. */
+    public const TYPES_OFFICIELS = ['semestre', 'custom'];
+
+    public const TYPES_OFFICIELS_LABELS = [
+        'semestre' => 'Semestre',
+        'custom'   => 'Période personnalisée',
+    ];
+
+    /** Machine d'états : preparation → ouverte → cloturee → archivee
+     *  (cloturee → ouverte : réouverture possible, admin).
+     *  Le verrouillage (`verrouille_par`/`verrouille_le`) est indépendant du
+     *  statut : il ne s'applique qu'à une période `cloturee` et bloque toute
+     *  modification, y compris la réouverture/l'archivage, jusqu'à
+     *  déverrouillage explicite par un administrateur. */
+    public const STATUTS = ['preparation', 'ouverte', 'cloturee', 'archivee'];
 
     public const STATUT_LABELS = [
+        'preparation' => 'Préparation',
         'ouverte'     => 'Ouverte',
-        'fermee'      => 'Fermée',
-        'verrouillee' => 'Verrouillée',
+        'cloturee'    => 'Clôturée',
         'archivee'    => 'Archivée',
     ];
 
     public const STATUT_COLORS = [
+        'preparation' => 'sky',
         'ouverte'     => 'emerald',
-        'fermee'      => 'amber',
-        'verrouillee' => 'red',
+        'cloturee'    => 'amber',
         'archivee'    => 'slate',
     ];
 

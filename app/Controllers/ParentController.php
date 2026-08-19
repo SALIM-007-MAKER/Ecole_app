@@ -5,28 +5,33 @@ namespace App\Controllers;
 use Core\Controller;
 use Core\Session;
 use App\Models\EleveModel;
-use App\Models\NoteModel;
-use App\Models\PeriodeModel;
 use App\Models\AbsenceModel;
+use App\Models\JustificationModel;
 use App\Models\NotificationModel;
 use App\Models\AnnonceModel;
+use App\Modules\Academique\Repositories\PeriodeScolaireRepository;
+use App\Modules\Academique\Repositories\BulletinRepository;
+use App\Modules\Academique\Services\BulletinEngineFactory;
 
 class ParentController extends Controller
 {
-    private EleveModel        $eleveModel;
-    private NoteModel         $noteModel;
-    private PeriodeModel      $periodeModel;
-    private NotificationModel $notifModel;
-    private AnnonceModel      $annonceModel;
+    private EleveModel                $eleveModel;
+    private NotificationModel         $notifModel;
+    private AnnonceModel              $annonceModel;
+    private JustificationModel        $justModel;
+    private PeriodeScolaireRepository $periodeRepo;
+    private BulletinRepository        $bulletinRepo;
 
     public function __construct()
     {
         parent::__construct();
         $this->eleveModel   = new EleveModel();
-        $this->noteModel    = new NoteModel();
-        $this->periodeModel = new PeriodeModel();
         $this->notifModel   = new NotificationModel();
         $this->annonceModel = new AnnonceModel();
+        $this->justModel    = new JustificationModel();
+
+        $this->periodeRepo  = new PeriodeScolaireRepository();
+        $this->bulletinRepo = new BulletinRepository();
     }
 
     // ─── Dashboard ────────────────────────────────────────────────────────────
@@ -71,18 +76,14 @@ class ParentController extends Controller
             return;
         }
 
-        $periodes  = $this->periodeModel->findAll('id');
+        $periodes  = $this->periodeRepo->findForSelect();
         $eleveId   = (int)$this->request->get('eleve_id', $enfants[0]->id);
         $periodeId = (int)$this->request->get('periode_id', $periodes ? $periodes[0]->id : 0);
 
-        $enfant = $this->resolveEnfant((int)$eleveId, $enfants);
-        $data   = null;
+        $enfant   = $this->resolveEnfant((int)$eleveId, $enfants);
+        $bulletin = null;
         if ($enfant && $periodeId) {
-            $data = $this->noteModel->getBulletinData(
-                (int)$enfant->id,
-                (int)$enfant->classe_id,
-                $periodeId
-            );
+            $bulletin = $this->previewBulletinSafe((int)$enfant->id, $periodeId);
         }
 
         $this->render('parent/notes', [
@@ -91,7 +92,7 @@ class ParentController extends Controller
             'enfant'    => $enfant,
             'periodes'  => $periodes,
             'periodeId' => $periodeId,
-            'data'      => $data,
+            'bulletin'  => $bulletin,
         ]);
     }
 
@@ -99,23 +100,18 @@ class ParentController extends Controller
 
     public function bulletin(): void
     {
-        $user    = $this->requireParent();
-        $enfants = $this->eleveModel->findByParent((int)$user['id']);
-        $periodes = $this->periodeModel->findAll('id');
+        $user     = $this->requireParent();
+        $enfants  = $this->eleveModel->findByParent((int)$user['id']);
+        $periodes = $this->periodeRepo->findForSelect();
 
         $eleveId   = (int)$this->request->get('eleve_id', $enfants[0]->id ?? 0);
         $periodeId = (int)$this->request->get('periode_id', $periodes[0]->id ?? 0);
 
-        $enfant  = $this->resolveEnfant((int)$eleveId, $enfants);
-        $periode = $periodeId ? $this->periodeModel->findById($periodeId) : null;
-        $data    = null;
+        $enfant   = $this->resolveEnfant((int)$eleveId, $enfants);
+        $bulletin = null;
 
         if ($enfant && $periodeId) {
-            $data = $this->noteModel->getBulletinData(
-                (int)$enfant->id,
-                (int)$enfant->classe_id,
-                $periodeId
-            );
+            $bulletin = $this->previewBulletinSafe((int)$enfant->id, $periodeId);
         }
 
         $this->render('parent/bulletin', [
@@ -123,9 +119,8 @@ class ParentController extends Controller
             'enfants'   => $enfants,
             'enfant'    => $enfant,
             'periodes'  => $periodes,
-            'periode'   => $periode,
             'periodeId' => $periodeId,
-            'data'      => $data,
+            'bulletin'  => $bulletin,
         ]);
     }
 
@@ -144,14 +139,16 @@ class ParentController extends Controller
         $absModel      = new AbsenceModel();
 
         if ($enfant) {
+            // Note : `absences` n'a pas de colonne matiere_id (une absence est
+            // par journée/session, pas par matière) — pas de jointure possible
+            // vers `matieres`, la vue affiche donc "-" pour cette colonne.
             $absences = $absModel->query(
-                "SELECT a.*, j.motif, j.valide,
-                        CONCAT(u.prenom, ' ', u.nom) AS enseignant_nom,
-                        m.nom AS matiere_nom
+                "SELECT a.*, j.motif, j.statut AS justification_statut,
+                        (a.statut_justif = 'justifiee') AS justifiee,
+                        CONCAT(u.prenom, ' ', u.nom) AS enseignant_nom
                  FROM `absences` a
                  LEFT JOIN `justifications` j ON j.absence_id = a.id
-                 LEFT JOIN `users` u ON u.id = a.saisie_par
-                 LEFT JOIN `matieres` m ON m.id = a.matiere_id
+                 LEFT JOIN `users` u ON u.id = a.signale_par
                  WHERE a.eleve_id = ?
                  ORDER BY a.date_absence DESC, a.session",
                 [(int)$enfant->id]
@@ -162,9 +159,8 @@ class ParentController extends Controller
                     COUNT(*) AS total,
                     SUM(CASE WHEN type = 'absence' THEN 1 ELSE 0 END) AS absences,
                     SUM(CASE WHEN type = 'retard'  THEN 1 ELSE 0 END) AS retards,
-                    SUM(CASE WHEN j.valide = 1 THEN 1 ELSE 0 END) AS justifiees
+                    SUM(CASE WHEN statut_justif = 'justifiee' THEN 1 ELSE 0 END) AS justifiees
                  FROM `absences` a
-                 LEFT JOIN `justifications` j ON j.absence_id = a.id
                  WHERE a.eleve_id = ?",
                 [(int)$enfant->id]
             );
@@ -211,76 +207,17 @@ class ParentController extends Controller
             return;
         }
 
-        $absModel->execute(
-            'INSERT INTO `justifications` (`absence_id`, `motif`, `valide`, `created_at`)
-             VALUES (?, ?, 0, NOW())
-             ON DUPLICATE KEY UPDATE `motif` = VALUES(`motif`)',
-            [(int)$id, $motif]
-        );
+        $this->justModel->upsert((int)$id, (int)$user['id'], $motif, null);
+        $absModel->updateStatutJustif((int)$id, 'en_attente');
 
         Session::flash('success', 'Justification soumise avec succès.');
         $this->redirect(BASE_URL . '/parent/absences?eleve_id=' . $absence->eleve_id);
     }
 
     // ─── Paiements ────────────────────────────────────────────────────────────
-
-    public function paiements(): void
-    {
-        $user    = $this->requireParent();
-        $enfants = $this->eleveModel->findByParent((int)$user['id']);
-
-        $eleveId = (int)$this->request->get('eleve_id', $enfants[0]->id ?? 0);
-        $annee   = $this->request->get('annee', $this->currentAnnee());
-        $enfant  = $this->resolveEnfant((int)$eleveId, $enfants);
-
-        $frais     = [];
-        $paiements = [];
-        $totaux    = ['total_frais' => 0, 'total_paye' => 0, 'total_reste' => 0];
-
-        if ($enfant) {
-            $frais = $this->eleveModel->query(
-                "SELECT fe.*, ft.nom AS frais_nom, ft.categorie,
-                        COALESCE(SUM(p.montant), 0) AS total_paye,
-                        fe.montant - COALESCE(SUM(p.montant), 0) AS reste
-                 FROM `frais_eleves` fe
-                 JOIN `frais_types` ft ON ft.id = fe.frais_type_id
-                 LEFT JOIN `paiements` p ON p.frais_eleve_id = fe.id
-                 WHERE fe.eleve_id = ? AND fe.annee_scolaire = ?
-                 GROUP BY fe.id
-                 ORDER BY fe.date_echeance",
-                [(int)$enfant->id, $annee]
-            );
-
-            $paiements = $this->eleveModel->query(
-                "SELECT p.*, ft.nom AS frais_nom
-                 FROM `paiements` p
-                 JOIN `frais_eleves` fe ON fe.id = p.frais_eleve_id
-                 JOIN `frais_types` ft ON ft.id = fe.frais_type_id
-                 WHERE fe.eleve_id = ? AND fe.annee_scolaire = ?
-                 ORDER BY p.date_paiement DESC",
-                [(int)$enfant->id, $annee]
-            );
-
-            foreach ($frais as $f) {
-                $totaux['total_frais'] += (float)$f->montant;
-                $totaux['total_paye']  += (float)$f->total_paye;
-                $totaux['total_reste'] += (float)$f->reste;
-            }
-        }
-
-        $annees = $this->anneesOptions();
-
-        $this->render('parent/paiements', [
-            'title'     => 'Scolarité et paiements',
-            'enfants'   => $enfants,
-            'enfant'    => $enfant,
-            'frais'     => $frais,
-            'paiements' => $paiements,
-            'totaux'    => $totaux,
-            'annee'     => $annee,
-            'annees'    => $annees,
-        ]);
-    }
+    // Migré vers Finance V2 : voir FactureController::mesPaiements()
+    // (GET /v2/finance/mes-paiements), source exclusive finance_factures/
+    // finance_paiements. Ancienne route /parent/paiements supprimée.
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
@@ -305,16 +242,19 @@ class ParentController extends Controller
 
     private function getDerniereMoyenne(int $eleveId, int $classeId): ?float
     {
-        $r = $this->noteModel->queryOne(
-            "SELECT mg.moyenne_generale
-             FROM `moyennes_generales` mg
-             JOIN `periodes` p ON p.id = mg.periode_id
-             WHERE mg.eleve_id = ? AND mg.classe_id = ?
-             ORDER BY p.date_debut DESC
-             LIMIT 1",
-            [$eleveId, $classeId]
-        );
-        return $r ? (float)$r->moyenne_generale : null;
+        return $this->bulletinRepo->derniereMoyenne($eleveId);
+    }
+
+    /** Génère un aperçu de bulletin sans persister ; null si aucune donnée exploitable. */
+    private function previewBulletinSafe(int $eleveId, int $periodeId): ?\App\Modules\Academique\DTO\BulletinData
+    {
+        try {
+            $etablissementId = (int)($this->currentUser()['etablissement_id'] ?? 1);
+            $generator = BulletinEngineFactory::make($etablissementId);
+            return $generator->previewBulletin($eleveId, $periodeId);
+        } catch (\RuntimeException) {
+            return null;
+        }
     }
 
     private function countAbsencesMois(int $eleveId): int
@@ -328,32 +268,19 @@ class ParentController extends Controller
         return (int)($r?->n ?? 0);
     }
 
+    /**
+     * Source V2 exclusive : finance_factures (créances non soldées).
+     * Migré depuis frais_eleves/paiements (V1) — ces tables sont figées
+     * depuis la bascule Finance V1→V2 et ne reflètent plus les frais réels.
+     */
     private function getSoldeImpaye(int $eleveId): float
     {
         $r = $this->eleveModel->queryOne(
-            "SELECT COALESCE(SUM(fe.montant - COALESCE(p_sum.total,0)), 0) AS solde
-             FROM `frais_eleves` fe
-             LEFT JOIN (
-                 SELECT frais_eleve_id, SUM(montant) AS total
-                 FROM `paiements` GROUP BY frais_eleve_id
-             ) p_sum ON p_sum.frais_eleve_id = fe.id
-             WHERE fe.eleve_id = ? AND fe.statut != 'paye'",
+            "SELECT COALESCE(SUM(montant_total - montant_paye), 0) AS solde
+             FROM `finance_factures`
+             WHERE eleve_id = ? AND statut IN ('emise','partiellement_payee','en_retard')",
             [$eleveId]
         );
         return (float)($r?->solde ?? 0);
-    }
-
-
-
-    private function anneesOptions(): array
-    {
-        $y   = (int)date('Y');
-        $m   = (int)date('m');
-        $cur = $m >= 9 ? $y : $y - 1;
-        return [
-            ($cur - 1) . '-' . $cur,
-            $cur . '-' . ($cur + 1),
-            ($cur + 1) . '-' . ($cur + 2),
-        ];
     }
 }

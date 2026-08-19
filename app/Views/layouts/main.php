@@ -12,6 +12,49 @@ $__etabIdForBranding = $__sessionForBranding['etablissement_id']
 $branding = BrandingService::make()->get((int)$__etabIdForBranding);
 $__logoFsPath = ROOT_PATH . '/public' . $branding->logoUrl;
 $__brandWeb = file_exists($__logoFsPath) ? $branding->logoUrl : null;
+
+/* ── Données utilisateur ──────────────────────────────────────────────── */
+$currentUser = \Core\Session::getUser();
+$role        = $currentUser['role'] ?? '';
+$perms       = $currentUser['permissions'] ?? [];
+$uri         = $_SERVER['REQUEST_URI'] ?? '';
+$userName    = htmlspecialchars(trim(($currentUser['prenom'] ?? '') . ' ' . ($currentUser['nom'] ?? 'Utilisateur')), ENT_QUOTES);
+$userInitial = strtoupper(($currentUser['prenom'][0] ?? '') ?: ($currentUser['nom'][0] ?? 'U'));
+
+/* ── Labels rôles ─────────────────────────────────────────────────────── */
+$roleLabels = [
+    'admin'      => 'Administrateur',
+    'directeur'  => 'Directeur',
+    'enseignant' => 'Enseignant',
+    'comptable'  => 'Comptable',
+    'secretaire' => 'Secrétaire',
+    'parent'     => 'Parent',
+    'eleve'      => 'Élève',
+];
+$roleLabel = $roleLabels[$role] ?? ucfirst($role);
+
+$roleColors = [
+    'admin'      => 'bg-red-100 text-red-700',
+    'directeur'  => 'bg-violet-100 text-violet-700',
+    'enseignant' => 'bg-amber-100 text-amber-700',
+    'comptable'  => 'bg-emerald-100 text-emerald-700',
+    'secretaire' => 'bg-sky-100 text-sky-700',
+    'parent'     => 'bg-indigo-100 text-indigo-700',
+    'eleve'      => 'bg-slate-100 text-slate-700',
+];
+$roleClass = $roleColors[$role] ?? 'bg-slate-100 text-slate-700';
+
+/* ── Menu dynamique ───────────────────────────────────────────────────── */
+$menus = MenuService::getMenuStructure($role, $perms);
+$currentUri = $uri;
+$bottomNavItems = MenuService::getBottomNavItems($role, $perms);
+
+/* ── Titre de page ────────────────────────────────────────────────────────
+   Source unique : $title si la vue le définit explicitement, sinon on le
+   déduit du libellé du menu correspondant à l'URL courante (même source
+   que la sidebar), pour que le header ne retombe jamais sur un titre figé. */
+$pageTitle = $title ?? MenuService::resolveActiveLabel($menus, $currentUri) ?? 'Tableau de bord';
+$pageTitle = htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8');
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -19,7 +62,6 @@ $__brandWeb = file_exists($__logoFsPath) ? $branding->logoUrl : null;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
-    <?php $pageTitle = htmlspecialchars($title ?? 'Tableau de bord', ENT_QUOTES, 'UTF-8'); ?>
     <title><?= $pageTitle ?> — <?= htmlspecialchars($branding->appName, ENT_QUOTES) ?></title>
     <meta name="robots" content="noindex, nofollow">
     <meta name="theme-color" content="<?= htmlspecialchars($branding->primaryColor, ENT_QUOTES) ?>">
@@ -67,44 +109,6 @@ $__brandWeb = file_exists($__logoFsPath) ? $branding->logoUrl : null;
     </style>
 </head>
 <body class="app-shell">
-
-<?php
-/* ── Données utilisateur ──────────────────────────────────────────────── */
-$currentUser = \Core\Session::getUser();
-$role        = $currentUser['role'] ?? '';
-$perms       = $currentUser['permissions'] ?? [];
-$uri         = $_SERVER['REQUEST_URI'] ?? '';
-$userName    = htmlspecialchars(trim(($currentUser['prenom'] ?? '') . ' ' . ($currentUser['nom'] ?? 'Utilisateur')), ENT_QUOTES);
-$userInitial = strtoupper(($currentUser['prenom'][0] ?? '') ?: ($currentUser['nom'][0] ?? 'U'));
-
-/* ── Labels rôles ─────────────────────────────────────────────────────── */
-$roleLabels = [
-    'admin'      => 'Administrateur',
-    'directeur'  => 'Directeur',
-    'enseignant' => 'Enseignant',
-    'comptable'  => 'Comptable',
-    'secretaire' => 'Secrétaire',
-    'parent'     => 'Parent',
-    'eleve'      => 'Élève',
-];
-$roleLabel = $roleLabels[$role] ?? ucfirst($role);
-
-$roleColors = [
-    'admin'      => 'bg-red-100 text-red-700',
-    'directeur'  => 'bg-violet-100 text-violet-700',
-    'enseignant' => 'bg-amber-100 text-amber-700',
-    'comptable'  => 'bg-emerald-100 text-emerald-700',
-    'secretaire' => 'bg-sky-100 text-sky-700',
-    'parent'     => 'bg-indigo-100 text-indigo-700',
-    'eleve'      => 'bg-slate-100 text-slate-700',
-];
-$roleClass = $roleColors[$role] ?? 'bg-slate-100 text-slate-700';
-
-/* ── Menu dynamique ───────────────────────────────────────────────────── */
-$menus = MenuService::getMenuStructure($role, $perms);
-$currentUri = $uri;
-$bottomNavItems = MenuService::getBottomNavItems($role, $perms);
-?>
 
 <!-- ══ OVERLAY MOBILE ═══════════════════════════════════════════════════ -->
 <div id="sidebar-overlay" aria-hidden="true"></div>
@@ -247,17 +251,19 @@ $bottomNavItems = MenuService::getBottomNavItems($role, $perms);
     <main role="main" style="flex:1">
         <div style="padding:1.5rem;max-width:1440px;margin:0 auto">
 
-            <?php /* Messages flash */
-            foreach (['success'=>['check-circle','#f0fdf4','#bbf7d0','#166534'],
-                       'error'  =>['alert-circle','#fef2f2','#fecaca','#991b1b'],
-                       'warning'=>['alert-triangle','#fffbeb','#fde68a','#92400e'],
-                       'info'   =>['info','#eff6ff','#bfdbfe','#1e40af']]
-                     as $type => [$icon, $bg, $br, $tc]):
+            <?php /* Messages flash — succès/info se ferment seuls après 5s,
+                     erreur/avertissement restent affichés jusqu'à fermeture
+                     manuelle (l'utilisateur doit pouvoir les lire/agir). */
+            foreach (['success'=>['check-circle','#f0fdf4','#bbf7d0','#166534',true],
+                       'error'  =>['alert-circle','#fef2f2','#fecaca','#991b1b',false],
+                       'warning'=>['alert-triangle','#fffbeb','#fde68a','#92400e',false],
+                       'info'   =>['info','#eff6ff','#bfdbfe','#1e40af',true]]
+                     as $type => [$icon, $bg, $br, $tc, $autoDismiss]):
                 if (!\Core\Session::hasFlash($type)) continue; ?>
-            <div role="alert"
+            <div role="alert" <?= $autoDismiss ? 'data-autodismiss="5000"' : '' ?>
                  style="display:flex;align-items:flex-start;gap:.75rem;padding:.875rem 1rem;
                         border-radius:.75rem;border:1px solid <?= $br ?>;background:<?= $bg ?>;
-                        color:<?= $tc ?>;font-size:.875rem;margin-bottom:1rem">
+                        color:<?= $tc ?>;font-size:.875rem;margin-bottom:1rem;transition:opacity .3s ease">
                 <i data-lucide="<?= $icon ?>" style="width:1rem;height:1rem;margin-top:.125rem;flex-shrink:0"></i>
                 <span style="flex:1"><?= htmlspecialchars((string)\Core\Session::getFlash($type), ENT_QUOTES) ?></span>
                 <button onclick="this.closest('[role=alert]').remove()"
@@ -267,6 +273,15 @@ $bottomNavItems = MenuService::getBottomNavItems($role, $perms);
                 </button>
             </div>
             <?php endforeach; ?>
+            <script>
+            document.querySelectorAll('[role=alert][data-autodismiss]').forEach(function (el) {
+                var delay = parseInt(el.getAttribute('data-autodismiss'), 10) || 5000;
+                setTimeout(function () {
+                    el.style.opacity = '0';
+                    setTimeout(function () { el.remove(); }, 300);
+                }, delay);
+            });
+            </script>
 
             <?php if (\Core\Session::hasFlash('errors')): ?>
             <div role="alert"
@@ -325,6 +340,7 @@ $bottomNavItems = MenuService::getBottomNavItems($role, $perms);
 </button>
 
 <!-- ══ SCRIPTS ═══════════════════════════════════════════════════════════ -->
+<script>window.APP_BASE_URL = '<?= BASE_URL ?>';</script>
 <script src="https://cdn.jsdelivr.net/npm/lucide@0.400.0/dist/umd/lucide.min.js"></script>
 <script>if (window.lucide) lucide.createIcons();</script>
 <script src="<?= BASE_URL ?>/assets/js/app.js"></script>
@@ -346,7 +362,7 @@ $bottomNavItems = MenuService::getBottomNavItems($role, $perms);
                 if (!d) return;
                 var count  = d.count || 0;
                 var badge  = document.getElementById('notif-badge');
-                var sBadge = document.getElementById('sidebar-notif-badge');
+                var sBadge = document.querySelector('.sidebar-notif-badge');
                 var label  = count > 99 ? '99+' : count;
                 if (count > 0) {
                     if (badge)  { badge.textContent = label; badge.style.display = 'flex'; }

@@ -14,7 +14,19 @@ class DisciplineFiltersDTO
         public readonly ?string $dateFin,
         public readonly int     $page,
         public readonly int     $perPage,
+        /** @var int[]|null Restriction serveur (jamais depuis la requête) — cf. EleveScopeTrait */
+        public readonly ?array  $eleveIds = null,
     ) {}
+
+    /** Retourne une copie restreinte au périmètre autorisé (parent/eleve). */
+    public function withEleveIds(array $ids): self
+    {
+        return new self(
+            $this->eleveId, $this->classeId, $this->anneeScolaire,
+            $this->statut, $this->gravite, $this->dateDebut, $this->dateFin,
+            $this->page, $this->perPage, $ids
+        );
+    }
 
     public static function fromRequest(array $data): self
     {

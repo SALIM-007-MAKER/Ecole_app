@@ -37,16 +37,19 @@ foreach ($grid as $jourGrid) {
 }
 ?>
 
-<div class="flex flex-wrap items-center justify-between gap-4 mb-5">
-    <div>
-        <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <i data-lucide="calendar-days" class="w-5 h-5 text-violet-600"></i>Emploi du temps
-        </h2>
-        <p class="text-sm text-slate-400">
-            <?= $stats->total_seances ?? 0 ?> séances ·
-            <?= $stats->total_classes ?? 0 ?> classes ·
-            <?= $stats->total_profs ?? 0 ?> enseignants
-        </p>
+<div class="flex flex-wrap items-start justify-between gap-4 mb-5">
+    <div class="flex items-start gap-4">
+        <div class="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="calendar-days" class="w-5 h-5 text-violet-600"></i>
+        </div>
+        <div>
+            <h2 class="text-lg font-bold text-slate-900">Emploi du temps</h2>
+            <p class="text-sm text-slate-400">
+                <?= $stats->total_seances ?? 0 ?> séances ·
+                <?= $stats->total_classes ?? 0 ?> classes ·
+                <?= $stats->total_profs ?? 0 ?> enseignants
+            </p>
+        </div>
     </div>
     <div class="flex items-center gap-2 flex-wrap">
         <a href="<?= BASE_URL ?>/emplois-du-temps/mensuel?annee=<?= urlencode($annee) ?><?= !empty($filters['classe_id']) ? '&classe_id='.$filters['classe_id'] : '' ?><?= !empty($filters['professeur_id']) ? '&prof_id='.$filters['professeur_id'] : '' ?>"

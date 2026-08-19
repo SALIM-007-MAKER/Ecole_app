@@ -9,17 +9,6 @@ function fpLienBadge(string $lien, array $labels): string {
         bg-{$c}-100 text-{$c}-700\">{$label}</span>";
 }
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title><?= htmlspecialchars($title) ?></title>
-    <?php include BASE_PATH . '/app/Views/layouts/head_assets.php'; ?>
-</head>
-<body class="bg-slate-50 text-slate-800">
-<?php include BASE_PATH . '/app/Views/layouts/sidebar.php'; ?>
-
-<main class="ml-64 p-6 min-h-screen">
     <div class="max-w-5xl mx-auto">
 
         <!-- Breadcrumb -->
@@ -225,7 +214,7 @@ function fpLienBadge(string $lien, array $labels): string {
             </h2>
             <form method="POST" action="<?= BASE_URL ?>/v2/scolarite/familles/<?= $famille->id ?>/rattacher-eleve"
                   class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <input type="hidden" name="csrf_token" value="<?= \Core\Session::getCsrfToken() ?>">
+                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
 
                 <div>
                     <label class="block text-xs font-medium text-slate-600 mb-1">Élève</label>
@@ -275,8 +264,6 @@ function fpLienBadge(string $lien, array $labels): string {
         <?php endif; ?>
 
     </div>
-</main>
-
 <!-- Modal détachement -->
 <div id="detachModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40">
     <div class="bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4">
@@ -289,7 +276,7 @@ function fpLienBadge(string $lien, array $labels): string {
             <button onclick="document.getElementById('detachModal').classList.add('hidden')"
                     class="px-4 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50">Annuler</button>
             <form method="POST" action="<?= BASE_URL ?>/v2/scolarite/familles/<?= $famille->id ?>/detacher-eleve">
-                <input type="hidden" name="csrf_token" value="<?= \Core\Session::getCsrfToken() ?>">
+                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                 <input type="hidden" name="eleve_id" id="detachEleveId">
                 <button type="submit"
                         class="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg">Retirer</button>
@@ -297,7 +284,6 @@ function fpLienBadge(string $lien, array $labels): string {
         </div>
     </div>
 </div>
-
 <!-- Modal archivage -->
 <div id="archiveModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40">
     <div class="bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4">
@@ -310,14 +296,13 @@ function fpLienBadge(string $lien, array $labels): string {
             <button onclick="document.getElementById('archiveModal').classList.add('hidden')"
                     class="px-4 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50">Annuler</button>
             <form method="POST" action="<?= BASE_URL ?>/v2/scolarite/familles/<?= $famille->id ?>/archiver">
-                <input type="hidden" name="csrf_token" value="<?= \Core\Session::getCsrfToken() ?>">
+                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                 <button type="submit"
                         class="px-4 py-2 text-sm bg-amber-600 hover:bg-amber-700 text-white rounded-lg">Archiver</button>
             </form>
         </div>
     </div>
 </div>
-
 <script>
 function confirmDetach(eleveId, nom) {
     document.getElementById('detachNom').textContent = nom;
@@ -325,7 +310,3 @@ function confirmDetach(eleveId, nom) {
     document.getElementById('detachModal').classList.remove('hidden');
 }
 </script>
-
-<?php include BASE_PATH . '/app/Views/layouts/footer_assets.php'; ?>
-</body>
-</html>

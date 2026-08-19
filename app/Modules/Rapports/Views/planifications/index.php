@@ -1,20 +1,10 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rapports planifiés</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-</head>
-<body class="bg-slate-50 min-h-screen">
 <div class="max-w-6xl mx-auto px-4 py-8">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-xl font-bold text-slate-800 flex items-center gap-2">
             <i data-lucide="calendar-clock" class="w-6 h-6 text-violet-600"></i>
             Rapports planifiés
         </h1>
-        <a href="/v2/rapports/planifications/create"
+        <a href="<?= BASE_URL ?>/v2/rapports/planifications/create"
            class="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">
             <i data-lucide="plus" class="w-4 h-4"></i> Nouvelle planification
         </a>
@@ -65,15 +55,15 @@
                     </td>
                     <td class="px-4 py-3">
                         <div class="flex items-center gap-2 justify-end">
-                            <a href="/v2/rapports/planifications/<?= $p['id'] ?>" class="text-slate-400 hover:text-violet-600" title="Voir">
+                            <a href="<?= BASE_URL ?>/v2/rapports/planifications/<?= $p['id'] ?>" class="text-slate-400 hover:text-violet-600" title="Voir">
                                 <i data-lucide="eye" class="w-4 h-4"></i>
                             </a>
-                            <a href="/v2/rapports/planifications/<?= $p['id'] ?>/edit" class="text-slate-400 hover:text-violet-600" title="Modifier">
+                            <a href="<?= BASE_URL ?>/v2/rapports/planifications/<?= $p['id'] ?>/edit" class="text-slate-400 hover:text-violet-600" title="Modifier">
                                 <i data-lucide="pencil" class="w-4 h-4"></i>
                             </a>
-                            <form method="post" action="/v2/rapports/planifications/<?= $p['id'] ?>/executer"
+                            <form method="post" action="<?= BASE_URL ?>/v2/rapports/planifications/<?= $p['id'] ?>/executer"
                                   onsubmit="return confirm('Exécuter maintenant ?')">
-                                <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?? '' ?>">
+                                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                                 <button class="text-slate-400 hover:text-green-600" title="Exécuter">
                                     <i data-lucide="play" class="w-4 h-4"></i>
                                 </button>
@@ -99,5 +89,3 @@
     <?php endif; ?>
 </div>
 <script>lucide.createIcons();</script>
-</body>
-</html>

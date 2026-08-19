@@ -18,12 +18,8 @@ $routes = [
     'ProfesseurController'    => 'app/Controllers/ProfesseurController.php',
     'ClasseController'        => 'app/Controllers/ClasseController.php',
     'MatiereController'       => 'app/Controllers/MatiereController.php',
-    'NoteController'          => 'app/Controllers/NoteController.php',
     'BulletinController'      => 'app/Controllers/BulletinController.php',
     'AbsenceController'       => 'app/Controllers/AbsenceController.php',
-    'ComptabiliteController'  => 'app/Controllers/ComptabiliteController.php',
-    'PaiementController'      => 'app/Controllers/PaiementController.php',
-    'DepenseController'       => 'app/Controllers/DepenseController.php',
     'EmploiDuTempsController' => 'app/Controllers/EmploiDuTempsController.php',
     'SalleController'         => 'app/Controllers/SalleController.php',
     'CreneauController'       => 'app/Controllers/CreneauController.php',
@@ -42,7 +38,7 @@ foreach ($routes as $ctrl => $file) {
 // ─── F21–F30 : Models exist ───────────────────────────────────────────────────
 $models = [
     'UserModel','EleveModel','ProfesseurModel','ClasseModel','MatiereModel',
-    'NoteModel','AbsenceModel','JustificationModel','PaiementModel','DepenseModel',
+    'NoteModel','AbsenceModel','JustificationModel',
     'AnnonceModel','EmploiDuTempsModel','SalleModel','CreneauModel',
     'NotificationModel','NotificationLogModel','NotificationPreferenceModel',
 ];
@@ -69,7 +65,6 @@ $views = [
     'errors/403'              => 'app/Views/errors/403.php',
     'errors/404'              => 'app/Views/errors/404.php',
     'rapports/index'          => 'app/Views/rapports/index.php',
-    'notes/index'             => 'app/Views/notes/index.php',
     'bulletins/index'         => 'app/Views/bulletins/index.php',
 ];
 $i = 38;
@@ -184,10 +179,12 @@ try {
     t('F105_NOTIF_LOG_TRIGGER_TYPE_COL',  in_array('trigger_type', $logCols));
     t('F106_NOTIF_LOG_NO_TRIGGER_COL',    !in_array('trigger', $logCols));
 
-    // F107: frais_eleves has correct FK
-    $fraisCols = $pdo->query('DESCRIBE frais_eleves')->fetchAll(PDO::FETCH_COLUMN);
-    t('F107_FRAIS_ELEVES_HAS_ELEVE_ID',    in_array('eleve_id', $fraisCols));
-    t('F108_FRAIS_ELEVES_HAS_FRAIS_TYPE',  in_array('frais_type_id', $fraisCols));
+    // F107/F108 (V2) : finance_factures / finance_lignes_facture ont les FK attendues
+    // — remplace les anciens tests sur frais_eleves (V1, décommissionnée)
+    $factureCols = $pdo->query('DESCRIBE finance_factures')->fetchAll(PDO::FETCH_COLUMN);
+    t('F107_FINANCE_FACTURES_HAS_ELEVE_ID', in_array('eleve_id', $factureCols));
+    $ligneCols = $pdo->query('DESCRIBE finance_lignes_facture')->fetchAll(PDO::FETCH_COLUMN);
+    t('F108_FINANCE_LIGNES_HAS_FRAIS_TYPE', in_array('frais_type_id', $ligneCols));
 
     // F109: password_resets table exists and has used column
     $prCols = $pdo->query('DESCRIBE password_resets')->fetchAll(PDO::FETCH_COLUMN);

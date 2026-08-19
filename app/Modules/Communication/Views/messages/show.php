@@ -1,18 +1,10 @@
 <?php /** @var int $thread_id @var array $messages @var int $page */ ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title>Conversation</title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 min-h-screen flex flex-col">
 
 <div class="max-w-3xl mx-auto w-full flex flex-col h-screen">
 
   <!-- Header -->
   <div class="bg-white border-b border-slate-100 px-4 py-3 flex items-center gap-3">
-    <a href="/v2/messages" class="text-slate-400 hover:text-slate-600">←</a>
+    <a href="<?= BASE_URL ?>/v2/messages" class="text-slate-400 hover:text-slate-600">←</a>
     <h1 class="font-semibold text-slate-800"><?= htmlspecialchars($titre ?? 'Conversation') ?></h1>
   </div>
 
@@ -61,7 +53,7 @@ document.getElementById('reply-form').addEventListener('submit', async (e) => {
   const corps = document.getElementById('reply-corps').value.trim();
   if (!corps) return;
 
-  const r = await fetch('/v2/messages/<?= $thread_id ?>/reply', {
+  const r = await fetch('<?= BASE_URL ?>/v2/messages/<?= $thread_id ?>/reply', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-Token': csrf },
     body: new URLSearchParams({ corps })
@@ -77,5 +69,3 @@ document.getElementById('reply-form').addEventListener('submit', async (e) => {
 const list = document.getElementById('messages-list');
 if (list) list.scrollTop = list.scrollHeight;
 </script>
-</body>
-</html>

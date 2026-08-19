@@ -13,7 +13,19 @@ class LateFiltersDTO
         public readonly ?string $statut,
         public readonly int     $page,
         public readonly int     $perPage,
+        /** @var int[]|null Restriction serveur (jamais depuis la requête) — cf. EleveScopeTrait */
+        public readonly ?array  $eleveIds = null,
     ) {}
+
+    /** Retourne une copie restreinte au périmètre autorisé (parent/eleve). */
+    public function withEleveIds(array $ids): self
+    {
+        return new self(
+            $this->eleveId, $this->classeId, $this->anneeScolaire,
+            $this->dateDebut, $this->dateFin, $this->statut,
+            $this->page, $this->perPage, $ids
+        );
+    }
 
     public static function fromRequest(array $data): self
     {

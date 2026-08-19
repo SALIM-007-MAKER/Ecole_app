@@ -138,8 +138,8 @@ function makeService(array $opts = []): AcademicAnalyticsService
 
 // Fixtures partagées
 $classeRows = [
-    ['classe_id'=>1,'classe_nom'=>'6ème A','niveau'=>'6ème','nb_eleves'=>30,'nb_notes'=>90,'moyenne'=>13.5,'nb_passants'=>25,'nb_absences'=>3,'note_min'=>8.0,'note_max'=>19.5],
-    ['classe_id'=>2,'classe_nom'=>'5ème B','niveau'=>'5ème','nb_eleves'=>28,'nb_notes'=>84,'moyenne'=>11.2,'nb_passants'=>18,'nb_absences'=>5,'note_min'=>5.0,'note_max'=>18.0],
+    ['classe_id'=>1,'classe_nom'=>'6e A','niveau'=>'6e','nb_eleves'=>30,'nb_notes'=>90,'moyenne'=>13.5,'nb_passants'=>25,'nb_absences'=>3,'note_min'=>8.0,'note_max'=>19.5],
+    ['classe_id'=>2,'classe_nom'=>'5e B','niveau'=>'5e','nb_eleves'=>28,'nb_notes'=>84,'moyenne'=>11.2,'nb_passants'=>18,'nb_absences'=>5,'note_min'=>5.0,'note_max'=>18.0],
 ];
 $distribRows = [
     ['tranche'=>'TB',  'nb'=>8],
@@ -149,11 +149,11 @@ $distribRows = [
     ['tranche'=>'INS', 'nb'=>12],
 ];
 $topRows = [
-    ['eleve_id'=>1,'nom'=>'DIALLO','prenom'=>'Alpha','matricule'=>'E001','classe_nom'=>'6ème A','moyenne_approx'=>18.5],
-    ['eleve_id'=>2,'nom'=>'KONÉ',  'prenom'=>'Fatoumata','matricule'=>'E002','classe_nom'=>'6ème A','moyenne_approx'=>17.2],
+    ['eleve_id'=>1,'nom'=>'DIALLO','prenom'=>'Alpha','matricule'=>'E001','classe_nom'=>'6e A','moyenne_approx'=>18.5],
+    ['eleve_id'=>2,'nom'=>'KONÉ',  'prenom'=>'Fatoumata','matricule'=>'E002','classe_nom'=>'6e A','moyenne_approx'=>17.2],
 ];
 $alerteRows = [
-    ['eleve_id'=>5,'nom'=>'TRAORÉ','prenom'=>'Boubacar','classe_nom'=>'5ème B','moyenne_approx'=>6.3],
+    ['eleve_id'=>5,'nom'=>'TRAORÉ','prenom'=>'Boubacar','classe_nom'=>'5e B','moyenne_approx'=>6.3],
 ];
 $etabData = ['moyenne'=>12.35,'nb_eleves'=>58,'nb_notes'=>174];
 
@@ -230,7 +230,7 @@ assert_count(2, $r, '2 classes retournées');
 assert_true(isset($r[1], $r[2]), 'Keyed par classe_id 1 et 2');
 assert_eq(13.5, $r[1]->value,   'Classe 1 → 13.5');
 assert_eq(11.2, $r[2]->value,   'Classe 2 → 11.2');
-assert_eq('Moyenne 6ème A', $r[1]->label, 'Label classe 1');
+assert_eq('Moyenne 6e A', $r[1]->label, 'Label classe 1');
 assert_eq(1, $r[1]->metadata['classe_id'], 'Metadata classe_id = 1');
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -240,15 +240,15 @@ assert_eq(1, $r[1]->metadata['classe_id'], 'Metadata classe_id = 1');
 section('5. moyenneParNiveau');
 
 $niveauRows = [
-    ['niveau'=>'6ème','nb_classes'=>2,'nb_eleves'=>60,'nb_notes'=>180,'moyenne'=>13.1,'nb_passants'=>50],
-    ['niveau'=>'5ème','nb_classes'=>2,'nb_eleves'=>56,'nb_notes'=>168,'moyenne'=>11.8,'nb_passants'=>40],
+    ['niveau'=>'6e','nb_classes'=>2,'nb_eleves'=>60,'nb_notes'=>180,'moyenne'=>13.1,'nb_passants'=>50],
+    ['niveau'=>'5e','nb_classes'=>2,'nb_eleves'=>56,'nb_notes'=>168,'moyenne'=>11.8,'nb_passants'=>40],
 ];
 $svc = makeService(['niveauRows' => $niveauRows]);
 $r = $svc->moyenneParNiveau(1);
 assert_count(2, $r,              '2 niveaux');
-assert_true(isset($r['6ème'], $r['5ème']), 'Keyed par niveau');
-assert_eq(13.1, $r['6ème']->value, '6ème → 13.1');
-assert_eq(2, $r['6ème']->metadata['nb_classes'], 'nb_classes = 2');
+assert_true(isset($r['6e'], $r['5e']), 'Keyed par niveau');
+assert_eq(13.1, $r['6e']->value, '6e → 13.1');
+assert_eq(2, $r['6e']->metadata['nb_classes'], 'nb_classes = 2');
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Section 6 — moyenneParMatiere
@@ -365,7 +365,7 @@ assert_eq('TB',     $top1['mention_code'], 'Mention DIALLO = TB (18.5)');
 // Classes overview
 $cl = $d->classesOverview[0];
 assert_true(isset($cl['classe_id']) && isset($cl['classe_nom']) && isset($cl['niveau']) && isset($cl['nb_eleves']) && isset($cl['moyenne']) && isset($cl['taux_reussite']), 'Overview fields présents');
-assert_eq(round(25/30*100,1), $cl['taux_reussite'], 'Taux réussite 6ème A = 83.3%');
+assert_eq(round(25/30*100,1), $cl['taux_reussite'], 'Taux réussite 6e A = 83.3%');
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Section 11 — dashboardEnseignant
@@ -374,8 +374,8 @@ assert_eq(round(25/30*100,1), $cl['taux_reussite'], 'Taux réussite 6ème A = 83
 section('11. dashboardEnseignant');
 
 $matEnsRows = [
-    ['matiere_id'=>1,'matiere_nom'=>'Mathématiques','classe_id'=>1,'classe_nom'=>'6ème A','nb_eleves'=>30,'moyenne'=>14.2,'nb_passants'=>28],
-    ['matiere_id'=>1,'matiere_nom'=>'Mathématiques','classe_id'=>2,'classe_nom'=>'5ème B','nb_eleves'=>28,'moyenne'=>11.8,'nb_passants'=>20],
+    ['matiere_id'=>1,'matiere_nom'=>'Mathématiques','classe_id'=>1,'classe_nom'=>'6e A','nb_eleves'=>30,'moyenne'=>14.2,'nb_passants'=>28],
+    ['matiere_id'=>1,'matiere_nom'=>'Mathématiques','classe_id'=>2,'classe_nom'=>'5e B','nb_eleves'=>28,'moyenne'=>11.8,'nb_passants'=>20],
 ];
 $svc = makeService(['matEnsRows' => $matEnsRows]);
 $d = $svc->dashboardEnseignant(7, 1);
@@ -407,9 +407,9 @@ $svc = makeService([
     'topRows'     => $topRows,
     'alerteRows'  => $alerteRows,
 ]);
-$d = $svc->dashboardResponsable(1, '6ème');
+$d = $svc->dashboardResponsable(1, '6e');
 assert_eq('responsable', $d->role,       'Rôle = responsable');
-assert_eq('Niveau 6ème', $d->contextLabel, 'ContextLabel = Niveau 6ème');
+assert_eq('Niveau 6e', $d->contextLabel, 'ContextLabel = Niveau 6e');
 assert_count(5, $d->kpis,               '5 KPIs responsable');
 assert_count(2, $d->classesOverview,    '2 classes overview');
 assert_count(2, $d->topPerformers,      '2 top performers');

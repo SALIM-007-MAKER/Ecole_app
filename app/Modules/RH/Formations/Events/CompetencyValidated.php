@@ -14,7 +14,9 @@ class CompetencyValidated extends Event
         public readonly string $competenceCode,
         public readonly string $niveau,
         public readonly int    $validatedBy
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {

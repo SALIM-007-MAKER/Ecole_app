@@ -93,7 +93,7 @@ class AnalyticsRepository
             LEFT JOIN notes_v2 n ON n.eleve_id = e.id AND n.evaluation_id = ev.id
             WHERE 1=1 $niveauFilter
             GROUP BY c.id, c.nom, c.niveau
-            ORDER BY c.niveau, c.nom
+            ORDER BY " . \App\Models\ClasseModel::ordreNiveauSql('c.niveau') . ", c.nom
         ";
         $params = [':periode_id' => $periodeId];
         if ($niveau !== null) $params[':niveau'] = $niveau;
@@ -154,7 +154,7 @@ class AnalyticsRepository
                 AND " . self::STATUT_OK . "
             LEFT JOIN notes_v2 n ON n.eleve_id = e.id AND n.evaluation_id = ev.id
             GROUP BY c.niveau
-            ORDER BY c.niveau
+            ORDER BY " . \App\Models\ClasseModel::ordreNiveauSql('c.niveau') . "
         ";
         return $this->safe($sql, [':periode_id' => $periodeId], fn($s) => $s->fetchAll(\PDO::FETCH_ASSOC));
     }

@@ -6,7 +6,7 @@
       <p class="font-semibold text-slate-800"><?= htmlspecialchars($e['employe_nom'] ?? '') ?></p>
       <p class="text-xs text-slate-400"><?= htmlspecialchars($e['type_evaluation'] ?? '') ?> — <?= htmlspecialchars($e['date_prevue'] ?? '') ?></p>
     </div>
-    <a href="/v2/rh/evaluations/<?= (int)$e['id'] ?>" class="text-xs bg-rose-50 text-rose-700 px-3 py-1 rounded-lg hover:bg-rose-100 transition-colors">Voir</a>
+    <a href="<?= BASE_URL ?>/v2/rh/evaluations/<?= (int)$e['id'] ?>" class="text-xs bg-rose-50 text-rose-700 px-3 py-1 rounded-lg hover:bg-rose-100 transition-colors">Voir</a>
   </div>
   <?php endforeach; ?>
   <?php if (empty($evaluations)): ?>

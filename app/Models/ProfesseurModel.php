@@ -136,7 +136,7 @@ class ProfesseurModel extends Model
             "SELECT id FROM `professeurs` WHERE email = ? AND id != ? AND etablissement_id = ?",
             [$email, $excludeId, $this->tenantId()]
         );
-        return $row !== null;
+        return $row !== false;
     }
 
     // ─── Dashboard enseignant ────────────────────────────────────────────────────

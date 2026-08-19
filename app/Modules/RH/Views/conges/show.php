@@ -5,26 +5,20 @@
 function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8'); }
 $statut = $conge['statut'] ?? '';
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Détail congé — EduNova</title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 text-slate-800 min-h-screen">
-<?php include dirname(__DIR__, 2) . '/layouts/sidebar.php'; ?>
-<main class="ml-64 p-8 max-w-4xl">
 
   <!-- Breadcrumb & en-tête -->
-  <div class="flex items-center gap-2 text-sm text-slate-500 mb-2">
-    <a href="/v2/rh/conges" class="hover:text-violet-600">Congés</a>
-    <span>/</span><span><?= e($conge['employe_nom_complet'] ?? '—') ?></span>
+  <div class="flex items-center gap-2 text-sm text-slate-500 mb-4">
+    <a href="<?= BASE_URL ?>/v2/rh/conges" class="hover:text-violet-600">Congés</a>
+    <i data-lucide="chevron-right" class="w-3 h-3"></i>
+    <span class="text-slate-700"><?= e($conge['employe_nom_complet'] ?? '—') ?></span>
   </div>
 
-  <div class="flex items-start justify-between mb-6">
-    <div>
+  <div class="flex items-start justify-between gap-4 mb-6">
+    <div class="flex items-start gap-4">
+      <div class="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+        <i data-lucide="calendar-off" class="w-5 h-5 text-violet-600"></i>
+      </div>
+      <div>
       <div class="flex items-center gap-3 mb-1">
         <h1 class="text-2xl font-bold text-slate-900"><?= e($conge['type_libelle']) ?></h1>
         <span class="px-3 py-1 rounded-full text-sm font-medium <?= $model::statutColor($statut) ?>">
@@ -35,12 +29,13 @@ $statut = $conge['statut'] ?? '';
         <?php endif; ?>
       </div>
       <p class="text-slate-500"><?= e($conge['employe_nom_complet'] ?? '—') ?> · <?= e($conge['employe_matricule'] ?? '') ?></p>
+      </div>
     </div>
-    <div class="flex gap-2 flex-wrap justify-end">
+    <div class="flex gap-2 flex-wrap justify-end flex-shrink-0">
       <?php if ($canUpdate && $statut === 'brouillon'): ?>
-        <a href="/v2/rh/conges/<?= (int)$conge['id'] ?>/edit"
+        <a href="<?= BASE_URL ?>/v2/rh/conges/<?= (int)$conge['id'] ?>/edit"
            class="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">Modifier</a>
-        <form method="POST" action="/v2/rh/conges/<?= (int)$conge['id'] ?>/soumettre"
+        <form method="POST" action="<?= BASE_URL ?>/v2/rh/conges/<?= (int)$conge['id'] ?>/soumettre"
               onsubmit="return confirm('Soumettre cette demande pour approbation ?')">
           <?= \Core\Csrf::field() ?>
           <button type="submit" class="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">
@@ -49,7 +44,7 @@ $statut = $conge['statut'] ?? '';
         </form>
       <?php endif; ?>
       <?php if ($canApprove && $statut === 'soumis'): ?>
-        <form method="POST" action="/v2/rh/conges/<?= (int)$conge['id'] ?>/approuver"
+        <form method="POST" action="<?= BASE_URL ?>/v2/rh/conges/<?= (int)$conge['id'] ?>/approuver"
               onsubmit="return confirm('Approuver ce congé ?')">
           <?= \Core\Csrf::field() ?>
           <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700">Approuver</button>
@@ -58,7 +53,7 @@ $statut = $conge['statut'] ?? '';
                 class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700">Rejeter</button>
       <?php endif; ?>
       <?php if ($canUpdate && $statut === 'approuve'): ?>
-        <form method="POST" action="/v2/rh/conges/<?= (int)$conge['id'] ?>/demarrer"
+        <form method="POST" action="<?= BASE_URL ?>/v2/rh/conges/<?= (int)$conge['id'] ?>/demarrer"
               onsubmit="return confirm('Marquer ce congé comme en cours ?')">
           <?= \Core\Csrf::field() ?>
           <button type="submit" class="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">Démarrer</button>
@@ -66,7 +61,7 @@ $statut = $conge['statut'] ?? '';
       <?php endif; ?>
       <?php if ($canUpdate && $statut === 'en_cours'): ?>
         <button onclick="document.getElementById('modal-terminer').classList.remove('hidden')"
-                class="px-4 py-2 bg-sky-600 text-white rounded-lg text-sm hover:bg-sky-700">Terminer</button>
+                class="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">Terminer</button>
       <?php endif; ?>
       <?php if ($canCancel && in_array($statut, ['soumis','approuve','en_cours'])): ?>
         <button onclick="document.getElementById('modal-annuler').classList.remove('hidden')"
@@ -179,15 +174,13 @@ $statut = $conge['statut'] ?? '';
   </div>
   <?php endif; ?>
 
-</main>
-
 <!-- Modal : Rejeter -->
 <div id="modal-rejeter" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
   <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full">
     <h3 class="text-lg font-bold text-slate-900 mb-4">Rejeter la demande</h3>
-    <form method="POST" action="/v2/rh/conges/<?= (int)$conge['id'] ?>/rejeter">
+    <form method="POST" action="<?= BASE_URL ?>/v2/rh/conges/<?= (int)$conge['id'] ?>/rejeter">
       <?= \Core\Csrf::field() ?>
-      <label class="block text-sm font-medium text-slate-700 mb-1">Motif de rejet *</label>
+      <label class="form-label">Motif de rejet *</label>
       <textarea name="motif_rejet" rows="4" required
                 class="w-full border border-red-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-300 outline-none mb-4"
                 placeholder="Expliquez la raison du rejet…"></textarea>
@@ -199,50 +192,46 @@ $statut = $conge['statut'] ?? '';
     </form>
   </div>
 </div>
-
 <!-- Modal : Annuler -->
 <div id="modal-annuler" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
   <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full">
     <h3 class="text-lg font-bold text-slate-900 mb-4">Annuler la demande</h3>
-    <form method="POST" action="/v2/rh/conges/<?= (int)$conge['id'] ?>/annuler">
+    <form method="POST" action="<?= BASE_URL ?>/v2/rh/conges/<?= (int)$conge['id'] ?>/annuler">
       <?= \Core\Csrf::field() ?>
-      <label class="block text-sm font-medium text-slate-700 mb-1">Motif d'annulation *</label>
+      <label class="form-label">Motif d'annulation *</label>
       <textarea name="motif_annulation" rows="3" required
-                class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-300 outline-none mb-4"
+                class="form-textarea mb-4"
                 placeholder="Raison de l'annulation…"></textarea>
       <div class="flex gap-3">
-        <button type="submit" class="px-5 py-2 bg-slate-700 text-white rounded-lg text-sm font-medium hover:bg-slate-800">Confirmer l'annulation</button>
+        <button type="submit" class="px-5 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors">Confirmer l'annulation</button>
         <button type="button" onclick="document.getElementById('modal-annuler').classList.add('hidden')"
                 class="px-5 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm hover:bg-slate-200">Fermer</button>
       </div>
     </form>
   </div>
 </div>
-
 <!-- Modal : Terminer -->
 <div id="modal-terminer" class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
   <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full">
     <h3 class="text-lg font-bold text-slate-900 mb-4">Clôturer le congé</h3>
-    <form method="POST" action="/v2/rh/conges/<?= (int)$conge['id'] ?>/terminer">
+    <form method="POST" action="<?= BASE_URL ?>/v2/rh/conges/<?= (int)$conge['id'] ?>/terminer">
       <?= \Core\Csrf::field() ?>
       <div class="mb-4">
-        <label class="block text-sm font-medium text-slate-700 mb-1">Date de retour effective</label>
+        <label class="form-label">Date de retour effective</label>
         <input type="date" name="date_retour_effectif" value="<?= date('Y-m-d') ?>"
-               class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-300 outline-none">
+               class="form-input">
       </div>
       <div class="mb-4">
-        <label class="block text-sm font-medium text-slate-700 mb-1">Commentaire (optionnel)</label>
+        <label class="form-label">Commentaire (optionnel)</label>
         <textarea name="commentaire_retour" rows="2"
-                  class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-300 outline-none"
+                  class="form-textarea"
                   placeholder="Remarques sur le retour…"></textarea>
       </div>
       <div class="flex gap-3">
-        <button type="submit" class="px-5 py-2 bg-sky-600 text-white rounded-lg text-sm font-medium hover:bg-sky-700">Clôturer</button>
+        <button type="submit" class="px-5 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700">Clôturer</button>
         <button type="button" onclick="document.getElementById('modal-terminer').classList.add('hidden')"
                 class="px-5 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm hover:bg-slate-200">Annuler</button>
       </div>
     </form>
   </div>
 </div>
-</body>
-</html>

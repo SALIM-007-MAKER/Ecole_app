@@ -9,6 +9,12 @@ class MatiereModel extends Model
     protected string $table = 'matieres';
     protected bool $tenantScoped = true;
 
+    public const CATEGORIES = [
+        'litteraire'   => 'Littéraire',
+        'scientifique' => 'Scientifique',
+        'autre'        => 'Autre',
+    ];
+
     public function findWithStats(): array
     {
         return $this->query(
@@ -59,6 +65,6 @@ class MatiereModel extends Model
             "SELECT id FROM `matieres` WHERE nom = ? AND id != ? AND etablissement_id = ?",
             [$nom, $excludeId, $this->tenantId()]
         );
-        return $row !== null;
+        return $row !== false;
     }
 }

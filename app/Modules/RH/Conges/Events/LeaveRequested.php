@@ -16,7 +16,9 @@ class LeaveRequested extends Event
         public readonly string $dateFin,
         public readonly float  $dureeJours,
         public readonly int    $createdBy
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     public function toArray(): array
     {
