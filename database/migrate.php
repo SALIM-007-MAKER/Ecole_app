@@ -27,16 +27,19 @@ set_time_limit(120);
 
 define('ROOT_PATH', dirname(__DIR__));
 
+// Charger .env s'il existe (installation classique) ; sinon on suppose que
+// les variables sont déjà fournies par l'environnement réel (conteneur,
+// plateforme PaaS) — même comportement que public/index.php (Phase 16+,
+// portabilité conteneur). On n'échoue plus juste parce que le fichier est
+// absent : la connexion PDO plus bas donnera une erreur claire si la config
+// manque réellement.
 $envFile = ROOT_PATH . '/.env';
-if (!file_exists($envFile)) {
-    die("ERREUR : .env introuvable dans " . ROOT_PATH . "\n");
-}
-
-// Charger .env
-foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
-    if (str_starts_with(trim($line), '#') || !str_contains($line, '=')) continue;
-    [$key, $val] = explode('=', $line, 2);
-    $_ENV[trim($key)] = trim($val, " \t\n\r\0\x0B\"'");
+if (file_exists($envFile)) {
+    foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+        if (str_starts_with(trim($line), '#') || !str_contains($line, '=')) continue;
+        [$key, $val] = explode('=', $line, 2);
+        $_ENV[trim($key)] = trim($val, " \t\n\r\0\x0B\"'");
+    }
 }
 
 // Aligne le fuseau horaire sur celui de l'application (Core\Application::run()

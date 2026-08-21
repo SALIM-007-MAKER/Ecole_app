@@ -1,0 +1,11 @@
+.env
+.env.*
+.git
+.gitignore
+storage/cache/*
+storage/logs/*
+storage/tenants/*
+database/backups/
+*.md
+.vscode/
+.idea/

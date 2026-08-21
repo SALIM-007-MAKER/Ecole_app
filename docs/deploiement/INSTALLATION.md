@@ -11,10 +11,14 @@
 
 ## 2. Récupération du code
 
-Ce projet n'est actuellement **pas versionné dans un dépôt Git**
-(`RELEASE_CANDIDATE_RC1_REPORT.md` §6, DT5). Avant toute mise en production,
-initialisez un dépôt (`git init`) et ajoutez un `.gitignore` couvrant au minimum
-`.env`, `storage/cache/`, `storage/tenants/` — voir §6 ci-dessous.
+Le projet est versionné sur GitHub (`https://github.com/SALIM-007-MAKER/Ecole_app`) :
+
+```bash
+git clone https://github.com/SALIM-007-MAKER/Ecole_app.git ecole_app
+```
+
+Le `.gitignore` exclut déjà `.env`, `storage/cache/`, `storage/tenants/`,
+`database/backups/`.
 
 ## 3. Configuration de l'environnement
 
@@ -39,13 +43,40 @@ DB_PASSWORD=...
 
 ## 4. Base de données
 
-```bash
-# Créer la base (vide, utf8mb4)
-mysql -u root -p -e "CREATE DATABASE ecole_app CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+> **Vérifié le 21/08/2026 en déployant réellement l'appli dans un conteneur
+> vide** : `php database/migrate.php` seul **ne suffit pas** sur une base
+> neuve. Les fichiers sous `database/migrations/` ne sont que les évolutions
+> *incrémentales* — ils supposent l'existence préalable des tables de base
+> (`users`, `eleves`, `classes`…) et de plusieurs dizaines de tables créées
+> par d'anciens scripts SQL (`database/ecole_app.sql`,
+> `database/*_migration.sql`, `migration_*.sql` à la racine) dont l'ordre
+> d'application exact n'est plus documenté. Lancer seulement `migrate.php`
+> sur une base vide échoue sur ~36 migrations (tables référencées
+> introuvables).
 
-# Appliquer toutes les migrations
+**Chemin recommandé, vérifié de bout en bout (conteneur Docker vide → appli
+fonctionnelle)** : partir d'un export complet d'un environnement déjà à jour
+plutôt que de rejouer l'historique SQL.
+
+```bash
+# Sur un environnement de référence déjà à jour (ex. votre poste de dev) :
+mysqldump -u root -p --no-tablespaces --routines --triggers \
+    --single-transaction ecole_app > snapshot.sql
+
+# Sur la base cible (vide) :
+mysql -u root -p -e "CREATE DATABASE ecole_app CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql -u root -p ecole_app < snapshot.sql
+
+# Puis, seulement pour les migrations plus récentes que le snapshot :
 php database/migrate.php
 ```
+
+`migrate.php` est idempotent (table `migrations_log`) : le relancer après
+l'import d'un snapshot ne réapplique que ce qui manque réellement.
+
+Un snapshot de référence est conservé hors dépôt Git dans
+`database/backups/` (voir `.gitignore`) — demandez-le si vous partez d'une
+base vraiment vide plutôt que de reconstituer l'historique SQL.
 
 Le runner est **idempotent** : relancer la commande ne réapplique pas les
 migrations déjà exécutées (table `migrations_log`). Voir

@@ -1,0 +1,40 @@
+services:
+  app:
+    build: .
+    ports: ["8080:80"]
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_URL: http://localhost:8080
+      APP_KEY: ${APP_KEY:-changeme-generate-32-random-bytes}
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: ecole_app
+      DB_USERNAME: ecole_app
+      DB_PASSWORD: ${DB_PASSWORD:-ecole_app}
+    volumes:
+      - storage_data:/var/www/html/storage
+      - uploads_data:/var/www/html/public/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: ecole_app
+      MYSQL_USER: ecole_app
+      MYSQL_PASSWORD: ${DB_PASSWORD:-ecole_app}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  db_data:
+  storage_data:
+  uploads_data:
