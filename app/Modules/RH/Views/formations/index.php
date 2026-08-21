@@ -45,13 +45,13 @@ $colors  = $model::SESSION_STATUT_COLORS ?? [];
   <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4">
     <form method="GET" class="flex flex-wrap gap-3 items-end">
       <div class="flex-1 min-w-[160px]">
-        <label class="block text-xs text-slate-500 mb-1">Recherche</label>
+        <label class="form-label text-xs mb-1">Recherche</label>
         <input type="text" name="q" value="<?= $e($filters->q) ?>"
                placeholder="Code session, formation…"
                class="form-input">
       </div>
       <div class="min-w-[140px]">
-        <label class="block text-xs text-slate-500 mb-1">Statut</label>
+        <label class="form-label text-xs mb-1">Statut</label>
         <select name="statut" class="form-select">
           <option value="">Tous</option>
           <?php foreach ($model::SESSION_STATUTS as $s): ?>
@@ -60,7 +60,7 @@ $colors  = $model::SESSION_STATUT_COLORS ?? [];
         </select>
       </div>
       <div class="min-w-[130px]">
-        <label class="block text-xs text-slate-500 mb-1">Type</label>
+        <label class="form-label text-xs mb-1">Type</label>
         <select name="type" class="form-select">
           <option value="">Tous</option>
           <?php foreach ($model::TYPES_FORMATION as $t): ?>
@@ -69,15 +69,15 @@ $colors  = $model::SESSION_STATUT_COLORS ?? [];
         </select>
       </div>
       <div class="min-w-[100px]">
-        <label class="block text-xs text-slate-500 mb-1">Année</label>
+        <label class="form-label text-xs mb-1">Année</label>
         <input type="number" name="annee" value="<?= $e($filters->annee) ?>"
                min="2020" max="2035"
                class="form-input">
       </div>
-      <button type="submit" class="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-violet-700 transition">
-        <i data-lucide="search" class="w-4 h-4 inline mr-1"></i>Filtrer
+      <button type="submit" class="btn btn-primary">
+        <i data-lucide="search" class="w-4 h-4"></i>Filtrer
       </button>
-      <a href="<?= BASE_URL ?>/v2/rh/formations" class="border border-slate-200 text-slate-600 px-4 py-2 rounded-lg text-sm hover:bg-slate-50 transition">Réinitialiser</a>
+      <a href="<?= BASE_URL ?>/v2/rh/formations" class="btn btn-secondary">Réinitialiser</a>
     </form>
   </div>
 
@@ -86,12 +86,12 @@ $colors  = $model::SESSION_STATUT_COLORS ?? [];
     <h2 class="text-lg font-semibold text-slate-700"><?= $total ?> session(s)</h2>
     <div class="flex gap-2">
       <?php if ($policy->canView($user)): ?>
-      <a href="<?= BASE_URL ?>/v2/rh/formations/catalogue" class="border border-violet-300 text-violet-700 px-4 py-2 rounded-lg text-sm hover:bg-violet-50 transition flex items-center gap-1">
+      <a href="<?= BASE_URL ?>/v2/rh/formations/catalogue" class="btn btn-outline">
         <i data-lucide="book-open" class="w-4 h-4"></i>Catalogue
       </a>
       <?php endif; ?>
       <?php if ($policy->canCreate($user)): ?>
-      <a href="<?= BASE_URL ?>/v2/rh/formations/sessions/create" class="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-violet-700 transition flex items-center gap-1">
+      <a href="<?= BASE_URL ?>/v2/rh/formations/sessions/create" class="btn btn-primary">
         <i data-lucide="plus" class="w-4 h-4"></i>Nouvelle session
       </a>
       <?php endif; ?>

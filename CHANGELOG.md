@@ -4,6 +4,117 @@ Format libre, organisé par phase de développement. Depuis la Phase 16.0, le
 projet est versionné dans Git (tag `v2.0.0`) — voir
 `SCOLARIS_V2_FINAL_RELEASE_REPORT.md`. Ordre chronologique croissant.
 
+## Post-release — Corrections diverses (2026-08-21)
+
+- **Rôle `directeur` avait accès aux paramètres techniques (Sécurité, Sauvegarde, Avancé).**
+  Trouvé en vérifiant, à la demande d'un utilisateur, la formulation « mêmes écrans que
+  l'Administrateur » du guide Direction sur la section Paramètres : `config/permissions.php`
+  attribuait à `directeur` des permissions `settings.securite.*`, `settings.sauvegarde.*` et
+  `settings.avance.*` strictement identiques à `admin`, et `SettingsController` ne pose aucune
+  restriction de rôle supplémentaire au-delà de la permission — Direction pouvait donc modifier
+  la politique de mot de passe, l'expiration de session et les réglages de sauvegarde/avancés
+  exactement comme Administrateur. Retiré ces 6 permissions (`view`+`update` × 3 sections) du
+  rôle `directeur` sur demande explicite. Le menu et la page `/parametres` filtrant déjà par
+  permission (pas de liste codée en dur), les deux tuiles disparaissent automatiquement pour
+  Direction sans changement de vue nécessaire. Comme pour toute modification de
+  `config/permissions.php`, un compte déjà connecté doit se reconnecter pour que le retrait
+  s'applique (permissions figées en session à la connexion).
+
+- **`academique.bulletin.admin` non attribuée à aucun rôle.** Trouvé en vérifiant le contenu
+  du guide administrateur avant publication : `BulletinPolicy::canAddDirecteurAppreciation()`
+  vérifie cette permission pour autoriser l'écran d'appréciation du chef d'établissement sur
+  un bulletin, mais elle n'existait dans aucun rôle de `config/permissions.php` — l'écran
+  était inaccessible à tout le monde, y compris Administrateur. Ajoutée aux rôles `admin` et
+  `directeur` (aux côtés de `academique.bulletin.generer`/`publier`, déjà présentes pour ces
+  deux rôles) ; vérifié via `BulletinPolicy::canAddDirecteurAppreciation()` sur les 7 rôles —
+  seuls `admin`/`directeur` passent, comme attendu. Les permissions étant figées en session à
+  la connexion (`AuthController::completeLogin()`), un compte déjà connecté doit se
+  reconnecter pour que le correctif s'applique.
+
+## Post-release — Convergence modules V1/V2 (2026-08-20 → 2026-08-21)
+
+Audit de cohérence UI (police, boutons, formulaires) ayant révélé que plusieurs écrans V2
+coexistaient avec leur ancienne version V1 sans lien entre elles — chaque système avait sa
+propre table, avec un risque réel de divergence de données selon l'écran utilisé.
+
+- **Absences** : `absences` (V1, utilisée par toute l'interface) et `vs_absences` (V2, module
+  Vie Scolaire, jusque-là uniquement lue/écrite par l'API publique `/api/v1/absences`)
+  coexistaient sans lien. Décision : convergence vers le V2 (architecture plus propre —
+  events, policy, workflow de justification dédié — déjà la cible de l'API).
+  - Migration `T037` : 5 lignes réelles (+ 2 justifications reconstruites) migrées vers
+    `vs_absences`. Table V1 conservée en base à ce stade comme trace d'audit, non lue par le
+    code — supprimée par la suite, voir plus bas.
+  - Écran de pointage groupé par classe, absent côté V2, reconstruit à l'identique
+    (`AbsenceRepository::findRosterForPointage`, `AbsenceController::pointage/storePointage`,
+    vue dédiée) — les retards saisis y sont routés vers `vs_retards`, pas vers `vs_absences`.
+  - Menus des 6 rôles, tableau de bord (`HomeController`), rapports (`RapportModel`, 5
+    méthodes), espace parent (`ParentController`) et espace élève (`EspaceEleveController`,
+    bug latent de jointure vers une colonne `matiere_id` inexistante corrigé au passage)
+    rebranchés sur le V2. Routes `/absences/*` (V1) décommissionnées dans `config/routes.php`.
+  - Non repris : `/absences/alertes` (seuil global tous classes confondues, sans équivalent
+    V2 direct — le plus proche est `/v2/vie-scolaire/absences/statistiques`).
+- **Emplois du temps / Salles / Créneaux** : même constat, mais `emplois_du_temps` (V1) et
+  `vs_emplois_du_temps` (V2) étaient tous deux vides — le référentiel (salles, créneaux) était
+  la seule vraie donnée à migrer.
+  - Le module V2 comportait deux bugs bloquants, indépendants du problème de menu : 3 requêtes
+    dans `TimetableController` joignaient une table `roles` inexistante (RBAC réellement piloté
+    par `config/permissions.php`, pas par les tables `rbac_*`/`roles`) — écrans « Vue
+    enseignant », « Remplacements » et « Ajouter un créneau » plantaient systématiquement ;
+    2 requêtes dans `TimetableRepository` joignaient `matieres.couleur`, colonne inexistante —
+    l'affichage de toute grille remplie plantait. Corrigés.
+  - Migration `T038` : 8 salles et 11 plages horaires réelles (V1 `salles`/`creneaux`) migrées
+    vers `vs_edt_salles`/`vs_edt_plages_horaires`, remplaçant les 9 lignes de démo génériques
+    jamais utilisées par une grille réelle.
+  - Écrans de gestion Salles et Plages horaires, absents côté V2, construits
+    (`SalleController`, `PlageHoraireController` du module `VieScolaire\EmploisDuTemps`).
+  - Menus (admin/direction/enseignant) et espace élève rebranchés sur le V2. Routes
+    `/emplois-du-temps/*`, `/salles/*`, `/creneaux/*` et `/api/emploi-du-temps/conflits` (V1)
+    décommissionnées.
+- **Retards** : reliquat laissé de côté lors de la migration des absences (T037) — les 2 lignes
+  V1 de type `retard` (table `absences`) chevauchaient le domaine Retards (`vs_retards`), déjà
+  seul système branché dans les menus. Migration `T039` : les 2 lignes migrées vers
+  `vs_retards`. `vs_retards.heure_arrivee` est NOT NULL (une heure d'horloge) alors que la V1 ne
+  stockait qu'une session ('matin'/'apres_midi') et une durée en minutes — heure reconstituée à
+  partir du premier créneau réel de la session (référentiel migré en T038), notée comme telle
+  dans l'observation de chaque ligne migrée. Absences (T037) et Retards (T039) couvrent
+  désormais l'intégralité des 7 lignes de l'ancienne table `absences` (V1).
+- Commentaires d'en-tête obsolètes corrigés dans `app/Modules/Academique/routes.php`
+  (mentionnait encore une coexistence avec `/notes` V1, supprimé depuis) et
+  `app/Modules/VieScolaire/routes.php` (mentionnait `/absences` V1, décommissionnée, et
+  `/presences` V1, qui n'a jamais existé — la V1 ne suivait que les absences).
+- **Retrait progressif — code V1** (une fois la confiance établie par les vérifications
+  ci-dessus) : suppression des 18 fichiers V1 devenus inatteignables — contrôleurs
+  (`AbsenceController`, `EmploiDuTempsController`, `SalleController`, `CreneauController`),
+  modèles (`AbsenceModel`, `JustificationModel`, `EmploiDuTempsModel`, `SalleModel`,
+  `CreneauModel`), événement `AbsenceCreee`, vues (`app/Views/{absences,emplois_du_temps,
+  salles,creneaux}/`).
+  - `NotificationHandler` (écoutait uniquement `AbsenceCreee`) devenu orphelin, supprimé avec
+    le reste — les notifications d'absence V2 passent déjà par leur propre chaîne
+    (`AttendanceHandler`/`DisciplineIntegrationHandler`/`CrossModuleListener`, préexistante).
+    `AuditHandler`/`StatsCacheHandler` conservés (gèrent d'autres événements encore actifs) —
+    seule leur branche `AbsenceCreee` retirée. Registration nettoyée dans `config/events.php`.
+- **Retrait progressif — tables V1** :
+  - Migration `T040` : en préparant la suppression, trouvé que la migration T037 avait
+    reconstruit une justification en texte générique alors qu'une table V1 séparée
+    (`justifications`, liée à `JustificationModel` supprimé) contenait le vrai motif soumis par
+    la famille — corrigé avec la donnée réelle avant qu'elle ne disparaisse.
+  - Sauvegarde complète (structure + données) des 5 tables avant suppression :
+    `database/backups/v1_tables_backup_before_drop_20260821.sql` (non versionnée —
+    `.gitignore` mis à jour, contient des données personnelles).
+  - Migration `T041` : `DROP TABLE` sur `justifications`, `absences`, `emplois_du_temps`,
+    `salles`, `creneaux`. FK désactivées le temps de l'opération (dépendances croisées entre
+    ces tables). Irréversible par conception — restauration via le fichier de sauvegarde
+    uniquement, pas de rollback automatique.
+  - `tests/security_tests.php` : 4 tests référençaient les fichiers/tables V1 supprimés
+    (`T06`, `T08` réécrits contre `vs_absences`/`vs_justifications_absences` ; `T34` réécrit
+    contre le contrôleur V2 ; `T26`/`T27` retirés — testaient l'absence de `$_GET`/`$_POST`
+    bruts dans le contrôleur V1, une convention que les contrôleurs V2 n'appliquent
+    délibérément pas). Suite repassée : 45/45 PASS.
+- Vérification : lint PHP sur tous les fichiers touchés, harnais CLI (écriture/archivage/
+  détection de conflit testés directement contre la base réelle, données de test nettoyées),
+  vérification navigateur partielle (session expirée en cours de test), suite de tests
+  `security_tests.php` au vert après nettoyage.
+
 ## [2.0.0] — Official Release (2026-07-10)
 
 Clôture officielle du cycle de développement V2. Architecture figée (Core,

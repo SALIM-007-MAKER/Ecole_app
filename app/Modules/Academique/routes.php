@@ -9,8 +9,12 @@
  * Préfixe : /v2/academique
  * Namespace contrôleurs : App\Modules\Academique\Controllers\
  *
- * Ces routes coexistent avec les routes V1 (/notes, /bulletins).
- * La V1 reste active jusqu'à la fin de la migration.
+ * Notes V1 (/notes, App\Controllers\NoteController) supprimées après parité
+ * confirmée — ce module est l'unique pipeline de notes/évaluations. Les
+ * routes /bulletins (V1, config/routes.php) restent l'URL historique, mais
+ * App\Controllers\BulletinController délègue déjà tout le calcul à
+ * BulletinEngineFactory/BulletinGenerator (ce module) — aucune coexistence
+ * réelle, juste un contrôleur d'URL historique au-dessus du même moteur.
  */
 
 use Core\Router;

@@ -280,7 +280,7 @@ $age       = $eleve->date_naissance
                 <div class="p-5">
                     <div class="flex items-center justify-between mb-4">
                         <p class="text-sm font-semibold text-slate-700">Suivi des absences</p>
-                        <a href="<?= BASE_URL ?>/absences?eleve_id=<?= $eleve->id ?>"
+                        <a href="<?= BASE_URL ?>/v2/vie-scolaire/absences?eleve_id=<?= $eleve->id ?>"
                            class="btn btn-warning">
                             <i data-lucide="external-link" class="w-4 h-4"></i>Voir toutes les absences
                         </a>
@@ -289,7 +289,7 @@ $age       = $eleve->date_naissance
                         <i data-lucide="calendar-x" class="w-10 h-10 text-slate-300 mx-auto mb-3"></i>
                         <p class="text-sm text-slate-500 font-medium mb-1">Absences disponibles dans le module dédié</p>
                         <p class="text-xs text-slate-400 mb-3">Consultez l'assiduité complète depuis la page absences.</p>
-                        <a href="<?= BASE_URL ?>/absences?eleve_id=<?= $eleve->id ?>" class="btn btn-warning">
+                        <a href="<?= BASE_URL ?>/v2/vie-scolaire/absences?eleve_id=<?= $eleve->id ?>" class="btn btn-warning">
                             <i data-lucide="calendar-x" class="w-4 h-4"></i>Consulter les absences
                         </a>
                     </div>
@@ -332,7 +332,7 @@ $age       = $eleve->date_naissance
                         <span class="text-sm font-semibold text-slate-700">Notes</span>
                         <span class="text-xs text-slate-400">Relevé complet</span>
                     </a>
-                    <a href="<?= BASE_URL ?>/absences?eleve_id=<?= $eleve->id ?>"
+                    <a href="<?= BASE_URL ?>/v2/vie-scolaire/absences?eleve_id=<?= $eleve->id ?>"
                        class="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white p-5 text-center text-slate-600 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 hover:shadow-md">
                         <i data-lucide="calendar-x" class="w-7 h-7 text-amber-500 mb-1.5"></i>
                         <span class="text-sm font-semibold text-slate-700">Absences</span>

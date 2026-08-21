@@ -48,6 +48,10 @@ $roleClass = $roleColors[$role] ?? 'bg-slate-100 text-slate-700';
 $menus = MenuService::getMenuStructure($role, $perms);
 $currentUri = $uri;
 $bottomNavItems = MenuService::getBottomNavItems($role, $perms);
+// Même principe que la sidebar desktop (navigation.php) : un seul gagnant
+// résolu une fois, comparé par égalité — pas un matching indépendant par
+// item qui pourrait en allumer plusieurs à la fois.
+$activeBottomNavUrl = MenuService::resolveActiveItemUrl($bottomNavItems, $currentUri);
 
 /* ── Titre de page ────────────────────────────────────────────────────────
    Source unique : $title si la vue le définit explicitement, sinon on le
@@ -315,7 +319,7 @@ $pageTitle = htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8');
 <nav class="mobile-bottom-nav" aria-label="Navigation principale mobile">
     <?php foreach ($bottomNavItems as $item): ?>
         <?php $itemUrl = BASE_URL . ($item['url'] ?? '/'); ?>
-        <a href="<?= $itemUrl ?>" class="mobile-nav-item<?= MenuService::isMenuActive($item['url'] ?? '', $currentUri) ? ' active' : '' ?>">
+        <a href="<?= $itemUrl ?>" class="mobile-nav-item<?= ($item['url'] ?? '') !== '' && ($item['url'] ?? '') === $activeBottomNavUrl ? ' active' : '' ?>">
             <i class="fa-solid <?= htmlspecialchars(MenuService::getMenuIconClass($item['icon'] ?? 'home'), ENT_QUOTES) ?>"></i>
             <span><?= htmlspecialchars($item['label'] ?? '', ENT_QUOTES) ?></span>
         </a>

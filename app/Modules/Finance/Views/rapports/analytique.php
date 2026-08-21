@@ -23,24 +23,23 @@ $fmt = fn(float $v) => number_format($v, 0, ',', ' ') . ' XOF';
         </div>
         <form method="GET" class="flex gap-2 items-end">
             <div>
-                <label class="block text-xs font-medium text-slate-600 mb-1">Année</label>
-                <select name="annee" class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                <label class="form-label text-xs mb-1">Année</label>
+                <select name="annee" class="form-select text-sm">
                     <?php for ($y = date('Y'); $y >= 2020; $y--): ?>
                     <option value="<?= $y ?>" <?= $annee == $y ? 'selected' : '' ?>><?= $y ?></option>
                     <?php endfor; ?>
                 </select>
             </div>
             <div>
-                <label class="block text-xs font-medium text-slate-600 mb-1">Année scolaire</label>
-                <select name="annee_scolaire" class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                <label class="form-label text-xs mb-1">Année scolaire</label>
+                <select name="annee_scolaire" class="form-select text-sm">
                     <?php foreach ($anneesSco as $as): ?>
                     <option value="<?= $as ?>" <?= $anneeSco === $as ? 'selected' : '' ?>><?= $as ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
-            <button type="submit" class="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-violet-700">Actualiser</button>
-            <a href="<?= BASE_URL ?>/v2/finance/rapports/export?type=analytique&format=excel&<?= http_build_query($_GET) ?>"
-               class="border border-slate-200 bg-white text-slate-700 px-4 py-2 rounded-lg text-sm hover:bg-slate-50 flex items-center gap-2">
+            <button type="submit" class="btn btn-primary">Actualiser</button>
+            <a href="<?= BASE_URL ?>/v2/finance/rapports/export?type=analytique&format=excel&<?= http_build_query($_GET) ?>" class="btn btn-outline">
                 <i data-lucide="table" class="w-4 h-4"></i> Excel
             </a>
         </form>
@@ -107,9 +106,8 @@ $fmt = fn(float $v) => number_format($v, 0, ',', ' ') . ' XOF';
         </div>
         <?php endif; ?>
     </div>
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
-lucide.createIcons();
 const annees      = <?= json_encode(array_column($comparatifAnnuel, 'annee')) ?>;
 const recettes    = <?= json_encode(array_column($comparatifAnnuel, 'recettes')) ?>;
 const evoLabels   = <?= json_encode(array_column($evolution, 'mois_label')) ?>;

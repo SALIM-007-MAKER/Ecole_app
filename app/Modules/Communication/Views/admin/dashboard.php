@@ -112,7 +112,7 @@ async function processBatch() {
 }
 
 async function retryJob(id) {
-  await fetch(`/v2/communication/admin/queue/${id}/retry`, { method: 'POST', headers: { 'X-CSRF-Token': csrf } });
+  await fetch(`<?= BASE_URL ?>/v2/communication/admin/queue/${id}/retry`, { method: 'POST', headers: { 'X-CSRF-Token': csrf } });
   location.reload();
 }
 

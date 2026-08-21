@@ -82,7 +82,7 @@ document.getElementById('form-groupe').addEventListener('submit', async (e) => {
 
 async function supprimerGroupe(id) {
   if (!confirm('Supprimer ce groupe ?')) return;
-  await fetch(`/v2/communication/groupes/${id}`, { method: 'DELETE', headers: { 'X-CSRF-Token': csrf } });
+  await fetch(`<?= BASE_URL ?>/v2/communication/groupes/${id}`, { method: 'DELETE', headers: { 'X-CSRF-Token': csrf } });
   location.reload();
 }
 </script>

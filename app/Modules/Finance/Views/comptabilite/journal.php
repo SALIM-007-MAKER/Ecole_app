@@ -42,7 +42,7 @@ $sourcesLabels = [
       <input type="text" name="q" placeholder="Numéro, libellé, réf…" value="<?= htmlspecialchars($filters->q ?? '') ?>"
              class="form-input col-span-2">
 
-      <select name="exercice_id" onchange="this.form.submit()" class="rounded-lg border border-slate-200 px-3 py-2 text-sm">
+      <select name="exercice_id" onchange="this.form.submit()" class="form-select text-sm">
         <option value="">Tous les exercices</option>
         <?php foreach ($exercices as $ex): ?>
         <option value="<?= $ex->id ?>" <?= ($filters->exerciceId ?? 0) == $ex->id ? 'selected' : '' ?>>
@@ -51,7 +51,7 @@ $sourcesLabels = [
         <?php endforeach; ?>
       </select>
 
-      <select name="periode_id" class="rounded-lg border border-slate-200 px-3 py-2 text-sm">
+      <select name="periode_id" class="form-select text-sm">
         <option value="">Toutes périodes</option>
         <?php foreach ($periodes as $p): ?>
         <option value="<?= $p->id ?>" <?= ($filters->periodeId ?? 0) == $p->id ? 'selected' : '' ?>>
@@ -60,7 +60,7 @@ $sourcesLabels = [
         <?php endforeach; ?>
       </select>
 
-      <select name="journal_code" class="rounded-lg border border-slate-200 px-3 py-2 text-sm">
+      <select name="journal_code" class="form-select text-sm">
         <option value="">Tous journaux</option>
         <?php foreach ($journaux as $j): ?>
         <option value="<?= $j->code ?>" <?= ($filters->journalCode ?? '') === $j->code ? 'selected' : '' ?>>
@@ -69,7 +69,7 @@ $sourcesLabels = [
         <?php endforeach; ?>
       </select>
 
-      <select name="statut" class="rounded-lg border border-slate-200 px-3 py-2 text-sm">
+      <select name="statut" class="form-select text-sm">
         <option value="">Tous statuts</option>
         <option value="valide"    <?= ($filters->statut ?? '') === 'valide'    ? 'selected' : '' ?>>Validées</option>
         <option value="brouillon" <?= ($filters->statut ?? '') === 'brouillon' ? 'selected' : '' ?>>Brouillon</option>
@@ -78,13 +78,13 @@ $sourcesLabels = [
       </select>
 
       <input type="date" name="date_debut" value="<?= htmlspecialchars($filters->dateDebut ?? '') ?>"
-             class="rounded-lg border border-slate-200 px-3 py-2 text-sm">
+             class="form-input text-sm">
       <input type="date" name="date_fin" value="<?= htmlspecialchars($filters->dateFin ?? '') ?>"
-             class="rounded-lg border border-slate-200 px-3 py-2 text-sm">
+             class="form-input text-sm">
 
       <div class="flex gap-2">
-        <button class="flex-1 bg-violet-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-violet-700">Filtrer</button>
-        <a href="<?= BASE_URL ?>/v2/finance/comptabilite/journal" class="flex-1 bg-slate-100 text-slate-600 rounded-lg py-2 text-sm font-medium hover:bg-slate-200 text-center">Reset</a>
+        <button class="btn btn-primary flex-1">Filtrer</button>
+        <a href="<?= BASE_URL ?>/v2/finance/comptabilite/journal" class="btn btn-secondary flex-1">Reset</a>
       </div>
     </form>
   </div>

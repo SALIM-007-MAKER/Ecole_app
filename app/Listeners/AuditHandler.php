@@ -6,7 +6,6 @@ use Core\Event;
 use Core\Listener;
 use App\Services\AuditService;
 use App\Events\EleveCreated;
-use App\Events\AbsenceCreee;
 use App\Events\DocumentGenere;
 use App\Events\ImportCsvCompleted;
 
@@ -27,14 +26,6 @@ class AuditHandler implements Listener
                 'eleves',
                 'eleves',
                 $event->eleveId,
-                $event->toArray()
-            ),
-
-            $event instanceof AbsenceCreee   => $this->audit->logCreate(
-                $event->saisieParId,
-                'absences',
-                'absences',
-                $event->absenceId ?: null,
                 $event->toArray()
             ),
 

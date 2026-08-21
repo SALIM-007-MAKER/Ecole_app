@@ -151,7 +151,7 @@ class TimetableRepository
         $stmt = $this->db->prepare("
             SELECT cr.*,
                    m.nom         AS matiere_nom,
-                   m.couleur     AS matiere_couleur,
+                   cr.couleur    AS matiere_couleur,
                    p.libelle     AS plage_libelle,
                    p.heure_debut AS plage_debut,
                    p.heure_fin   AS plage_fin,
@@ -351,7 +351,7 @@ class TimetableRepository
             SELECT cr.*,
                    c.nom         AS classe_nom,
                    m.nom         AS matiere_nom,
-                   m.couleur     AS matiere_couleur,
+                   cr.couleur    AS matiere_couleur,
                    p.libelle     AS plage_libelle,
                    p.heure_debut AS plage_debut,
                    p.heure_fin   AS plage_fin,

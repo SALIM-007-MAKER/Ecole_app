@@ -253,7 +253,7 @@ $age       = $eleve->date_naissance
             <div id="tab-absences" class="tab-panel hidden p-5">
                 <div class="flex justify-between items-center mb-4">
                     <p class="text-sm font-semibold text-slate-700">Suivi des absences</p>
-                    <a href="<?= BASE_URL ?>/absences?eleve_id=<?= $eleve->id ?>" class="btn btn-warning"><i data-lucide="external-link" class="w-4 h-4"></i>Voir toutes les absences</a>
+                    <a href="<?= BASE_URL ?>/v2/vie-scolaire/absences?eleve_id=<?= $eleve->id ?>" class="btn btn-warning"><i data-lucide="external-link" class="w-4 h-4"></i>Voir toutes les absences</a>
                 </div>
                 <div class="flex flex-col items-center py-10 text-slate-400">
                     <i data-lucide="calendar-x" class="w-10 h-10 text-slate-300 mb-3"></i>
@@ -286,7 +286,7 @@ $age       = $eleve->date_naissance
                     <span class="text-sm font-semibold text-slate-700">Notes</span>
                     <span class="text-xs text-slate-400">Relevé</span>
                 </a>
-                <a href="<?= BASE_URL ?>/absences?eleve_id=<?= $eleve->id ?>"
+                <a href="<?= BASE_URL ?>/v2/vie-scolaire/absences?eleve_id=<?= $eleve->id ?>"
                    class="flex flex-col items-center gap-2 rounded-xl border border-slate-200 bg-white p-5 text-center shadow-sm transition-all hover:-translate-y-0.5 hover:border-amber-200 hover:bg-amber-50">
                     <i data-lucide="calendar-x" class="w-7 h-7 text-amber-500"></i>
                     <span class="text-sm font-semibold text-slate-700">Absences</span>

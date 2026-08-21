@@ -5,14 +5,13 @@ namespace App\Listeners;
 use Core\Event;
 use Core\Listener;
 use App\Events\EleveCreated;
-use App\Events\AbsenceCreee;
 use App\Events\ImportCsvCompleted;
 
 class StatsCacheHandler implements Listener
 {
     public function handle(Event $event): void
     {
-        if (!($event instanceof EleveCreated || $event instanceof AbsenceCreee || $event instanceof ImportCsvCompleted)) {
+        if (!($event instanceof EleveCreated || $event instanceof ImportCsvCompleted)) {
             return;
         }
 

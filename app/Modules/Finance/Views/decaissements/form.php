@@ -114,9 +114,9 @@ $val = fn(string $k, string $default = '') => htmlspecialchars($old[$k] ?? $defa
         </div>
 
         <div class="flex justify-end gap-3 pt-2 border-t border-slate-100">
-            <a href="<?= BASE_URL ?>/v2/finance/decaissements" class="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">Annuler</a>
-            <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700">
-                <i data-lucide="send" class="inline w-4 h-4 mr-1"></i> Soumettre le décaissement
+            <a href="<?= BASE_URL ?>/v2/finance/decaissements" class="btn btn-secondary">Annuler</a>
+            <button type="submit" class="btn btn-primary">
+                <i data-lucide="send" class="w-4 h-4"></i> Soumettre le décaissement
             </button>
         </div>
     </form>

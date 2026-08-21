@@ -58,14 +58,14 @@ $titre = 'Corbeille';
 const csrf = document.querySelector('meta[name=csrf-token]')?.content ?? '';
 
 async function restaurer(id) {
-  const r = await fetch(`/v2/trash/${id}/restore`, {method:'POST', headers:{'X-CSRF-Token': csrf}});
+  const r = await fetch(`<?= BASE_URL ?>/v2/trash/${id}/restore`, {method:'POST', headers:{'X-CSRF-Token': csrf}});
   const d = await r.json();
   if (d.success) location.reload();
 }
 
 async function purger(id) {
   if (!confirm('Supprimer définitivement ? Cette action est irréversible.')) return;
-  const r = await fetch(`/v2/trash/${id}/purge`, {method:'POST', headers:{'X-CSRF-Token': csrf}});
+  const r = await fetch(`<?= BASE_URL ?>/v2/trash/${id}/purge`, {method:'POST', headers:{'X-CSRF-Token': csrf}});
   const d = await r.json();
   if (d.success) location.reload();
 }

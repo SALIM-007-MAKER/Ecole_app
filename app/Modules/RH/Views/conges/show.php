@@ -33,12 +33,11 @@ $statut = $conge['statut'] ?? '';
     </div>
     <div class="flex gap-2 flex-wrap justify-end flex-shrink-0">
       <?php if ($canUpdate && $statut === 'brouillon'): ?>
-        <a href="<?= BASE_URL ?>/v2/rh/conges/<?= (int)$conge['id'] ?>/edit"
-           class="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">Modifier</a>
+        <a href="<?= BASE_URL ?>/v2/rh/conges/<?= (int)$conge['id'] ?>/edit" class="btn btn-secondary">Modifier</a>
         <form method="POST" action="<?= BASE_URL ?>/v2/rh/conges/<?= (int)$conge['id'] ?>/soumettre"
               onsubmit="return confirm('Soumettre cette demande pour approbation ?')">
           <?= \Core\Csrf::field() ?>
-          <button type="submit" class="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">
+          <button type="submit" class="btn btn-primary">
             Soumettre
           </button>
         </form>
@@ -47,25 +46,22 @@ $statut = $conge['statut'] ?? '';
         <form method="POST" action="<?= BASE_URL ?>/v2/rh/conges/<?= (int)$conge['id'] ?>/approuver"
               onsubmit="return confirm('Approuver ce congé ?')">
           <?= \Core\Csrf::field() ?>
-          <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700">Approuver</button>
+          <button type="submit" class="btn btn-success">Approuver</button>
         </form>
-        <button onclick="document.getElementById('modal-rejeter').classList.remove('hidden')"
-                class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700">Rejeter</button>
+        <button onclick="document.getElementById('modal-rejeter').classList.remove('hidden')" class="btn btn-danger">Rejeter</button>
       <?php endif; ?>
       <?php if ($canUpdate && $statut === 'approuve'): ?>
         <form method="POST" action="<?= BASE_URL ?>/v2/rh/conges/<?= (int)$conge['id'] ?>/demarrer"
               onsubmit="return confirm('Marquer ce congé comme en cours ?')">
           <?= \Core\Csrf::field() ?>
-          <button type="submit" class="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">Démarrer</button>
+          <button type="submit" class="btn btn-primary">Démarrer</button>
         </form>
       <?php endif; ?>
       <?php if ($canUpdate && $statut === 'en_cours'): ?>
-        <button onclick="document.getElementById('modal-terminer').classList.remove('hidden')"
-                class="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">Terminer</button>
+        <button onclick="document.getElementById('modal-terminer').classList.remove('hidden')" class="btn btn-primary">Terminer</button>
       <?php endif; ?>
       <?php if ($canCancel && in_array($statut, ['soumis','approuve','en_cours'])): ?>
-        <button onclick="document.getElementById('modal-annuler').classList.remove('hidden')"
-                class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm hover:bg-slate-300">Annuler</button>
+        <button onclick="document.getElementById('modal-annuler').classList.remove('hidden')" class="btn btn-secondary">Annuler</button>
       <?php endif; ?>
     </div>
   </div>
@@ -182,12 +178,12 @@ $statut = $conge['statut'] ?? '';
       <?= \Core\Csrf::field() ?>
       <label class="form-label">Motif de rejet *</label>
       <textarea name="motif_rejet" rows="4" required
-                class="w-full border border-red-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-300 outline-none mb-4"
+                class="form-textarea mb-4"
                 placeholder="Expliquez la raison du rejet…"></textarea>
       <div class="flex gap-3">
-        <button type="submit" class="px-5 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700">Confirmer le rejet</button>
+        <button type="submit" class="btn btn-danger">Confirmer le rejet</button>
         <button type="button" onclick="document.getElementById('modal-rejeter').classList.add('hidden')"
-                class="px-5 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm hover:bg-slate-200">Annuler</button>
+                class="btn btn-secondary">Annuler</button>
       </div>
     </form>
   </div>
@@ -203,9 +199,9 @@ $statut = $conge['statut'] ?? '';
                 class="form-textarea mb-4"
                 placeholder="Raison de l'annulation…"></textarea>
       <div class="flex gap-3">
-        <button type="submit" class="px-5 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors">Confirmer l'annulation</button>
+        <button type="submit" class="btn btn-danger">Confirmer l'annulation</button>
         <button type="button" onclick="document.getElementById('modal-annuler').classList.add('hidden')"
-                class="px-5 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm hover:bg-slate-200">Fermer</button>
+                class="btn btn-secondary">Fermer</button>
       </div>
     </form>
   </div>
@@ -228,9 +224,9 @@ $statut = $conge['statut'] ?? '';
                   placeholder="Remarques sur le retour…"></textarea>
       </div>
       <div class="flex gap-3">
-        <button type="submit" class="px-5 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700">Clôturer</button>
+        <button type="submit" class="btn btn-primary">Clôturer</button>
         <button type="button" onclick="document.getElementById('modal-terminer').classList.add('hidden')"
-                class="px-5 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm hover:bg-slate-200">Annuler</button>
+                class="btn btn-secondary">Annuler</button>
       </div>
     </form>
   </div>

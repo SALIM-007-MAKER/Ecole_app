@@ -9,7 +9,7 @@
     <div class="bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-4 text-red-700 text-sm"><?= htmlspecialchars($error) ?></div>
     <?php endif; ?>
 
-    <form method="POST" action="<?= $article ? "/v2/inventaire/articles/{$article['id']}/modifier" : '/v2/inventaire/articles' ?>"
+    <form method="POST" action="<?= BASE_URL . ($article ? "/v2/inventaire/articles/{$article['id']}/modifier" : '/v2/inventaire/articles') ?>"
           class="bg-white rounded-xl shadow-sm p-6 space-y-5">
         <input type="hidden" name="_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
 

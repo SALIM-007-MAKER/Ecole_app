@@ -29,7 +29,7 @@ ksort($parClasse);
 
   <!-- Sélecteur exercice -->
   <form method="GET" class="flex gap-3 items-center">
-    <select name="exercice_id" onchange="this.form.submit()" class="rounded-lg border border-slate-200 px-3 py-2 text-sm">
+    <select name="exercice_id" onchange="this.form.submit()" class="form-select text-sm">
       <option value="">Exercice courant</option>
       <?php foreach ($exercices as $ex): ?>
       <option value="<?= $ex->id ?>" <?= ($exercice && $exercice->id == $ex->id) ? 'selected' : '' ?>>
@@ -37,7 +37,7 @@ ksort($parClasse);
       </option>
       <?php endforeach; ?>
     </select>
-    <button class="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-violet-700">Afficher</button>
+    <button class="btn btn-primary">Afficher</button>
   </form>
 
   <!-- Indicateur équilibre -->

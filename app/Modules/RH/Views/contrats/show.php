@@ -32,38 +32,33 @@ $alertClass = $model::alerteColor($jours);
     </div>
     <div class="flex gap-2 flex-shrink-0">
       <?php if ($canUpdate && in_array($contrat['statut'], ['brouillon','actif'], true)): ?>
-        <a href="<?= BASE_URL ?>/v2/rh/contrats/<?= (int)$contrat['id'] ?>/edit"
-           class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
+        <a href="<?= BASE_URL ?>/v2/rh/contrats/<?= (int)$contrat['id'] ?>/edit" class="btn btn-outline">
           <i data-lucide="pencil" class="w-4 h-4"></i> Modifier
         </a>
       <?php endif; ?>
       <?php if ($canUpdate && $contrat['statut'] === 'brouillon'): ?>
         <form method="POST" action="<?= BASE_URL ?>/v2/rh/contrats/<?= (int)$contrat['id'] ?>/activer">
           <?= \Core\Csrf::field() ?>
-          <button class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700">Activer</button>
+          <button class="btn btn-success">Activer</button>
         </form>
       <?php endif; ?>
       <?php if ($canUpdate && $contrat['statut'] === 'actif'): ?>
         <form method="POST" action="<?= BASE_URL ?>/v2/rh/contrats/<?= (int)$contrat['id'] ?>/suspendre">
           <?= \Core\Csrf::field() ?>
-          <button onclick="return confirm('Suspendre ce contrat ?')"
-                  class="px-4 py-2 bg-amber-500 text-white rounded-lg text-sm hover:bg-amber-600">Suspendre</button>
+          <button onclick="return confirm('Suspendre ce contrat ?')" class="btn btn-warning">Suspendre</button>
         </form>
       <?php endif; ?>
       <?php if ($canUpdate && $contrat['statut'] === 'suspendu'): ?>
         <form method="POST" action="<?= BASE_URL ?>/v2/rh/contrats/<?= (int)$contrat['id'] ?>/reactiver">
           <?= \Core\Csrf::field() ?>
-          <button onclick="return confirm('Réactiver ce contrat ?')"
-                  class="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">Réactiver</button>
+          <button onclick="return confirm('Réactiver ce contrat ?')" class="btn btn-primary">Réactiver</button>
         </form>
       <?php endif; ?>
       <?php if ($canTerminate && in_array($contrat['statut'], ['actif','suspendu'], true)): ?>
-        <button onclick="document.getElementById('modal-resilier').classList.remove('hidden')"
-                class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700">Résilier</button>
+        <button onclick="document.getElementById('modal-resilier').classList.remove('hidden')" class="btn btn-danger">Résilier</button>
       <?php endif; ?>
       <?php if ($canRenew && in_array($contrat['statut'], ['actif','expire'], true)): ?>
-        <button onclick="document.getElementById('modal-renouveler').classList.remove('hidden')"
-                class="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">Renouveler</button>
+        <button onclick="document.getElementById('modal-renouveler').classList.remove('hidden')" class="btn btn-primary">Renouveler</button>
       <?php endif; ?>
     </div>
   </div>
@@ -160,8 +155,7 @@ $alertClass = $model::alerteColor($jours);
         <div class="flex items-center justify-between mb-4">
           <h2 class="font-semibold text-slate-700">Avenants (<?= count($avenants) ?>)</h2>
           <?php if ($canUpdate && in_array($contrat['statut'], ['actif','suspendu'], true)): ?>
-            <button onclick="document.getElementById('modal-avenant').classList.remove('hidden')"
-                    class="px-3 py-1.5 bg-violet-50 text-violet-600 border border-violet-200 rounded-lg text-xs hover:bg-violet-100">
+            <button onclick="document.getElementById('modal-avenant').classList.remove('hidden')" class="btn btn-outline btn-sm">
               + Avenant
             </button>
           <?php endif; ?>
@@ -276,8 +270,8 @@ $alertClass = $model::alerteColor($jours);
       </div>
       <div class="flex justify-end gap-3 mt-6">
         <button type="button" onclick="document.getElementById('modal-avenant').classList.add('hidden')"
-                class="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm hover:bg-slate-200">Annuler</button>
-        <button type="submit" class="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">Enregistrer</button>
+                class="btn btn-secondary">Annuler</button>
+        <button type="submit" class="btn btn-primary">Enregistrer</button>
       </div>
     </form>
   </div>
@@ -291,12 +285,12 @@ $alertClass = $model::alerteColor($jours);
       <div>
         <label class="form-label">Motif de résiliation *</label>
         <textarea name="motif" rows="3" required placeholder="Ex : démission, fin de mission, licenciement..."
-                  class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-300"></textarea>
+                  class="form-textarea"></textarea>
       </div>
       <div class="flex justify-end gap-3 mt-6">
         <button type="button" onclick="document.getElementById('modal-resilier').classList.add('hidden')"
-                class="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm hover:bg-slate-200">Annuler</button>
-        <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700">Confirmer la résiliation</button>
+                class="btn btn-secondary">Annuler</button>
+        <button type="submit" class="btn btn-danger">Confirmer la résiliation</button>
       </div>
     </form>
   </div>
@@ -322,8 +316,8 @@ $alertClass = $model::alerteColor($jours);
       </div>
       <div class="flex justify-end gap-3 mt-6">
         <button type="button" onclick="document.getElementById('modal-renouveler').classList.add('hidden')"
-                class="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm hover:bg-slate-200">Annuler</button>
-        <button type="submit" class="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">Renouveler</button>
+                class="btn btn-secondary">Annuler</button>
+        <button type="submit" class="btn btn-primary">Renouveler</button>
       </div>
     </form>
   </div>

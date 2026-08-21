@@ -7,6 +7,10 @@ storage/cache/*
 storage/tenants/*
 !storage/tenants/.gitkeep
 
+# Dumps SQL locaux (sauvegardes prises avant une migration destructive) —
+# peuvent contenir des données personnelles réelles, jamais versionnés
+database/backups/
+
 # Fichiers uploadés par les utilisateurs
 public/uploads/*
 !public/uploads/.gitkeep

@@ -16,12 +16,11 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
       <h1 class="text-2xl font-bold text-slate-900">Campagnes d'évaluation</h1>
     </div>
     <div class="flex gap-3">
-      <a href="<?= BASE_URL ?>/v2/rh/evaluations" class="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">
+      <a href="<?= BASE_URL ?>/v2/rh/evaluations" class="btn btn-secondary">
         Évaluations
       </a>
       <?php if ($policy->canCreate($user)): ?>
-      <a href="<?= BASE_URL ?>/v2/rh/evaluations/campagnes/create"
-         class="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700">
+      <a href="<?= BASE_URL ?>/v2/rh/evaluations/campagnes/create" class="btn btn-primary">
         + Nouvelle campagne
       </a>
       <?php endif; ?>
@@ -38,14 +37,14 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
   <!-- Filtre année -->
   <form method="GET" class="flex gap-3 mb-6">
     <input type="number" name="annee" value="<?= $annee ?>" min="2020" max="2099"
-           class="border border-slate-200 rounded-lg px-3 py-2 text-sm w-28 focus:ring-2 focus:ring-violet-300 outline-none">
+           class="form-input w-28">
     <select name="statut" class="form-select">
       <option value="">Tous statuts</option>
       <?php foreach ($model::CAMPAGNE_STATUTS as $k => $v): ?>
         <option value="<?= e($k) ?>" <?= ($_GET['statut'] ?? '') === $k ? 'selected' : '' ?>><?= e($v) ?></option>
       <?php endforeach; ?>
     </select>
-    <button type="submit" class="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">Filtrer</button>
+    <button type="submit" class="btn btn-primary">Filtrer</button>
   </form>
 
   <?php if (empty($campagnes)): ?>
@@ -82,18 +81,17 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
           <form method="POST" action="<?= BASE_URL ?>/v2/rh/evaluations/campagnes/<?= (int)$c['id'] ?>/activer"
                 onsubmit="return confirm('Activer cette campagne ?')">
             <?= \Core\Csrf::field() ?>
-            <button type="submit" class="w-full px-4 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-medium hover:bg-emerald-700">Activer</button>
+            <button type="submit" class="btn btn-success btn-sm w-full">Activer</button>
           </form>
           <?php endif; ?>
           <?php if ($policy->canValidate($user) && $c['statut'] === 'active'): ?>
           <form method="POST" action="<?= BASE_URL ?>/v2/rh/evaluations/campagnes/<?= (int)$c['id'] ?>/cloturer"
                 onsubmit="return confirm('Clôturer cette campagne ?')">
             <?= \Core\Csrf::field() ?>
-            <button type="submit" class="w-full px-4 py-1.5 bg-amber-600 text-white rounded-lg text-xs font-medium hover:bg-amber-700">Clôturer</button>
+            <button type="submit" class="btn btn-warning btn-sm w-full">Clôturer</button>
           </form>
           <?php endif; ?>
-          <a href="<?= BASE_URL ?>/v2/rh/evaluations?campagne_id=<?= (int)$c['id'] ?>"
-             class="w-full px-4 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs text-center hover:bg-slate-200">
+          <a href="<?= BASE_URL ?>/v2/rh/evaluations?campagne_id=<?= (int)$c['id'] ?>" class="btn btn-secondary btn-sm w-full">
             Voir évaluations
           </a>
         </div>

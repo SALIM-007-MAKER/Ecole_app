@@ -44,9 +44,8 @@ $peutPayer        = $canPayer && ($dec->statut === 'approuve' || $payableDirect)
             <?php if ($canValider && $dec->statut === 'soumis'): ?>
             <form method="POST" action="<?= BASE_URL ?>/v2/finance/decaissements/<?= $dec->id ?>/valider" class="inline">
                 <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
-                <button type="submit" onclick="return confirm('Valider ce décaissement ?')"
-                        class="px-3 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700">
-                    <i data-lucide="check" class="inline w-4 h-4 mr-1"></i> Valider
+                <button type="submit" onclick="return confirm('Valider ce décaissement ?')" class="btn btn-primary">
+                    <i data-lucide="check" class="w-4 h-4"></i> Valider
                 </button>
             </form>
             <?php endif; ?>
@@ -54,31 +53,27 @@ $peutPayer        = $canPayer && ($dec->statut === 'approuve' || $payableDirect)
             <?php if ($canApprouver && $dec->statut === 'valide'): ?>
             <form method="POST" action="<?= BASE_URL ?>/v2/finance/decaissements/<?= $dec->id ?>/approuver" class="inline">
                 <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
-                <button type="submit" onclick="return confirm('Approuver ce décaissement ?')"
-                        class="px-3 py-2 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700">
-                    <i data-lucide="shield-check" class="inline w-4 h-4 mr-1"></i> Approuver
+                <button type="submit" onclick="return confirm('Approuver ce décaissement ?')" class="btn btn-warning">
+                    <i data-lucide="shield-check" class="w-4 h-4"></i> Approuver
                 </button>
             </form>
             <?php endif; ?>
 
             <?php if ($canRejeter && in_array($dec->statut, ['soumis', 'valide'], true)): ?>
-            <button onclick="document.getElementById('modal-rejeter').classList.remove('hidden')"
-                    class="px-3 py-2 text-sm font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100">
-                <i data-lucide="x" class="inline w-4 h-4 mr-1"></i> Rejeter
+            <button onclick="document.getElementById('modal-rejeter').classList.remove('hidden')" class="btn btn-outline-danger">
+                <i data-lucide="x" class="w-4 h-4"></i> Rejeter
             </button>
             <?php endif; ?>
 
             <?php if ($peutPayer): ?>
-            <button onclick="document.getElementById('modal-payer').classList.remove('hidden')"
-                    class="px-3 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700">
-                <i data-lucide="banknote" class="inline w-4 h-4 mr-1"></i> Payer
+            <button onclick="document.getElementById('modal-payer').classList.remove('hidden')" class="btn btn-success">
+                <i data-lucide="banknote" class="w-4 h-4"></i> Payer
             </button>
             <?php endif; ?>
 
             <?php if ($canAnnuler && in_array($dec->statut, ['soumis', 'valide', 'approuve'], true)): ?>
-            <button onclick="document.getElementById('modal-annuler').classList.remove('hidden')"
-                    class="px-3 py-2 text-sm text-slate-500 bg-slate-100 rounded-lg hover:bg-slate-200">
-                <i data-lucide="ban" class="inline w-4 h-4 mr-1"></i> Annuler
+            <button onclick="document.getElementById('modal-annuler').classList.remove('hidden')" class="btn btn-secondary">
+                <i data-lucide="ban" class="w-4 h-4"></i> Annuler
             </button>
             <?php endif; ?>
         </div>
@@ -291,13 +286,13 @@ $peutPayer        = $canPayer && ($dec->statut === 'approuve' || $payableDirect)
             <div class="mb-4">
                 <label class="form-label">Motif de rejet <span class="form-required">*</span></label>
                 <textarea name="motif" rows="3" required
-                          class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                          class="form-textarea"
                           placeholder="Raison du rejet..."></textarea>
             </div>
             <div class="flex justify-end gap-3">
                 <button type="button" onclick="document.getElementById('modal-rejeter').classList.add('hidden')"
-                        class="px-4 py-2 text-sm text-slate-600">Fermer</button>
-                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700">
+                        class="btn btn-secondary">Fermer</button>
+                <button type="submit" class="btn btn-danger">
                     Confirmer le rejet
                 </button>
             </div>
@@ -315,13 +310,13 @@ $peutPayer        = $canPayer && ($dec->statut === 'approuve' || $payableDirect)
             <div class="mb-4">
                 <label class="form-label">Motif d'annulation <span class="form-required">*</span></label>
                 <textarea name="motif" rows="3" required
-                          class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400"
+                          class="form-textarea"
                           placeholder="Raison de l'annulation..."></textarea>
             </div>
             <div class="flex justify-end gap-3">
                 <button type="button" onclick="document.getElementById('modal-annuler').classList.add('hidden')"
-                        class="px-4 py-2 text-sm text-slate-600">Fermer</button>
-                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors">
+                        class="btn btn-secondary">Fermer</button>
+                <button type="submit" class="btn btn-danger">
                     Confirmer l'annulation
                 </button>
             </div>
@@ -337,8 +332,7 @@ $peutPayer        = $canPayer && ($dec->statut === 'approuve' || $payableDirect)
             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
             <div>
                 <label class="form-label">Mode de paiement <span class="form-required">*</span></label>
-                <select name="mode_paiement" required
-                        class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <select name="mode_paiement" required class="form-select">
                     <?php foreach ($modes as $m): ?>
                     <option value="<?= htmlspecialchars($m->code) ?>"><?= htmlspecialchars($m->nom) ?></option>
                     <?php endforeach; ?>
@@ -348,12 +342,12 @@ $peutPayer        = $canPayer && ($dec->statut === 'approuve' || $payableDirect)
             <div>
                 <label class="form-label">Référence de paiement</label>
                 <input type="text" name="reference_externe" placeholder="N° chèque, virement..."
-                       class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                       class="form-input">
             </div>
             <div class="flex justify-end gap-3 pt-2">
                 <button type="button" onclick="document.getElementById('modal-payer').classList.add('hidden')"
-                        class="px-4 py-2 text-sm text-slate-600">Annuler</button>
-                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700">
+                        class="btn btn-secondary">Annuler</button>
+                <button type="submit" class="btn btn-success">
                     Confirmer le paiement
                 </button>
             </div>
@@ -376,8 +370,8 @@ $peutPayer        = $canPayer && ($dec->statut === 'approuve' || $payableDirect)
             </div>
             <div class="flex justify-end gap-3 pt-2">
                 <button type="button" onclick="document.getElementById('modal-justificatif').classList.add('hidden')"
-                        class="px-4 py-2 text-sm text-slate-600">Annuler</button>
-                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700">
+                        class="btn btn-secondary">Annuler</button>
+                <button type="submit" class="btn btn-primary">
                     Téléverser
                 </button>
             </div>

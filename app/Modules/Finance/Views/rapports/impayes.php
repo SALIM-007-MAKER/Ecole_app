@@ -28,12 +28,10 @@ $agingColor = ['0-30j'=>'emerald','31-60j'=>'amber','61-90j'=>'orange','+90j'=>'
             </div>
         </div>
         <div class="flex gap-2 flex-shrink-0">
-            <a href="<?= BASE_URL ?>/v2/finance/rapports/export?type=impayes&format=csv&<?= http_build_query($_GET) ?>"
-               class="inline-flex items-center gap-2 border border-slate-300 bg-white text-slate-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
+            <a href="<?= BASE_URL ?>/v2/finance/rapports/export?type=impayes&format=csv&<?= http_build_query($_GET) ?>" class="btn btn-outline">
                 <i data-lucide="download" class="w-4 h-4"></i> CSV
             </a>
-            <a href="<?= BASE_URL ?>/v2/finance/rapports/print?type=impayes&<?= http_build_query($_GET) ?>" target="_blank"
-               class="inline-flex items-center gap-2 border border-slate-300 bg-white text-slate-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
+            <a href="<?= BASE_URL ?>/v2/finance/rapports/print?type=impayes&<?= http_build_query($_GET) ?>" target="_blank" class="btn btn-outline">
                 <i data-lucide="printer" class="w-4 h-4"></i> Imprimer
             </a>
         </div>
@@ -42,8 +40,8 @@ $agingColor = ['0-30j'=>'emerald','31-60j'=>'amber','61-90j'=>'orange','+90j'=>'
     <!-- Filtres -->
     <form method="GET" class="bg-white rounded-xl border border-slate-100 p-4 mb-6 flex flex-wrap gap-3 items-end shadow-sm">
         <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">Année scolaire</label>
-            <select name="annee_scolaire" class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
+            <label class="form-label text-xs mb-1">Année scolaire</label>
+            <select name="annee_scolaire" class="form-select text-sm">
                 <option value="">Toutes</option>
                 <?php foreach ($anneesSco as $as): ?>
                 <option value="<?= $as ?>" <?= $filters->anneeScolaire === $as ? 'selected' : '' ?>><?= $as ?></option>
@@ -51,8 +49,8 @@ $agingColor = ['0-30j'=>'emerald','31-60j'=>'amber','61-90j'=>'orange','+90j'=>'
             </select>
         </div>
         <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">Classe</label>
-            <select name="classe_id" class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
+            <label class="form-label text-xs mb-1">Classe</label>
+            <select name="classe_id" class="form-select text-sm">
                 <option value="">Toutes</option>
                 <?php foreach ($classes as $c): ?>
                 <option value="<?= $c->id ?>" <?= $filters->classeId === $c->id ? 'selected' : '' ?>><?= htmlspecialchars($c->nom) ?></option>
@@ -60,8 +58,8 @@ $agingColor = ['0-30j'=>'emerald','31-60j'=>'amber','61-90j'=>'orange','+90j'=>'
             </select>
         </div>
         <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">Tranche d'âge</label>
-            <select name="tranche" class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
+            <label class="form-label text-xs mb-1">Tranche d'âge</label>
+            <select name="tranche" class="form-select text-sm">
                 <option value="">Toutes</option>
                 <?php foreach (['0-30'=>'0–30 jours','31-60'=>'31–60 jours','61-90'=>'61–90 jours','+90'=>'Plus de 90 jours'] as $v=>$l): ?>
                 <option value="<?= $v ?>" <?= $filters->tranche === $v ? 'selected' : '' ?>><?= $l ?></option>
@@ -69,10 +67,10 @@ $agingColor = ['0-30j'=>'emerald','31-60j'=>'amber','61-90j'=>'orange','+90j'=>'
             </select>
         </div>
         <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">Recherche</label>
-            <input type="text" name="q" value="<?= htmlspecialchars($filters->q) ?>" placeholder="Élève, matricule…" class="border border-slate-200 rounded-lg px-3 py-2 text-sm w-44">
+            <label class="form-label text-xs mb-1">Recherche</label>
+            <input type="text" name="q" value="<?= htmlspecialchars($filters->q) ?>" placeholder="Élève, matricule…" class="form-input text-sm w-44">
         </div>
-        <button type="submit" class="inline-flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors">
+        <button type="submit" class="btn btn-primary">
             <i data-lucide="filter" class="w-4 h-4"></i> Filtrer
         </button>
         <a href="<?= BASE_URL ?>/v2/finance/rapports/impayes" class="text-slate-500 text-sm px-3 py-2 hover:text-slate-700">Réinitialiser</a>

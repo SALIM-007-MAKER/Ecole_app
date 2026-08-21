@@ -20,9 +20,8 @@ $canManage = $canManage ?? false;
             </div>
         </div>
         <?php if ($canManage): ?>
-        <button onclick="document.getElementById('modal-create').classList.remove('hidden')"
-                class="px-4 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700">
-            <i data-lucide="plus" class="inline w-4 h-4 mr-1"></i> Nouvelle catégorie
+        <button onclick="document.getElementById('modal-create').classList.remove('hidden')" class="btn btn-primary">
+            <i data-lucide="plus" class="w-4 h-4"></i> Nouvelle catégorie
         </button>
         <?php endif; ?>
     </div>
@@ -126,8 +125,8 @@ $canManage = $canManage ?? false;
 
             <div class="flex justify-end gap-3 pt-2">
                 <button type="button" onclick="document.getElementById('modal-create').classList.add('hidden')"
-                        class="px-4 py-2 text-sm text-slate-600">Annuler</button>
-                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700">
+                        class="btn btn-secondary">Annuler</button>
+                <button type="submit" class="btn btn-primary">
                     Créer la catégorie
                 </button>
             </div>

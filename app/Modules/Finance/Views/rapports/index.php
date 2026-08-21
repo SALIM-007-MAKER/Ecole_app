@@ -39,7 +39,7 @@
         foreach ($cards as $c):
             $cls = $colorMap[$c['color']] ?? 'bg-slate-100 text-slate-700';
         ?>
-        <a href="<?= $c['url'] ?>" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 hover:shadow-md hover:-translate-y-0.5 transition-all group">
+        <a href="<?= BASE_URL . $c['url'] ?>" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 hover:shadow-md hover:-translate-y-0.5 transition-all group">
             <div class="flex items-center gap-4 mb-4">
                 <div class="p-3 rounded-xl <?= $cls ?>">
                     <i data-lucide="<?= $c['icon'] ?>" class="w-6 h-6"></i>
@@ -81,7 +81,7 @@
                 <label class="form-label">Au</label>
                 <input type="date" name="date_fin" class="form-input">
             </div>
-            <button type="submit" class="bg-violet-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors flex items-center gap-2">
+            <button type="submit" class="btn btn-primary">
                 <i data-lucide="download" class="w-4 h-4"></i> Exporter
             </button>
         </form>

@@ -43,8 +43,7 @@ $badgeStatut = function(string $s): string {
             </div>
         </div>
         <?php if ($canCreate): ?>
-        <a href="<?= BASE_URL ?>/v2/finance/factures"
-           class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700 transition-colors flex-shrink-0">
+        <a href="<?= BASE_URL ?>/v2/finance/factures" class="btn btn-primary flex-shrink-0">
             <i data-lucide="plus" class="w-4 h-4"></i> Nouveau paiement
         </a>
         <?php endif; ?>
@@ -156,12 +155,11 @@ $badgeStatut = function(string $s): string {
                 </select>
             </div>
             <div class="flex gap-2">
-                <button type="submit" class="flex-1 px-3 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700">
-                    <i data-lucide="search" class="inline w-4 h-4"></i>
+                <button type="submit" class="btn btn-primary flex-1">
+                    <i data-lucide="search" class="w-4 h-4"></i>
                 </button>
-                <a href="<?= BASE_URL ?>/v2/finance/paiements"
-                   class="flex-1 flex items-center justify-center px-3 py-2 text-sm text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200">
-                    <i data-lucide="x" class="inline w-4 h-4"></i>
+                <a href="<?= BASE_URL ?>/v2/finance/paiements" class="btn btn-ghost flex-1">
+                    <i data-lucide="x" class="w-4 h-4"></i>
                 </a>
             </div>
         </form>

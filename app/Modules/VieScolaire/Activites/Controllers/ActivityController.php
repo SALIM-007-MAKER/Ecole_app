@@ -26,7 +26,8 @@ class ActivityController extends Controller
 
     public function index(): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('activity.view');
 
         $filters = ActivityFiltersDTO::fromRequest($_GET);
@@ -49,7 +50,8 @@ class ActivityController extends Controller
 
     public function show(int $id): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('activity.view');
 
         $activity = $this->service->findActivity($id);
@@ -75,7 +77,8 @@ class ActivityController extends Controller
 
     public function create(): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('activity.create');
 
         [$classes, $enseignants, $categories] = $this->formData();
@@ -90,7 +93,8 @@ class ActivityController extends Controller
 
     public function store(): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('activity.create');
         $this->verifyCsrf();
 
@@ -118,7 +122,8 @@ class ActivityController extends Controller
 
     public function edit(int $id): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('activity.update');
 
         $activity = $this->service->findActivity($id);
@@ -141,7 +146,8 @@ class ActivityController extends Controller
 
     public function update(int $id): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('activity.update');
         $this->verifyCsrf();
 
@@ -175,7 +181,8 @@ class ActivityController extends Controller
 
     public function publier(int $id): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('activity.publish');
         $this->verifyCsrf();
 
@@ -200,7 +207,8 @@ class ActivityController extends Controller
 
     public function annuler(int $id): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('activity.validate');
         $this->verifyCsrf();
 
@@ -227,7 +235,8 @@ class ActivityController extends Controller
 
     public function inscrireForm(int $id): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('activity.update');
 
         $activity = $this->service->findActivity($id);
@@ -249,7 +258,8 @@ class ActivityController extends Controller
 
     public function inscrireEleve(int $id): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('activity.update');
         $this->verifyCsrf();
 
@@ -277,7 +287,8 @@ class ActivityController extends Controller
 
     public function annulerInscription(int $inscriptionId): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('activity.update');
         $this->verifyCsrf();
 
@@ -297,7 +308,8 @@ class ActivityController extends Controller
 
     public function marquerPresences(int $id): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('activity.update');
         $this->verifyCsrf();
 
@@ -317,7 +329,8 @@ class ActivityController extends Controller
 
     public function export(): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('activity.export');
 
         $filters = ActivityFiltersDTO::fromRequest($_GET + ['per_page' => 1000]);
@@ -350,7 +363,8 @@ class ActivityController extends Controller
 
     public function statistiques(): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('activity.view');
 
         $annee = $_GET['annee'] ?? date('Y') . '-' . (date('Y') + 1);

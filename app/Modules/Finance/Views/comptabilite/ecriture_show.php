@@ -135,7 +135,7 @@ $sourcesLabels = [
       <div class="flex gap-3">
         <input type="text" name="motif" placeholder="Motif d'extourne (obligatoire)…" required
                class="form-input flex-1">
-        <button type="submit" class="bg-amber-600 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-amber-700">
+        <button type="submit" class="btn btn-warning">
           Extourner
         </button>
       </div>

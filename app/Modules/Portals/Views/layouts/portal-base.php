@@ -25,12 +25,19 @@ $uri        = $_SERVER['REQUEST_URI'] ?? '';
     <title><?= htmlspecialchars($pageTitle ?? $portalTitle) ?> — EduNova</title>
     <meta name="theme-color" content="<?= htmlspecialchars($portalColor['primary']) ?>">
     <style><?= $cssVars ?></style>
+
+    <!-- Google Fonts — même police que le dashboard principal -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
+                    fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'] },
                     colors: {
                         portal: {
                             DEFAULT: '<?= htmlspecialchars($portalColor['primary']) ?>',
@@ -41,9 +48,11 @@ $uri        = $_SERVER['REQUEST_URI'] ?? '';
             }
         }
     </script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <!-- Icônes — mêmes bibliothèques et version que le dashboard principal -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.7.2/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.400.0/dist/umd/lucide.min.js"></script>
     <style>
+        body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
         [x-cloak] { display: none !important; }
         .sidebar-item.active { background-color: var(--portal-light); color: var(--portal-primary); font-weight: 600; }
         .sidebar-item:not(.active):hover { background-color: #f8fafc; }

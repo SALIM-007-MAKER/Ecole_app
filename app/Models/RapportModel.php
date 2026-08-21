@@ -43,7 +43,8 @@ class RapportModel extends Model
         $classes = $this->queryOne("SELECT COUNT(*) AS n FROM `classes`");
         $profs   = $this->queryOne("SELECT COUNT(*) AS n FROM `professeurs`");
         $absToday = $this->queryOne(
-            "SELECT COUNT(*) AS n FROM `absences` WHERE `date_absence` = CURDATE()"
+            "SELECT COUNT(*) AS n FROM `vs_absences`
+             WHERE `date_absence` = CURDATE() AND `type` = 'absence' AND `deleted_at` IS NULL"
         );
 
         return [
@@ -210,58 +211,82 @@ class RapportModel extends Model
 
     public function getAbsencesParClasse(): array
     {
+        // Absences (vs_absences, module Vie Scolaire) et retards (vs_retards,
+        // domaine séparé depuis la convergence du 20/08/2026 — cf. T037)
+        // vivent désormais dans deux tables distinctes.
         return $this->query(
             "SELECT c.nom AS classe, c.niveau,
                     COUNT(DISTINCT e.id) AS nb_eleves,
                     COUNT(a.id)          AS nb_absences,
-                    SUM(a.type='retard') AS nb_retards,
-                    SUM(a.type='absence') AS nb_seches,
+                    (SELECT COUNT(*) FROM vs_retards r
+                      WHERE r.classe_id = c.id AND r.deleted_at IS NULL) AS nb_retards,
+                    COUNT(a.id)          AS nb_seches,
                     ROUND(COUNT(a.id) / NULLIF(COUNT(DISTINCT e.id), 0), 1) AS moy_par_eleve
              FROM `classes` c
              LEFT JOIN `eleves` e ON e.classe_id = c.id AND e.actif = 1
-             LEFT JOIN `absences` a ON a.eleve_id = e.id
+             LEFT JOIN `vs_absences` a
+                    ON a.eleve_id = e.id AND a.type = 'absence' AND a.deleted_at IS NULL
              GROUP BY c.id ORDER BY nb_absences DESC"
         );
     }
 
     public function getAbsencesHebdo(int $nbWeeks = 12): array
     {
-        $rows = $this->query(
+        $absRows = $this->query(
             "SELECT YEARWEEK(date_absence, 1) AS semaine_num,
                     MIN(date_absence)          AS debut_semaine,
-                    COUNT(*)                   AS total,
-                    SUM(type='absence')        AS absences,
-                    SUM(type='retard')         AS retards
-             FROM `absences`
+                    COUNT(*)                   AS absences
+             FROM `vs_absences`
              WHERE date_absence >= DATE_SUB(CURDATE(), INTERVAL ? WEEK)
+               AND type = 'absence' AND deleted_at IS NULL
              GROUP BY semaine_num ORDER BY semaine_num",
             [$nbWeeks]
         );
+        $retRows = $this->query(
+            "SELECT YEARWEEK(date_retard, 1) AS semaine_num, COUNT(*) AS retards
+             FROM `vs_retards`
+             WHERE date_retard >= DATE_SUB(CURDATE(), INTERVAL ? WEEK) AND deleted_at IS NULL
+             GROUP BY semaine_num",
+            [$nbWeeks]
+        );
+        $retardsParSemaine = [];
+        foreach ($retRows as $r) {
+            $retardsParSemaine[$r->semaine_num] = (int)$r->retards;
+        }
 
         $moisFr = ['01'=>'Jan','02'=>'Fév','03'=>'Mar','04'=>'Avr','05'=>'Mai','06'=>'Jun',
                    '07'=>'Jul','08'=>'Aoû','09'=>'Sep','10'=>'Oct','11'=>'Nov','12'=>'Déc'];
 
-        foreach ($rows as &$r) {
+        foreach ($absRows as &$r) {
+            $r->retards = $retardsParSemaine[$r->semaine_num] ?? 0;
+            $r->total   = (int)$r->absences + $r->retards;
             $ts = strtotime($r->debut_semaine);
             $r->label = date('d', $ts) . ' ' . ($moisFr[date('m', $ts)] ?? '');
         }
         unset($r);
 
-        return $rows;
+        return $absRows;
     }
 
     public function getRepartitionAbsences(): array
     {
         $r = $this->queryOne(
             "SELECT COUNT(*) AS total,
-                    SUM(a.type='absence')                    AS absences,
-                    SUM(a.type='retard')                     AS retards,
-                    SUM(a.statut_justif = 'justifiee')       AS justifiees,
-                    SUM(a.statut_justif != 'justifiee')      AS non_justifiees
-             FROM `absences` a"
+                    SUM(a.statut = 'justifiee')  AS justifiees,
+                    SUM(a.statut != 'justifiee') AS non_justifiees
+             FROM `vs_absences` a
+             WHERE a.type = 'absence' AND a.deleted_at IS NULL"
+        );
+        $retards = $this->queryOne(
+            "SELECT COUNT(*) AS n FROM `vs_retards` WHERE deleted_at IS NULL"
         );
 
-        return (array)($r ?? new \stdClass());
+        $result = (array)($r ?? new \stdClass());
+        $result['absences'] = $result['total'] ?? 0;
+        $result['retards']  = (int)($retards?->n ?? 0);
+        $result['total']    = (int)($result['absences']) + $result['retards'];
+
+        return $result;
     }
 
     public function getTopAbsents(int $n = 10): array
@@ -270,9 +295,10 @@ class RapportModel extends Model
             "SELECT e.nom, e.prenom, e.matricule,
                     c.nom AS classe, c.niveau,
                     COUNT(a.id) AS nb_absences
-             FROM `absences` a
+             FROM `vs_absences` a
              JOIN `eleves` e ON e.id = a.eleve_id
              LEFT JOIN `classes` c ON c.id = e.classe_id
+             WHERE a.type = 'absence' AND a.deleted_at IS NULL
              GROUP BY a.eleve_id
              ORDER BY nb_absences DESC LIMIT ?",
             [$n]

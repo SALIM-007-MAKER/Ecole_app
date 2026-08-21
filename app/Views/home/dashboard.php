@@ -288,8 +288,8 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
                     Saisir des notes
                 </a>
                 <?php endif; ?>
-                <?php if (can($perms, 'absences.create')): ?>
-                <a href="<?= BASE_URL ?>/absences/create"
+                <?php if (can($perms, 'attendance.create')): ?>
+                <a href="<?= BASE_URL ?>/v2/vie-scolaire/absences/create"
                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-amber-50 hover:text-amber-700 transition-colors group">
                     <div class="w-7 h-7 rounded-md bg-amber-100 flex items-center justify-center group-hover:bg-amber-200 transition-colors">
                         <i data-lucide="calendar-plus" class="w-3.5 h-3.5 text-amber-600"></i>
@@ -332,7 +332,7 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
                         ['Enseignants',  BASE_URL . '/professeurs',  'user-check',    '#dcfce7', '#16a34a'],
                         ['Classes',      BASE_URL . '/classes',      'building-2',    '#e0f2fe', '#0284c7'],
                         ['Notes',        BASE_URL . '/v2/academique/evaluations', 'book-open', '#f3e8ff', '#9333ea'],
-                        ['Absences',     BASE_URL . '/absences',     'calendar-x',    '#fef3c7', '#d97706'],
+                        ['Absences',     BASE_URL . '/v2/vie-scolaire/absences', 'calendar-x', '#fef3c7', '#d97706'],
                         ['Finance',      BASE_URL . '/v2/finance/rapports/dashboard', 'wallet',        '#dcfce7', '#059669'],
                     ];
                     foreach ($modules as [$label, $url, $icon, $bg, $color]):
@@ -370,8 +370,8 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
     </a>
     <?php endif; ?>
 
-    <?php if (can($perms, 'absences.create')): ?>
-    <a href="<?= BASE_URL ?>/absences/create" class="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white p-5 text-center text-slate-600 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 hover:shadow-md">
+    <?php if (can($perms, 'attendance.create')): ?>
+    <a href="<?= BASE_URL ?>/v2/vie-scolaire/absences/create" class="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white p-5 text-center text-slate-600 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 hover:shadow-md">
         <i data-lucide="calendar-plus" class="w-7 h-7 text-amber-600 mb-2"></i>
         <span class="text-sm font-semibold text-slate-700">Signaler une absence</span>
     </a>
@@ -437,7 +437,7 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
                 <i data-lucide="user-plus" class="w-7 h-7 text-emerald-600 mb-2"></i>
                 <span class="text-sm font-semibold text-slate-700">Inscrire un élève</span>
             </a>
-            <a href="<?= BASE_URL ?>/absences/create" class="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white p-5 text-center text-slate-600 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 hover:shadow-md">
+            <a href="<?= BASE_URL ?>/v2/vie-scolaire/absences/create" class="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white p-5 text-center text-slate-600 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 hover:shadow-md">
                 <i data-lucide="calendar-plus" class="w-7 h-7 text-amber-600 mb-2"></i>
                 <span class="text-sm font-semibold text-slate-700">Signaler absence</span>
             </a>
@@ -715,14 +715,14 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
                 </div>
                 Consulter les notes
             </a>
-            <a href="<?= BASE_URL ?>/absences/create"
+            <a href="<?= BASE_URL ?>/v2/vie-scolaire/absences/create"
                class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-amber-50 hover:text-amber-700 transition-colors group">
                 <div class="w-7 h-7 rounded-md bg-amber-100 flex items-center justify-center">
                     <i data-lucide="calendar-plus" class="w-3.5 h-3.5 text-amber-600"></i>
                 </div>
                 Signaler une absence
             </a>
-            <a href="<?= BASE_URL ?>/absences"
+            <a href="<?= BASE_URL ?>/v2/vie-scolaire/absences"
                class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors group">
                 <div class="w-7 h-7 rounded-md bg-slate-100 flex items-center justify-center">
                     <i data-lucide="calendar-x" class="w-3.5 h-3.5 text-slate-500"></i>
@@ -832,7 +832,7 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
             </div>
             <h3 class="font-bold text-slate-900 mb-1">Mes absences</h3>
             <p class="text-sm text-slate-500 mb-5">Suivez votre assiduité et les absences enregistrées.</p>
-            <a href="<?= BASE_URL ?>/absences" class="btn btn-warning">
+            <a href="<?= BASE_URL ?>/v2/vie-scolaire/absences" class="btn btn-warning">
                 <i data-lucide="eye" class="w-4 h-4"></i>Voir mes absences
             </a>
         </div>

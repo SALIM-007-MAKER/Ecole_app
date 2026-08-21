@@ -24,12 +24,10 @@ $statutBadge = [
             <h1 class="text-2xl font-bold text-slate-800">Rapport des factures</h1>
         </div>
         <div class="flex gap-2">
-            <a href="<?= BASE_URL ?>/v2/finance/rapports/export?type=factures&format=csv&<?= http_build_query($_GET) ?>"
-               class="border border-slate-200 bg-white text-slate-700 px-4 py-2 rounded-lg text-sm hover:bg-slate-50 flex items-center gap-2">
+            <a href="<?= BASE_URL ?>/v2/finance/rapports/export?type=factures&format=csv&<?= http_build_query($_GET) ?>" class="btn btn-outline">
                 <i data-lucide="file-text" class="w-4 h-4"></i> CSV
             </a>
-            <a href="<?= BASE_URL ?>/v2/finance/rapports/export?type=factures&format=excel&<?= http_build_query($_GET) ?>"
-               class="border border-slate-200 bg-white text-slate-700 px-4 py-2 rounded-lg text-sm hover:bg-slate-50 flex items-center gap-2">
+            <a href="<?= BASE_URL ?>/v2/finance/rapports/export?type=factures&format=excel&<?= http_build_query($_GET) ?>" class="btn btn-outline">
                 <i data-lucide="table" class="w-4 h-4"></i> Excel
             </a>
         </div>
@@ -38,8 +36,8 @@ $statutBadge = [
     <!-- Filtres -->
     <form method="GET" class="bg-white rounded-xl border border-slate-100 p-4 mb-6 flex flex-wrap gap-3 items-end shadow-sm">
         <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">Statut</label>
-            <select name="statut" class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
+            <label class="form-label text-xs mb-1">Statut</label>
+            <select name="statut" class="form-select text-sm">
                 <option value="">Tous</option>
                 <?php foreach (['emise'=>'Émise','partiellement_payee'=>'Part. payée','payee'=>'Payée','en_retard'=>'En retard','annulee'=>'Annulée'] as $v=>$l): ?>
                 <option value="<?= $v ?>" <?= $filters->statut === $v ? 'selected' : '' ?>><?= $l ?></option>
@@ -47,8 +45,8 @@ $statutBadge = [
             </select>
         </div>
         <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">Année scolaire</label>
-            <select name="annee_scolaire" class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
+            <label class="form-label text-xs mb-1">Année scolaire</label>
+            <select name="annee_scolaire" class="form-select text-sm">
                 <option value="">Toutes</option>
                 <?php foreach ($anneesSco as $as): ?>
                 <option value="<?= $as ?>" <?= $filters->anneeScolaire === $as ? 'selected' : '' ?>><?= $as ?></option>
@@ -56,8 +54,8 @@ $statutBadge = [
             </select>
         </div>
         <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">Classe</label>
-            <select name="classe_id" class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
+            <label class="form-label text-xs mb-1">Classe</label>
+            <select name="classe_id" class="form-select text-sm">
                 <option value="">Toutes</option>
                 <?php foreach ($classes as $c): ?>
                 <option value="<?= $c->id ?>" <?= $filters->classeId === $c->id ? 'selected' : '' ?>><?= htmlspecialchars($c->nom) ?></option>
@@ -65,18 +63,18 @@ $statutBadge = [
             </select>
         </div>
         <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">Du</label>
-            <input type="date" name="date_debut" value="<?= htmlspecialchars($filters->dateDebut) ?>" class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
+            <label class="form-label text-xs mb-1">Du</label>
+            <input type="date" name="date_debut" value="<?= htmlspecialchars($filters->dateDebut) ?>" class="form-input text-sm">
         </div>
         <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">Au</label>
-            <input type="date" name="date_fin" value="<?= htmlspecialchars($filters->dateFin) ?>" class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
+            <label class="form-label text-xs mb-1">Au</label>
+            <input type="date" name="date_fin" value="<?= htmlspecialchars($filters->dateFin) ?>" class="form-input text-sm">
         </div>
         <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">Recherche</label>
-            <input type="text" name="q" value="<?= htmlspecialchars($filters->q) ?>" placeholder="N° facture, élève…" class="border border-slate-200 rounded-lg px-3 py-2 text-sm w-44">
+            <label class="form-label text-xs mb-1">Recherche</label>
+            <input type="text" name="q" value="<?= htmlspecialchars($filters->q) ?>" placeholder="N° facture, élève…" class="form-input text-sm w-44">
         </div>
-        <button type="submit" class="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-violet-700">Filtrer</button>
+        <button type="submit" class="btn btn-primary">Filtrer</button>
         <a href="<?= BASE_URL ?>/v2/finance/rapports/factures" class="text-slate-500 text-sm px-3 py-2 hover:text-slate-700">Reset</a>
     </form>
 
@@ -173,5 +171,3 @@ $statutBadge = [
         </div>
         <?php endif; ?>
     </div>
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-<script>lucide.createIcons();</script>

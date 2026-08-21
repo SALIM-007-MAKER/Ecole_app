@@ -1,11 +1,9 @@
 <?php
 
 use App\Events\EleveCreated;
-use App\Events\AbsenceCreee;
 use App\Events\DocumentGenere;
 use App\Events\ImportCsvCompleted;
 use App\Listeners\AuditHandler;
-use App\Listeners\NotificationHandler;
 use App\Listeners\StatsCacheHandler;
 use App\Modules\Scolarite\Events\EleveUpdated;
 use App\Modules\Scolarite\Events\EleveArchived;
@@ -162,12 +160,6 @@ return [
 
     EleveCreated::class => [
         new AuditHandler(),
-        new StatsCacheHandler(),
-    ],
-
-    AbsenceCreee::class => [
-        new AuditHandler(),
-        new NotificationHandler(),
         new StatsCacheHandler(),
     ],
 

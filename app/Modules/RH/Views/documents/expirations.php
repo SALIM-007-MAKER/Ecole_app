@@ -8,8 +8,8 @@ $today = date('Y-m-d');
       <h2 class="text-xl font-semibold text-slate-800">Alertes expiration</h2>
       <p class="text-sm text-slate-500"><?= count($docs) ?> document(s) expirant dans les <?= (int)$jours ?> prochains jours</p>
     </div>
-    <a href="<?= BASE_URL ?>/v2/rh/documents" class="border border-slate-200 text-slate-600 px-4 py-2 rounded-lg text-sm hover:bg-slate-50 transition">
-      <i data-lucide="arrow-left" class="w-4 h-4 inline mr-1"></i>Retour
+    <a href="<?= BASE_URL ?>/v2/rh/documents" class="btn btn-secondary">
+      <i data-lucide="arrow-left" class="w-4 h-4"></i>Retour
     </a>
   </div>
 

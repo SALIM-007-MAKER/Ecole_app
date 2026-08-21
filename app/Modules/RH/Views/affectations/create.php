@@ -150,8 +150,8 @@ function val(string $k, $default = ''): string {
     </div>
 
     <div class="flex gap-3 pt-2">
-      <button type="submit" class="px-6 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">Créer l'affectation</button>
-      <a href="<?= BASE_URL ?>/v2/rh/affectations" class="px-6 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm hover:bg-slate-200">Annuler</a>
+      <button type="submit" class="btn btn-primary">Créer l'affectation</button>
+      <a href="<?= BASE_URL ?>/v2/rh/affectations" class="btn btn-secondary">Annuler</a>
     </div>
   </form>
 

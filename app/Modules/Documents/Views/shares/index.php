@@ -87,13 +87,13 @@ const docId = <?= $document['id'] ?>;
 document.getElementById('shareForm')?.addEventListener('submit', async function(e) {
   e.preventDefault();
   const fd = new FormData(this);
-  const res = await fetch(`/v2/documents/${docId}/shares`, {method:'POST', body: fd});
+  const res = await fetch(`<?= BASE_URL ?>/v2/documents/${docId}/shares`, {method:'POST', body: fd});
   const data = await res.json();
   const box = document.getElementById('shareResult');
   box.classList.remove('hidden');
   if (data.success) {
     box.className = 'mt-2 text-sm text-green-700';
-    box.textContent = data.partage?.token ? 'Lien : /v2/share/' + data.partage.token : 'Partage créé.';
+    box.textContent = data.partage?.token ? 'Lien : <?= BASE_URL ?>/v2/share/' + data.partage.token : 'Partage créé.';
     setTimeout(() => location.reload(), 1500);
   } else {
     box.className = 'mt-2 text-sm text-red-700';
@@ -103,7 +103,7 @@ document.getElementById('shareForm')?.addEventListener('submit', async function(
 
 async function revoquer(id) {
   if (!confirm('Révoquer ce partage ?')) return;
-  const r = await fetch(`/v2/shares/${id}/revoke`, {method:'POST', headers:{'X-CSRF-Token': csrf}});
+  const r = await fetch(`<?= BASE_URL ?>/v2/shares/${id}/revoke`, {method:'POST', headers:{'X-CSRF-Token': csrf}});
   const d = await r.json();
   if (d.success) location.reload();
 }

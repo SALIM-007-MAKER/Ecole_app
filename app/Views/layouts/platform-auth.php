@@ -7,13 +7,17 @@
     <meta name="robots" content="noindex, nofollow">
     <meta name="theme-color" content="#0f172a">
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>tailwind.config = { corePlugins: { preflight: false } }</script>
+    <script>tailwind.config = { corePlugins: { preflight: false }, theme: { extend: { fontFamily: { sans: ['Inter','ui-sans-serif','system-ui','sans-serif'] } } } }</script>
     <?php $cssV = @filemtime($_SERVER['DOCUMENT_ROOT'] . '/ecole_app/public/assets/css/app.css') ?: '1'; ?>
     <link href="<?= BASE_URL ?>/assets/css/app.css?v=<?= $cssV ?>" rel="stylesheet">
 
     <style>
-        body { font-family: ui-sans-serif, system-ui, sans-serif; }
+        body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
         .platform-bg {
             min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
             padding: 3rem 1rem; background: radial-gradient(circle at top, #1e293b, #0f172a 60%);

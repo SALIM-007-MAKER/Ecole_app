@@ -9,12 +9,12 @@ $typeColors = $model::TYPE_COLORS ?? [];
       <p class="text-sm text-slate-500"><?= count($formations) ?> formation(s)</p>
     </div>
     <div class="flex gap-2">
-      <a href="<?= BASE_URL ?>/v2/rh/formations" class="border border-slate-200 text-slate-600 px-4 py-2 rounded-lg text-sm hover:bg-slate-50 transition">
-        <i data-lucide="arrow-left" class="w-4 h-4 inline mr-1"></i>Retour sessions
+      <a href="<?= BASE_URL ?>/v2/rh/formations" class="btn btn-secondary">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>Retour sessions
       </a>
       <?php if ($policy->canManageCatalog($user)): ?>
-      <a href="<?= BASE_URL ?>/v2/rh/formations/catalogue/create" class="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-violet-700 transition">
-        <i data-lucide="plus" class="w-4 h-4 inline mr-1"></i>Ajouter formation
+      <a href="<?= BASE_URL ?>/v2/rh/formations/catalogue/create" class="btn btn-primary">
+        <i data-lucide="plus" class="w-4 h-4"></i>Ajouter formation
       </a>
       <?php endif; ?>
     </div>

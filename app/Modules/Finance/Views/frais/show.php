@@ -74,9 +74,8 @@ $statutLabel = match($frais->statut) {
             <?php endif; ?>
 
             <?php if ($canUpdate): ?>
-            <a href="<?= BASE_URL ?>/v2/finance/frais/<?= $frais->id ?>/edit"
-               class="px-3 py-2 text-sm text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50">
-                <i data-lucide="pencil" class="inline w-4 h-4 mr-1"></i> Modifier
+            <a href="<?= BASE_URL ?>/v2/finance/frais/<?= $frais->id ?>/edit" class="btn btn-outline">
+                <i data-lucide="pencil" class="w-4 h-4"></i> Modifier
             </a>
             <?php endif; ?>
         </div>
@@ -175,13 +174,13 @@ $statutLabel = match($frais->statut) {
                     <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                     <div class="grid grid-cols-4 gap-3 items-end">
                         <div>
-                            <label class="block text-xs font-medium text-slate-600 mb-1">Année scolaire *</label>
+                            <label class="form-label text-xs mb-1">Année scolaire *</label>
                             <input type="text" name="annee_scolaire" placeholder="2026-2027" required
                                    pattern="\d{4}-\d{4}"
                                    class="form-input">
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-600 mb-1">Niveau</label>
+                            <label class="form-label text-xs mb-1">Niveau</label>
                             <select name="niveau" class="form-select">
                                 <option value="">Tous niveaux</option>
                                 <?php foreach (array_merge(...array_values(\App\Models\ClasseModel::NIVEAUX)) as $n): ?>
@@ -190,13 +189,12 @@ $statutLabel = match($frais->statut) {
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-600 mb-1">Montant *</label>
+                            <label class="form-label text-xs mb-1">Montant *</label>
                             <input type="number" name="montant" step="0.01" min="0.01" required
                                    class="form-input">
                         </div>
                         <div>
-                            <button type="submit"
-                                    class="w-full px-4 py-1.5 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700">
+                            <button type="submit" class="btn btn-primary w-full">
                                 Enregistrer
                             </button>
                         </div>
@@ -310,8 +308,8 @@ $statutLabel = match($frais->statut) {
             </div>
             <div class="flex justify-end gap-3">
                 <button type="button" onclick="document.getElementById('modal-archiver').classList.add('hidden')"
-                        class="px-4 py-2 text-sm text-slate-600">Annuler</button>
-                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700">
+                        class="btn btn-secondary">Annuler</button>
+                <button type="submit" class="btn btn-warning">
                     Confirmer l'archivage
                 </button>
             </div>

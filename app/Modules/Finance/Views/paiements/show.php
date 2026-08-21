@@ -184,13 +184,11 @@ $badgeStatut = function(string $s): string {
             </div>
         </div>
         <div class="flex gap-2">
-            <a href="<?= BASE_URL ?>/v2/finance/paiements/<?= $paiement->id ?>/recu"
-               class="px-3 py-1.5 text-sm text-emerald-700 bg-white border border-emerald-300 rounded-lg hover:bg-emerald-50">
-                <i data-lucide="eye" class="inline w-3.5 h-3.5 mr-1"></i> Voir
+            <a href="<?= BASE_URL ?>/v2/finance/paiements/<?= $paiement->id ?>/recu" class="btn btn-outline-success btn-sm">
+                <i data-lucide="eye" class="w-3.5 h-3.5"></i> Voir
             </a>
-            <a href="<?= BASE_URL ?>/v2/finance/paiements/<?= $paiement->id ?>/recu/print" target="_blank"
-               class="px-3 py-1.5 text-sm text-emerald-700 bg-white border border-emerald-300 rounded-lg hover:bg-emerald-50">
-                <i data-lucide="printer" class="inline w-3.5 h-3.5 mr-1"></i> Imprimer
+            <a href="<?= BASE_URL ?>/v2/finance/paiements/<?= $paiement->id ?>/recu/print" target="_blank" class="btn btn-outline-success btn-sm">
+                <i data-lucide="printer" class="w-3.5 h-3.5"></i> Imprimer
             </a>
         </div>
     </div>
@@ -321,15 +319,15 @@ $badgeStatut = function(string $s): string {
             <div class="mb-4">
                 <label class="form-label">Motif <span class="form-required">*</span></label>
                 <textarea name="motif" rows="3" required
-                          class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-rose-300"
+                          class="form-textarea"
                           placeholder="Raison de l'annulation…"></textarea>
             </div>
             <div class="flex gap-3">
-                <button type="submit" class="flex-1 py-2 text-sm font-semibold text-white bg-rose-600 rounded-lg hover:bg-rose-700">
+                <button type="submit" class="btn btn-danger flex-1">
                     Confirmer l'annulation
                 </button>
                 <button type="button" onclick="document.getElementById('modal_annuler').classList.add('hidden')"
-                        class="flex-1 py-2 text-sm text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200">
+                        class="btn btn-secondary flex-1">
                     Fermer
                 </button>
             </div>
@@ -361,22 +359,22 @@ $badgeStatut = function(string $s): string {
                 <div>
                     <label class="form-label">Motif <span class="form-required">*</span></label>
                     <textarea name="motif" rows="2" required
-                              class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-300"
+                              class="form-textarea"
                               placeholder="Raison du remboursement…"></textarea>
                 </div>
                 <div>
                     <label class="form-label">Référence remboursement</label>
                     <input type="text" name="reference_remboursement"
-                           class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-300"
+                           class="form-input"
                            placeholder="N° virement…">
                 </div>
             </div>
             <div class="flex gap-3 mt-4">
-                <button type="submit" class="flex-1 py-2 text-sm font-semibold text-white bg-amber-600 rounded-lg hover:bg-amber-700">
+                <button type="submit" class="btn btn-warning flex-1">
                     Confirmer le remboursement
                 </button>
                 <button type="button" onclick="document.getElementById('modal_rembourser').classList.add('hidden')"
-                        class="flex-1 py-2 text-sm text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200">
+                        class="btn btn-secondary flex-1">
                     Fermer
                 </button>
             </div>

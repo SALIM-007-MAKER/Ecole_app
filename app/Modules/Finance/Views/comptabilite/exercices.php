@@ -19,8 +19,7 @@ $statutLabels = ['ouvert'=>'Ouvert','cloture'=>'Clôturé','reouvert'=>'Réouver
     </div>
     <div class="flex gap-2">
       <?php if ($canGerer): ?>
-      <a href="<?= BASE_URL ?>/v2/finance/comptabilite/exercices/create"
-         class="inline-flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-violet-700">
+      <a href="<?= BASE_URL ?>/v2/finance/comptabilite/exercices/create" class="btn btn-primary">
         <i data-lucide="plus" class="w-4 h-4"></i>Nouvel exercice
       </a>
       <?php endif; ?>
@@ -34,8 +33,7 @@ $statutLabels = ['ouvert'=>'Ouvert','cloture'=>'Clôturé','reouvert'=>'Réouver
     <p class="text-slate-500 font-medium mb-1">Aucun exercice comptable</p>
     <p class="text-slate-400 text-sm mb-4">Créez votre premier exercice pour commencer à enregistrer des écritures.</p>
     <?php if ($canGerer): ?>
-    <a href="<?= BASE_URL ?>/v2/finance/comptabilite/exercices/create"
-       class="inline-flex items-center gap-2 bg-violet-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-violet-700">
+    <a href="<?= BASE_URL ?>/v2/finance/comptabilite/exercices/create" class="btn btn-primary">
       <i data-lucide="plus" class="w-4 h-4"></i>Créer un exercice
     </a>
     <?php endif; ?>

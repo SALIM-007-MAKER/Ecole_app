@@ -27,7 +27,8 @@ class TimetableController extends Controller
 
     public function index(): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('timetable.view');
 
         $filters = TimetableFiltersDTO::fromRequest($_GET);
@@ -49,7 +50,8 @@ class TimetableController extends Controller
 
     public function create(): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('timetable.create');
 
         $db      = Database::getInstance()->getConnection();
@@ -65,7 +67,8 @@ class TimetableController extends Controller
 
     public function store(): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('timetable.create');
         $this->verifyCsrf();
 
@@ -93,7 +96,8 @@ class TimetableController extends Controller
 
     public function show(int $id): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('timetable.view');
 
         $edt = $this->service->findEdt($id);
@@ -121,7 +125,8 @@ class TimetableController extends Controller
 
     public function ajouterCreneauForm(int $edtId): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('timetable.update');
 
         $edt = $this->service->findEdt($edtId);
@@ -133,7 +138,7 @@ class TimetableController extends Controller
 
         $db       = Database::getInstance()->getConnection();
         $matieres = $db->query("SELECT id, nom, couleur FROM matieres WHERE actif = 1 ORDER BY nom")->fetchAll(\PDO::FETCH_ASSOC);
-        $enseignants = $db->query("SELECT u.id, u.nom, u.prenom FROM users u JOIN user_roles ur ON ur.user_id = u.id JOIN roles r ON r.id = ur.role_id WHERE r.nom = 'enseignant' ORDER BY u.nom")->fetchAll(\PDO::FETCH_ASSOC);
+        $enseignants = $db->query("SELECT id, nom, prenom FROM users WHERE role = 'enseignant' ORDER BY nom")->fetchAll(\PDO::FETCH_ASSOC);
 
         $this->render('VieScolaire::emplois_du_temps/creneaux/ajouter', [
             'user'        => $user,
@@ -147,7 +152,8 @@ class TimetableController extends Controller
 
     public function storeCreneau(int $edtId): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('timetable.update');
         $this->verifyCsrf();
 
@@ -181,7 +187,8 @@ class TimetableController extends Controller
 
     public function modifierCreneau(int $creneauId): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('timetable.update');
         $this->verifyCsrf();
 
@@ -230,7 +237,8 @@ class TimetableController extends Controller
 
     public function supprimerCreneau(int $creneauId): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('timetable.update');
         $this->verifyCsrf();
 
@@ -255,7 +263,8 @@ class TimetableController extends Controller
 
     public function publier(int $id): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('timetable.publish');
         $this->verifyCsrf();
 
@@ -280,7 +289,8 @@ class TimetableController extends Controller
 
     public function enseignant(): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('timetable.view');
 
         $enseignantId = (int)($_GET['enseignant_id'] ?? $user['id']);
@@ -294,7 +304,7 @@ class TimetableController extends Controller
         $stmt->execute([$enseignantId]);
         $enseignant = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-        $enseignants = $db->query("SELECT u.id, u.nom, u.prenom FROM users u JOIN user_roles ur ON ur.user_id = u.id JOIN roles r ON r.id = ur.role_id WHERE r.nom = 'enseignant' ORDER BY u.nom")->fetchAll(\PDO::FETCH_ASSOC);
+        $enseignants = $db->query("SELECT id, nom, prenom FROM users WHERE role = 'enseignant' ORDER BY nom")->fetchAll(\PDO::FETCH_ASSOC);
 
         $this->render('VieScolaire::emplois_du_temps/enseignant', [
             'user'         => $user,
@@ -312,14 +322,15 @@ class TimetableController extends Controller
 
     public function remplacements(): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('timetable.view');
 
         $date         = $_GET['date'] ?? date('Y-m-d');
         $remplacements = $this->service->remplacementsDuJour($date);
 
         $db   = Database::getInstance()->getConnection();
-        $enseignants = $db->query("SELECT u.id, u.nom, u.prenom FROM users u JOIN user_roles ur ON ur.user_id = u.id JOIN roles r ON r.id = ur.role_id WHERE r.nom = 'enseignant' ORDER BY u.nom")->fetchAll(\PDO::FETCH_ASSOC);
+        $enseignants = $db->query("SELECT id, nom, prenom FROM users WHERE role = 'enseignant' ORDER BY nom")->fetchAll(\PDO::FETCH_ASSOC);
         $salles = $this->service->salles();
 
         $creneaux = $db->query("SELECT cr.id, cr.jour, p.libelle AS plage, c.nom AS classe, m.nom AS matiere FROM vs_edt_creneaux cr JOIN vs_edt_plages_horaires p ON p.id = cr.plage_id JOIN classes c ON c.id = cr.classe_id JOIN matieres m ON m.id = cr.matiere_id WHERE cr.deleted_at IS NULL ORDER BY c.nom, cr.jour, p.ordre")->fetchAll(\PDO::FETCH_ASSOC);
@@ -336,7 +347,8 @@ class TimetableController extends Controller
 
     public function storeRemplacement(): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('timetable.update');
         $this->verifyCsrf();
 
@@ -363,7 +375,8 @@ class TimetableController extends Controller
 
     public function export(): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('timetable.export');
 
         $classeId = (int)($_GET['classe_id'] ?? 0);
@@ -399,7 +412,8 @@ class TimetableController extends Controller
 
     public function statistiques(): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('timetable.view');
 
         $classeId = (int)($_GET['classe_id'] ?? 0);

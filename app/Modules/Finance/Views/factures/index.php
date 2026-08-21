@@ -36,8 +36,7 @@ $fmtMontant = fn(float $v): string => number_format($v, 0, ',', ' ') . ' XOF';
             </a>
             <?php endif; ?>
             <?php if ($canCreate): ?>
-            <a href="<?= BASE_URL ?>/v2/finance/factures/create"
-               class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700 transition-colors">
+            <a href="<?= BASE_URL ?>/v2/finance/factures/create" class="btn btn-primary">
                 <i data-lucide="plus" class="w-4 h-4"></i> Nouvelle facture
             </a>
             <?php endif; ?>
@@ -129,10 +128,10 @@ $fmtMontant = fn(float $v): string => number_format($v, 0, ',', ' ') . ' XOF';
                 <option value="migration_v1" <?= ($filters->origine ?? '') === 'migration_v1' ? 'selected' : '' ?>>Migrées depuis V1</option>
             </select>
 
-            <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700 transition-colors">
+            <button type="submit" class="btn btn-primary">
                 <i data-lucide="filter" class="w-4 h-4"></i> Filtrer
             </button>
-            <a href="<?= BASE_URL ?>/v2/finance/factures" class="px-4 py-2 text-sm text-slate-500 hover:text-slate-700">
+            <a href="<?= BASE_URL ?>/v2/finance/factures" class="text-sm text-slate-500 hover:text-slate-700">
                 Réinitialiser
             </a>
         </form>

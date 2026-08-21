@@ -8,7 +8,12 @@ use App\Services\MenuService;
 
 $currentUri = $currentUri ?? ($_SERVER['REQUEST_URI'] ?? '');
 $role = $currentUser['role'] ?? '';
-$activeGroupId = MenuService::resolveActiveGroupId($menus ?? [], $currentUri);
+$activeGroupId  = MenuService::resolveActiveGroupId($menus ?? [], $currentUri);
+// Calculé une seule fois pour toute la sidebar : LE lien unique à
+// surligner, tous les items le comparent par égalité stricte plutôt que
+// de se juger actifs chacun de leur côté (cf. commentaire de
+// MenuService::getMenuItemClass()).
+$activeItemUrl  = MenuService::resolveActiveItemUrl($menus ?? [], $currentUri);
 
 if (empty($menus)): ?>
     <nav class="sidebar-nav" role="navigation" aria-label="Navigation principale">
@@ -22,8 +27,7 @@ if (empty($menus)): ?>
 <nav class="sidebar-nav" role="navigation" aria-label="Navigation principale">
     <?php foreach ($menus as $item): ?>
         <?php
-        $itemActive = MenuService::isMenuActive($item['url'] ?? '', $currentUri);
-        $itemClass = MenuService::getMenuItemClass($item['url'] ?? '', $currentUri, false);
+        $itemClass = MenuService::getMenuItemClass($item['url'] ?? '', $activeItemUrl, false);
         $isGroup = !empty($item['children']) && is_array($item['children']);
         ?>
 
@@ -46,7 +50,7 @@ if (empty($menus)): ?>
                  <?= $groupActive ? 'style="max-height:500px"' : '' ?>>
                 <?php foreach ($item['children'] as $child): ?>
                     <?php
-                    $childClass = MenuService::getMenuItemClass($child['url'] ?? '', $currentUri, true);
+                    $childClass = MenuService::getMenuItemClass($child['url'] ?? '', $activeItemUrl, true);
                     $childUrl = BASE_URL . ($child['url'] ?? '/');
                     ?>
                     <a href="<?= $childUrl ?>"

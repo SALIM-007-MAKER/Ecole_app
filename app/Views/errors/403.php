@@ -15,7 +15,7 @@ $__base = defined('BASE_URL') ? BASE_URL : '';
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.7.2/css/all.min.css">
 <style>body { font-family: Inter, system-ui, sans-serif; }</style>
 </head>
 <body class="bg-slate-50 min-h-screen flex items-center justify-center p-6">

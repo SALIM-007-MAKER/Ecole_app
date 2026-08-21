@@ -8,7 +8,7 @@
   <div class="bg-white rounded-xl shadow-sm p-6">
     <h1 class="text-xl font-bold text-slate-800 mb-6"><?= htmlspecialchars($titre ?? '') ?></h1>
 
-    <?php $action = $ouvrage ? '/v2/bibliotheque/catalogue/' . $ouvrage['id'] . '/update' : '/v2/bibliotheque/catalogue'; ?>
+    <?php $action = BASE_URL . ($ouvrage ? '/v2/bibliotheque/catalogue/' . $ouvrage['id'] . '/update' : '/v2/bibliotheque/catalogue'); ?>
     <form method="POST" action="<?= $action ?>" class="space-y-4">
       <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
 

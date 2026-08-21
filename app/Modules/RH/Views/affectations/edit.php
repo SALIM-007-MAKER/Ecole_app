@@ -148,9 +148,7 @@ function val(string $k, $default = ''): string {
     </div>
 
     <div class="flex gap-3 pt-2">
-      <button type="submit" <?= $affectation['statut'] === 'terminee' ? 'disabled' : '' ?>
-              class="px-6 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700 disabled:opacity-50">Enregistrer</button>
-      <a href="<?= BASE_URL ?>/v2/rh/affectations/<?= (int)$affectation['id'] ?>"
-         class="px-6 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm hover:bg-slate-200">Annuler</a>
+      <button type="submit" <?= $affectation['statut'] === 'terminee' ? 'disabled' : '' ?> class="btn btn-primary">Enregistrer</button>
+      <a href="<?= BASE_URL ?>/v2/rh/affectations/<?= (int)$affectation['id'] ?>" class="btn btn-secondary">Annuler</a>
     </div>
   </form>

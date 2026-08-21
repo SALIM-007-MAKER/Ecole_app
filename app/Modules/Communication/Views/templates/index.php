@@ -65,7 +65,7 @@
 const csrf = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 async function supprimer(id) {
   if (!confirm('Supprimer ce template ?')) return;
-  await fetch(`/v2/communication/templates/${id}`, { method: 'DELETE', headers: { 'X-CSRF-Token': csrf } });
+  await fetch(`<?= BASE_URL ?>/v2/communication/templates/${id}`, { method: 'DELETE', headers: { 'X-CSRF-Token': csrf } });
   location.reload();
 }
 </script>

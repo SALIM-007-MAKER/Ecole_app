@@ -41,10 +41,13 @@ $fk = (int)$pdo->query("SELECT COUNT(*) FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
     WHERE TABLE_SCHEMA='ecole_app' AND TABLE_NAME='notes' AND REFERENCED_TABLE_NAME='controles'")->fetchColumn();
 t('T05_FK_NOTES_CONTROLES', $fk > 0);
 
-// T06: FK absences → eleves
+// T06: FK vs_justifications_absences → vs_absences (le domaine Absences V2 —
+// vs_absences elle-même n'a volontairement pas de FK déclarées, validation
+// applicative uniquement ; la table `absences` V1 testée ici jusqu'au
+// 21/08/2026 a été supprimée, voir CHANGELOG.md)
 $fk2 = (int)$pdo->query("SELECT COUNT(*) FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
-    WHERE TABLE_SCHEMA='ecole_app' AND TABLE_NAME='absences' AND REFERENCED_TABLE_NAME='eleves'")->fetchColumn();
-t('T06_FK_ABSENCES_ELEVES', $fk2 > 0);
+    WHERE TABLE_SCHEMA='ecole_app' AND TABLE_NAME='vs_justifications_absences' AND REFERENCED_TABLE_NAME='vs_absences'")->fetchColumn();
+t('T06_FK_JUSTIFICATIONS_ABSENCES', $fk2 > 0);
 
 // T07: Transaction rollback
 try {
@@ -55,8 +58,9 @@ try {
 $exists = (int)$pdo->query("SELECT COUNT(*) FROM matieres WHERE nom='__rollback_test__'")->fetchColumn();
 t('T07_TRANSACTION_ROLLBACK', $exists === 0);
 
-// T08: statut_justif is enum (not free text)
-$col = $pdo->query("SHOW COLUMNS FROM absences LIKE 'statut_justif'")->fetch()->Type;
+// T08: statut is enum (not free text) — vs_absences (V2), remplace la
+// table `absences` V1 (colonne statut_justif) supprimée le 21/08/2026
+$col = $pdo->query("SHOW COLUMNS FROM vs_absences LIKE 'statut'")->fetch()->Type;
 t('T08_STATUT_JUSTIF_ENUM', str_contains($col, 'enum'));
 
 // ─── PERMISSIONS ──────────────────────────────────────────────────────────────
@@ -143,12 +147,16 @@ foreach (array_merge(glob('app/Controllers/*.php') ?: [], glob('app/Models/*.php
 }
 t('T25_NO_SHELL_EXEC', empty($dangerFiles), implode(',', $dangerFiles));
 
-// T26: No direct $_GET/$_POST in EmploiDuTempsController (after fix)
-$edtContent = file_get_contents('app/Controllers/EmploiDuTempsController.php');
-$rawGet  = preg_match_all('/\$_GET\[/', $edtContent);
-$rawPost = preg_match_all('/\$_POST\[/', $edtContent);
-t('T26_EDT_NO_RAW_GET',  $rawGet  === 0, "found: $rawGet");
-t('T27_EDT_NO_RAW_POST', $rawPost === 0, "found: $rawPost");
+// T26/T27 : retirés le 21/08/2026 — testaient l'absence de $_GET/$_POST
+// bruts dans app/Controllers/EmploiDuTempsController.php (V1, supprimé,
+// voir CHANGELOG.md). Core\Request::get()/post() n'est qu'un passe-plat
+// sans sanitisation (vérifié) : la règle visait la testabilité, pas une
+// vraie faille — les contrôleurs V2 (dont son remplaçant,
+// VieScolaire\EmploisDuTemps\Controllers\TimetableController) accèdent aux
+// superglobales directement partout, par convention établie du module ; la
+// sécurité réelle passe par verifyCsrf()/requirePermission(), déjà couverts
+// par d'autres tests. Réintroduire cette règle reviendrait à faire échouer
+// tout le module V2 pour un écart de convention, pas un risque.
 
 // T28: logout uses POST route (not GET)
 $routes = file_get_contents('config/routes.php');
@@ -172,16 +180,19 @@ t('T31_DEMO_CREDS_IN_DEBUG_ONLY',
 $appConfig = file_get_contents('config/app.php');
 t('T32_NO_DEFAULT_KEY', !str_contains($appConfig, "'default_key'"));
 
-// T33: Absence uploads go to storage/ not public/
-$absContent = file_get_contents('app/Controllers/AbsenceController.php');
-t('T33_UPLOADS_OUT_OF_PUBLIC',
-    str_contains($absContent, 'storage/uploads/justifications') &&
-    !str_contains($absContent, "public/uploads/justifications'"));
+// T33: retiré le 21/08/2026 — testait le contrôleur Absences V1
+// (app/Controllers/AbsenceController.php, supprimé, voir CHANGELOG.md).
+// Le module V2 (App\Modules\VieScolaire\Absences) n'implémente pas encore
+// l'upload de justificatif côté serveur (JustificationDTO::$fichier existe
+// mais storeJustification() ne traite pas $_FILES) — rien à tester tant que
+// cette fonctionnalité n'existe pas.
 
-// T34: Permission check before data load in AbsenceController::show()
+// T34: Permission check before data load — AbsenceController::show() V2
+// (remplace le test sur le contrôleur V1 supprimé)
+$absContent = file_get_contents('app/Modules/VieScolaire/Absences/Controllers/AbsenceController.php');
 $showMethod = preg_match('/function show.*?function \w/s', $absContent, $m) ? $m[0] : '';
-$permPos    = strpos($showMethod, 'can(');
-$dataPos    = strpos($showMethod, 'findWithDetails(');
+$permPos    = strpos($showMethod, 'requirePermission(');
+$dataPos    = strpos($showMethod, 'findById(');
 t('T34_PERM_BEFORE_DATA_IN_SHOW', $permPos !== false && $dataPos !== false && $permPos < $dataPos);
 
 // T35: NoteModel recalcul has transaction

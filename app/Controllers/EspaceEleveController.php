@@ -5,15 +5,13 @@ namespace App\Controllers;
 use Core\Controller;
 use Core\Session;
 use App\Models\EleveModel;
-use App\Models\AbsenceModel;
 use App\Models\NotificationModel;
 use App\Models\AnnonceModel;
-use App\Models\EmploiDuTempsModel;
-use App\Models\CreneauModel;
 use App\Modules\Academique\DTO\BulletinData;
 use App\Modules\Academique\Repositories\PeriodeScolaireRepository;
 use App\Modules\Academique\Repositories\BulletinRepository;
 use App\Modules\Academique\Services\BulletinEngineFactory;
+use App\Modules\VieScolaire\EmploisDuTemps\Repositories\TimetableRepository;
 
 class EspaceEleveController extends Controller
 {
@@ -64,15 +62,16 @@ class EspaceEleveController extends Controller
         }
 
         if ($eleve) {
-            $absModel = new AbsenceModel();
-            $absencesRecentes = $absModel->query(
-                "SELECT a.*, m.nom AS matiere_nom
-                 FROM `absences` a
-                 LEFT JOIN `matieres` m ON m.id = a.matiere_id
-                 WHERE a.eleve_id = ?
-                 ORDER BY a.date_absence DESC LIMIT 5",
-                [(int)$eleve->id]
+            // vs_absences n'a pas de colonne matiere_id (une absence est par
+            // journée, pas par matière) — pas de jointure possible.
+            $stmt = \Core\Database::getInstance()->getConnection()->prepare(
+                "SELECT date_absence, type, NULL AS matiere_nom
+                 FROM vs_absences
+                 WHERE eleve_id = :eleve_id AND deleted_at IS NULL AND type = 'absence'
+                 ORDER BY date_absence DESC LIMIT 5"
             );
+            $stmt->execute([':eleve_id' => $eleve->id]);
+            $absencesRecentes = $stmt->fetchAll(\PDO::FETCH_OBJ);
         }
 
         $annonces      = $this->annonceModel->findPubliees('eleves');
@@ -157,24 +156,36 @@ class EspaceEleveController extends Controller
         if (!$eleve) { $this->renderCompteNonLie(); return; }
 
         $annee    = $this->currentAnnee();
-        $creneaux = (new CreneauModel())->findAllActifs();
-        $grid     = [];
-        $jours    = EmploiDuTempsModel::JOURS;
+        $jours    = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+        $repo     = new TimetableRepository();
 
+        $creneaux = array_map(function (array $p): object {
+            $p['is_pause'] = (bool)preg_match('/pause|récréation|recreation/i', $p['libelle']);
+            $p['heure_debut'] = substr($p['heure_debut'], 0, 5);
+            $p['heure_fin']   = substr($p['heure_fin'], 0, 5);
+            return (object)$p;
+        }, $repo->findAllPlages());
+
+        $seances = [];
         if ($eleve && $eleve->classe_id) {
-            $edtModel = new EmploiDuTempsModel();
-            $grid = $edtModel->getWeekGrid(
-                ['classe_id' => $eleve->classe_id],
-                $annee
-            );
+            $edt = $repo->findEdtByClasse((int)$eleve->classe_id, $annee, null, 'standard');
+            if ($edt !== null && $edt['statut'] === 'publie') {
+                $seances = array_map(function (array $s): object {
+                    $s['jour_semaine']   = $s['jour'];
+                    $s['creneau_id']     = $s['plage_id'];
+                    $s['couleur']        = $s['matiere_couleur'];
+                    $s['enseignant_nom'] = trim($s['enseignant_prenom'] . ' ' . $s['enseignant_nom']);
+                    return (object)$s;
+                }, $repo->findCreneauxByEdt((int)$edt['id']));
+            }
         }
 
         $this->render('eleve/emploi_du_temps', [
             'title'    => 'Mon emploi du temps',
             'eleve'    => $eleve,
             'creneaux' => $creneaux,
-            'grid'     => $grid,
             'jours'    => $jours,
+            'seances'  => $seances,
             'annee'    => $annee,
         ]);
     }
@@ -242,23 +253,24 @@ class EspaceEleveController extends Controller
         $dow   = (int)date('N'); // 1=Lun … 7=Dim
         if ($dow > 6) return [];
 
-        return $this->eleveModel->query(
-            "SELECT edt.*,
-                    m.nom AS matiere_nom,
-                    CONCAT(p.prenom, ' ', p.nom) AS prof_fullname,
-                    s.nom AS salle_nom,
-                    cr.heure_debut, cr.heure_fin, cr.nom AS creneau_nom,
-                    edt.couleur
-             FROM `emplois_du_temps` edt
-             JOIN `creneaux` cr ON cr.id = edt.creneau_id
-             JOIN `matieres` m  ON m.id  = edt.matiere_id
-             JOIN `professeurs` p ON p.id = edt.professeur_id
-             LEFT JOIN `salles` s ON s.id = edt.salle_id
-             WHERE edt.classe_id = ? AND edt.jour_semaine = ?
-             AND edt.annee_scolaire = ? AND edt.actif = 1
-             ORDER BY cr.heure_debut",
-            [$classeId, $dow, $annee]
-        );
+        $repo = new TimetableRepository();
+        $edt  = $repo->findEdtByClasse($classeId, $annee, null, 'standard');
+        if ($edt === null || $edt['statut'] !== 'publie') {
+            return [];
+        }
+
+        $creneaux = array_filter($repo->findCreneauxByEdt((int)$edt['id']), fn(array $c) => (int)$c['jour'] === $dow);
+
+        return array_map(function (array $c): object {
+            $c['matiere_nom']   = $c['matiere_nom'];
+            $c['prof_fullname'] = trim($c['enseignant_prenom'] . ' ' . $c['enseignant_nom']);
+            $c['salle_nom']     = $c['salle_nom'] ?? null;
+            $c['heure_debut']   = substr($c['plage_debut'], 0, 5);
+            $c['heure_fin']     = substr($c['plage_fin'], 0, 5);
+            $c['creneau_nom']   = $c['plage_libelle'];
+            $c['couleur']       = $c['matiere_couleur'];
+            return (object)$c;
+        }, array_values($creneaux));
     }
 
 }

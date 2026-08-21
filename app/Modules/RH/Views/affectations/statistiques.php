@@ -38,8 +38,7 @@ $statutBar = [
         <p class="text-sm text-slate-500 mt-0.5">Répartition par type, statut et département</p>
       </div>
     </div>
-    <a href="<?= BASE_URL ?>/v2/rh/affectations"
-       class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors flex-shrink-0">
+    <a href="<?= BASE_URL ?>/v2/rh/affectations" class="btn btn-outline flex-shrink-0">
       <i data-lucide="arrow-left" class="w-4 h-4"></i>
       Retour aux affectations
     </a>

@@ -185,12 +185,10 @@ if ($facture) {
 
         <!-- Actions -->
         <div class="flex gap-3 pt-2">
-            <button type="submit"
-                    class="flex-1 px-6 py-2.5 text-sm font-semibold text-white bg-violet-600 rounded-lg hover:bg-violet-700">
-                <i data-lucide="check" class="inline w-4 h-4 mr-1"></i> Enregistrer le paiement
+            <button type="submit" class="btn btn-primary flex-1">
+                <i data-lucide="check" class="w-4 h-4"></i> Enregistrer le paiement
             </button>
-            <a href="<?= BASE_URL ?>/v2/finance/factures/<?= $facture->id ?? '' ?>"
-               class="px-4 py-2.5 text-sm font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200">
+            <a href="<?= BASE_URL ?>/v2/finance/factures/<?= $facture->id ?? '' ?>" class="btn btn-secondary">
                 Annuler
             </a>
         </div>

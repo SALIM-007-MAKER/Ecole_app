@@ -10,7 +10,7 @@
 
     <div class="bg-white rounded-xl border border-slate-100 p-6">
         <form method="post"
-              action="<?= $planif ? '/v2/rapports/planifications/' . $planif['id'] . '/modifier' : '/v2/rapports/planifications' ?>"
+              action="<?= BASE_URL . ($planif ? '/v2/rapports/planifications/' . $planif['id'] . '/modifier' : '/v2/rapports/planifications') ?>"
               class="space-y-5">
             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
 

@@ -21,13 +21,12 @@ foreach ($competences as $c) {
       </p>
     </div>
     <div class="flex gap-2">
-      <a href="<?= BASE_URL ?>/v2/rh/formations" class="border border-slate-200 text-slate-600 px-4 py-2 rounded-lg text-sm hover:bg-slate-50 transition">
-        <i data-lucide="arrow-left" class="w-4 h-4 inline mr-1"></i>Retour
+      <a href="<?= BASE_URL ?>/v2/rh/formations" class="btn btn-secondary">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>Retour
       </a>
       <?php if ($employeId && $policy->canValidate($user)): ?>
-      <button onclick="document.getElementById('modal-comp').classList.remove('hidden')"
-              class="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-violet-700 transition">
-        <i data-lucide="plus" class="w-4 h-4 inline mr-1"></i>Valider compétence
+      <button onclick="document.getElementById('modal-comp').classList.remove('hidden')" class="btn btn-primary">
+        <i data-lucide="plus" class="w-4 h-4"></i>Valider compétence
       </button>
       <?php endif; ?>
     </div>
@@ -37,7 +36,7 @@ foreach ($competences as $c) {
   <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4">
     <form method="GET" class="flex gap-3 items-end">
       <div class="flex-1">
-        <label class="block text-xs text-slate-500 mb-1">Employé</label>
+        <label class="form-label text-xs mb-1">Employé</label>
         <select name="employe_id" class="form-select">
           <option value="">— Référentiel complet —</option>
           <?php foreach ($employes as $emp): ?>
@@ -47,8 +46,8 @@ foreach ($competences as $c) {
           <?php endforeach; ?>
         </select>
       </div>
-      <button type="submit" class="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-violet-700 transition">Afficher</button>
-      <a href="<?= BASE_URL ?>/v2/rh/formations/competences" class="border border-slate-200 text-slate-600 px-4 py-2 rounded-lg text-sm hover:bg-slate-50">Réinitialiser</a>
+      <button type="submit" class="btn btn-primary">Afficher</button>
+      <a href="<?= BASE_URL ?>/v2/rh/formations/competences" class="btn btn-secondary">Réinitialiser</a>
     </form>
   </div>
 
@@ -134,9 +133,8 @@ foreach ($competences as $c) {
         </div>
       </div>
       <div class="flex gap-3 mt-5">
-        <button type="submit" class="bg-violet-600 text-white px-5 py-2 rounded-lg text-sm hover:bg-violet-700 transition">Valider</button>
-        <button type="button" onclick="document.getElementById('modal-comp').classList.add('hidden')"
-                class="border border-slate-200 text-slate-600 px-5 py-2 rounded-lg text-sm hover:bg-slate-50 transition">Annuler</button>
+        <button type="submit" class="btn btn-primary">Valider</button>
+        <button type="button" onclick="document.getElementById('modal-comp').classList.add('hidden')" class="btn btn-secondary">Annuler</button>
       </div>
     </form>
   </div>

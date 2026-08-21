@@ -137,11 +137,11 @@ $errors     = $errors     ?? [];
 
             <!-- Actions -->
             <div class="p-5 flex justify-end gap-3">
-                <a href="<?= BASE_URL ?>/v2/finance/factures" class="px-4 py-2 text-sm text-slate-600">Annuler</a>
+                <a href="<?= BASE_URL ?>/v2/finance/factures" class="btn btn-secondary">Annuler</a>
                 <button type="submit"
                         onclick="return confirm('Lancer la génération en masse ? Cette opération peut créer de nombreuses factures.')"
-                        class="px-6 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700">
-                    <i data-lucide="zap" class="inline w-4 h-4 mr-1"></i> Lancer la génération
+                        class="btn btn-primary">
+                    <i data-lucide="zap" class="w-4 h-4"></i> Lancer la génération
                 </button>
             </div>
         </div>

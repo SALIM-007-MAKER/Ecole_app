@@ -117,10 +117,10 @@ function val(string $k, string $def = ''): string { global $old; return htmlspec
     </div>
 
     <div class="flex gap-3">
-      <button type="submit" class="px-6 py-2.5 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700">
+      <button type="submit" class="btn btn-primary">
         Créer la campagne
       </button>
-      <a href="<?= BASE_URL ?>/v2/rh/evaluations/campagnes" class="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">
+      <a href="<?= BASE_URL ?>/v2/rh/evaluations/campagnes" class="btn btn-secondary">
         Annuler
       </a>
     </div>

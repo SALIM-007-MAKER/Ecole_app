@@ -5,22 +5,25 @@ namespace App\Controllers;
 use Core\Controller;
 use Core\Session;
 use App\Models\EleveModel;
-use App\Models\AbsenceModel;
-use App\Models\JustificationModel;
 use App\Models\NotificationModel;
 use App\Models\AnnonceModel;
 use App\Modules\Academique\Repositories\PeriodeScolaireRepository;
 use App\Modules\Academique\Repositories\BulletinRepository;
 use App\Modules\Academique\Services\BulletinEngineFactory;
+use App\Modules\VieScolaire\Absences\DTO\JustificationDTO;
+use App\Modules\VieScolaire\Absences\Repositories\AbsenceRepository;
+use App\Modules\VieScolaire\Absences\Services\AbsenceService;
+use Core\Database;
 
 class ParentController extends Controller
 {
     private EleveModel                $eleveModel;
     private NotificationModel         $notifModel;
     private AnnonceModel              $annonceModel;
-    private JustificationModel        $justModel;
     private PeriodeScolaireRepository $periodeRepo;
     private BulletinRepository        $bulletinRepo;
+    private AbsenceRepository         $absenceRepo;
+    private AbsenceService            $absenceService;
 
     public function __construct()
     {
@@ -28,10 +31,11 @@ class ParentController extends Controller
         $this->eleveModel   = new EleveModel();
         $this->notifModel   = new NotificationModel();
         $this->annonceModel = new AnnonceModel();
-        $this->justModel    = new JustificationModel();
 
-        $this->periodeRepo  = new PeriodeScolaireRepository();
-        $this->bulletinRepo = new BulletinRepository();
+        $this->periodeRepo    = new PeriodeScolaireRepository();
+        $this->bulletinRepo   = new BulletinRepository();
+        $this->absenceRepo    = new AbsenceRepository();
+        $this->absenceService = new AbsenceService();
     }
 
     // ─── Dashboard ────────────────────────────────────────────────────────────
@@ -134,36 +138,47 @@ class ParentController extends Controller
         $eleveId = (int)$this->request->get('eleve_id', $enfants[0]->id ?? 0);
         $enfant  = $this->resolveEnfant((int)$eleveId, $enfants);
 
-        $absences      = [];
-        $stats         = null;
-        $absModel      = new AbsenceModel();
+        $absences = [];
+        $stats    = null;
 
         if ($enfant) {
-            // Note : `absences` n'a pas de colonne matiere_id (une absence est
-            // par journée/session, pas par matière) — pas de jointure possible
-            // vers `matieres`, la vue affiche donc "-" pour cette colonne.
-            $absences = $absModel->query(
-                "SELECT a.*, j.motif, j.statut AS justification_statut,
-                        (a.statut_justif = 'justifiee') AS justifiee,
-                        CONCAT(u.prenom, ' ', u.nom) AS enseignant_nom
-                 FROM `absences` a
-                 LEFT JOIN `justifications` j ON j.absence_id = a.id
-                 LEFT JOIN `users` u ON u.id = a.signale_par
-                 WHERE a.eleve_id = ?
-                 ORDER BY a.date_absence DESC, a.session",
-                [(int)$enfant->id]
-            );
+            $pdo = Database::getInstance()->getConnection();
 
-            $stats = $absModel->queryOne(
-                "SELECT
-                    COUNT(*) AS total,
-                    SUM(CASE WHEN type = 'absence' THEN 1 ELSE 0 END) AS absences,
-                    SUM(CASE WHEN type = 'retard'  THEN 1 ELSE 0 END) AS retards,
-                    SUM(CASE WHEN statut_justif = 'justifiee' THEN 1 ELSE 0 END) AS justifiees
-                 FROM `absences` a
-                 WHERE a.eleve_id = ?",
-                [(int)$enfant->id]
+            // Note : vs_absences n'a pas de colonne matiere_id (une absence
+            // est par journée, pas par matière) — pas de jointure possible
+            // vers `matieres`, la vue affiche donc "-" pour cette colonne.
+            $stmt = $pdo->prepare(
+                "SELECT a.date_absence, a.type,
+                        NULL AS matiere_nom, NULL AS creneau,
+                        (a.statut = 'justifiee') AS justifiee,
+                        COALESCE(j.description, a.observation) AS motif
+                 FROM vs_absences a
+                 LEFT JOIN vs_justifications_absences j ON j.absence_id = a.id
+                 WHERE a.eleve_id = :eleve_id AND a.deleted_at IS NULL AND a.type = 'absence'
+                 ORDER BY a.date_absence DESC"
             );
+            $stmt->execute([':eleve_id' => $enfant->id]);
+            $absences = $stmt->fetchAll(\PDO::FETCH_OBJ);
+
+            $statStmt = $pdo->prepare(
+                "SELECT COUNT(*) AS total,
+                        SUM(type = 'absence') AS absences,
+                        SUM(statut = 'justifiee') AS justifiees
+                 FROM vs_absences
+                 WHERE eleve_id = :eleve_id AND deleted_at IS NULL AND type = 'absence'"
+            );
+            $statStmt->execute([':eleve_id' => $enfant->id]);
+            $stats = $statStmt->fetch(\PDO::FETCH_OBJ) ?: null;
+
+            // Les retards vivent dans le domaine Retards (vs_retards), pas
+            // dans les absences — comptés séparément pour la carte KPI.
+            $retardStmt = $pdo->prepare(
+                "SELECT COUNT(*) FROM vs_retards WHERE eleve_id = :eleve_id AND deleted_at IS NULL"
+            );
+            $retardStmt->execute([':eleve_id' => $enfant->id]);
+            if ($stats) {
+                $stats->retards = (int)$retardStmt->fetchColumn();
+            }
         }
 
         $this->render('parent/absences', [
@@ -189,8 +204,7 @@ class ParentController extends Controller
             return;
         }
 
-        $absModel = new AbsenceModel();
-        $absence  = $absModel->findById((int)$id);
+        $absence = $this->absenceRepo->findById((int)$id);
         if (!$absence) {
             Session::flash('error', 'Absence introuvable.');
             $this->redirect(BASE_URL . '/parent/absences');
@@ -201,17 +215,21 @@ class ParentController extends Controller
         $user    = $this->currentUser();
         $enfants = $this->eleveModel->findByParent((int)$user['id']);
         $ids     = array_column($enfants, 'id');
-        if (!in_array($absence->eleve_id, $ids, false)) {
+        if (!in_array((int)$absence['eleve_id'], $ids, false)) {
             Session::flash('error', 'Action non autorisée.');
             $this->redirect(BASE_URL . '/parent/absences');
             return;
         }
 
-        $this->justModel->upsert((int)$id, (int)$user['id'], $motif, null);
-        $absModel->updateStatutJustif((int)$id, 'en_attente');
+        try {
+            $dto = new JustificationDTO(motifId: null, description: $motif, fichier: null);
+            $this->absenceService->soumettrJustification((int)$id, $dto, (int)$user['id']);
+            Session::flash('success', 'Justification soumise avec succès.');
+        } catch (\Throwable $e) {
+            Session::flash('error', $e->getMessage());
+        }
 
-        Session::flash('success', 'Justification soumise avec succès.');
-        $this->redirect(BASE_URL . '/parent/absences?eleve_id=' . $absence->eleve_id);
+        $this->redirect(BASE_URL . '/parent/absences?eleve_id=' . $absence['eleve_id']);
     }
 
     // ─── Paiements ────────────────────────────────────────────────────────────
@@ -259,13 +277,13 @@ class ParentController extends Controller
 
     private function countAbsencesMois(int $eleveId): int
     {
-        $r = $this->eleveModel->queryOne(
-            "SELECT COUNT(*) AS n FROM `absences`
-             WHERE `eleve_id` = ?
-             AND `date_absence` >= DATE_FORMAT(NOW(), '%Y-%m-01')",
-            [$eleveId]
+        $stmt = Database::getInstance()->getConnection()->prepare(
+            "SELECT COUNT(*) AS n FROM vs_absences
+             WHERE eleve_id = :eleve_id AND type = 'absence' AND deleted_at IS NULL
+               AND date_absence >= DATE_FORMAT(NOW(), '%Y-%m-01')"
         );
-        return (int)($r?->n ?? 0);
+        $stmt->execute([':eleve_id' => $eleveId]);
+        return (int)$stmt->fetchColumn();
     }
 
     /**

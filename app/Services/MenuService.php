@@ -190,11 +190,11 @@ class MenuService
                 'id' => 'academique',
                 'label' => 'Académique',
                 'icon' => 'book-open-check',
-                'permissions' => ['notes.view', 'academique.evaluations.view', 'bulletins.view', 'absences.view'],
+                'permissions' => ['notes.view', 'academique.evaluations.view', 'bulletins.view', 'attendance.view'],
                 'children' => [
                     ['label' => 'Notes', 'icon' => 'pencil-line', 'url' => '/v2/academique/evaluations', 'permissions' => ['academique.evaluations.view']],
                     ['label' => 'Bulletins', 'icon' => 'file-text', 'url' => '/bulletins', 'permissions' => ['bulletins.view']],
-                    ['label' => 'Absences', 'icon' => 'calendar-x', 'url' => '/absences', 'permissions' => ['absences.view']],
+                    ['label' => 'Absences', 'icon' => 'calendar-x', 'url' => '/v2/vie-scolaire/absences', 'permissions' => ['attendance.view']],
                 ],
             ],
             [
@@ -255,12 +255,12 @@ class MenuService
                 'id' => 'planning',
                 'label' => 'Planning',
                 'icon' => 'calendar-days',
-                'permissions' => ['emploi_du_temps.view'],
+                'permissions' => ['timetable.view'],
                 'children' => [
-                    ['label' => 'Hebdomadaire', 'icon' => 'calendar', 'url' => '/emplois-du-temps'],
-                    ['label' => 'Mensuel', 'icon' => 'calendar-range', 'url' => '/emplois-du-temps/mensuel'],
-                    ['label' => 'Salles', 'icon' => 'door-open', 'url' => '/salles', 'permissions' => ['emploi_du_temps.view']],
-                    ['label' => 'Créneaux', 'icon' => 'clock', 'url' => '/creneaux', 'permissions' => ['emploi_du_temps.view']],
+                    ['label' => 'Emplois du temps', 'icon' => 'calendar', 'url' => '/v2/vie-scolaire/emplois-du-temps', 'permissions' => ['timetable.view']],
+                    ['label' => 'Remplacements', 'icon' => 'repeat', 'url' => '/v2/vie-scolaire/emplois-du-temps/remplacements', 'permissions' => ['timetable.view']],
+                    ['label' => 'Salles', 'icon' => 'door-open', 'url' => '/v2/vie-scolaire/emplois-du-temps/salles', 'permissions' => ['timetable.view']],
+                    ['label' => 'Plages horaires', 'icon' => 'clock', 'url' => '/v2/vie-scolaire/emplois-du-temps/plages', 'permissions' => ['timetable.view']],
                 ],
             ],
             [
@@ -354,11 +354,11 @@ class MenuService
                 'id' => 'academique',
                 'label' => 'Académique',
                 'icon' => 'book-open-check',
-                'permissions' => ['notes.view', 'academique.evaluations.view', 'bulletins.view', 'absences.view'],
+                'permissions' => ['notes.view', 'academique.evaluations.view', 'bulletins.view', 'attendance.view'],
                 'children' => [
                     ['label' => 'Notes', 'icon' => 'pencil-line', 'url' => '/v2/academique/evaluations', 'permissions' => ['academique.evaluations.view']],
                     ['label' => 'Bulletins', 'icon' => 'file-text', 'url' => '/bulletins', 'permissions' => ['bulletins.view']],
-                    ['label' => 'Absences', 'icon' => 'calendar-x', 'url' => '/absences', 'permissions' => ['absences.view']],
+                    ['label' => 'Absences', 'icon' => 'calendar-x', 'url' => '/v2/vie-scolaire/absences', 'permissions' => ['attendance.view']],
                 ],
             ],
             [
@@ -419,10 +419,10 @@ class MenuService
                 'id' => 'planning',
                 'label' => 'Planning',
                 'icon' => 'calendar-days',
-                'permissions' => ['emploi_du_temps.view'],
+                'permissions' => ['timetable.view'],
                 'children' => [
-                    ['label' => 'Hebdomadaire', 'icon' => 'calendar', 'url' => '/emplois-du-temps'],
-                    ['label' => 'Mensuel', 'icon' => 'calendar-range', 'url' => '/emplois-du-temps/mensuel'],
+                    ['label' => 'Emplois du temps', 'icon' => 'calendar', 'url' => '/v2/vie-scolaire/emplois-du-temps', 'permissions' => ['timetable.view']],
+                    ['label' => 'Remplacements', 'icon' => 'repeat', 'url' => '/v2/vie-scolaire/emplois-du-temps/remplacements', 'permissions' => ['timetable.view']],
                 ],
             ],
             [
@@ -586,10 +586,10 @@ class MenuService
                 'id' => 'academique',
                 'label' => 'Académique',
                 'icon' => 'book-open-check',
-                'permissions' => ['notes.view', 'academique.evaluations.view', 'absences.view'],
+                'permissions' => ['notes.view', 'academique.evaluations.view', 'attendance.view'],
                 'children' => [
                     ['label' => 'Mes notes', 'icon' => 'pencil-line', 'url' => '/v2/academique/evaluations', 'permissions' => ['academique.evaluations.view']],
-                    ['label' => 'Mes absences', 'icon' => 'calendar-x', 'url' => '/absences', 'permissions' => ['absences.view']],
+                    ['label' => 'Mes absences', 'icon' => 'calendar-x', 'url' => '/v2/vie-scolaire/absences', 'permissions' => ['attendance.view']],
                 ],
             ],
             [
@@ -607,10 +607,9 @@ class MenuService
                 'id' => 'planning',
                 'label' => 'Planning',
                 'icon' => 'calendar-days',
-                'permissions' => ['emploi_du_temps.view'],
+                'permissions' => ['timetable.view'],
                 'children' => [
-                    ['label' => 'Mon emploi du temps', 'icon' => 'calendar', 'url' => '/emplois-du-temps'],
-                    ['label' => 'Vue mensuelle', 'icon' => 'calendar-range', 'url' => '/emplois-du-temps/mensuel'],
+                    ['label' => 'Mon emploi du temps', 'icon' => 'calendar', 'url' => '/v2/vie-scolaire/emplois-du-temps/enseignant', 'permissions' => ['timetable.view']],
                 ],
             ],
             [
@@ -733,7 +732,7 @@ class MenuService
                 'id' => 'absences',
                 'label' => 'Mes absences',
                 'icon' => 'calendar-x',
-                'url' => '/absences',
+                'url' => '/v2/vie-scolaire/absences',
                 'permissions' => [],
             ],
             [
@@ -926,21 +925,55 @@ class MenuService
     }
 
     /**
-     * Vérifie si un menu item est actif selon l'URI actuelle
+     * Vérifie si un menu item est actif selon l'URI actuelle.
+     *
+     * Correction du 21/08/2026 : remplace un `str_contains($currentUri,
+     * $menuUrl)` naïf, responsable d'un état actif instable dans la
+     * sidebar. Un simple test de sous-chaîne matche n'importe où dans
+     * l'URL, sans respecter les frontières de segments ni retirer le
+     * préfixe BASE_URL — ex. le lien "Rapports financiers"
+     * (`/v2/finance/rapports`) matchait aussi `/v2/finance/rapports/dashboard`
+     * ("Vue d'ensemble"), les deux s'allumaient en même temps sur cette
+     * page. Utilise désormais la même normalisation de chemin que
+     * resolveActiveGroupId() (retrait de BASE_URL, de la query string, du
+     * slash final) et n'accepte qu'une correspondance exacte ou un
+     * sous-chemin réel (frontière `/`), jamais une sous-chaîne arbitraire.
      */
     public static function isMenuActive(string $menuUrl, string $currentUri): bool
     {
-        return str_contains($currentUri, $menuUrl);
+        if ($menuUrl === '' || $menuUrl === '/') {
+            return false; // Un menu "racine" ne doit jamais matcher toutes les pages.
+        }
+
+        $current = self::normalizePath($currentUri);
+        $target  = self::normalizePath($menuUrl);
+
+        return $current === $target || str_starts_with($current, $target . '/');
     }
 
     /**
-     * Récupère les classes CSS pour un menu item actif
+     * Récupère les classes CSS pour un menu item actif.
+     *
+     * Correction du 21/08/2026 : compare désormais $menuUrl à l'unique
+     * gagnant résolu pour toute la sidebar par resolveActiveItemUrl()
+     * (passé en $activeItemUrl, calculé une seule fois par la vue — voir
+     * navigation.php), au lieu de faire matcher indépendamment chaque item
+     * contre l'URL courante. Un matching indépendant par item pouvait
+     * allumer deux liens à la fois quand l'un est un sous-chemin réel de
+     * l'autre (ex. "Vue d'ensemble" `/v2/finance/rapports/dashboard` est
+     * un sous-chemin de "Rapports financiers" `/v2/finance/rapports` — les
+     * deux sont des entrées sœurs du même groupe, pas une hiérarchie
+     * parent/enfant dans le menu) : la comparaison au gagnant unique
+     * élimine ce double allumage, avec la même logique "correspondance
+     * exacte prioritaire, sinon préfixe le plus long" déjà utilisée pour
+     * ouvrir le bon groupe (resolveActiveGroupId) et le titre de page
+     * (resolveActiveLabel).
      */
-    public static function getMenuItemClass(string $menuUrl, string $currentUri, bool $isSubmenu = false): string
+    public static function getMenuItemClass(string $menuUrl, ?string $activeItemUrl, bool $isSubmenu = false): string
     {
         $baseClass = $isSubmenu ? 'nav-sub' : 'nav-item';
 
-        if (self::isMenuActive($menuUrl, $currentUri)) {
+        if ($menuUrl !== '' && $menuUrl === $activeItemUrl) {
             return $baseClass . ' nav-active';
         }
 
@@ -1038,16 +1071,19 @@ class MenuService
     }
 
     /**
-     * Résout le libellé du menu (top-level ou enfant de groupe) correspondant
-     * le mieux à l'URL courante — sert de titre de page par défaut quand une
-     * vue ne définit pas explicitement $title, pour que le header reste
-     * toujours synchronisé avec la navigation.
+     * Résout l'unique item de menu (top-level ou enfant de groupe) qui
+     * correspond le mieux à l'URL courante — correspondance exacte
+     * prioritaire, sinon préfixe de chemin le plus long (même règle que
+     * resolveActiveGroupId, appliquée ici item par item plutôt que
+     * groupe par groupe). Base commune de resolveActiveLabel() et
+     * resolveActiveItemUrl() : un seul et même gagnant pour tout ce que
+     * la sidebar doit synchroniser (libellé de page, lien surligné).
      */
-    public static function resolveActiveLabel(array $menus, string $currentUri): ?string
+    private static function resolveActiveItem(array $menus, string $currentUri): ?array
     {
         $current = self::normalizePath($currentUri);
 
-        $bestLabel = null;
+        $best = null;
         $bestPrefixLength = -1;
 
         foreach ($menus as $item) {
@@ -1057,23 +1093,47 @@ class MenuService
 
             foreach ($candidates as $candidate) {
                 $candidatePath = self::normalizePath($candidate['url'] ?? '');
-                $label = $candidate['label'] ?? null;
-                if ($candidatePath === '' || $candidatePath === '/' || $label === null) {
+                if ($candidatePath === '' || $candidatePath === '/') {
                     continue;
                 }
 
                 if ($current === $candidatePath) {
                     // Correspondance exacte : priorité absolue.
-                    return $label;
+                    return $candidate;
                 }
 
                 if (str_starts_with($current, $candidatePath . '/') && strlen($candidatePath) > $bestPrefixLength) {
                     $bestPrefixLength = strlen($candidatePath);
-                    $bestLabel = $label;
+                    $best = $candidate;
                 }
             }
         }
 
-        return $bestLabel;
+        return $best;
+    }
+
+    /**
+     * Libellé du menu correspondant le mieux à l'URL courante — sert de
+     * titre de page par défaut quand une vue ne définit pas explicitement
+     * $title, pour que le header reste toujours synchronisé avec la
+     * navigation.
+     */
+    public static function resolveActiveLabel(array $menus, string $currentUri): ?string
+    {
+        return self::resolveActiveItem($menus, $currentUri)['label'] ?? null;
+    }
+
+    /**
+     * URL brute (telle que stockée dans la structure de menu) de l'item
+     * actif — LE lien unique à surligner dans la sidebar pour l'URL
+     * courante. À calculer une seule fois par rendu et comparer par
+     * égalité stricte dans getMenuItemClass(), plutôt que de laisser
+     * chaque item se juger « actif » indépendamment des autres (ce qui
+     * pouvait en allumer plusieurs à la fois — voir le commentaire de
+     * getMenuItemClass()).
+     */
+    public static function resolveActiveItemUrl(array $menus, string $currentUri): ?string
+    {
+        return self::resolveActiveItem($menus, $currentUri)['url'] ?? null;
     }
 }

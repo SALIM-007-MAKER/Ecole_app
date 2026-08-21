@@ -35,15 +35,16 @@ $typeLabels = [
     </div>
     <div class="flex items-center gap-2 flex-wrap">
         <?php if (epAbs($perms, 'attendance.view')): ?>
-        <a href="<?= BASE_URL ?>/v2/vie-scolaire/absences/statistiques"
-           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+        <a href="<?= BASE_URL ?>/v2/vie-scolaire/absences/statistiques" class="btn btn-outline">
             <i data-lucide="bar-chart-2" class="w-4 h-4"></i>Statistiques
         </a>
         <?php endif; ?>
         <?php if (epAbs($perms, 'attendance.create')): ?>
-        <a href="<?= BASE_URL ?>/v2/vie-scolaire/absences/create"
-           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition-colors">
-            <i data-lucide="plus" class="w-4 h-4"></i>Nouvelle absence
+        <a href="<?= BASE_URL ?>/v2/vie-scolaire/absences/pointage" class="btn btn-primary">
+            <i data-lucide="check-square" class="w-4 h-4"></i>Pointage journalier
+        </a>
+        <a href="<?= BASE_URL ?>/v2/vie-scolaire/absences/create" class="btn btn-secondary">
+            <i data-lucide="plus" class="w-4 h-4"></i>Saisie unitaire
         </a>
         <?php endif; ?>
     </div>

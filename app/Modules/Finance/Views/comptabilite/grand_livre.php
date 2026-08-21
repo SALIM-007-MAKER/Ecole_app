@@ -23,7 +23,7 @@ $fmt = fn(float $v): string => number_format($v, 0, ',', ' ') . ' XOF';
   <!-- Filtres -->
   <div class="bg-white rounded-xl border border-slate-200 p-4">
     <form method="GET" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-      <select name="exercice_id" onchange="this.form.submit()" class="rounded-lg border border-slate-200 px-3 py-2 text-sm">
+      <select name="exercice_id" onchange="this.form.submit()" class="form-select text-sm">
         <option value="">Exercice courant</option>
         <?php foreach ($exercices as $ex): ?>
         <option value="<?= $ex->id ?>" <?= ($filters->exerciceId ?? 0) == $ex->id ? 'selected' : '' ?>>
@@ -32,14 +32,14 @@ $fmt = fn(float $v): string => number_format($v, 0, ',', ' ') . ' XOF';
         <?php endforeach; ?>
       </select>
 
-      <select name="classe" class="rounded-lg border border-slate-200 px-3 py-2 text-sm">
+      <select name="classe" class="form-select text-sm">
         <option value="">Toutes classes</option>
         <?php foreach ([1=>'Classe 1 — Capitaux',4=>'Classe 4 — Tiers',5=>'Classe 5 — Financier',6=>'Classe 6 — Charges',7=>'Classe 7 — Produits'] as $k=>$v): ?>
         <option value="<?= $k ?>" <?= ($filters->classe ?? '') == $k ? 'selected' : '' ?>><?= $v ?></option>
         <?php endforeach; ?>
       </select>
 
-      <select name="type" class="rounded-lg border border-slate-200 px-3 py-2 text-sm">
+      <select name="type" class="form-select text-sm">
         <option value="">Tous types</option>
         <option value="actif"   <?= ($filters->type ?? '') === 'actif'   ? 'selected' : '' ?>>Actif</option>
         <option value="passif"  <?= ($filters->type ?? '') === 'passif'  ? 'selected' : '' ?>>Passif</option>
@@ -48,15 +48,15 @@ $fmt = fn(float $v): string => number_format($v, 0, ',', ' ') . ' XOF';
       </select>
 
       <input type="text" name="compte_code" placeholder="Code compte (ex: 53)" value="<?= htmlspecialchars($filters->compteCode ?? '') ?>"
-             class="rounded-lg border border-slate-200 px-3 py-2 text-sm">
+             class="form-input text-sm">
       <input type="date" name="date_debut" value="<?= htmlspecialchars($filters->dateDebut ?? '') ?>"
-             class="rounded-lg border border-slate-200 px-3 py-2 text-sm">
+             class="form-input text-sm">
       <input type="date" name="date_fin" value="<?= htmlspecialchars($filters->dateFin ?? '') ?>"
-             class="rounded-lg border border-slate-200 px-3 py-2 text-sm">
+             class="form-input text-sm">
 
       <div class="flex gap-2 col-span-2 md:col-span-1">
-        <button class="flex-1 bg-violet-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-violet-700">Filtrer</button>
-        <a href="<?= BASE_URL ?>/v2/finance/comptabilite/grand-livre" class="flex-1 bg-slate-100 text-slate-600 rounded-lg py-2 text-sm font-medium hover:bg-slate-200 text-center">Reset</a>
+        <button class="btn btn-primary flex-1">Filtrer</button>
+        <a href="<?= BASE_URL ?>/v2/finance/comptabilite/grand-livre" class="btn btn-secondary flex-1">Reset</a>
       </div>
     </form>
   </div>

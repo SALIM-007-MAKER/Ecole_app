@@ -25,21 +25,18 @@ $parStatut = array_column($stats['par_statut'] ?? [], 'nb', 'statut');
       </div>
     </div>
     <div class="flex gap-2 flex-wrap flex-shrink-0">
-      <a href="<?= BASE_URL ?>/v2/rh/affectations/statistiques"
-         class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
+      <a href="<?= BASE_URL ?>/v2/rh/affectations/statistiques" class="btn btn-outline">
         <i data-lucide="bar-chart-2" class="w-4 h-4"></i>
         Statistiques
       </a>
       <?php if ($canExport): ?>
-        <a href="<?= BASE_URL ?>/v2/rh/affectations/export?<?= http_build_query($_GET) ?>"
-           class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
+        <a href="<?= BASE_URL ?>/v2/rh/affectations/export?<?= http_build_query($_GET) ?>" class="btn btn-outline">
           <i data-lucide="download" class="w-4 h-4"></i>
           Export CSV
         </a>
       <?php endif; ?>
       <?php if ($canCreate): ?>
-        <a href="<?= BASE_URL ?>/v2/rh/affectations/create"
-           class="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors">
+        <a href="<?= BASE_URL ?>/v2/rh/affectations/create" class="btn btn-primary">
           <i data-lucide="plus" class="w-4 h-4"></i>
           Nouvelle affectation
         </a>
@@ -93,12 +90,12 @@ $parStatut = array_column($stats['par_statut'] ?? [], 'nb', 'statut');
   <!-- Filtres -->
   <form method="GET" class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 mb-6 flex flex-wrap gap-4 items-end">
     <div class="flex-1 min-w-40">
-      <label class="block text-xs font-medium text-slate-600 mb-1">Recherche</label>
+      <label class="form-label text-xs mb-1">Recherche</label>
       <input type="text" name="q" value="<?= e($filters->q) ?>" placeholder="Nom ou matricule..."
              class="form-input">
     </div>
     <div>
-      <label class="block text-xs font-medium text-slate-600 mb-1">Type</label>
+      <label class="form-label text-xs mb-1">Type</label>
       <select name="type" class="form-select">
         <option value="">Tous</option>
         <?php foreach ($model::TYPES as $k => $label): ?>
@@ -107,7 +104,7 @@ $parStatut = array_column($stats['par_statut'] ?? [], 'nb', 'statut');
       </select>
     </div>
     <div>
-      <label class="block text-xs font-medium text-slate-600 mb-1">Statut</label>
+      <label class="form-label text-xs mb-1">Statut</label>
       <select name="statut" class="form-select">
         <option value="">Tous</option>
         <?php foreach ($model::STATUTS as $k => $label): ?>
@@ -116,7 +113,7 @@ $parStatut = array_column($stats['par_statut'] ?? [], 'nb', 'statut');
       </select>
     </div>
     <div>
-      <label class="block text-xs font-medium text-slate-600 mb-1">Département</label>
+      <label class="form-label text-xs mb-1">Département</label>
       <select name="departement_id" class="form-select">
         <option value="">Tous</option>
         <?php foreach ($departements as $d): ?>
@@ -124,7 +121,7 @@ $parStatut = array_column($stats['par_statut'] ?? [], 'nb', 'statut');
         <?php endforeach; ?>
       </select>
     </div>
-    <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white text-sm font-medium rounded-lg hover:bg-violet-700 transition-colors">
+    <button type="submit" class="btn btn-primary">
       <i data-lucide="filter" class="w-4 h-4"></i> Filtrer
     </button>
     <a href="<?= BASE_URL ?>/v2/rh/affectations" class="text-sm text-slate-500 hover:text-slate-700 self-end py-2">Réinitialiser</a>

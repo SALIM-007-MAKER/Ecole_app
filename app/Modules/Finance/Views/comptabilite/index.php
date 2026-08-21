@@ -36,13 +36,13 @@ $pct = fn(float $v, float $t): string => $t > 0 ? number_format(($v / $t) * 100,
       </div>
     </div>
     <div class="flex gap-2 flex-wrap flex-shrink-0">
-      <a href="<?= BASE_URL ?>/v2/finance/comptabilite/journal" class="inline-flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors">
+      <a href="<?= BASE_URL ?>/v2/finance/comptabilite/journal" class="btn btn-primary">
         <i data-lucide="book-open" class="w-4 h-4"></i>Journal
       </a>
-      <a href="<?= BASE_URL ?>/v2/finance/comptabilite/balance" class="inline-flex items-center gap-2 bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
+      <a href="<?= BASE_URL ?>/v2/finance/comptabilite/balance" class="btn btn-outline">
         <i data-lucide="scale" class="w-4 h-4"></i>Balance
       </a>
-      <a href="<?= BASE_URL ?>/v2/finance/comptabilite/grand-livre" class="inline-flex items-center gap-2 bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
+      <a href="<?= BASE_URL ?>/v2/finance/comptabilite/grand-livre" class="btn btn-outline">
         <i data-lucide="layers" class="w-4 h-4"></i>Grand Livre
       </a>
     </div>
@@ -53,7 +53,7 @@ $pct = fn(float $v, float $t): string => $t > 0 ? number_format(($v / $t) * 100,
     <i data-lucide="alert-triangle" class="w-10 h-10 text-amber-500 mx-auto mb-3"></i>
     <p class="text-amber-800 font-medium text-lg">Aucun exercice comptable ouvert</p>
     <p class="text-amber-600 text-sm mt-1 mb-4">Créez un exercice pour commencer à enregistrer des écritures comptables.</p>
-    <a href="<?= BASE_URL ?>/v2/finance/comptabilite/exercices/create" class="inline-flex items-center gap-2 bg-amber-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-amber-700">
+    <a href="<?= BASE_URL ?>/v2/finance/comptabilite/exercices/create" class="btn btn-warning">
       <i data-lucide="plus" class="w-4 h-4"></i>Créer un exercice
     </a>
   </div>
@@ -121,7 +121,7 @@ $pct = fn(float $v, float $t): string => $t > 0 ? number_format(($v / $t) * 100,
       ['/v2/finance/comptabilite/balance',         'scale',      'bg-emerald-50 text-emerald-700 border-emerald-200','Balance',   'Vérification équilibre'],
     ]; ?>
     <?php foreach ($navItems as [$url, $icon, $cls, $title, $sub]): ?>
-    <a href="<?= $url ?>" class="bg-white border <?= $cls ?> rounded-xl p-4 hover:shadow-sm transition-shadow group">
+    <a href="<?= BASE_URL . $url ?>" class="bg-white border <?= $cls ?> rounded-xl p-4 hover:shadow-sm transition-shadow group">
       <i data-lucide="<?= $icon ?>" class="w-6 h-6 mb-2"></i>
       <p class="font-semibold text-sm"><?= $title ?></p>
       <p class="text-xs opacity-70 mt-0.5"><?= $sub ?></p>

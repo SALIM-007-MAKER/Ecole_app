@@ -24,13 +24,11 @@
             </div>
         </div>
         <div class="flex items-center gap-2 flex-wrap flex-shrink-0">
-            <a href="<?= BASE_URL ?>/v2/finance/frais/categories"
-               class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
+            <a href="<?= BASE_URL ?>/v2/finance/frais/categories" class="btn btn-outline">
                 <i data-lucide="tag" class="w-4 h-4"></i> Catégories
             </a>
             <?php if ($canCreate): ?>
-            <a href="<?= BASE_URL ?>/v2/finance/frais/create"
-               class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700 transition-colors">
+            <a href="<?= BASE_URL ?>/v2/finance/frais/create" class="btn btn-primary">
                 <i data-lucide="plus" class="w-4 h-4"></i> Nouveau frais
             </a>
             <?php endif; ?>
@@ -102,10 +100,10 @@
             </select>
         </div>
         <div class="flex items-center gap-2 mt-3">
-            <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700">
-                <i data-lucide="search" class="inline w-4 h-4 mr-1"></i> Filtrer
+            <button type="submit" class="btn btn-primary">
+                <i data-lucide="search" class="w-4 h-4"></i> Filtrer
             </button>
-            <a href="<?= BASE_URL ?>/v2/finance/frais" class="px-4 py-2 text-sm text-slate-500 hover:text-slate-700">Réinitialiser</a>
+            <a href="<?= BASE_URL ?>/v2/finance/frais" class="text-sm text-slate-500 hover:text-slate-700">Réinitialiser</a>
         </div>
     </form>
 
@@ -306,10 +304,10 @@
             </div>
             <div class="flex justify-end gap-3">
                 <button type="button" onclick="document.getElementById('modal-archiver').classList.add('hidden')"
-                        class="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">
+                        class="btn btn-secondary">
                     Annuler
                 </button>
-                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700">
+                <button type="submit" class="btn btn-warning">
                     Archiver
                 </button>
             </div>

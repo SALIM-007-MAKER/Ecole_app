@@ -79,7 +79,7 @@
 
 <script>
 function refreshWidget(widgetId) {
-  fetch(`/api/v2/portals/admin/widgets/${encodeURIComponent(widgetId)}`, {
+  fetch(`<?= BASE_URL ?>/api/v2/portals/admin/widgets/${encodeURIComponent(widgetId)}`, {
     headers: {'Accept': 'application/json'}
   }).then(r => r.json()).then(data => {
     console.log('Widget refreshed:', widgetId, data);

@@ -58,24 +58,24 @@ $taux   = $model::tauxCompletion((int)($session['nb_inscrits'] ?? 0), (int)($ses
       <?php if (in_array('ouvrir', $trans) && $policy->canUpdate($user)): ?>
       <form method="POST" action="<?= BASE_URL ?>/v2/rh/formations/sessions/<?= (int)$session['id'] ?>/ouvrir">
         <?= \Core\Csrf::field() ?>
-        <button class="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-violet-700 transition">
-          <i data-lucide="unlock" class="w-4 h-4 inline mr-1"></i>Ouvrir inscriptions
+        <button class="btn btn-primary">
+          <i data-lucide="unlock" class="w-4 h-4"></i>Ouvrir inscriptions
         </button>
       </form>
       <?php endif; ?>
       <?php if (in_array('demarrer', $trans) && $policy->canUpdate($user)): ?>
       <form method="POST" action="<?= BASE_URL ?>/v2/rh/formations/sessions/<?= (int)$session['id'] ?>/demarrer">
         <?= \Core\Csrf::field() ?>
-        <button class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 transition">
-          <i data-lucide="play" class="w-4 h-4 inline mr-1"></i>Démarrer
+        <button class="btn btn-success">
+          <i data-lucide="play" class="w-4 h-4"></i>Démarrer
         </button>
       </form>
       <?php endif; ?>
       <?php if (in_array('terminer', $trans) && $policy->canValidate($user)): ?>
       <form method="POST" action="<?= BASE_URL ?>/v2/rh/formations/sessions/<?= (int)$session['id'] ?>/terminer">
         <?= \Core\Csrf::field() ?>
-        <button class="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-violet-700 transition">
-          <i data-lucide="check-circle" class="w-4 h-4 inline mr-1"></i>Terminer
+        <button class="btn btn-primary">
+          <i data-lucide="check-circle" class="w-4 h-4"></i>Terminer
         </button>
       </form>
       <?php endif; ?>
@@ -83,8 +83,8 @@ $taux   = $model::tauxCompletion((int)($session['nb_inscrits'] ?? 0), (int)($ses
       <form method="POST" action="<?= BASE_URL ?>/v2/rh/formations/sessions/<?= (int)$session['id'] ?>/annuler"
             onsubmit="return confirm('Confirmer l\'annulation de cette session ?')">
         <?= \Core\Csrf::field() ?>
-        <button class="border border-red-300 text-red-600 px-4 py-2 rounded-lg text-sm hover:bg-red-50 transition">
-          <i data-lucide="x-circle" class="w-4 h-4 inline mr-1"></i>Annuler session
+        <button class="btn btn-outline-danger">
+          <i data-lucide="x-circle" class="w-4 h-4"></i>Annuler session
         </button>
       </form>
       <?php endif; ?>
@@ -107,9 +107,8 @@ $taux   = $model::tauxCompletion((int)($session['nb_inscrits'] ?? 0), (int)($ses
         <div class="p-4 border-b border-slate-100 flex justify-between items-center">
           <h3 class="font-semibold text-slate-700">Participants (<?= count($inscriptions) ?>)</h3>
           <?php if ($policy->canEnroll($user) && in_array($statut, ['planifiee','ouverte'])): ?>
-          <button onclick="document.getElementById('modal-inscrire').classList.remove('hidden')"
-                  class="bg-violet-600 text-white px-3 py-1.5 rounded-lg text-xs hover:bg-violet-700 transition">
-            <i data-lucide="user-plus" class="w-3.5 h-3.5 inline mr-1"></i>Inscrire
+          <button onclick="document.getElementById('modal-inscrire').classList.remove('hidden')" class="btn btn-primary btn-sm">
+            <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>Inscrire
           </button>
           <?php endif; ?>
         </div>
@@ -157,14 +156,13 @@ $taux   = $model::tauxCompletion((int)($session['nb_inscrits'] ?? 0), (int)($ses
                     <?= \Core\Csrf::field() ?>
                     <input type="hidden" name="session_id" value="<?= (int)$session['id'] ?>">
                     <input type="hidden" name="present" value="<?= $insc['statut'] === 'present' ? '0' : '1' ?>">
-                    <button class="text-xs border border-slate-200 px-2 py-1 rounded hover:bg-slate-50">
+                    <button class="btn btn-secondary btn-sm">
                       <?= $insc['statut'] === 'present' ? 'Absent' : 'Présent' ?>
                     </button>
                   </form>
                   <?php endif; ?>
                   <?php if ($policy->canValidate($user) && !in_array($insc['statut'], ['valide','annule'])): ?>
-                  <button onclick="openValiderModal(<?= (int)$insc['id'] ?>, '<?= $e($insc['employe_nom'] ?? '') ?>')"
-                          class="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700">
+                  <button onclick="openValiderModal(<?= (int)$insc['id'] ?>, '<?= $e($insc['employe_nom'] ?? '') ?>')" class="btn btn-success btn-sm">
                     Valider
                   </button>
                   <?php endif; ?>
@@ -173,7 +171,7 @@ $taux   = $model::tauxCompletion((int)($session['nb_inscrits'] ?? 0), (int)($ses
                         onsubmit="return confirm('Annuler l\'inscription ?')">
                     <?= \Core\Csrf::field() ?>
                     <input type="hidden" name="session_id" value="<?= (int)$session['id'] ?>">
-                    <button class="text-xs border border-red-200 text-red-600 px-2 py-1 rounded hover:bg-red-50">×</button>
+                    <button class="btn btn-outline-danger btn-sm">×</button>
                   </form>
                   <?php endif; ?>
                 </div>
@@ -228,9 +226,8 @@ $taux   = $model::tauxCompletion((int)($session['nb_inscrits'] ?? 0), (int)($ses
         <p class="text-xs text-slate-400 mt-1">Les employés déjà inscrits (hors annulés) sont exclus automatiquement.</p>
       </div>
       <div class="flex gap-3">
-        <button type="submit" class="bg-violet-600 text-white px-5 py-2 rounded-lg text-sm hover:bg-violet-700 transition">Inscrire</button>
-        <button type="button" onclick="document.getElementById('modal-inscrire').classList.add('hidden')"
-                class="border border-slate-200 text-slate-600 px-5 py-2 rounded-lg text-sm hover:bg-slate-50 transition">Annuler</button>
+        <button type="submit" class="btn btn-primary">Inscrire</button>
+        <button type="button" onclick="document.getElementById('modal-inscrire').classList.add('hidden')" class="btn btn-secondary">Annuler</button>
       </div>
     </form>
   </div>
@@ -255,9 +252,8 @@ $taux   = $model::tauxCompletion((int)($session['nb_inscrits'] ?? 0), (int)($ses
                   class="form-textarea resize-none"></textarea>
       </div>
       <div class="flex gap-3">
-        <button type="submit" class="bg-green-600 text-white px-5 py-2 rounded-lg text-sm hover:bg-green-700 transition">Valider et délivrer attestation</button>
-        <button type="button" onclick="document.getElementById('modal-valider').classList.add('hidden')"
-                class="border border-slate-200 text-slate-600 px-5 py-2 rounded-lg text-sm hover:bg-slate-50 transition">Annuler</button>
+        <button type="submit" class="btn btn-success">Valider et délivrer attestation</button>
+        <button type="button" onclick="document.getElementById('modal-valider').classList.add('hidden')" class="btn btn-secondary">Annuler</button>
       </div>
     </form>
   </div>

@@ -101,7 +101,7 @@ document.getElementById('form-campagne').addEventListener('submit', async (e) =>
 
 async function lancerCampagne(id) {
   if (!confirm('Lancer cette campagne ?')) return;
-  const r = await fetch(`/v2/communication/campagnes/${id}/launch`, {
+  const r = await fetch(`<?= BASE_URL ?>/v2/communication/campagnes/${id}/launch`, {
     method: 'POST', headers: { 'X-CSRF-Token': csrf }
   });
   const j = await r.json();

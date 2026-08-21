@@ -57,6 +57,7 @@ return [
         'academique.moyennes.view', 'academique.moyennes.recalcul',
         'academique.classement.view', 'academique.classement.generer',
         'academique.bulletin.view', 'academique.bulletin.generer', 'academique.bulletin.publier',
+        'academique.bulletin.admin',
         'academique.analytics.view',
         // ── Vie Scolaire V2 ─────────────────────────────────────────────────────
         'attendance.view', 'attendance.create', 'attendance.update', 'attendance.delete',
@@ -150,9 +151,9 @@ return [
         'settings.finances.view', 'settings.finances.update',
         'settings.documents.view', 'settings.documents.update',
         'settings.notifications.view', 'settings.notifications.update',
-        'settings.securite.view', 'settings.securite.update',
-        'settings.sauvegarde.view', 'settings.sauvegarde.update',
-        'settings.avance.view', 'settings.avance.update',
+        // Sécurité, Sauvegarde et Avancé : retirées du rôle directeur le 21/08/2026 —
+        // paramétrage technique réservé à Administrateur/Super-Admin (voir
+        // docs/fonctionnel/GUIDE_DIRECTION.md § 10).
         // Domaines personnalisés, Stockage & Quotas, Monitoring & Cache : retirés du
         // périmètre établissement (T026) — réservés à l'Administration de la
         // plateforme (Core\Platform\PlatformAuth, Super Administrateur uniquement).
@@ -175,6 +176,7 @@ return [
         'academique.moyennes.view', 'academique.moyennes.recalcul',
         'academique.classement.view', 'academique.classement.generer',
         'academique.bulletin.view', 'academique.bulletin.generer', 'academique.bulletin.publier',
+        'academique.bulletin.admin',
         'academique.analytics.view',
         // ── Vie Scolaire V2 ─────────────────────────────────────────────────────
         'attendance.view', 'attendance.create', 'attendance.update', 'attendance.delete',
