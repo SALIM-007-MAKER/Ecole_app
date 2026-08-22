@@ -764,6 +764,13 @@ class MenuService
                 'permissions' => ['reward.view'],
             ],
             [
+                'id' => 'activites',
+                'label' => 'Activités scolaires',
+                'icon' => 'star',
+                'url' => '/v2/vie-scolaire/activites',
+                'permissions' => ['activity.view'],
+            ],
+            [
                 'id' => 'announcements',
                 'label' => 'Annonces',
                 'icon' => 'megaphone',

@@ -4,6 +4,33 @@ Format libre, organisé par phase de développement. Depuis la Phase 16.0, le
 projet est versionné dans Git (tag `v2.0.0`) — voir
 `SCOLARIS_V2_FINAL_RELEASE_REPORT.md`. Ordre chronologique croissant.
 
+## Post-release — Corrections diverses (2026-08-22)
+
+- **Messagerie (`Communication`) sans aucune vérification de destinataire.**
+  Trouvé en vérifiant le guide Élève avant de préciser le texte sur la
+  messagerie : `ThreadDTO::validate()` ne contrôle que la présence des champs
+  (sujet, destinataires, corps du message) et `ThreadService::creer()`
+  insérait chaque `participant_id` reçu du formulaire tel quel, sans vérifier
+  qu'il correspond à un compte existant, actif, ni même du même établissement
+  que l'expéditeur — un utilisateur aurait pu démarrer une conversation avec
+  n'importe quel ID, y compris d'un autre établissement (fuite potentielle
+  cross-tenant). Ajouté `ThreadService::filtrerDestinatairesValides()` qui ne
+  conserve que les comptes actifs du même établissement ; `creer()` lève
+  désormais une `RuntimeException` si aucun destinataire ne survit au filtre,
+  remontée en erreur 422 par `ThreadController::store()` plutôt qu'un thread
+  vide ou une fuite silencieuse. **Le module `communication` est cependant
+  désactivé (`config/modules.php` → `enabled: false`)** dans cette
+  installation — ce correctif est sans effet tant qu'il n'est pas activé,
+  mais corrige le code avant activation future.
+
+- **Menu Élève incomplet : « Activités scolaires » invisible alors que la
+  permission existe.** `MenuService::getStudentMenus()` ne listait pas
+  d'entrée vers `/v2/vie-scolaire/activites`, alors que le rôle `eleve`
+  possède déjà la permission `activity.view` et que le module `vie_scolaire`
+  qui la sert est actif. Ajoutée l'entrée manquante. Les entrées équivalentes
+  pour Bibliothèque et Messagerie n'ont pas été ajoutées : ces deux modules
+  sont désactivés (`enabled: false`), un lien vers eux produirait une 404.
+
 ## Post-release — Corrections diverses (2026-08-21)
 
 - **Rôle `directeur` avait accès aux paramètres techniques (Sécurité, Sauvegarde, Avancé).**
