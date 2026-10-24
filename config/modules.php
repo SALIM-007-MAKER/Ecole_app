@@ -55,8 +55,15 @@ return [
     // rh_* ont été créées (migrations rh_001→rh_011, corrigées — incompatibilités
     // de types FK et syntaxe MariaDB-only réparées), le pont rh_employes.professeur_id
     // → professeurs.id est actif, et tous les événements RH audités/corrigés.
+    // Désactivé le 2026-10-24 (simplification V1, audit validé) : gelé pour la V2.
+    // Code, tables rh_* et données conservés intacts (aucune suppression) ; seuls
+    // changent : routes /v2/rh non chargées, listeners d'événements RH non
+    // enregistrés (config/events.rh.php) et entrées RH masquées du menu
+    // (MenuService). Le pont rh_employes.professeur_id → professeurs.id est à sens
+    // unique (RH référence le noyau, jamais l'inverse) : aucun module actif n'en dépend.
+    // Réactivation : repasser 'enabled' à true.
     'rh' => [
-        'enabled'   => true,
+        'enabled'   => false,
         'namespace' => 'App\\Modules\\RH',
         'routes'    => ROOT_PATH . '/app/Modules/RH/routes.php',
         'manifest'  => ROOT_PATH . '/app/Modules/RH/module.json',
@@ -104,8 +111,15 @@ return [
         'manifest'  => ROOT_PATH . '/app/Modules/Portals/module.json',
     ],
 
+    // Désactivé le 2026-10-24 (simplification V1, audit validé) : API REST gelée pour la V2.
+    // Code conservé. Les classes partagées app/Shared/Api et config/api.php restent
+    // chargeables ; Scolarite\Services\EleveService (utilisé par EleveApiController)
+    // appartient au module Scolarité et n'est pas affecté. Les routes V1 /api/eleves,
+    // /api/notifications/*, /api/push/* (App\Controllers\Api) vivent dans
+    // config/routes.php et restent actives.
+    // Réactivation : repasser 'enabled' à true.
     'api' => [
-        'enabled'   => true,
+        'enabled'   => false,
         'namespace' => 'App\\Modules\\Api',
         'routes'    => ROOT_PATH . '/app/Modules/Api/routes.php',
         'manifest'  => ROOT_PATH . '/app/Modules/Api/module.json',

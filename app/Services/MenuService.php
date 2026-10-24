@@ -21,10 +21,69 @@ class MenuService
             return [];
         }
 
-        $roleMenus = $menus[$role];
+        $roleMenus = self::withoutDisabledModules($menus[$role]);
         
         // Filtrer les menus selon les permissions
         return self::filterMenuByPermissions($roleMenus, $permissions, $role);
+    }
+
+    /**
+     * Préfixes d'URL des modules pouvant être désactivés (config/modules.php) :
+     * leurs entrées de menu sont masquées tant que le module est inactif, pour
+     * ne jamais afficher de lien vers des routes non chargées (404). Ajouter ici
+     * une ligne pour tout autre module gelé qui possède des entrées de menu.
+     */
+    private const MODULE_URL_PREFIXES = [
+        'rh' => '/v2/rh',
+    ];
+
+    /**
+     * Retire du menu les liens (et les groupes devenus vides) appartenant à un
+     * module désactivé. Les permissions et les définitions de menu ne sont pas
+     * modifiées : réactiver le module suffit à faire réapparaître ses entrées.
+     */
+    private static function withoutDisabledModules(array $menus): array
+    {
+        static $modules = null;
+        if ($modules === null) {
+            $modules = defined('ROOT_PATH') ? (require ROOT_PATH . '/config/modules.php') : [];
+        }
+
+        $hidden = [];
+        foreach (self::MODULE_URL_PREFIXES as $module => $prefix) {
+            if (isset($modules[$module]) && empty($modules[$module]['enabled'])) {
+                $hidden[] = $prefix;
+            }
+        }
+        if ($hidden === []) {
+            return $menus;
+        }
+
+        $isHidden = static function (?string $url) use ($hidden): bool {
+            foreach ($hidden as $prefix) {
+                if ($url === $prefix || ($url !== null && str_starts_with($url, $prefix . '/'))) {
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        $out = [];
+        foreach ($menus as $item) {
+            if (!empty($item['children'])) {
+                $item['children'] = array_values(array_filter(
+                    $item['children'],
+                    static fn(array $child): bool => !$isHidden($child['url'] ?? null)
+                ));
+                if ($item['children'] === []) {
+                    continue;
+                }
+            } elseif ($isHidden($item['url'] ?? null)) {
+                continue;
+            }
+            $out[] = $item;
+        }
+        return $out;
     }
 
     /**
