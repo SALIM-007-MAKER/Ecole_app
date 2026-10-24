@@ -2,7 +2,7 @@
 /**
  * Tests d'isolation multi-tenant — Phase 14.3 (Migration des tables métier)
  *
- * Exerce EleveModel, ClasseModel, NoteModel, AbsenceModel sous deux
+ * Exerce EleveModel, ClasseModel, NoteModel, AbsenceRepository (V2) sous deux
  * TenantContext distincts (établissement A = celui existant, id=1 ;
  * établissement B = créé pour ce test) et vérifie qu'aucune lecture,
  * recherche, pagination, création, modification ou suppression ne peut
@@ -29,6 +29,7 @@ spl_autoload_register(function (string $class): void {
     $namespaces = [
         'Core\\'        => ROOT_PATH . '/core/',
         'App\\Models\\' => ROOT_PATH . '/app/Models/',
+        'App\\Modules\\VieScolaire\\' => ROOT_PATH . '/app/Modules/VieScolaire/',
     ];
     foreach ($namespaces as $prefix => $dir) {
         if (str_starts_with($class, $prefix)) {
@@ -39,7 +40,7 @@ spl_autoload_register(function (string $class): void {
     }
 });
 
-use App\Models\AbsenceModel;
+use App\Modules\VieScolaire\Absences\Repositories\AbsenceRepository;
 use App\Models\ClasseModel;
 use App\Models\EleveModel;
 use App\Models\NoteModel;
@@ -206,28 +207,28 @@ try {
     assert_eq($etabA, (int)$noteRow->etablissement_id, 'NoteModel::upsert() tague etablissement_id automatiquement');
 
     // ══════════════════════════════════════════════════════════════════════
-    section('7. AbsenceModel — pointage (storePointage) isolé');
+    section('7. AbsenceRepository (V2, vs_absences) — absences isolées entre établissements');
     // ══════════════════════════════════════════════════════════════════════
 
-    // Date fixe (pas date('Y-m-d')/CURDATE()) : PHP tourne en UTC alors que MySQL
-    // utilise le fuseau horaire système (UTC+1 ici) — les deux peuvent désigner
-    // des jours calendaires différents pendant l'heure qui suit minuit UTC,
-    // rendant une comparaison date('Y-m-d') (écriture) vs CURDATE() (lecture)
-    // intermittente indépendamment de toute logique métier. Découvert Phase 14.12.
+    // Remplace l'ancien test AbsenceModel::storePointage() (modèle V1 et table `absences`
+    // supprimés par l'unification V1/V2). Date fixe : voir note fuseau PHP/MySQL (Phase 14.12).
     $pointageDate = '2026-01-15';
     TenantContext::set($etabA);
-    $absenceModel = new AbsenceModel();
-    $absenceModel->storePointage(
-        $classeAId, $pointageDate, 'matin',
-        [$eleveAId => 'absence'], [], [$eleveAId => 'Test isolation'], 1
-    );
-    $absRow = $pdo->query("SELECT etablissement_id, motif FROM absences WHERE eleve_id={$eleveAId} AND date_absence='{$pointageDate}' AND session='matin'")->fetch();
-    assert_true($absRow !== false, 'AbsenceModel::storePointage() enregistre l\'absence');
-    assert_eq($etabA, (int)$absRow->etablissement_id, 'AbsenceModel::storePointage() tague etablissement_id automatiquement');
+    $absenceRepo = new AbsenceRepository();
+    $absenceId = $absenceRepo->insert([
+        'eleve_id' => $eleveAId, 'classe_id' => $classeAId, 'annee_scolaire' => '2025-2026',
+        'date_absence' => $pointageDate, 'type' => 'absence', 'saisie_par' => 1,
+        'observation' => 'Test isolation',
+    ]);
+    assert_true($absenceId > 0, 'AbsenceRepository::insert() enregistre l\'absence');
+    assert_eq(1, count($absenceRepo->findByEleveAndDate($eleveAId, $pointageDate)), 'Tenant A relit sa propre absence');
 
-    // Tenant B ne doit voir aucune des absences/notes de Tenant A
+    // Tenant B ne doit voir aucune des absences de Tenant A (IDOR inter-établissements).
+    // ANOMALIE CONNUE (audit V1) : vs_absences n'a pas de colonne etablissement_id et
+    // AbsenceRepository ne filtre pas par tenant — cette assertion échoue tant que
+    // l'isolation multi-établissements n'est pas implémentée pour les tables vs_*.
     TenantContext::set($etabB);
-    $absencesB = $absenceModel->findForEleve($eleveAId); // IDOR : élève A vu depuis contexte B
+    $absencesB = $absenceRepo->findByEleveAndDate($eleveAId, $pointageDate);
     assert_eq(0, count($absencesB), 'Tenant B ne peut pas lire les absences de l\'élève A (IDOR bloqué)');
 
     // ══════════════════════════════════════════════════════════════════════

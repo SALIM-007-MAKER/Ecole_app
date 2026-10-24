@@ -83,7 +83,12 @@ try {
     $pdo->exec("INSERT INTO etablissements (slug, nom, nom_court, type, pays, statut)
                 VALUES ('branding-test-b', 'Établissement Branding B', 'Branding B', 'lycee', 'DZ', 'active')");
     $etabB = (int)$pdo->lastInsertId();
-    $etabA = 1; // edunova-demo, déjà seedé en T008
+    // Établissement A dédié au test (sans branding personnalisé = valeurs par défaut) :
+    // ne dépend plus des données réelles de l'établissement n°1, modifiables par l'utilisateur.
+    // Tout est annulé par le rollback final.
+    $pdo->exec("INSERT INTO etablissements (slug, nom, nom_court, type, pays, statut)
+                VALUES ('branding-test-a', 'Établissement Branding A', 'Branding A', 'lycee', 'DZ', 'active')");
+    $etabA = (int)$pdo->lastInsertId();
 
     $service = BrandingService::make();
 

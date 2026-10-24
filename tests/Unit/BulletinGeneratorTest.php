@@ -16,6 +16,7 @@ spl_autoload_register(function (string $class) use ($base): void {
     $map = [
         'Core\\'                   => $base . '/core/',
         'App\Modules\Academique\\' => $base . '/app/Modules/Academique/',
+        'App\Modules\VieScolaire\\' => $base . '/app/Modules/VieScolaire/',
         'App\Services\\'           => $base . '/app/Services/',
     ];
     foreach ($map as $prefix => $dir) {
@@ -47,6 +48,9 @@ use App\Modules\Academique\Services\RankingEngine;
 use App\Modules\Academique\Services\BulletinGenerator;
 use App\Modules\Academique\Repositories\BulletinRepository;
 use App\Modules\Academique\Repositories\RankingRepository;
+use App\Modules\Academique\Repositories\PeriodeScolaireRepository;
+use App\Modules\Academique\Repositories\AppreciationMatiereRepository;
+use App\Modules\VieScolaire\Absences\Repositories\AbsenceRepository;
 use App\Modules\Academique\DTO\BulletinData;
 use App\Modules\Academique\DTO\BulletinSummary;
 use App\Modules\Academique\ValueObjects\AverageValue;
@@ -124,6 +128,11 @@ class StubBulletinRepository extends BulletinRepository
     public function infoPeriode(int $periodeId): ?object { return $this->periode; }
     public function infoEtablissement(): array           { return ['nom' => 'Lycée Test', 'adresse' => '1 rue Test', 'logo' => null]; }
     public function elevesParClasse(int $classeId): array { return $this->eleve ? [$this->eleve->id] : []; }
+    public function effectifClasse(int $classeId): int   { return $this->eleve ? 1 : 0; }
+
+    /** Bulletin déjà enregistré (null = première génération) — sert à tester la préservation de l'appréciation du directeur. */
+    public ?array $bulletinExistant = null;
+    public function findByEleveEtPeriode(int $eleveId, int $periodeId): ?array { return $this->bulletinExistant; }
 
     public function notesEleveParPeriode(int $eleveId, int $classeId, int $periodeId): array
     {
@@ -161,6 +170,33 @@ class StubRankingRepo extends RankingRepository
     public function notesParNiveauEtPeriode(string $n, int $p): array { return $this->rows; }
     public function notesParMatiereEtPeriode(int $m, int $p, ?int $c = null): array { return $this->rows; }
     public function notesParClasseMultiPeriodes(int $c, array $p): array { return $this->rows; }
+}
+
+// Dépendances que BulletinGenerator instancie lui-même (avec accès DB) quand on ne les injecte pas :
+// stubs sans PDO pour garder la suite autonome (aucune dépendance DB, comme annoncé en en-tête).
+class StubAbsenceRepo extends AbsenceRepository
+{
+    public function __construct() {}
+    public function countByEleveAndDateRange(int $eleveId, string $dateDebut, string $dateFin): array
+    {
+        return ['justifiees' => 0, 'nonJustifiees' => 0];
+    }
+}
+
+class StubAppreciationRepo extends AppreciationMatiereRepository
+{
+    /** @param array<string,string> $saisies clé « eleve:matiere:periode » => texte saisi par le professeur */
+    public function __construct(private array $saisies = []) {}
+    public function find(int $eleveId, int $matiereId, int $periodeId): ?string
+    {
+        return $this->saisies["{$eleveId}:{$matiereId}:{$periodeId}"] ?? null;
+    }
+}
+
+class StubPeriodeRepo extends PeriodeScolaireRepository
+{
+    public function __construct() {}
+    public function findByAnneeEtType(string $annee, string $type): array { return []; }
 }
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
@@ -252,7 +288,10 @@ function makeGenerator(array $noteRows, ?object $eleve = null, ?object $periode 
     $rankRepo = new StubRankingRepo($rankingRows);
     $ranking  = new RankingEngine($calc, $rankRepo);
     $repo     = new StubBulletinRepository($eleveObj, $periode ?? makePeriode(), $noteRows);
-    return new BulletinGenerator($calc, $ranking, $repo, seuilRattrapage: 8.0, appKey: 'test_key');
+    return new BulletinGenerator(
+        $calc, $ranking, $repo, seuilRattrapage: 8.0, appKey: 'test_key',
+        periodeRepo: new StubPeriodeRepo(), absenceRepo: new StubAbsenceRepo(), apprRepo: new StubAppreciationRepo(),
+    );
 }
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
@@ -335,7 +374,14 @@ assert_eq('B',  $ligne10['mention_code'],      'Mention maths = B (15 ≥14 <16)
 assert_eq('AB', $ligne11['mention_code'],      'Mention français = AB (12)');
 assert_eq(2, $ligne10['nb_notes'],             'Maths = 2 notes');
 assert_eq(1, $ligne11['nb_notes'],             'Français = 1 note');
-assert_true(!empty($ligne10['appreciation']),  'Appréciation maths non vide');
+// L'appréciation par matière est saisie à la main par le professeur : jamais générée automatiquement.
+assert_eq('', $ligne10['appreciation'],          'Appréciation maths vide tant que le professeur n\'a rien saisi');
+$genAppr = makeGenerator($noteRows);
+$ref = new ReflectionProperty(BulletinGenerator::class, 'apprRepo');
+$ref->setValue($genAppr, new StubAppreciationRepo(['1:10:1' => 'Bon travail, à poursuivre.']));
+$ligneAppr = null;
+foreach ($genAppr->previewBulletin(1, 1)->lignesMatieres as $l) { if ((int)$l['matiere_id'] === 10) $ligneAppr = $l; }
+assert_eq('Bon travail, à poursuivre.', $ligneAppr['appreciation'] ?? null, 'Appréciation maths = texte saisi par le professeur quand il existe');
 
 // ─── Section 5 : Token stable ─────────────────────────────────────────────────
 
@@ -366,11 +412,24 @@ $rankRows6 = array_map(fn($r) => array_merge($r, [
 $rankRepo = new StubRankingRepo($rankRows6);
 $ranking  = new RankingEngine($calc, $rankRepo);
 $stubRepo = new StubBulletinRepository($eleve6, makePeriode(), $noteRows);
-$gen2     = new BulletinGenerator($calc, $ranking, $stubRepo, 8.0, 'test_key');
+$gen2     = new BulletinGenerator(
+    $calc, $ranking, $stubRepo, seuilRattrapage: 8.0, appKey: 'test_key',
+    periodeRepo: new StubPeriodeRepo(), absenceRepo: new StubAbsenceRepo(), apprRepo: new StubAppreciationRepo(),
+);
 
 $generated = $gen2->genererBulletin(1, 1, 99);
 
 assert_true($generated instanceof BulletinData, 'genererBulletin retourne BulletinData');
+assert_true($generated->appreciationDirecteur === null, 'Première génération : pas d\'appréciation du directeur');
+
+// Régénération (ex : après correction d'une note) : l'appréciation du directeur déjà saisie est préservée.
+$stubRepoRegen = new StubBulletinRepository($eleve6, makePeriode(), $noteRows);   // dépôt distinct : ne fausse pas le décompte de saveBulletin ci-dessous
+$stubRepoRegen->bulletinExistant = ['appreciation_directeur' => 'Élève sérieux, félicitations.'];
+$genRegen = new BulletinGenerator(
+    $calc, $ranking, $stubRepoRegen, seuilRattrapage: 8.0, appKey: 'test_key',
+    periodeRepo: new StubPeriodeRepo(), absenceRepo: new StubAbsenceRepo(), apprRepo: new StubAppreciationRepo(),
+);
+assert_eq('Élève sérieux, félicitations.', $genRegen->genererBulletin(1, 1, 99)->appreciationDirecteur, 'Régénération : l\'appréciation du directeur est préservée');
 assert_eq(1, count($stubRepo->getSaved()),      'saveBulletin appelé une fois');
 assert_eq(99, $generated->generatedById,         'generatedById = userId');
 
