@@ -77,6 +77,7 @@ $router->get('/v2/academique/evaluations/{id}/notes/importer',      'Academique\
 $router->post('/v2/academique/evaluations/{id}/notes/importer',     'Academique\Controllers\NoteController@importerCsv');
 $router->get('/v2/academique/notes/{id}',                           'Academique\Controllers\NoteController@show');
 $router->post('/v2/academique/notes/{id}',                          'Academique\Controllers\NoteController@update');
+$router->post('/v2/academique/notes/{id}/delete',                   'Academique\Controllers\NoteController@destroy');
 
 // Compatibility: listing notes by filters (eleve_id, classe_id, etc.)
 $router->get('/v2/academique/notes',                                 'Academique\Controllers\NoteController@listForEleve');

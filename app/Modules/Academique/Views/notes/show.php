@@ -164,6 +164,19 @@ $flash       = \Core\Session::getFlash();
             </form>
         </div>
         <?php endif; ?>
+
+        <?php if ($policy && $policy->canSupprimer($user, $note)): ?>
+        <div class="mt-5 pt-5 border-t border-slate-100">
+            <form method="POST" action="<?= BASE_URL ?>/v2/academique/notes/<?= $note->id ?>/delete"
+                  onsubmit="return confirm('Supprimer définitivement cette note ? Action irréversible et auditée.')">
+                <input type="hidden" name="_csrf_token" value="<?= \Core\Session::getCsrfToken() ?>">
+                <button type="submit"
+                        class="btn btn-ghost text-red-500 border border-red-200 hover:bg-red-50">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>Supprimer la note
+                </button>
+            </form>
+        </div>
+        <?php endif; ?>
     </div>
 </div>
 

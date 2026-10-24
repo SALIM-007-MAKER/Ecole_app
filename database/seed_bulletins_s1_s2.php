@@ -83,7 +83,7 @@ try {
         'Français' => [-0.2, 'litteraire'], 'Mathématiques' => [-0.7, 'scientifique'],
         'Anglais' => [0.1, 'litteraire'], 'Histoire-Géographie' => [-0.1, 'litteraire'],
         'S.V.T' => [0.3, 'scientifique'], 'Physique-Chimie' => [-0.5, 'scientifique'],
-        'Education Physique' => [1.0, 'autre'], 'Conduite' => [0.6, 'autre'],
+        'EPS' => [1.0, 'autre'], 'Conduite' => [0.6, 'autre'],
     ];
     $subjectIds = [];
     foreach ($matieres as $nom => $_) {

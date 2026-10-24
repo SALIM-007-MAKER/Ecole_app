@@ -33,7 +33,8 @@ foreach ($lignesMatieres as $l) {
             <td class="moy20"><?= fmtMoy($l['moyenne'] ?? null) ?></td>
             <td><?= ($l['moyenne'] ?? null) !== null ? fmtMoy((float)$l['moyenne'] * (float)$l['coefficient']) : '—' ?></td>
             <td><?= ordinal($l['rang'] ?? null) ?></td>
-            <td class="appreciation"><?= e($l['appreciation']) ?></td>
+            <?php /* Volontairement vide : appréciation rédigée à la main par le professeur après impression. */ ?>
+            <td class="appreciation"></td>
         </tr>
         <?php endforeach; ?>
         <tr class="total-row">

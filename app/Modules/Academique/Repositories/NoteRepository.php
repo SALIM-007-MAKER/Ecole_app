@@ -61,21 +61,34 @@ class NoteRepository
         [$where, $params] = $this->buildWhere($filters);
 
         $countSql = "SELECT COUNT(*) FROM notes_v2 n {$where}";
-        $total    = (int)$this->pdo->prepare($countSql)->execute($params) ? null : 0;
-
-        $stmt = $this->pdo->prepare($countSql);
+        $stmt     = $this->pdo->prepare($countSql);
         $stmt->execute($params);
         $total = (int)$stmt->fetchColumn();
+
+        // Vue par élève (eleve_id filtré, evaluation_id absent) : notes les plus
+        // récentes en premier, plus utile qu'un tri par nom (constant sur cette
+        // vue puisqu'il n'y a qu'un seul élève). Vue par évaluation (défaut) :
+        // tri alphabétique des élèves inchangé.
+        $orderBy = !empty($filters['eleve_id']) && empty($filters['evaluation_id'])
+            ? 'ev.date_evaluation DESC, ev.id DESC'
+            : 'e.nom, e.prenom';
 
         $offset = ($page - 1) * $perPage;
         $sql    = "SELECT n.*,
                           e.nom AS eleve_nom, e.prenom AS eleve_prenom, e.matricule,
-                          ev.libelle AS eval_libelle, ev.note_max
+                          ev.libelle AS eval_libelle, ev.note_max, ev.coefficient,
+                          ev.date_evaluation, ev.matiere_id, ev.classe_id,
+                          m.nom  AS matiere_nom,
+                          c.nom  AS classe_nom,
+                          te.nom AS type_nom, te.couleur AS type_couleur
                    FROM notes_v2 n
-                   JOIN eleves e       ON e.id = n.eleve_id
-                   JOIN evaluations ev ON ev.id = n.evaluation_id
+                   JOIN eleves e                  ON e.id = n.eleve_id
+                   JOIN evaluations ev             ON ev.id = n.evaluation_id
+                   LEFT JOIN matieres m            ON m.id = ev.matiere_id
+                   LEFT JOIN classes c             ON c.id = ev.classe_id
+                   LEFT JOIN types_evaluations te  ON te.id = ev.type_evaluation_id
                    {$where}
-                   ORDER BY e.nom, e.prenom
+                   ORDER BY {$orderBy}
                    LIMIT {$perPage} OFFSET {$offset}";
 
         $stmt = $this->pdo->prepare($sql);
@@ -88,6 +101,32 @@ class NoteRepository
             'last_page'    => max(1, (int)ceil($total / $perPage)),
             'per_page'     => $perPage,
         ];
+    }
+
+    /**
+     * Statistiques agrégées sur TOUTES les notes d'un élève (indépendantes de
+     * la pagination) — moyenne générale pondérée par coefficient et ramenée
+     * sur 20 pour rester comparable entre évaluations à barèmes différents.
+     */
+    public function statsForEleve(int $eleveId): object
+    {
+        $sql = "SELECT
+                    COUNT(*) AS total,
+                    SUM(n.statut = 'publiee' OR n.statut = 'verrouillee') AS publiees,
+                    SUM(n.est_absent = 1) AS absents,
+                    COUNT(DISTINCT ev.matiere_id) AS nb_matieres,
+                    MAX(CASE WHEN n.est_absent = 0 THEN n.valeur / ev.note_max * 20 END) AS meilleure_note,
+                    SUM(CASE WHEN n.est_absent = 0 AND n.valeur IS NOT NULL AND ev.note_max > 0
+                             THEN (n.valeur / ev.note_max * 20) * ev.coefficient ELSE 0 END)
+                    / NULLIF(SUM(CASE WHEN n.est_absent = 0 AND n.valeur IS NOT NULL AND ev.note_max > 0
+                             THEN ev.coefficient ELSE 0 END), 0) AS moyenne_generale
+                FROM notes_v2 n
+                JOIN evaluations ev ON ev.id = n.evaluation_id
+                WHERE n.eleve_id = ?";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([$eleveId]);
+        return $stmt->fetch(\PDO::FETCH_OBJ) ?: new \stdClass();
     }
 
     public function countStats(int $evaluationId): array

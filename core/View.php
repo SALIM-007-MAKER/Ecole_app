@@ -42,24 +42,18 @@ class View
         $content = ob_get_clean();
 
         if ($layout === 'none') {
-            // If this is an AJAX or JSON request, return raw content as intended.
-            $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
-            $acceptsJson = isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json');
-            if ($isAjax || $acceptsJson) {
-                echo $content;
-                return;
-            }
-
-            // For standard HTML requests, wrap content inside the main layout so
-            // pages using 'none' still inherit the dashboard/design system.
-            $layoutFile = $this->layoutPath . 'main.php';
-            if (!file_exists($layoutFile)) {
-                // Fallback to raw content if main layout is missing.
-                echo $content;
-                return;
-            }
-
-            include $layoutFile;
+            // 'none' renvoie TOUJOURS le contenu brut, jamais enveloppé dans
+            // main.php — que la requête soit AJAX ou une navigation normale.
+            // Chaque vue qui passe 'none' (bulletins/imprimer, errors/403,
+            // errors/404, home/index...) fournit déjà son propre document
+            // HTML complet (<!DOCTYPE html><html>...). L'envelopper en plus
+            // dans main.php imbriquait deux documents HTML l'un dans l'autre :
+            // la barre latérale/le profil/le bandeau d'installation PWA du
+            // tableau de bord restaient visibles (et imprimables/exportables
+            // en PDF) par-dessus la page censée être autonome, en plus de
+            // faire perdre le <title> propre de la vue (écrasé par celui de
+            // main.php).
+            echo $content;
             return;
         }
 

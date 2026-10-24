@@ -23,10 +23,13 @@ $classement = $bulletin ? (object)['rang' => $bulletin->rang, 'effectif' => $bul
         </div>
     </div>
     <?php if ($bulletin && $periodeId): ?>
-    <a href="<?= BASE_URL ?>/v2/academique/bulletins/<?= $eleve->id ?>/<?= $periodeId ?>/imprimer"
-       class="btn btn-primary" target="_blank">
-        <i data-lucide="download" class="w-4 h-4"></i>Télécharger PDF
-    </a>
+<?php
+$csAnnee = null;
+foreach ($periodes as $__p) { if ((int)$__p->id === (int)$periodeId) { $csAnnee = $__p->annee_scolaire ?? null; break; } }
+$csSemestres = array_values(array_filter($periodes, static fn($p) => ($p->annee_scolaire ?? null) === $csAnnee));
+$csEleveId = $eleve->id;
+include __DIR__ . '/../bulletins/_choix_semestre.php';
+?>
     <?php endif; ?>
 </div>
 

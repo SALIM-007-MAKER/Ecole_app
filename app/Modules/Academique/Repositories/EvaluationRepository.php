@@ -168,14 +168,27 @@ class EvaluationRepository
         return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 
-    public function listMatieresForSelect(): array
+    /**
+     * @param bool $inclureConduite false pour exclure la matière « Conduite »
+     *             du select (formulaire d'évaluation ouvert à un enseignant —
+     *             circuit réservé au Directeur/Admin, voir EvaluationPolicy).
+     */
+    public function listMatieresForSelect(bool $inclureConduite = true): array
     {
-        $stmt = $this->pdo->query(
-            "SELECT id, nom, coefficient
-             FROM `matieres`
-             ORDER BY nom ASC"
-        );
-        return $stmt->fetchAll(PDO::FETCH_OBJ);
+        $sql = "SELECT id, nom, coefficient FROM `matieres`";
+        if (!$inclureConduite) {
+            $sql .= " WHERE nom <> 'Conduite'";
+        }
+        $sql .= " ORDER BY nom ASC";
+        return $this->pdo->query($sql)->fetchAll(PDO::FETCH_OBJ);
+    }
+
+    public function findMatiereNom(int $matiereId): ?string
+    {
+        $stmt = $this->pdo->prepare("SELECT nom FROM `matieres` WHERE id = ?");
+        $stmt->execute([$matiereId]);
+        $nom = $stmt->fetchColumn();
+        return $nom !== false ? $nom : null;
     }
 
     public function listClassesForSelect(): array

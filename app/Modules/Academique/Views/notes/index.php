@@ -156,7 +156,7 @@ if (!$evaluation) return;
                 <th class="text-center px-4 py-3 font-medium text-slate-600">Présence</th>
                 <th class="text-left px-4 py-3 font-medium text-slate-600">Commentaire</th>
                 <th class="text-center px-4 py-3 font-medium text-slate-600">Statut</th>
-                <th class="text-right px-4 py-3 font-medium text-slate-600">Actions</th>
+                <th class="text-right px-4 py-3 font-medium text-slate-600 col-actions">Actions</th>
             </tr>
         </thead>
         <tbody class="divide-y divide-slate-100">
@@ -213,12 +213,25 @@ if (!$evaluation) return;
                         <?= $statuts[$note->statut] ?? $note->statut ?>
                     </span>
                 </td>
-                <td class="px-4 py-3 text-right">
-                    <a href="<?= BASE_URL ?>/v2/academique/notes/<?= $note->id ?>"
-                       class="p-1.5 text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded transition"
-                       title="Voir détail">
-                        <i data-lucide="eye" class="w-4 h-4"></i>
-                    </a>
+                <td class="px-4 py-3 text-right col-actions">
+                    <div class="flex items-center justify-end gap-1">
+                        <a href="<?= BASE_URL ?>/v2/academique/notes/<?= $note->id ?>"
+                           class="btn btn-ghost btn-icon text-slate-500"
+                           title="Voir détail">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </a>
+                        <?php if ($policy && $policy->canSupprimer($user, $note)): ?>
+                        <form method="POST" action="<?= BASE_URL ?>/v2/academique/notes/<?= $note->id ?>/delete"
+                              onsubmit="return confirm('Supprimer définitivement cette note ?')">
+                            <input type="hidden" name="_csrf_token" value="<?= \Core\Session::getCsrfToken() ?>">
+                            <button type="submit"
+                                    class="btn btn-ghost btn-icon text-red-400 hover:text-red-600"
+                                    title="Supprimer">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </form>
+                        <?php endif; ?>
+                    </div>
                 </td>
             </tr>
             <?php endforeach; ?>

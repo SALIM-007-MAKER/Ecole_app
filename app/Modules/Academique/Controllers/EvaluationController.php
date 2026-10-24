@@ -85,12 +85,15 @@ class EvaluationController extends Controller
     {
         $this->requirePermission('academique.evaluations.manage');
 
+        $user    = $this->currentUser();
+        $isAdmin = in_array('academique.evaluations.admin', $user['permissions'] ?? [], true);
+
         $this->render('Academique::evaluations/form', [
             'title'       => 'Nouvelle évaluation',
             'evaluation'  => null,
             'periodes'    => $this->repo->listPeriodesForSelect(),
             'types'       => $this->repo->listTypesForSelect(),
-            'matieres'    => $this->repo->listMatieresForSelect(),
+            'matieres'    => $this->repo->listMatieresForSelect($isAdmin),
             'classes'     => $this->repo->listClassesForSelect(),
             'enseignants' => $this->repo->listEnseignantsForSelect(),
             'statuts'     => EvaluationModel::STATUT_LABELS,
@@ -113,8 +116,15 @@ class EvaluationController extends Controller
             $this->redirect(BASE_URL . '/v2/academique/evaluations/create');
         }
 
+        $user       = $this->currentUser();
+        $matiereNom = $this->repo->findMatiereNom($dto->matiereId);
+        if (!$this->policy->canCreate($user, $matiereNom)) {
+            Session::flash('errors', ['global' => ["La création d'une évaluation de Conduite est réservée au Directeur."]]);
+            Session::flash('old', $_POST);
+            $this->redirect(BASE_URL . '/v2/academique/evaluations/create');
+        }
+
         try {
-            $user         = $this->currentUser();
             $evaluationId = $this->service->creer($dto, (int)$user['id']);
             Session::flash('success', "Évaluation « {$dto->libelle} » créée en brouillon.");
             $this->redirect(BASE_URL . '/v2/academique/evaluations/' . $evaluationId);
@@ -139,13 +149,14 @@ class EvaluationController extends Controller
         if (!$this->policy->canUpdate($user, $evaluation)) {
             $this->requirePermission('academique.evaluations.admin');
         }
+        $isAdmin = in_array('academique.evaluations.admin', $user['permissions'] ?? [], true);
 
         $this->render('Academique::evaluations/form', [
             'title'       => 'Modifier — ' . $evaluation->libelle,
             'evaluation'  => $evaluation,
             'periodes'    => $this->repo->listPeriodesForSelect(),
             'types'       => $this->repo->listTypesForSelect(),
-            'matieres'    => $this->repo->listMatieresForSelect(),
+            'matieres'    => $this->repo->listMatieresForSelect($isAdmin),
             'classes'     => $this->repo->listClassesForSelect(),
             'enseignants' => $this->repo->listEnseignantsForSelect(),
             'statuts'     => EvaluationModel::STATUT_LABELS,
@@ -181,6 +192,15 @@ class EvaluationController extends Controller
         }
 
         $isAdmin = in_array('academique.evaluations.admin', $user['permissions'] ?? [], true);
+
+        if (!$isAdmin && $dto->matiereId !== (int)$evaluation->matiere_id) {
+            $nouvelleMatiereNom = $this->repo->findMatiereNom($dto->matiereId);
+            if ($this->policy->estConduite($nouvelleMatiereNom)) {
+                Session::flash('errors', ['global' => ["Le passage en matière Conduite est réservé au Directeur."]]);
+                Session::flash('old', $_POST);
+                $this->redirect(BASE_URL . '/v2/academique/evaluations/' . $evaluationId . '/edit');
+            }
+        }
 
         try {
             $this->service->modifier($evaluationId, $dto, (int)$user['id'], $isAdmin);

@@ -5,6 +5,7 @@ namespace App\Modules\Academique\Services;
 use App\Modules\Academique\DTO\NoteBatchDTO;
 use App\Modules\Academique\DTO\NoteDTO;
 use App\Modules\Academique\Events\NoteCreated;
+use App\Modules\Academique\Events\NoteDeleted;
 use App\Modules\Academique\Events\NoteImported;
 use App\Modules\Academique\Events\NoteLocked;
 use App\Modules\Academique\Events\NotePublished;
@@ -123,6 +124,31 @@ class NoteService
             oldValeur:    $oldValeur,
             newValeur:    $newValeur,
             updatedById:  $userId,
+        ));
+    }
+
+    // ─── Supprimer une note individuelle ─────────────────────────────────────
+
+    public function supprimer(int $noteId, int $userId): void
+    {
+        $note = $this->model->findById($noteId);
+        if (!$note) {
+            throw new \RuntimeException("Note introuvable.");
+        }
+        if ($note->statut === 'verrouillee') {
+            throw new \RuntimeException("Cette note est verrouillée et ne peut pas être supprimée.");
+        }
+
+        $valeur = $note->valeur !== null ? (float)$note->valeur : null;
+
+        $this->model->delete($noteId);
+
+        EventDispatcher::dispatch(new NoteDeleted(
+            noteId:       $noteId,
+            evaluationId: (int)$note->evaluation_id,
+            eleveId:      (int)$note->eleve_id,
+            valeur:       $valeur,
+            deletedById:  $userId,
         ));
     }
 

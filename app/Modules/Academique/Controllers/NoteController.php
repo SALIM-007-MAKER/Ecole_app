@@ -70,7 +70,7 @@ class NoteController extends Controller
         $user       = $this->currentUser();
 
         if (!$this->policy->canSaisir($user, $evaluation)) {
-            Session::flash('error', "La saisie de notes est fermée pour cette évaluation.");
+            Session::flash('error', $this->messageSaisieRefusee($evaluation));
             $this->redirect(BASE_URL . '/v2/academique/evaluations/' . $id);
         }
 
@@ -96,7 +96,7 @@ class NoteController extends Controller
         $user       = $this->currentUser();
 
         if (!$this->policy->canSaisir($user, $evaluation)) {
-            Session::flash('error', "La saisie est fermée.");
+            Session::flash('error', $this->messageSaisieRefusee($evaluation));
             $this->redirect(BASE_URL . '/v2/academique/evaluations/' . $id . '/notes');
         }
 
@@ -162,7 +162,9 @@ class NoteController extends Controller
         $user       = $this->currentUser();
 
         if (!$this->policy->canImporter($user, $evaluation)) {
-            Session::flash('error', "Import impossible : saisie fermée.");
+            Session::flash('error', $this->policy->estConduite($evaluation->matiere_nom ?? null)
+                ? "L'import des notes de Conduite est réservé au Directeur."
+                : "Import impossible : saisie fermée.");
             $this->redirect(BASE_URL . '/v2/academique/evaluations/' . $id . '/notes');
         }
 
@@ -182,7 +184,9 @@ class NoteController extends Controller
         $user       = $this->currentUser();
 
         if (!$this->policy->canImporter($user, $evaluation)) {
-            Session::flash('error', "Import impossible : saisie fermée.");
+            Session::flash('error', $this->policy->estConduite($evaluation->matiere_nom ?? null)
+                ? "L'import des notes de Conduite est réservé au Directeur."
+                : "Import impossible : saisie fermée.");
             $this->redirect(BASE_URL . '/v2/academique/evaluations/' . $id . '/notes');
         }
 
@@ -250,7 +254,10 @@ class NoteController extends Controller
 
         $user = $this->currentUser();
         if (!$this->policy->canModifier($user, $note)) {
-            Session::flash('error', "Cette note est verrouillée.");
+            $message = $note->statut === 'verrouillee'
+                ? "Cette note est verrouillée."
+                : $this->messageSaisieRefusee($note);
+            Session::flash('error', $message);
             $this->redirect(BASE_URL . '/v2/academique/notes/' . $id);
         }
 
@@ -269,6 +276,41 @@ class NoteController extends Controller
         $this->redirect(BASE_URL . '/v2/academique/notes/' . $id);
     }
 
+    // ─── Supprimer ────────────────────────────────────────────────────────────
+
+    public function destroy(string $id): void
+    {
+        $this->requirePermission('academique.notes.admin');
+        $this->verifyCsrf();
+
+        $note = $this->repo->findWithDetails((int)$id);
+        if (!$note) {
+            Session::flash('error', "Note introuvable.");
+            $this->redirect(BASE_URL . '/v2/academique/evaluations');
+            return;
+        }
+
+        $user           = $this->currentUser();
+        $evaluationId   = $note->evaluation_id;
+
+        if (!$this->policy->canSupprimer($user, $note)) {
+            Session::flash('error', "Cette note est verrouillée et ne peut pas être supprimée.");
+            $this->redirect(BASE_URL . '/v2/academique/notes/' . $id);
+            return;
+        }
+
+        try {
+            $this->service->supprimer((int)$id, (int)$user['id']);
+            Session::flash('success', "Note supprimée.");
+        } catch (\RuntimeException $e) {
+            Session::flash('error', $e->getMessage());
+            $this->redirect(BASE_URL . '/v2/academique/notes/' . $id);
+            return;
+        }
+
+        $this->redirect(BASE_URL . '/v2/academique/evaluations/' . $evaluationId . '/notes');
+    }
+
     // ─── Listing notes by eleve / filters (legacy compatibility for /notes) ──
 
     public function listForEleve(): void
@@ -282,23 +324,51 @@ class NoteController extends Controller
         $user       = $this->currentUser();
 
         $eleve = null;
-        if (!empty($filters->eleve_id)) {
+        $stats = null;
+        if (!empty($filters->eleveId)) {
             $eleveModel = new \App\Models\EleveModel();
-            $eleve = $eleveModel->findWithDetails((int)$filters->eleve_id) ?: null;
+            $eleve = $eleveModel->findWithDetails((int)$filters->eleveId) ?: null;
+            $stats = $this->repo->statsForEleve((int)$filters->eleveId);
         }
 
+        // Période à cibler pour le lien « Imprimer bulletin » — la période
+        // active de l'établissement (même résolution que BulletinController::
+        // eleve()) ; jamais une valeur codée en dur (T043 — un id de période
+        // inexistant fait échouer /v2/academique/bulletins/{id}/{periodeId}/imprimer).
+        $periodeRepo   = new \App\Modules\Academique\Repositories\PeriodeScolaireRepository();
+        $periodeActive = $periodeRepo->findActive();
+        $semestresDisponibles = $periodeActive ? $periodeRepo->findForSelect($periodeActive->annee_scolaire) : [];
+
         $this->render('Academique::notes/eleve', [
-            'title'      => 'Notes',
-            'pagination' => $pagination,
-            'filters'    => $filters,
-            'statuts'    => NoteModel::STATUT_LABELS,
-            'colors'     => NoteModel::STATUT_COLORS,
-            'user'       => $user,
-            'eleve'      => $eleve,
+            'title'         => 'Notes',
+            'pagination'    => $pagination,
+            'filters'       => $filters,
+            'statuts'       => NoteModel::STATUT_LABELS,
+            'colors'        => NoteModel::STATUT_COLORS,
+            'user'          => $user,
+            'eleve'         => $eleve,
+            'stats'         => $stats,
+            'policy'        => $this->policy,
+            'periodeActive' => $periodeActive,
+            'semestresDisponibles' => $semestresDisponibles,
         ]);
     }
 
     // ─── Privé ───────────────────────────────────────────────────────────────
+
+    /**
+     * Message explicite selon le motif du refus : Conduite réservée au
+     * Directeur/Admin (academique.notes.admin), sinon saisie fermée/évaluation
+     * non publiée. Accepte un objet évaluation ou note (les deux exposent
+     * matiere_nom et notes_saisie_ouverte/statut selon le contexte).
+     */
+    private function messageSaisieRefusee(object $evaluationOuNote): string
+    {
+        if ($this->policy->estConduite($evaluationOuNote->matiere_nom ?? null)) {
+            return "La saisie des notes de Conduite est réservée au Directeur.";
+        }
+        return "La saisie de notes est fermée pour cette évaluation.";
+    }
 
     private function loadEvaluation(int $id): object
     {

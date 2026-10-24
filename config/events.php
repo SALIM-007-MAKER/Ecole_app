@@ -118,6 +118,7 @@ use App\Modules\Finance\Events\FeeDeactivated;
 use App\Modules\Finance\Events\FeeArchived;
 use App\Modules\Finance\Listeners\FraisAuditHandler;
 use App\Modules\Academique\Events\NoteUpdated;
+use App\Modules\Academique\Events\NoteDeleted;
 use App\Modules\Academique\Events\NotePublished;
 use App\Modules\Academique\Events\NoteLocked;
 use App\Modules\Academique\Events\NoteImported;
@@ -341,6 +342,10 @@ return [
     ],
 
     NoteUpdated::class => [
+        new NoteHandler(),
+    ],
+
+    NoteDeleted::class => [
         new NoteHandler(),
     ],
 
