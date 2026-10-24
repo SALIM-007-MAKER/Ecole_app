@@ -3,17 +3,44 @@
 namespace App\Modules\Academique\Policies;
 
 use App\Models\EleveModel;
+use App\Modules\Academique\Services\TeacherScope;
 use App\Modules\Scolarite\Repositories\FamilleRepository;
 
 class BulletinPolicy
 {
     private FamilleRepository $familleRepo;
     private EleveModel $eleveModel;
+    private TeacherScope $teacherScope;
 
-    public function __construct(?FamilleRepository $familleRepo = null, ?EleveModel $eleveModel = null)
+    public function __construct(
+        ?FamilleRepository $familleRepo = null,
+        ?EleveModel $eleveModel = null,
+        ?TeacherScope $teacherScope = null,
+    ) {
+        $this->familleRepo  = $familleRepo  ?? new FamilleRepository();
+        $this->eleveModel   = $eleveModel   ?? new EleveModel();
+        $this->teacherScope = $teacherScope ?? new TeacherScope();
+    }
+
+    /**
+     * Rôles dont l'accès aux bulletins est limité par PROPRIÉTÉ ou par PÉRIMÈTRE (et non par
+     * la seule permission) : un permission « bulletins.view » ne suffit jamais pour eux.
+     */
+    private const ROLES_RESTREINTS = ['parent', 'eleve', 'enseignant'];
+
+    /**
+     * Pages de résultats de classe / classement général de l'ancien module /bulletins
+     * (grille de toutes les matières, rang, moyenne générale de TOUTE la classe) : réservées
+     * au personnel de direction/secrétariat. Parents et élèves ont leurs propres écrans ;
+     * un enseignant ne doit voir que ses classes et ses matières (écrans V2 filtrés), jamais
+     * le classement général — qui révélerait des résultats hors de son périmètre.
+     */
+    public function canBrowseClassResults(array $user): bool
     {
-        $this->familleRepo = $familleRepo ?? new FamilleRepository();
-        $this->eleveModel  = $eleveModel  ?? new EleveModel();
+        if (in_array($user['role'] ?? '', self::ROLES_RESTREINTS, true)) {
+            return false;
+        }
+        return $this->has($user, 'bulletins.view') || $this->has($user, 'academique.bulletin.view');
     }
 
     /** Peut générer un bulletin (admin, directeur, prof principal). */
@@ -49,7 +76,19 @@ class BulletinPolicy
      * rôles précis (l'inverse laisserait la permission large primer et
      * annulerait la restriction).
      */
-    public function canViewForParent(array $user, int $eleveId): bool
+    /**
+     * Peut consulter le bulletin d'UN élève précis (aperçu V1 comme impression V2).
+     *
+     *  - parent     : uniquement les enfants qui lui sont rattachés ;
+     *  - élève      : uniquement son propre bulletin ;
+     *  - enseignant : uniquement les élèves des classes où il est affecté pour l'année
+     *                 scolaire de la période demandée (`$periodeId`, obligatoire pour lui) ;
+     *  - autres rôles : selon leurs permissions de consultation de bulletins.
+     *
+     * Refus par défaut : identifiant d'élève ou de période inexistant, année inconnue, compte
+     * sans fiche professeur, etc. ne donnent jamais accès.
+     */
+    public function canViewForParent(array $user, int $eleveId, ?int $periodeId = null): bool
     {
         $role = $user['role'] ?? '';
 
@@ -60,6 +99,22 @@ class BulletinPolicy
         if ($role === 'eleve') {
             $eleve = $this->eleveModel->findByUserId((int)($user['id'] ?? 0));
             return $eleve !== false && (int)$eleve->id === $eleveId;
+        }
+
+        if ($role === 'enseignant') {
+            if (!$this->canView($user) || $periodeId === null) {
+                return false;
+            }
+            $annee = $this->teacherScope->anneeDeLaPeriode($periodeId);
+            if ($annee === null) {
+                return false;
+            }
+            return $this->teacherScope->enseigneEleve(
+                (int)($user['id'] ?? 0),
+                (int)($user['etablissement_id'] ?? 0),
+                $eleveId,
+                $annee
+            );
         }
 
         return $this->canView($user);

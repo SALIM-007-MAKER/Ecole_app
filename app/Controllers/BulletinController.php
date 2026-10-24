@@ -3,11 +3,13 @@
 namespace App\Controllers;
 
 use Core\Controller;
+use Core\Logger;
 use Core\Session;
 use App\Models\ClasseModel;
 use App\Models\EleveModel;
 use App\Modules\Academique\DTO\BulletinData;
 use App\Modules\Academique\DTO\RankingResultDTO;
+use App\Modules\Academique\Policies\BulletinPolicy;
 use App\Modules\Academique\Repositories\EvaluationRepository;
 use App\Modules\Academique\Repositories\PeriodeScolaireRepository;
 use App\Modules\Academique\Repositories\RankingRepository;
@@ -32,6 +34,7 @@ class BulletinController extends Controller
     private EvaluationRepository $evalRepo;
     private RankingRepository    $rankingRepo;
     private RankingEngine        $rankingEngine;
+    private BulletinPolicy       $policy;
 
     public function __construct()
     {
@@ -40,6 +43,7 @@ class BulletinController extends Controller
         $this->eleveModel  = new EleveModel();
         $this->evalRepo    = new EvaluationRepository();
         $this->rankingRepo = new RankingRepository();
+        $this->policy      = new BulletinPolicy();
 
         // Même moteur, même configuration (note_passage/seuil_rattrapage par
         // établissement) que celui qui génère les bulletins imprimés — voir
@@ -56,6 +60,7 @@ class BulletinController extends Controller
     public function index(): void
     {
         $this->requirePermission('bulletins.view');
+        $this->requireClassResultsAccess();
 
         $this->render('bulletins/index', [
             'title'    => 'Bulletins de notes',
@@ -71,6 +76,7 @@ class BulletinController extends Controller
     public function classe(): void
     {
         $this->requirePermission('bulletins.view');
+        $this->requireClassResultsAccess();
 
         $classeId  = (int)$this->request->get('classe_id',  0);
         $periodeId = (int)$this->request->get('periode_id', 0);
@@ -126,6 +132,7 @@ class BulletinController extends Controller
     public function classement(): void
     {
         $this->requirePermission('bulletins.view');
+        $this->requireClassResultsAccess();
 
         $classeId  = (int)$this->request->get('classe_id',  0);
         $periodeId = (int)$this->request->get('periode_id', 0);
@@ -168,20 +175,7 @@ class BulletinController extends Controller
         $this->requirePermission('bulletins.view');
 
         $eleveId = (int)$id;
-        $eleve   = $this->eleveModel->findById($eleveId);
-        if (!$eleve) {
-            Session::flash('error', 'Élève introuvable.');
-            $this->redirect(BASE_URL . '/bulletins');
-            return;
-        }
-
-        $classeId = (int)$this->request->get('classe_id', 0) ?: (int)$eleve->classe_id;
-        $classe   = $this->classeModel->findById($classeId);
-        if (!$classe) {
-            Session::flash('error', 'Classe introuvable.');
-            $this->redirect(BASE_URL . '/bulletins');
-            return;
-        }
+        $user    = $this->currentUser();
 
         $periodeRepo = new PeriodeScolaireRepository();
         $periodes    = $periodeRepo->findForSelect();
@@ -202,6 +196,37 @@ class BulletinController extends Controller
         }
 
         $periodeId = (int)$periode->id;
+
+        // Autorisation côté serveur AVANT toute lecture de données de l'élève : propriété (parent /
+        // élève) ou périmètre d'affectation (enseignant). Un identifiant inexistant et un identifiant
+        // interdit produisent la même réponse 403 (pas d'énumération des élèves).
+        // Personnel (direction, secrétariat…) : permission `bulletins.view` déjà exigée ci-dessus.
+        // Parent / élève / enseignant : propriété ou périmètre uniquement, jamais la seule permission.
+        $autorise = $this->policy->canBrowseClassResults($user ?? [])
+            || $this->policy->canViewForParent($user ?? [], $eleveId, $periodeId);
+        if (!$autorise) {
+            $this->refuserAcces("bulletin eleve={$eleveId} periode={$periodeId}");
+        }
+
+        $eleve = $this->eleveModel->findById($eleveId);
+        if (!$eleve) {
+            Session::flash('error', 'Élève introuvable.');
+            $this->redirect(BASE_URL . '/bulletins');
+            return;
+        }
+
+        // classe_id fourni par le navigateur : pris en compte pour le seul personnel ; les autres
+        // rôles voient toujours la classe réelle de l'élève.
+        $classeId = $this->policy->canBrowseClassResults($user)
+            ? ((int)$this->request->get('classe_id', 0) ?: (int)$eleve->classe_id)
+            : (int)$eleve->classe_id;
+        $classe = $this->classeModel->findById($classeId);
+        if (!$classe) {
+            Session::flash('error', 'Classe introuvable.');
+            $this->redirect(BASE_URL . '/bulletins');
+            return;
+        }
+
         $semestresDisponibles = $periodeRepo->findForSelect($periode->annee_scolaire);
 
         $bulletin = $this->previewBulletinSafe($eleveId, $periodeId);
@@ -227,6 +252,27 @@ class BulletinController extends Controller
      * previewBulletinSafe() (même garantie : aucun recalcul manuel, absorbe
      * la RuntimeException d'un élève/période sans notes publiées).
      */
+    /**
+     * Pages « résultats de classe » / « classement » / sélecteur de l'ancien module /bulletins :
+     * personnel uniquement (voir BulletinPolicy::canBrowseClassResults()).
+     */
+    private function requireClassResultsAccess(): void
+    {
+        if (!$this->policy->canBrowseClassResults($this->currentUser() ?? [])) {
+            $this->refuserAcces('resultats de classe ' . ($this->request->getUri()));
+        }
+    }
+
+    /** Refus uniforme : journalisé, 403, sans indiquer si la ressource existe. */
+    private function refuserAcces(string $contexte): never
+    {
+        $u = $this->currentUser() ?? [];
+        Logger::security('BULLETIN_ACCESS_DENIED', $contexte . ' user=' . (int)($u['id'] ?? 0) . ' role=' . ($u['role'] ?? ''));
+        http_response_code(403);
+        $this->render('errors/403', ['title' => 'Permission insuffisante'], 'none');
+        exit;
+    }
+
     private function previewBulletinSafe(int $eleveId, int $periodeId): ?BulletinData
     {
         try {

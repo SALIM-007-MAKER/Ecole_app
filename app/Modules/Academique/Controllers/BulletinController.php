@@ -49,7 +49,8 @@ class BulletinController extends Controller
         $eleveId   = (int)$eleveId;
         $periodeId = (int)$periodeId;
 
-        if (!$this->policy->canViewForParent($user, $eleveId)) {
+        if (!$this->policy->canViewForParent($user, $eleveId, $periodeId)) {
+            \Core\Logger::security('BULLETIN_ACCESS_DENIED', "imprimer eleve={$eleveId} periode={$periodeId} user=" . (int)($user['id'] ?? 0) . ' role=' . ($user['role'] ?? ''));
             http_response_code(403);
             $this->render('errors/403', ['title' => 'Permission insuffisante'], 'none');
             return;
