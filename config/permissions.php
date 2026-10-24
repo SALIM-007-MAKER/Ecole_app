@@ -440,7 +440,10 @@ return [
         'portal.enseignant.access',
     ],
     'parent' => [
-        'notes.view_own', 'absences.view_own', 'absences.justify', 'bulletins.view',
+        // 'bulletins.view' retiré (octobre 2026) : donnait accès à /bulletins/* (résultats et bulletins de
+        // TOUS les élèves). Un parent consulte les bulletins de ses enfants via /parent/bulletin et
+        // /v2/academique/bulletins/{élève}/{période}/imprimer (contrôle de rattachement famille).
+        'notes.view_own', 'absences.view_own', 'absences.justify',
         'comptabilite.view_own',
         'emploi_du_temps.view_own',
         'annonces.view',
@@ -471,7 +474,9 @@ return [
         'portal.parent.access',
     ],
     'eleve' => [
-        'notes.view_own', 'absences.view_own', 'bulletins.view',
+        // 'bulletins.view' retiré (octobre 2026) : voir le rôle parent. L'élève consulte son bulletin
+        // via /eleve/bulletin et /v2/academique/bulletins/{son id}/{période}/imprimer.
+        'notes.view_own', 'absences.view_own',
         'emploi_du_temps.view_own',
         'annonces.view',
         // ── Finance V2 ──────────────────────────────────────────────────────────
