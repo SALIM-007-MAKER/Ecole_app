@@ -216,6 +216,63 @@ try {
 
     assert_true($repo->findByDomain('domaine-totalement-inconnu.example.com') === null, 'Un domaine inconnu ne résout vers aucun établissement');
 
+    // ══════════════════════════════════════════════════════════════════════
+    section('6. Établissement inactif, domaine désactivé, Host invalide ou non autorisé');
+    // ══════════════════════════════════════════════════════════════════════
+
+    $resolverFor = static function (string $host) use ($repo): ?\Core\Tenant\Etablissement {
+        $_SERVER['HTTP_HOST'] = $host;
+        unset($_SERVER['HTTP_X_TENANT_SLUG'], $_SESSION['__etab_slug']);
+        $resolver = new \Core\Tenant\TenantResolver($repo, ['base_domain' => 'scolaris.app']);
+        return $resolver->resolve(new \Core\Request());
+    };
+
+    // Domaine connu et vérifié → résolution par le TenantResolver (chemin réel, pas seulement le dépôt)
+    $viaResolver = $resolverFor('ecole-test-a.example.com');
+    assert_eq($etabA, $viaResolver?->id, 'TenantResolver résout un domaine personnalisé vérifié');
+
+    // Domaine inconnu → aucune résolution via le résolveur
+    assert_true($resolverFor('inconnu-total.example.com') === null, 'TenantResolver : domaine inconnu → aucun établissement');
+
+    // Host malformé (underscore, caractères illégaux) : rejeté avant toute requête de domaine
+    assert_true($resolverFor('bad_host!.example.com') === null, 'TenantResolver : Host invalide ignoré (aucune résolution)');
+    assert_true($resolverFor('ecole-test-a.example.com.evil') === null, 'TenantResolver : suffixe détourné ne résout pas le domaine de etabA');
+
+    // Domaine désactivé (toggleActive) → ne résout plus
+    $domA = $service->listForEtablissement($etabA)[0];
+    $service->toggleActive($etabA, (int)$domA['id'], false);
+    assert_true($resolverFor('ecole-test-a.example.com') === null, 'Domaine désactivé : ne résout plus vers l\'établissement');
+    $service->toggleActive($etabA, (int)$domA['id'], true);
+    assert_eq($etabA, $resolverFor('ecole-test-a.example.com')?->id, 'Domaine réactivé : résout de nouveau');
+
+    // Établissement suspendu : résolu, mais le middleware refuse l'accès (503)
+    $pdo->prepare("UPDATE etablissements SET statut = 'suspended' WHERE id = ?")->execute([$etabA]);
+    $suspended = $resolverFor('ecole-test-a.example.com');
+    assert_true($suspended !== null && $suspended->isSuspended(), 'Établissement suspendu : résolu et signalé suspendu');
+    $threw = false;
+    try {
+        (new \Core\Tenant\TenantMiddleware(
+            new \Core\Tenant\TenantResolver($repo, ['base_domain' => 'scolaris.app']),
+            new \Core\Request()
+        ))->handle();
+    } catch (\Core\Tenant\TenantException) {
+        $threw = true;
+    }
+    assert_true($threw, 'TenantMiddleware : établissement suspendu → accès refusé (TenantException)');
+    $pdo->prepare("UPDATE etablissements SET statut = 'active' WHERE id = ?")->execute([$etabA]);
+
+    // Établissement supprimé (soft delete) : son domaine ne résout plus
+    $pdo->prepare("UPDATE etablissements SET deleted_at = NOW() WHERE id = ?")->execute([$etabA]);
+    assert_true($repo->findByDomain('ecole-test-a.example.com') === null, 'Établissement supprimé : son domaine ne résout plus');
+    assert_true($resolverFor('ecole-test-a.example.com') === null, 'TenantResolver : établissement supprimé → aucune résolution');
+    $pdo->prepare("UPDATE etablissements SET deleted_at = NULL WHERE id = ?")->execute([$etabA]);
+
+    // Un domaine déjà pris par un autre établissement ne peut pas être revendiqué (unicité globale)
+    $stolen = false;
+    try { $service->addDomain($etabB, 'ecole-test-a.example.com'); } catch (\InvalidArgumentException) { $stolen = true; }
+    assert_true($stolen, 'Domaine déjà attribué à etabA : etabB ne peut pas le revendiquer');
+    unset($_SERVER['HTTP_HOST']);
+
 } finally {
     $pdo->rollBack();
     echo "\n(rollback effectué — aucune donnée de test persistée)\n";
