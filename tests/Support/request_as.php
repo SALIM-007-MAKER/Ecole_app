@@ -55,12 +55,15 @@ $pdo = new PDO(
     $_ENV['DB_USERNAME'] ?? 'root', $_ENV['DB_PASSWORD'] ?? '',
     [PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]
 );
-$stmt = $pdo->prepare('SELECT * FROM users WHERE id = ?');
-$stmt->execute([(int)$uid]);
-$u = $stmt->fetch();
-if (!$u) { echo 'RESULT:' . json_encode(['error' => 'utilisateur introuvable']) . "\n"; exit(2); }
-$etab = (int)$u['etablissement_id'];
-$perms = (new \App\Models\UserModel())->getPermissions($role, (int)$uid, $etab);
+$u = null; $etab = 0; $perms = [];
+if ($role !== 'guest') {   // « guest » = visiteur non connecté (pages publiques)
+    $stmt = $pdo->prepare('SELECT * FROM users WHERE id = ?');
+    $stmt->execute([(int)$uid]);
+    $u = $stmt->fetch();
+    if (!$u) { echo 'RESULT:' . json_encode(['error' => 'utilisateur introuvable']) . "\n"; exit(2); }
+    $etab = (int)$u['etablissement_id'];
+    $perms = (new \App\Models\UserModel())->getPermissions($role, (int)$uid, $etab);
+}
 
 ob_start();
 register_shutdown_function(function () use ($role, $uri, $method) {
@@ -70,15 +73,18 @@ register_shutdown_function(function () use ($role, $uri, $method) {
     echo 'RESULT:' . json_encode([
         'role' => $role, 'method' => $method, 'uri' => $uri, 'status' => $code, 'bytes' => strlen((string)$body),
         'forbidden' => $code === 403 || str_contains($txt, 'Permission insuffisante'),
+        'md5' => md5((string)$body),
         'text' => mb_substr($txt, 0, 120),
     ], JSON_UNESCAPED_UNICODE) . "\n";
 });
 
 \Core\Session::start();
 $_SESSION['_csrf_token'] = 'test-csrf-token';
-\Core\Session::setUser([
-    'id' => (int)$u['id'], 'nom' => $u['nom'], 'prenom' => $u['prenom'] ?? '', 'email' => $u['email'],
-    'role' => $role, 'photo' => null, 'permissions' => $perms, 'etablissement_id' => $etab,
-    'available_etablissements' => [],
-]);
+if ($u !== null) {
+    \Core\Session::setUser([
+        'id' => (int)$u['id'], 'nom' => $u['nom'], 'prenom' => $u['prenom'] ?? '', 'email' => $u['email'],
+        'role' => $role, 'photo' => null, 'permissions' => $perms, 'etablissement_id' => $etab,
+        'available_etablissements' => [],
+    ]);
+}
 \Core\Application::getInstance()->run();

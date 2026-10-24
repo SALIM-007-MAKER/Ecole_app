@@ -170,8 +170,17 @@ class BulletinController extends Controller
      */
     public function verifier(string $token): void
     {
-        $row = $this->repo->findByToken($token);
-        if (!$row) {
+        // Format strict (64 caractères hexadécimaux minuscules, exactement comme les jetons émis) vérifié AVANT
+        // toute requête : rejette les valeurs tronquées, modifiées, en majuscules (la collation MySQL de la
+        // colonne ignore la casse) ou malformées, sans interroger la base.
+        $row = preg_match('/^[a-f0-9]{64}$/D', $token) === 1 ? $this->repo->findByToken($token) : null;
+
+        // Seul un bulletin ÉMIS (publié ou archivé) est vérifiable publiquement. Un brouillon, un
+        // jeton inconnu ou invalide suivent le même chemin et produisent la MÊME réponse 404 (même
+        // statut, même contenu) : on ne révèle ni l'existence ni l'état d'un bulletin non émis.
+        $verifiable = $row !== null && $row !== false && in_array($row['statut'] ?? '', ['publie', 'archive'], true);
+
+        if (!$verifiable) {
             http_response_code(404);
             $this->render('Academique::bulletins/verification', [
                 'trouve' => false,
