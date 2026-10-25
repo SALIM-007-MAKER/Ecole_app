@@ -13,8 +13,8 @@
  *    évaluation + notes -> import CSV sur une évaluation séparée ->
  *    validation saisie -> bulletin (BulletinEngineFactory reprend bien les
  *    notes fraîchement saisies) ;
- *  - nettoyage complet des données de test créées (aucune pollution
- *    persistante de la base).
+ *  - isolation par transaction annulée (try/finally) : aucune écriture
+ *    persistante, audit_logs compris.
  *
  * Lance : C:\wamp64\bin\php\php8.2.29\php.exe tests/Unit/NoteControllerV2MigrationTest.php
  */
@@ -141,6 +141,13 @@ $TYPE_EVAL_ID  = 1;
 $testEleveId = null;
 $testEvalIds = [];
 $notifIdsBefore = (int)$pdo->query("SELECT COALESCE(MAX(id),0) FROM notifications")->fetchColumn();
+
+// Isolation : toutes les écritures du test (élève, évaluations, notes, notifications ET lignes d'audit_logs écrites
+// par les listeners) passent par la connexion unique de Core\Database. Elles sont donc faites dans une transaction
+// annulée dans le finally — rien ne subsiste en base, y compris l'audit. (Les services utilisés n'ouvrent pas de
+// transaction propre ; toutes les tables concernées sont InnoDB.)
+$auditAvant = (int)$pdo->query("SELECT COUNT(*) FROM audit_logs")->fetchColumn();
+$pdo->beginTransaction();
 
 try {
     $pdo->prepare(
@@ -289,8 +296,11 @@ try {
 
 } finally {
     // ─── Nettoyage complet ────────────────────────────────────────────────────
-    section('Nettoyage des données de test');
+    section('Annulation de la transaction de test');
 
+    // ROLLBACK d'abord : c'est lui qui garantit l'absence de trace. Les DELETE ci-dessous ne sont qu'un filet
+    // de sécurité si, par erreur, une écriture avait été validée hors transaction.
+    if ($pdo->inTransaction()) { $pdo->rollBack(); }
     if ($testEleveId !== null) {
         $pdo->prepare("DELETE FROM notifications WHERE user_id = ? AND type = 'note' AND id > ?")
             ->execute([$ADMIN_USER_ID, $notifIdsBefore]);
@@ -304,6 +314,10 @@ try {
         $stillThere = $pdo->query("SELECT COUNT(*) FROM eleves WHERE id = $testEleveId")->fetchColumn();
         assert_true((int)$stillThere === 0, "Élève de test supprimé — base restaurée à son état initial");
     }
+    $auditApres = (int)$pdo->query("SELECT COUNT(*) FROM audit_logs")->fetchColumn();
+    assert_true($auditApres === $auditAvant, "audit_logs inchangé après le test ($auditAvant -> $auditApres lignes) : aucune écriture persistante");
+    $evalsRestantes = $testEvalIds === [] ? 0 : (int)$pdo->query('SELECT COUNT(*) FROM evaluations WHERE id IN (' . implode(',', array_map('intval', $testEvalIds)) . ')')->fetchColumn();
+    assert_true($evalsRestantes === 0, 'aucune évaluation de test ne subsiste');
 }
 
 // ─── Résumé ────────────────────────────────────────────────────────────────
