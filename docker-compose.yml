@@ -7,6 +7,8 @@ services:
       APP_DEBUG: "false"
       APP_URL: http://localhost:8080
       APP_KEY: ${APP_KEY:-changeme-generate-32-random-bytes}
+      # Obligatoire et SANS valeur par défaut : docker compose refuse de démarrer si elle n'est pas définie.
+      BULLETIN_TOKEN_SECRET: ${BULLETIN_TOKEN_SECRET:?définir BULLETIN_TOKEN_SECRET (voir docs/deploiement/BULLETIN_TOKEN_SECRET.md)}
       DB_HOST: db
       DB_PORT: 3306
       DB_DATABASE: ecole_app
