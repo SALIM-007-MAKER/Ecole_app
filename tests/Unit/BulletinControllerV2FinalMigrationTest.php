@@ -24,6 +24,9 @@ foreach (file(ROOT_PATH . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES
     $_ENV[trim($key)] = trim($value, " \t\n\r\0\x0B\"'");
 }
 
+// Secret JETABLE de test : l'application n'a plus aucune clé par défaut pour les jetons de bulletins.
+$_ENV['BULLETIN_TOKEN_SECRET'] = hash('sha256', 'bulletin-v2final-test-secret');
+
 spl_autoload_register(function (string $class): void {
     $namespaces = [
         'Core\\'             => ROOT_PATH . '/core/',
@@ -247,18 +250,19 @@ try {
     assert_true(str_contains($pdfHtml, '<!DOCTYPE html>'), 'exportHtml() produit un document HTML complet (base impression navigateur)');
     assert_true(str_contains($pdfHtml, 'BULLETIN DE NOTES'), "Le PDF contient l'en-tête du bulletin");
     assert_true(str_contains($pdfHtml, number_format($bulletin->moyennePeriode, 2)), 'Le PDF affiche la moyenne correcte');
-    assert_true(str_contains($pdfHtml, $bulletin->verificationToken), 'Le PDF contient le token de vérification QR');
+    assert_true(!str_contains($pdfHtml, $bulletin->verificationToken), 'Le PDF d\'un brouillon ne contient PAS le jeton de vérification');
 
     // ── 6. Vérification QR code ──
     assert_true($bulletin->verificationToken !== '', 'Un token de vérification a été généré');
-    assert_true(str_contains($bulletin->qrCodeUrl, $bulletin->verificationToken), "L'URL du QR code contient le token");
+    assert_true($bulletin->qrCodeUrl === '', "Un brouillon n'a pas d'URL de QR (le QR est réservé aux bulletins publiés)");
+    assert_true(\App\Modules\Academique\Services\BulletinTokenService::fromEnvironment()->matches($bulletin->verificationToken, 1, $testEleveId, $PERIODE_ID), 'Le jeton est le HMAC officiel de ce bulletin');
 
     $repo = new BulletinRepository();
     $foundByToken = $repo->findByToken($bulletin->verificationToken);
     assert_true($foundByToken !== null, 'Le token du QR permet de retrouver le bulletin en base (scan QR -> vérification)');
     assert_true($foundByToken !== null && (int)$foundByToken['eleve_id'] === $testEleveId, 'Le bulletin retrouvé via QR correspond au bon élève');
 
-    // Re-génération -> même token (déterministe, cf. generateVerificationToken())
+    // Re-génération -> même token (déterministe ET conservé : la colonne n'est jamais réécrite)
     $bulletin2 = BulletinEngineFactory::make(1)->genererBulletin($testEleveId, $PERIODE_ID, 1);
     assert_true($bulletin2->verificationToken === $bulletin->verificationToken, 'Le token QR est stable entre deux générations du même bulletin (eleve+periode)');
 

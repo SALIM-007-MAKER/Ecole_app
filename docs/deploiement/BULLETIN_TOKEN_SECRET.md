@@ -57,3 +57,23 @@ Détails dans l'en-tête de `app/Modules/Academique/Services/BulletinTokenServic
 
 Changer la valeur invalide **tous** les jetons existants. Ne le faites que lors d'une rotation planifiée
 (procédure dédiée, avec réimpression des bulletins officiels concernés) — jamais pour « tester ».
+
+## 7. Variables associées
+
+| Variable | Défaut | Rôle |
+|---|---|---|
+| `BULLETIN_PUBLICATION_ENABLED` | `false` (fermé) | Interrupteur de la publication / archivage des bulletins. Tant qu'il n'est pas à `true` (ou `1`, `yes`, `on`), personne ne peut publier, quels que soient ses droits. Ne l'ouvrir qu'après la revue des droits RBAC. |
+| `TRUSTED_PROXIES` | vide | Adresses ou blocs CIDR (séparés par des virgules) des proxys autorisés à fournir `X-Forwarded-For`. **Vide : l'en-tête est ignoré.** Les jokers (`*`, `0.0.0.0/0`, `::/0`) sont refusés. |
+
+La page publique de vérification est limitée à **30 requêtes par minute et par adresse IP**. Derrière un proxy (Railway, Nginx…),
+renseignez `TRUSTED_PROXIES` avec l'adresse du proxy, sinon toutes les requêtes semblent venir du proxy et partagent un seul compteur.
+
+## 8. Remarques d'exploitation
+
+- Le lecteur de `.env` du projet **ne gère pas les commentaires en fin de ligne** : écrivez `BULLETIN_TOKEN_SECRET=<valeur>` sans rien après,
+  et placez les commentaires sur leurs propres lignes (commençant par `#`).
+- Sans secret valide, les **aperçus** (espaces parent et élève) continuent de fonctionner, mais l'enregistrement d'un bulletin
+  et la vérification publique refusent explicitement. L'impression d'un **brouillon** reste possible (filigrane « BROUILLON », sans QR).
+- Un bulletin n'a un QR officiel qu'une fois **publié** ; l'URL du QR est construite à l'impression à partir de `APP_URL`
+  (en production : HTTPS obligatoire, hôte non local).
+- Les jetons n'apparaissent jamais dans les journaux ni dans l'audit : seule une empreinte courte (`jeton_empreinte`) est consignée.

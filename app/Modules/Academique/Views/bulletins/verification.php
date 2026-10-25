@@ -1,19 +1,26 @@
 <?php
 /**
- * Page publique de vérification d'authenticité d'un bulletin (accédée via
- * le QR code imprimé). Aucune authentification requise — voir
- * BulletinController::verifier() et BulletinPolicy::canVerify().
+ * Page publique de vérification d'authenticité d'un bulletin (accédée via le QR code imprimé).
+ * Aucune authentification requise — voir BulletinController::verifier().
  *
- * @var bool          $trouve
- * @var ?BulletinData $bulletin
+ * Elle n'affiche QUE le résultat de la vérification : aucun nom d'élève, classe, période, moyenne, statut ni
+ * nom d'établissement. Un résultat négatif est identique pour un jeton inconnu, ancien, invalide ou un bulletin
+ * non publié (aucune information sur l'existence d'un bulletin).
+ *
+ * @var bool $trouve   true = bulletin officiel authentique
+ * @var bool $limite   true = trop de requêtes (réponse 429)
+ * @var bool $indisponible true = service momentanément indisponible (configuration serveur, réponse 503)
  */
-function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8'); }
+$limite = $limite ?? false;
+$indisponible = $indisponible ?? false;
 ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
 <title>Vérification de bulletin</title>
 <style>
 body { font-family: Arial, sans-serif; background: #f1f5f9; display: flex; align-items: center;
@@ -22,27 +29,26 @@ body { font-family: Arial, sans-serif; background: #f1f5f9; display: flex; align
         box-shadow: 0 4px 16px rgba(0,0,0,.1); }
 .status { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; margin-bottom: 16px; }
 .status.ok { color: #059669; }
-.status.ko { color: #dc2626; }
-.row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
-.row:last-child { border-bottom: none; }
-.label { color: #64748b; }
-.value { font-weight: 600; color: #1e293b; }
+.status.ko { color: #b91c1c; }
+.status.wait { color: #b45309; }
+p { color: #64748b; font-size: 14px; line-height: 1.5; margin: 0; }
 </style>
 </head>
 <body>
 <div class="card">
-    <?php if ($trouve && $bulletin): ?>
-        <div class="status ok">✔ Bulletin authentique</div>
-        <div class="row"><span class="label">Élève</span><span class="value"><?= e($bulletin->eleveNom . ' ' . $bulletin->elevePrenom) ?></span></div>
-        <div class="row"><span class="label">Classe</span><span class="value"><?= e($bulletin->classeNom) ?></span></div>
-        <div class="row"><span class="label">Période</span><span class="value"><?= e($bulletin->periodeNom) ?></span></div>
-        <div class="row"><span class="label">Année scolaire</span><span class="value"><?= e($bulletin->anneeScolaire) ?></span></div>
-        <div class="row"><span class="label">Moyenne</span><span class="value"><?= number_format($bulletin->moyennePeriode, 2) ?>/20</span></div>
-        <div class="row"><span class="label">Statut</span><span class="value"><?= e(ucfirst($bulletin->statut)) ?></span></div>
-    <?php else: ?>
-        <div class="status ko">✘ Bulletin introuvable</div>
-        <p style="color:#64748b; font-size: 14px;">Ce code de vérification ne correspond à aucun bulletin connu. Le document présenté pourrait être invalide ou falsifié.</p>
-    <?php endif; ?>
+<?php if ($indisponible): ?>
+    <div class="status wait">Service momentanément indisponible</div>
+    <p>La vérification n'est pas possible pour le moment. Veuillez réessayer plus tard.</p>
+<?php elseif ($limite): ?>
+    <div class="status wait">Trop de demandes</div>
+    <p>Veuillez réessayer dans quelques instants.</p>
+<?php elseif ($trouve): ?>
+    <div class="status ok">✔ Authenticité confirmée</div>
+    <p>Ce code correspond à un bulletin officiel émis par l'établissement. Comparez toujours le document présenté avec l'original ou demandez confirmation à l'établissement.</p>
+<?php else: ?>
+    <div class="status ko">Vérification impossible</div>
+    <p>Ce code n'est pas reconnu. Si vous détenez un bulletin ancien, demandez une copie à l'établissement.</p>
+<?php endif; ?>
 </div>
 </body>
 </html>

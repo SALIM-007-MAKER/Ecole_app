@@ -74,7 +74,7 @@ class BulletinRepository
     public function infoEleve(int $eleveId): ?object
     {
         $sql = "
-            SELECT e.id, e.nom, e.prenom,
+            SELECT e.id, e.nom, e.prenom, e.etablissement_id,
                    COALESCE(e.matricule, '') AS matricule,
                    e.photo,
                    e.classe_id,
@@ -187,7 +187,10 @@ class BulletinRepository
     {
         try {
             $stmt = $this->db->prepare(
-                "SELECT * FROM bulletins_v2 WHERE verification_token = :t"
+                "SELECT b.*, e.etablissement_id AS etablissement_id
+                   FROM bulletins_v2 b
+                   JOIN eleves e ON e.id = b.eleve_id
+                  WHERE b.verification_token = :t"
             );
             $stmt->execute([':t' => $token]);
             $row = $stmt->fetch(\PDO::FETCH_ASSOC);
@@ -201,8 +204,10 @@ class BulletinRepository
     {
         try {
             $stmt = $this->db->prepare(
-                "SELECT * FROM bulletins_v2
-                  WHERE eleve_id = :e AND periode_id = :p"
+                "SELECT b.*, e.etablissement_id AS etablissement_id
+                   FROM bulletins_v2 b
+                   JOIN eleves e ON e.id = b.eleve_id
+                  WHERE b.eleve_id = :e AND b.periode_id = :p"
             );
             $stmt->execute([':e' => $eleveId, ':p' => $periodeId]);
             $row = $stmt->fetch(\PDO::FETCH_ASSOC);
@@ -262,22 +267,24 @@ class BulletinRepository
      * Insère ou met à jour un bulletin (upsert basé sur le token unique).
      * Retourne l'ID de la ligne insérée/mise à jour.
      */
-    public function saveBulletin(BulletinData $b): int
+    public function saveBulletin(BulletinData $b, int $tokenVersion = \App\Modules\Academique\Services\BulletinTokenService::VERSION): int
     {
         $dataJson = json_encode($b->toArray(), JSON_UNESCAPED_UNICODE);
 
         $sql = "
             INSERT INTO bulletins_v2
-                (eleve_id, classe_id, periode_id, verification_token,
+                (eleve_id, classe_id, periode_id, verification_token, token_version,
                  moyenne, rang, nb_eleves, mention_code, decision,
                  appreciation_pp, appreciation_directeur,
                  statut, data_json, generated_by, generated_at)
             VALUES
-                (:eleve_id, :classe_id, :periode_id, :token,
+                (:eleve_id, :classe_id, :periode_id, :token, :token_version,
                  :moyenne, :rang, :nb_eleves, :mention_code, :decision,
                  :app_pp, :app_dir,
                  :statut, :data_json, :gen_by, :gen_at)
             ON DUPLICATE KEY UPDATE
+                -- verification_token et token_version ne sont JAMAIS réécrits ici : un bulletin déjà enregistré
+                -- garde son jeton à chaque régénération (seule la rotation T047 peut le remplacer).
                 moyenne                 = VALUES(moyenne),
                 rang                    = VALUES(rang),
                 nb_eleves               = VALUES(nb_eleves),
@@ -298,6 +305,7 @@ class BulletinRepository
                 ':classe_id'  => $b->classeId,
                 ':periode_id' => $b->periodeId,
                 ':token'      => $b->verificationToken,
+                ':token_version' => $tokenVersion,
                 ':moyenne'    => $b->moyennePeriode,
                 ':rang'       => $b->rang,
                 ':nb_eleves'  => $b->nbEleves,
@@ -310,10 +318,18 @@ class BulletinRepository
                 ':gen_by'     => $b->generatedById,
                 ':gen_at'     => $b->generatedAt,
             ]);
-            return (int)$this->db->lastInsertId() ?: 0;
+            $id = (int)$this->db->lastInsertId() ?: 0;
         } catch (\PDOException $e) {
-            throw new \RuntimeException('Erreur sauvegarde bulletin: ' . $e->getMessage());
+            // Message générique : le texte d'une erreur de doublon contient la valeur du jeton.
+            throw new \RuntimeException('Erreur sauvegarde bulletin (code SQL ' . (string)($e->errorInfo[1] ?? $e->getCode()) . ').');
         }
+
+        // Garde-fou : la colonne et le JSON doivent porter le même jeton après chaque enregistrement.
+        $row = $this->findByEleveEtPeriode($b->eleveId, $b->periodeId);
+        if ($row === null || !hash_equals((string)$row['verification_token'], $b->verificationToken)) {
+            throw new \RuntimeException('Incohérence de jeton après sauvegarde du bulletin (colonne et JSON divergent).');
+        }
+        return $id;
     }
 
     /**
@@ -349,7 +365,45 @@ class BulletinRepository
             $stmt->execute($params);
             return $stmt->rowCount() > 0;
         } catch (\PDOException $e) {
-            throw new \RuntimeException('Erreur mise à jour statut: ' . $e->getMessage());
+            throw new \RuntimeException('Erreur mise à jour statut (code SQL ' . (string)($e->errorInfo[1] ?? $e->getCode()) . ').');
+        }
+    }
+
+    /**
+     * Transition de statut ATOMIQUE : n'a d'effet que si le bulletin est encore dans l'état attendu
+     * (deux publications simultanées ne produisent qu'une seule transition). Retourne true si appliquée.
+     */
+    public function transitionStatut(int $bulletinId, string $from, string $to, int $userId, string $at): bool
+    {
+        $sets = ['statut = :to', 'updated_at = NOW()'];
+        $params = [':id' => $bulletinId, ':from' => $from, ':to' => $to];
+        if ($to === 'publie') {
+            $sets[] = 'published_at = :at';
+            $sets[] = 'published_by = :by';
+            $params[':at'] = $at; $params[':by'] = $userId;
+        } elseif ($to === 'archive') {
+            $sets[] = 'archived_at = :at';
+            $sets[] = 'archived_by = :by';
+            $params[':at'] = $at; $params[':by'] = $userId;
+        }
+        $stmt = $this->db->prepare('UPDATE bulletins_v2 SET ' . implode(', ', $sets) . ' WHERE id = :id AND statut = :from');
+        $stmt->execute($params);
+        return $stmt->rowCount() === 1;
+    }
+
+    /**
+     * Un ancien jeton (déjà retiré) a-t-il été présenté ? Recherche par EMPREINTE SHA-256 : l'ancien jeton
+     * n'est jamais conservé. Tolère l'absence de la table (schéma T046 non appliqué).
+     */
+    public function findRetiredByDigest(string $sha256): ?array
+    {
+        try {
+            $stmt = $this->db->prepare('SELECT id, bulletin_id, motif FROM bulletin_tokens_retired WHERE token_sha256 = :d');
+            $stmt->execute([':d' => $sha256]);
+            $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+            return $row ?: null;
+        } catch (\PDOException) {
+            return null;
         }
     }
 
@@ -369,7 +423,7 @@ class BulletinRepository
             $stmt->execute([':app_dir' => $appreciation, ':token' => $token]);
             return $stmt->rowCount() > 0;
         } catch (\PDOException $e) {
-            throw new \RuntimeException("Erreur mise à jour de l'appréciation direction: " . $e->getMessage());
+            throw new \RuntimeException('Erreur mise à jour de l\'appréciation direction (code SQL ' . (string)($e->errorInfo[1] ?? $e->getCode()) . ').');
         }
     }
 }

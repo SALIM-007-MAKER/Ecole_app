@@ -206,6 +206,12 @@ $router->get('/v2/academique/bulletins/verify/{token}',                 'Academi
 $router->get ('/v2/academique/bulletins/{eleveId}/{periodeId}/appreciation-directeur', 'Academique\Controllers\BulletinController@appreciationForm');
 $router->post('/v2/academique/bulletins/{eleveId}/{periodeId}/appreciation-directeur', 'Academique\Controllers\BulletinController@updateAppreciation');
 
+// Publication / archivage d'un bulletin (rend le bulletin officiel : QR de vérification valide).
+// POST uniquement ; CSRF + politique (academique.bulletin.publish|admin) + interrupteur BULLETIN_PUBLICATION_ENABLED
+// (fermé par défaut) + statut + jeton officiel — voir BulletinController::changerStatut().
+$router->post('/v2/academique/bulletins/{eleveId}/{periodeId}/publier',  'Academique\Controllers\BulletinController@publier');
+$router->post('/v2/academique/bulletins/{eleveId}/{periodeId}/archiver', 'Academique\Controllers\BulletinController@archiver');
+
 // ─── Appréciations par matière (moteur Académique V2) ──────────────────────────
 $router->get('/v2/academique/appreciations',                                        'Academique\Controllers\AppreciationController@index');
 $router->get('/v2/academique/classes/{classeId}/matieres/{matiereId}/appreciations', 'Academique\Controllers\AppreciationController@saisie');

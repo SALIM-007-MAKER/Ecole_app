@@ -42,23 +42,36 @@
  * @var ?float  $moyenneAutre
  * @var array   $absences            {justifiees, nonJustifiees}
  * @var ?string $appreciationDirecteur
- * @var string  $qrSvg               SVG autonome (Core\QrCode\QrEncoder)
- * @var string  $verificationToken
+ * @var string  $qrSvg               SVG autonome du QR OFFICIEL ; chaîne vide pour tout bulletin non publié
+ * @var bool    $estOfficiel         true seulement pour un bulletin publié/archivé à jeton valide
+ * @var bool    $peutPublier         bouton « Publier » affiché (droit + interrupteur de publication ouverts)
+ * @var string  $csrfToken           jeton CSRF du formulaire de publication
  */
 
-function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8'); }
+// Fonctions d'aide déclarées de façon conditionnelle : la vue peut être rendue plusieurs fois dans un même
+// processus (tests) sans « Cannot redeclare ».
+if (!function_exists('e')) {
+    function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8'); }
+}
 // Reproduit l'écriture manuscrite/tableur du bulletin papier : pas de décimales
 // forcées — 20 s'écrit "20", 12.50 s'écrit "12.5", 186.875 reste "186.875".
-function fmtMoy(?float $v): string {
-    if ($v === null) return '—';
-    $s = rtrim(rtrim(number_format($v, 3, '.', ''), '0'), '.');
-    return $s === '' ? '0' : $s;
+if (!function_exists('fmtMoy')) {
+    function fmtMoy(?float $v): string {
+        if ($v === null) return '—';
+        $s = rtrim(rtrim(number_format($v, 3, '.', ''), '0'), '.');
+        return $s === '' ? '0' : $s;
+    }
 }
-function ordinal(?int $n): string
-{
-    if ($n === null || $n <= 0) return '—';
-    return $n === 1 ? '1er' : $n . 'ème';
+if (!function_exists('ordinal')) {
+    function ordinal(?int $n): string
+    {
+        if ($n === null || $n <= 0) return '—';
+        return $n === 1 ? '1er' : $n . 'ème';
+    }
 }
+$estOfficiel = $estOfficiel ?? false;
+$peutPublier = $peutPublier ?? false;
+$csrfToken   = $csrfToken   ?? '';
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -106,6 +119,16 @@ body { font-family: 'Times New Roman', Times, serif; font-size: 10.5pt; line-hei
 .no-print button { font-family: Arial, sans-serif; font-size: 12px; padding: 6px 14px; border-radius: 6px;
     border: 1px solid #fff; cursor: pointer; }
 .no-print .btn-print { background: #fff; color: #1e293b; }
+.no-print .btn-publish { background: #059669; color: #fff; border-color: #059669; }
+.no-print .badge-brouillon { color: #fbbf24; font: bold 12px Arial, sans-serif; align-self: center; }
+
+/* Filigrane des bulletins NON officiels (brouillon) : imprimé sur chaque page, au-dessus du contenu, sans
+ * gêner la lecture ni capter la souris ; les couleurs d'arrière-plan sont forcées à l'impression. */
+.watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-32deg);
+    font: bold 120pt Arial, Helvetica, sans-serif; letter-spacing: 6pt; color: rgba(120, 120, 120, .22);
+    white-space: nowrap; pointer-events: none; user-select: none; z-index: 40;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.watermark small { display: block; text-align: center; font-size: 22pt; letter-spacing: 3pt; }
 .no-print .btn-close { background: transparent; color: #fff; }
 
 /* .page = pleine page imprimable (277mm = 297 - 2x10mm de marge @page).
@@ -201,7 +224,19 @@ table { border-collapse: collapse; width: 100%; }
 </head>
 <body>
 
+<?php if (!$estOfficiel): ?>
+<div class="watermark" aria-hidden="true">BROUILLON<small>DOCUMENT NON OFFICIEL — SANS VALEUR</small></div>
+<?php endif; ?>
+
 <div class="no-print">
+    <?php if (!$estOfficiel): ?><span class="badge-brouillon">BROUILLON — non officiel, sans QR de vérification</span><?php endif; ?>
+    <?php if ($peutPublier): ?>
+    <form method="post" action="<?= e(BASE_URL) ?>/v2/academique/bulletins/<?= (int)$eleveId ?>/<?= (int)$periodeId ?>/publier" style="margin:0"
+          onsubmit="return confirm('Publier ce bulletin ? Il deviendra officiel et recevra un QR de vérification.');">
+        <input type="hidden" name="_csrf_token" value="<?= e($csrfToken) ?>">
+        <button type="submit" class="btn-publish">✔ Publier ce bulletin</button>
+    </form>
+    <?php endif; ?>
     <button class="btn-print" onclick="window.print()">🖨️ Imprimer / Enregistrer en PDF</button>
     <button class="btn-close" onclick="window.close()">✕ Fermer</button>
 </div>

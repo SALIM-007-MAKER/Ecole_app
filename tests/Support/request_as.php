@@ -65,8 +65,19 @@ if ($role !== 'guest') {   // « guest » = visiteur non connecté (pages publiq
     $perms = (new \App\Models\UserModel())->getPermissions($role, (int)$uid, $etab);
 }
 
+// Toutes les écritures de la requête simulée (audit des impressions, journaux en base…) sont ANNULÉES à la fin :
+// un test HTTP ne laisse aucune trace dans la base. Désactivable avec REQUEST_AS_COMMIT=1 (jamais utilisé par les tests).
+$transactionTest = null;
+if (getenv('REQUEST_AS_COMMIT') !== '1') {
+    $transactionTest = \Core\Database::getInstance()->getConnection();
+    $transactionTest->beginTransaction();
+}
+
 ob_start();
-register_shutdown_function(function () use ($role, $uri, $method) {
+register_shutdown_function(function () use ($role, $uri, $method, &$transactionTest) {
+    if ($transactionTest !== null && $transactionTest->inTransaction()) {
+        $transactionTest->rollBack();
+    }
     $body = ob_get_clean();
     $code = http_response_code() ?: 200;
     $txt  = trim(preg_replace('/\s+/', ' ', strip_tags((string)$body)));
@@ -74,6 +85,7 @@ register_shutdown_function(function () use ($role, $uri, $method) {
         'role' => $role, 'method' => $method, 'uri' => $uri, 'status' => $code, 'bytes' => strlen((string)$body),
         'forbidden' => $code === 403 || str_contains($txt, 'Permission insuffisante'),
         'md5' => md5((string)$body),
+        'headers' => function_exists('xdebug_get_headers') ? xdebug_get_headers() : null,   // headers_list() est vide en ligne de commande
         'text' => mb_substr($txt, 0, 120),
     ], JSON_UNESCAPED_UNICODE) . "\n";
 });

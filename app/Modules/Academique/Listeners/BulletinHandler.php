@@ -8,8 +8,15 @@ use App\Modules\Academique\Events\BulletinGenerated;
 use App\Modules\Academique\Events\BulletinPublished;
 use App\Modules\Academique\Events\BulletinArchived;
 use App\Modules\Academique\Events\BulletinAppreciationUpdated;
+use App\Modules\Academique\Services\BulletinTokenService;
 use App\Services\AuditService;
 
+/**
+ * Audit des événements de bulletins. Le jeton de vérification complet n'est JAMAIS écrit dans le journal d'audit :
+ * on y consigne une empreinte courte non réversible (BulletinTokenService::fingerprint) qui permet de recouper
+ * des événements sans exposer un jeton utilisable. La clé s'appelle « jeton_empreinte » et non « token_… » : AuditService
+ * masque (« *** ») toute clé contenant « token », ce qui effacerait aussi l'empreinte.
+ */
 class BulletinHandler implements Listener
 {
     private AuditService $audit;
@@ -42,7 +49,7 @@ class BulletinHandler implements Listener
             [
                 'classe_id'   => $event->classeId,
                 'periode_id'  => $event->periodeId,
-                'token'       => $event->verificationToken,
+                'jeton_empreinte'    => BulletinTokenService::fingerprint($event->verificationToken),
                 'moyenne'     => $event->moyenne,
                 'mention'     => $event->mentionCode,
                 'rang'        => $event->rang,
@@ -64,7 +71,7 @@ class BulletinHandler implements Listener
             null,
             [
                 'periode_id'   => $event->periodeId,
-                'token'        => $event->verificationToken,
+                'jeton_empreinte'     => BulletinTokenService::fingerprint($event->verificationToken),
                 'published_at' => $event->publishedAt,
             ]
         );
@@ -81,7 +88,7 @@ class BulletinHandler implements Listener
             null,
             [
                 'periode_id'  => $event->periodeId,
-                'token'       => $event->verificationToken,
+                'jeton_empreinte'    => BulletinTokenService::fingerprint($event->verificationToken),
                 'archived_at' => $event->archivedAt,
             ]
         );
@@ -98,7 +105,7 @@ class BulletinHandler implements Listener
             null,
             [
                 'periode_id' => $event->periodeId,
-                'token'      => $event->verificationToken,
+                'jeton_empreinte'   => BulletinTokenService::fingerprint($event->verificationToken),
             ]
         );
     }

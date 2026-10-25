@@ -4,6 +4,7 @@ namespace App\Modules\Academique\Services;
 
 use App\Modules\Academique\Repositories\BulletinRepository;
 use App\Modules\Academique\Repositories\RankingRepository;
+use Core\Logger;
 use Core\Tenant\SettingsService;
 
 /**
@@ -16,16 +17,22 @@ use Core\Tenant\SettingsService;
  * l'écran de paramétrage n'avaient aucun effet sur les bulletins réellement
  * générés (toujours 10.0/8.0 codés en dur) — voir ACADEMIQUE_MODULE_FREEZE.md
  * et l'audit métier du bulletin.
+ *
+ * Jetons de vérification : le secret vient UNIQUEMENT de BULLETIN_TOKEN_SECRET (environnement). Il n'est plus
+ * généré ni stocké en base, et il n'existe aucune valeur par défaut. S'il manque ou s'il est invalide, le moteur
+ * est quand même construit (les aperçus parents/élèves n'ont pas besoin de jeton) mais toute génération
+ * persistée est refusée avec un message explicite (BulletinTokenException).
  */
 class BulletinEngineFactory
 {
+    private static bool $secretAbsentSignale = false;
+
     public static function make(int $etablissementId): BulletinGenerator
     {
         $settings = SettingsService::make();
 
         $notePassage     = (float)$settings->get($etablissementId, 'academique', 'note_passage', '10');
         $seuilRattrapage = (float)$settings->get($etablissementId, 'academique', 'seuil_rattrapage', '8');
-        $bulletinSecret   = self::getOrCreateSecret($settings, $etablissementId);
 
         $calculator    = new AcademicCalculationService(['note_passage' => $notePassage]);
         $rankingEngine = new RankingEngine($calculator, new RankingRepository(), ['note_passage' => $notePassage]);
@@ -37,27 +44,21 @@ class BulletinEngineFactory
             repo: $bulletinRepo,
             seuilRattrapage: $seuilRattrapage,
             notePassage: $notePassage,
-            appKey: $bulletinSecret,
+            tokens: self::tokenService(),
         );
     }
 
-    /**
-     * Secret propre à l'établissement utilisé comme sel du jeton de
-     * vérification QR (remplace l'ancien littéral codé en dur 'ecole_app_v2',
-     * devinable puisque partagé par tous les établissements et visible dans
-     * le code source). Généré à la volée au premier bulletin, puis persisté —
-     * même mécanisme que les settings existants (etab_settings), aucune
-     * nouvelle table nécessaire.
-     */
-    private static function getOrCreateSecret(SettingsService $settings, int $etablissementId): string
+    /** Service de jetons, ou null si BULLETIN_TOKEN_SECRET est absent/invalide (signalé une fois par processus). */
+    private static function tokenService(): ?BulletinTokenService
     {
-        $secret = $settings->get($etablissementId, 'academique', 'bulletin_secret', null);
-        if (is_string($secret) && $secret !== '') {
-            return $secret;
+        try {
+            return BulletinTokenService::fromEnvironment();
+        } catch (BulletinTokenException $e) {
+            if (!self::$secretAbsentSignale) {
+                self::$secretAbsentSignale = true;
+                Logger::warning('Jetons de bulletins indisponibles : ' . $e->getMessage());   // jamais la valeur du secret
+            }
+            return null;
         }
-
-        $secret = bin2hex(random_bytes(32));
-        $settings->set($etablissementId, 'academique', 'bulletin_secret', $secret, 'string');
-        return $secret;
     }
 }

@@ -69,10 +69,12 @@ class BulletinGenerator implements BulletinGeneratorInterface
         private BulletinRepository         $repo,
         private float                      $seuilRattrapage = 8.0,
         private float                      $notePassage     = 10.0,
-        private string                     $appKey          = 'ecole_app_v2',
         ?PeriodeScolaireRepository         $periodeRepo     = null,
         ?AbsenceRepository                 $absenceRepo     = null,
         ?AppreciationMatiereRepository     $apprRepo        = null,
+        // Aucune clé par défaut : sans service de jetons (BULLETIN_TOKEN_SECRET absent), les aperçus restent
+        // possibles mais toute génération persistée est refusée (BulletinTokenException).
+        private ?BulletinTokenService      $tokens          = null,
     ) {
         $this->periodeRepo = $periodeRepo ?? new PeriodeScolaireRepository();
         $this->absenceRepo = $absenceRepo ?? new AbsenceRepository();
@@ -107,15 +109,19 @@ class BulletinGenerator implements BulletinGeneratorInterface
         $classement       = $this->rankingEngine->classementClasse($classeId, $periodeId);
         $resultatsAnnuels = $this->resultatsClasseEtAnnuels($classeId, $periode->annee_scolaire, $eleveId);
 
+        // Jeton : celui déjà stocké pour ce bulletin s'il existe (jamais de changement silencieux à la
+        // régénération), sinon un nouveau jeton officiel. Requiert BULLETIN_TOKEN_SECRET.
+        $jeton = $this->resoudreJeton($eleve, $eleveId, $periodeId);
+
         $bulletin = $this->buildBulletinData(
             $eleveId, $periodeId, $userId,
             $matieresData, $eleve, $periode, $etab,
-            $classement, $resultatsAnnuels, preview: false
+            $classement, $resultatsAnnuels, preview: false, token: $jeton['token']
         );
         $bulletin = $this->preserveAppreciationDirecteur($bulletin);
 
         // Persistance
-        $this->repo->saveBulletin($bulletin);
+        $this->repo->saveBulletin($bulletin, $jeton['version']);
 
         // Événement + audit
         EventDispatcher::dispatch(new BulletinGenerated(
@@ -137,6 +143,8 @@ class BulletinGenerator implements BulletinGeneratorInterface
 
     public function genererBulletinsClasse(int $classeId, int $periodeId, int $userId): array
     {
+        $this->tokenService();   // refus explicite et immédiat si BULLETIN_TOKEN_SECRET est absent ou invalide
+
         // Classement calculé une seule fois pour toute la classe
         $classement = $this->rankingEngine->classementClasse($classeId, $periodeId);
         $etab       = $this->repo->infoEtablissement();
@@ -160,14 +168,16 @@ class BulletinGenerator implements BulletinGeneratorInterface
                 $rows         = $this->repo->notesEleveParPeriode((int)$eleveId, $classeId, $periodeId);
                 $matieresData = $this->groupNotesByMatiere($rows);
 
+                $jeton = $this->resoudreJeton($eleve, (int)$eleveId, $periodeId);
+
                 $bulletin = $this->buildBulletinData(
                     (int)$eleveId, $periodeId, $userId,
                     $matieresData, $eleve, $periode, $etab,
-                    $classement, $resultatsAnnuels, preview: false
+                    $classement, $resultatsAnnuels, preview: false, token: $jeton['token']
                 );
                 $bulletin = $this->preserveAppreciationDirecteur($bulletin);
 
-                $this->repo->saveBulletin($bulletin);
+                $this->repo->saveBulletin($bulletin, $jeton['version']);
 
                 EventDispatcher::dispatch(new BulletinGenerated(
                     eleveId          : (int)$eleveId,
@@ -233,14 +243,18 @@ class BulletinGenerator implements BulletinGeneratorInterface
     {
         $row = $this->repo->findByToken($verificationToken);
         if (!$row) {
-            throw new \RuntimeException("Bulletin introuvable : $verificationToken");
+            throw new \RuntimeException('Bulletin introuvable.');
         }
-        if ($row['statut'] === 'archive') {
-            throw new \RuntimeException("Impossible de publier un bulletin archivé.");
+        if (($row['statut'] ?? '') !== 'brouillon') {
+            throw new \RuntimeException('Seul un bulletin en brouillon peut être publié.');
         }
+        $this->exigerJetonOfficiel($row);   // jamais de QR officiel sur un jeton hérité ou invalide
 
         $publishedAt = date('Y-m-d H:i:s');
-        $this->repo->updateStatut($verificationToken, 'publie', $userId, publishedAt: $publishedAt);
+        // Transition atomique : si le statut a changé entre-temps (publication simultanée), rien n'est écrit.
+        if (!$this->repo->transitionStatut((int)$row['id'], 'brouillon', 'publie', $userId, $publishedAt)) {
+            throw new \RuntimeException('Le statut du bulletin a changé entre-temps : publication annulée.');
+        }
 
         $bulletin = BulletinData::fromArray(json_decode($row['data_json'], true) ?? [])
             ->withStatut('publie', publishedAt: $publishedAt);
@@ -261,14 +275,16 @@ class BulletinGenerator implements BulletinGeneratorInterface
     {
         $row = $this->repo->findByToken($verificationToken);
         if (!$row) {
-            throw new \RuntimeException("Bulletin introuvable : $verificationToken");
+            throw new \RuntimeException('Bulletin introuvable.');
         }
-        if ($row['statut'] !== 'publie') {
-            throw new \RuntimeException("Seul un bulletin publié peut être archivé.");
+        if (($row['statut'] ?? '') !== 'publie') {
+            throw new \RuntimeException('Seul un bulletin publié peut être archivé.');
         }
 
         $archivedAt = date('Y-m-d H:i:s');
-        $this->repo->updateStatut($verificationToken, 'archive', $userId, archivedAt: $archivedAt);
+        if (!$this->repo->transitionStatut((int)$row['id'], 'publie', 'archive', $userId, $archivedAt)) {
+            throw new \RuntimeException('Le statut du bulletin a changé entre-temps : archivage annulé.');
+        }
 
         $bulletin = BulletinData::fromArray(json_decode($row['data_json'], true) ?? [])
             ->withStatut('archive', archivedAt: $archivedAt);
@@ -292,6 +308,12 @@ class BulletinGenerator implements BulletinGeneratorInterface
     public function exportHtml(BulletinData $b): string
     {
         $esc = fn(mixed $v): string => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
+
+        // Le jeton n'est jamais imprimé ; le lien de vérification n'existe que pour un bulletin officiel
+        // (qrCodeUrl vide pour un brouillon ou un aperçu).
+        $verifLigne = $b->qrCodeUrl !== ''
+            ? "Vérifier l'authenticité de ce bulletin : " . $esc($b->qrCodeUrl) . '<br>'
+            : '';
 
         // Lignes de matières
         $lignesHtml = '';
@@ -495,8 +517,7 @@ HTML
 
   <!-- Vérification -->
   <div class="verification">
-    Vérifier l'authenticité de ce bulletin : {$esc($b->qrCodeUrl)}<br>
-    Token : {$esc($b->verificationToken)} — Généré le {$esc($b->generatedAt)}
+    {$verifLigne}Généré le {$esc($b->generatedAt)}
   </div>
 </div>
 </body>
@@ -508,9 +529,10 @@ HTML;
     {
         $payload          = $bulletin->toArray();
         $payload['_links'] = [
-            'self'   => '/v2/academique/bulletins/' . $bulletin->verificationToken,
-            'verify' => $bulletin->qrCodeUrl,
-            'html'   => '/v2/academique/bulletins/' . $bulletin->verificationToken . '/html',
+            // Aucun jeton dans les liens : un brouillon n'a pas de lien de vérification, et les ressources sont
+            // adressées par (élève, période).
+            'self'   => '/v2/academique/bulletins/' . $bulletin->eleveId . '/' . $bulletin->periodeId . '/imprimer',
+            'verify' => $bulletin->qrCodeUrl !== '' ? $bulletin->qrCodeUrl : null,
         ];
         return $payload;
     }
@@ -534,6 +556,7 @@ HTML;
         RankingResultDTO $classement,
         array            $resultatsAnnuels,
         bool             $preview,
+        string           $token = '',
     ): BulletinData {
         // 1 — AcademicCalculationService : SEULE source des moyennes
         $calcResult    = $this->calculator->calculerBulletin($matieresData, true, $this->seuilRattrapage);
@@ -565,10 +588,9 @@ HTML;
             ? $this->absenceRepo->countByEleveAndDateRange($eleveId, $periode->date_debut, $periode->date_fin)
             : ['justifiees' => 0, 'nonJustifiees' => 0];
 
-        // 5 — Token de vérification (stable pour le même élève+période)
-        $token = $this->generateVerificationToken($eleveId, $periodeId);
-        $baseUrl = defined('APP_URL') ? rtrim(APP_URL, '/') : '';
-        $qrUrl   = $baseUrl . '/v2/academique/bulletins/verify/' . $token;
+        // 5 — Jeton de vérification : fourni par l'appelant (aperçu : aucun). L'URL du QR n'est JAMAIS figée
+        // dans le bulletin : elle est construite à l'impression, et seulement pour un bulletin publié.
+        $qrUrl = '';
 
         return new BulletinData(
             eleveId              : $eleveId,
@@ -913,11 +935,60 @@ HTML;
     }
 
     /**
-     * Token SHA-256 stable pour un couple (eleve_id, periode_id).
+     * Jeton officiel (HMAC) d'un bulletin — voir BulletinTokenService pour la définition exacte.
+     *
+     * @throws BulletinTokenException si BULLETIN_TOKEN_SECRET est absent ou invalide
      */
-    public function generateVerificationToken(int $eleveId, int $periodeId): string
+    public function issueToken(int $etablissementId, int $eleveId, int $periodeId): string
     {
-        return hash('sha256', "bulletin:{$eleveId}:{$periodeId}:{$this->appKey}");
+        return $this->tokenService()->issue($etablissementId, $eleveId, $periodeId);
+    }
+
+    private function tokenService(): BulletinTokenService
+    {
+        return $this->tokens ?? throw BulletinTokenException::missing();
+    }
+
+    /**
+     * Jeton à porter par le bulletin qu'on enregistre : celui DÉJÀ stocké s'il existe (une régénération ne
+     * change jamais silencieusement un jeton, quelle que soit sa version), sinon un nouveau jeton officiel.
+     *
+     * @return array{token:string, version:int}
+     */
+    private function resoudreJeton(object $eleve, int $eleveId, int $periodeId): array
+    {
+        $existant = $this->repo->findByEleveEtPeriode($eleveId, $periodeId);
+        if ($existant !== null && (string)($existant['verification_token'] ?? '') !== '') {
+            return ['token' => (string)$existant['verification_token'], 'version' => (int)($existant['token_version'] ?? 1)];
+        }
+        return [
+            'token'   => $this->issueToken($this->etablissementDe($eleve), $eleveId, $periodeId),
+            'version' => BulletinTokenService::VERSION,
+        ];
+    }
+
+    /** Un bulletin ne peut être publié (donc recevoir un QR officiel) qu'avec un jeton de version courante et valide. */
+    private function exigerJetonOfficiel(array $row): void
+    {
+        if ((int)($row['token_version'] ?? 1) !== BulletinTokenService::VERSION) {
+            throw new \RuntimeException('Jeton hérité : la rotation des jetons doit précéder la publication de ce bulletin.');
+        }
+        $etab = (int)($row['etablissement_id'] ?? 0) ?: $this->etablissementDe((object)[]);
+        if (!$this->tokenService()->matches((string)$row['verification_token'], $etab, (int)$row['eleve_id'], (int)$row['periode_id'])) {
+            throw new \RuntimeException('Jeton de vérification invalide pour ce bulletin : publication refusée.');
+        }
+    }
+
+    private function etablissementDe(object $eleve): int
+    {
+        $id = (int)($eleve->etablissement_id ?? 0);
+        if ($id > 0) {
+            return $id;
+        }
+        if (\Core\Tenant\TenantContext::isSet()) {
+            return \Core\Tenant\TenantContext::id();
+        }
+        return (int)((require ROOT_PATH . '/config/tenant.php')['default_id'] ?? 1);
     }
 
     private function buildSignatures(): array
