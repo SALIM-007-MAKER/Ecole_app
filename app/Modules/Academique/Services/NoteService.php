@@ -54,6 +54,11 @@ class NoteService
         $conduite = $this->repo->evaluationEstConduite($batch->evaluationId);
 
         foreach ($batch->notes as $dto) {
+            // Lot 3 : l'élève doit appartenir à la classe de l'évaluation (donc à l'établissement courant)
+            if (!$this->repo->eleveDansClasseDeLEvaluation($batch->evaluationId, $dto->eleveId)) {
+                $results['errors'][$dto->eleveId] = "Élève introuvable dans la classe de cette évaluation.";
+                continue;
+            }
             // Conduite : pas de case « absent » (une note de comportement est toujours attribuée). Une ligne laissée
             // vide n'est pas enregistrée : la note reste « non saisie ».
             if ($conduite) {

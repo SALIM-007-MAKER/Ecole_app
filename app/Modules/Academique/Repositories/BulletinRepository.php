@@ -5,6 +5,7 @@ namespace App\Modules\Academique\Repositories;
 use Core\Database;
 use Core\Tenant\BrandingService;
 use Core\Tenant\TenantContext;
+use Core\Tenant\TenantScope;
 use App\Modules\Academique\DTO\BulletinData;
 
 /**
@@ -98,11 +99,11 @@ class BulletinRepository
                    c.niveau
             FROM eleves e
             JOIN classes c ON c.id = e.classe_id
-            WHERE e.id = :id
+            WHERE e.id = ?" . TenantScope::colonne('eleves', 'e.etablissement_id')[0] . "
         ";
         try {
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([':id' => $eleveId]);
+            $stmt->execute([$eleveId, ...TenantScope::colonne('eleves', 'e.etablissement_id')[1]]);
             $row = $stmt->fetch(\PDO::FETCH_OBJ);
             return $row ?: null;
         } catch (\PDOException) {
@@ -120,11 +121,11 @@ class BulletinRepository
                    COALESCE(annee_scolaire, CONCAT(YEAR(date_debut), '/', YEAR(date_fin))) AS annee_scolaire,
                    date_debut, date_fin
             FROM periodes_scolaires
-            WHERE id = :id
+            WHERE id = ?" . TenantScope::referentiel('periodes_scolaires', 'etablissement_id')[0] . "
         ";
         try {
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([':id' => $periodeId]);
+            $stmt->execute([$periodeId, ...TenantScope::referentiel('periodes_scolaires', 'etablissement_id')[1]]);
             $row = $stmt->fetch(\PDO::FETCH_OBJ);
             return $row ?: null;
         } catch (\PDOException) {
@@ -186,9 +187,9 @@ class BulletinRepository
     {
         try {
             $stmt = $this->db->prepare(
-                "SELECT id FROM eleves WHERE classe_id = :cid ORDER BY nom, prenom"
+                "SELECT id FROM eleves WHERE classe_id = ?" . TenantScope::colonne('eleves', 'etablissement_id')[0] . " ORDER BY nom, prenom"
             );
-            $stmt->execute([':cid' => $classeId]);
+            $stmt->execute([$classeId, ...TenantScope::colonne('eleves', 'etablissement_id')[1]]);
             return $stmt->fetchAll(\PDO::FETCH_COLUMN);
         } catch (\PDOException) {
             return [];
@@ -223,9 +224,9 @@ class BulletinRepository
                 "SELECT b.*, e.etablissement_id AS etablissement_id
                    FROM bulletins_v2 b
                    JOIN eleves e ON e.id = b.eleve_id
-                  WHERE b.eleve_id = :e AND b.periode_id = :p"
+                  WHERE b.eleve_id = ? AND b.periode_id = ?" . TenantScope::colonne('eleves', 'e.etablissement_id')[0]
             );
-            $stmt->execute([':e' => $eleveId, ':p' => $periodeId]);
+            $stmt->execute([$eleveId, $periodeId, ...TenantScope::colonne('eleves', 'e.etablissement_id')[1]]);
             $row = $stmt->fetch(\PDO::FETCH_ASSOC);
             return $row ?: null;
         } catch (\PDOException) {
@@ -244,11 +245,11 @@ class BulletinRepository
                 "SELECT b.moyenne
                    FROM bulletins_v2 b
                    JOIN periodes_scolaires ps ON ps.id = b.periode_id
-                  WHERE b.eleve_id = :e
+                  WHERE b.eleve_id = ?" . TenantScope::classe('b.classe_id')[0] . "
                   ORDER BY ps.date_fin DESC, b.generated_at DESC
                   LIMIT 1"
             );
-            $stmt->execute([':e' => $eleveId]);
+            $stmt->execute([$eleveId, ...TenantScope::classe('b.classe_id')[1]]);
             $val = $stmt->fetchColumn();
             return $val !== false && $val !== null ? (float)$val : null;
         } catch (\PDOException) {
@@ -264,11 +265,11 @@ class BulletinRepository
                 "SELECT b.*, e.nom, e.prenom, e.matricule
                    FROM bulletins_v2 b
                    JOIN eleves e ON e.id = b.eleve_id
-                  WHERE b.classe_id  = :c
-                    AND b.periode_id = :p
+                  WHERE b.classe_id  = ?
+                    AND b.periode_id = ?" . TenantScope::classe('b.classe_id')[0] . "
                   ORDER BY b.rang ASC"
             );
-            $stmt->execute([':c' => $classeId, ':p' => $periodeId]);
+            $stmt->execute([$classeId, $periodeId, ...TenantScope::classe('b.classe_id')[1]]);
             return $stmt->fetchAll(\PDO::FETCH_ASSOC);
         } catch (\PDOException) {
             return [];
@@ -433,10 +434,10 @@ class BulletinRepository
         try {
             $stmt = $this->db->prepare(
                 "UPDATE bulletins_v2
-                    SET appreciation_directeur = :app_dir, updated_at = NOW()
-                  WHERE verification_token = :token"
+                    SET appreciation_directeur = ?, updated_at = NOW()
+                  WHERE verification_token = ?" . TenantScope::classe('classe_id')[0]
             );
-            $stmt->execute([':app_dir' => $appreciation, ':token' => $token]);
+            $stmt->execute([$appreciation, $token, ...TenantScope::classe('classe_id')[1]]);
             return $stmt->rowCount() > 0;
         } catch (\PDOException $e) {
             throw new \RuntimeException('Erreur mise à jour de l\'appréciation direction (code SQL ' . (string)($e->errorInfo[1] ?? $e->getCode()) . ').');

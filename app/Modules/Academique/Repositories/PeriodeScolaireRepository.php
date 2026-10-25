@@ -3,6 +3,7 @@
 namespace App\Modules\Academique\Repositories;
 
 use Core\Database;
+use Core\Tenant\TenantScope;
 use PDO;
 
 class PeriodeScolaireRepository
@@ -54,17 +55,20 @@ class PeriodeScolaireRepository
                        JOIN `controles` c ON c.id = n.controle_id AND c.periode_id = ps.id
                     ) AS nb_notes_v1
              FROM `periodes_scolaires` ps
-             WHERE ps.id = ?"
+             WHERE ps.id = ?" . TenantScope::referentiel('periodes_scolaires', 'ps.etablissement_id')[0]
         );
-        $stmt->execute([$id]);
+        $stmt->execute([$id, ...TenantScope::referentiel('periodes_scolaires', 'ps.etablissement_id')[1]]);
         $row = $stmt->fetch(PDO::FETCH_OBJ);
         return $row ?: null;
     }
 
     public function findAllWithStats(string $annee = ''): array
     {
-        $where  = $annee !== '' ? "WHERE ps.annee_scolaire = ?" : '';
-        $params = $annee !== '' ? [$annee] : [];
+        $cond = []; $params = [];
+        if ($annee !== '') { $cond[] = 'ps.annee_scolaire = ?'; $params[] = $annee; }
+        [$ts, $tp] = TenantScope::referentiel('periodes_scolaires', 'ps.etablissement_id', '');
+        if ($ts !== '') { $cond[] = trim($ts); array_push($params, ...$tp); }
+        $where = $cond ? 'WHERE ' . implode(' AND ', $cond) : '';
 
         $stmt = $this->pdo->prepare(
             "SELECT ps.*,
@@ -79,15 +83,17 @@ class PeriodeScolaireRepository
 
     public function findActive(?string $annee = null): ?\stdClass
     {
+        [$ts, $tp] = TenantScope::referentiel('periodes_scolaires', 'etablissement_id');
         if ($annee !== null) {
             $stmt = $this->pdo->prepare(
-                "SELECT * FROM `periodes_scolaires` WHERE is_active = 1 AND annee_scolaire = ? LIMIT 1"
+                "SELECT * FROM `periodes_scolaires` WHERE is_active = 1 AND annee_scolaire = ?" . $ts . " LIMIT 1"
             );
-            $stmt->execute([$annee]);
+            $stmt->execute([$annee, ...$tp]);
         } else {
-            $stmt = $this->pdo->query(
-                "SELECT * FROM `periodes_scolaires` WHERE is_active = 1 ORDER BY annee_scolaire DESC LIMIT 1"
+            $stmt = $this->pdo->prepare(
+                "SELECT * FROM `periodes_scolaires` WHERE is_active = 1" . $ts . " ORDER BY annee_scolaire DESC LIMIT 1"
             );
+            $stmt->execute($tp);
         }
         $row = $stmt->fetch(PDO::FETCH_OBJ);
         return $row ?: null;
@@ -95,30 +101,34 @@ class PeriodeScolaireRepository
 
     public function findForSelect(?string $annee = null): array
     {
+        [$ts, $tp] = TenantScope::referentiel('periodes_scolaires', 'etablissement_id');
         if ($annee !== null) {
             $stmt = $this->pdo->prepare(
                 "SELECT id, nom, statut, is_active, annee_scolaire
                  FROM `periodes_scolaires`
-                 WHERE annee_scolaire = ? AND statut != 'archivee'
+                 WHERE annee_scolaire = ? AND statut != 'archivee'" . $ts . "
                  ORDER BY ordre ASC, numero ASC"
             );
-            $stmt->execute([$annee]);
+            $stmt->execute([$annee, ...$tp]);
         } else {
-            $stmt = $this->pdo->query(
+            $stmt = $this->pdo->prepare(
                 "SELECT id, nom, statut, is_active, annee_scolaire
                  FROM `periodes_scolaires`
-                 WHERE statut != 'archivee'
+                 WHERE statut != 'archivee'" . $ts . "
                  ORDER BY annee_scolaire DESC, ordre ASC, numero ASC"
             );
+            $stmt->execute($tp);
         }
         return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 
     public function listAnneesScolaires(): array
     {
-        $stmt = $this->pdo->query(
-            "SELECT DISTINCT annee_scolaire FROM `periodes_scolaires` ORDER BY annee_scolaire DESC"
+        [$ts, $tp] = TenantScope::referentiel('periodes_scolaires', 'etablissement_id', 'WHERE');
+        $stmt = $this->pdo->prepare(
+            "SELECT DISTINCT annee_scolaire FROM `periodes_scolaires`" . $ts . " ORDER BY annee_scolaire DESC"
         );
+        $stmt->execute($tp);
         $rows = $stmt->fetchAll(PDO::FETCH_OBJ);
         return array_column($rows, 'annee_scolaire');
     }
@@ -131,9 +141,9 @@ class PeriodeScolaireRepository
     ): bool {
         $stmt = $this->pdo->prepare(
             "SELECT COUNT(*) FROM `periodes_scolaires`
-             WHERE annee_scolaire = ? AND type_periode = ? AND numero = ? AND id != ?"
+             WHERE annee_scolaire = ? AND type_periode = ? AND numero = ? AND id != ?" . TenantScope::referentiel('periodes_scolaires', 'etablissement_id')[0]
         );
-        $stmt->execute([$annee, $type, $numero, $excludeId]);
+        $stmt->execute([$annee, $type, $numero, $excludeId, ...TenantScope::referentiel('periodes_scolaires', 'etablissement_id')[1]]);
         return (int)$stmt->fetchColumn() > 0;
     }
 
@@ -141,9 +151,9 @@ class PeriodeScolaireRepository
     {
         $stmt = $this->pdo->prepare(
             "SELECT COUNT(*) FROM `periodes_scolaires`
-             WHERE nom = ? AND annee_scolaire = ? AND id != ?"
+             WHERE nom = ? AND annee_scolaire = ? AND id != ?" . TenantScope::referentiel('periodes_scolaires', 'etablissement_id')[0]
         );
-        $stmt->execute([$nom, $annee, $excludeId]);
+        $stmt->execute([$nom, $annee, $excludeId, ...TenantScope::referentiel('periodes_scolaires', 'etablissement_id')[1]]);
         return (int)$stmt->fetchColumn() > 0;
     }
 
@@ -163,9 +173,9 @@ class PeriodeScolaireRepository
             "SELECT COUNT(*) FROM `periodes_scolaires`
              WHERE annee_scolaire = ? AND id != ?
                AND date_debut IS NOT NULL AND date_fin IS NOT NULL
-               AND date_debut <= ? AND date_fin >= ?"
+               AND date_debut <= ? AND date_fin >= ?" . TenantScope::referentiel('periodes_scolaires', 'etablissement_id')[0]
         );
-        $stmt->execute([$annee, $excludeId, $dateFin, $dateDebut]);
+        $stmt->execute([$annee, $excludeId, $dateFin, $dateDebut, ...TenantScope::referentiel('periodes_scolaires', 'etablissement_id')[1]]);
         return (int)$stmt->fetchColumn() > 0;
     }
 
@@ -174,10 +184,10 @@ class PeriodeScolaireRepository
     {
         $stmt = $this->pdo->prepare(
             "SELECT id, nom, date_debut, date_fin FROM `periodes_scolaires`
-             WHERE annee_scolaire = ? AND date_debut IS NOT NULL AND date_fin IS NOT NULL
+             WHERE annee_scolaire = ? AND date_debut IS NOT NULL AND date_fin IS NOT NULL" . TenantScope::referentiel('periodes_scolaires', 'etablissement_id')[0] . "
              ORDER BY date_debut ASC"
         );
-        $stmt->execute([$annee]);
+        $stmt->execute([$annee, ...TenantScope::referentiel('periodes_scolaires', 'etablissement_id')[1]]);
         return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 
@@ -187,16 +197,17 @@ class PeriodeScolaireRepository
         $stmt = $this->pdo->prepare(
             "SELECT id, numero, nom, date_debut, date_fin
              FROM `periodes_scolaires`
-             WHERE annee_scolaire = ? AND type_periode = ?
+             WHERE annee_scolaire = ? AND type_periode = ?" . TenantScope::referentiel('periodes_scolaires', 'etablissement_id')[0] . "
              ORDER BY numero ASC"
         );
-        $stmt->execute([$annee, $type]);
+        $stmt->execute([$annee, $type, ...TenantScope::referentiel('periodes_scolaires', 'etablissement_id')[1]]);
         return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 
     public function countStats(): array
     {
-        $row = $this->pdo->query(
+        [$ts, $tp] = TenantScope::referentiel('periodes_scolaires', 'etablissement_id', 'WHERE');
+        $stmt = $this->pdo->prepare(
             "SELECT
                 COUNT(*)                              AS total,
                 SUM(statut = 'preparation')           AS preparation,
@@ -206,8 +217,10 @@ class PeriodeScolaireRepository
                 SUM(statut = 'archivee')              AS archivees,
                 SUM(is_active = 1)                    AS actives,
                 COUNT(DISTINCT annee_scolaire)        AS nb_annees
-             FROM `periodes_scolaires`"
-        )->fetch(PDO::FETCH_OBJ);
+             FROM `periodes_scolaires`" . $ts
+        );
+        $stmt->execute($tp);
+        $row = $stmt->fetch(PDO::FETCH_OBJ);
 
         return [
             'total'        => (int)($row->total        ?? 0),
@@ -228,6 +241,8 @@ class PeriodeScolaireRepository
         $conditions = [];
         $params     = [];
 
+        [$ts, $tp] = TenantScope::referentiel('periodes_scolaires', 'ps.etablissement_id', '');
+        if ($ts !== '') { $conditions[] = trim($ts); array_push($params, ...$tp); }
         if (!empty($filters['annee_scolaire'])) {
             $conditions[] = 'ps.annee_scolaire = ?';
             $params[]     = $filters['annee_scolaire'];

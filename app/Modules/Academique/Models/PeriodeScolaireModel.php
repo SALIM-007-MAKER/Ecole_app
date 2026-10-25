@@ -3,6 +3,7 @@
 namespace App\Modules\Academique\Models;
 
 use Core\Model;
+use Core\Tenant\TenantScope;
 
 class PeriodeScolaireModel extends Model
 {
@@ -50,39 +51,59 @@ class PeriodeScolaireModel extends Model
         'archivee'    => 'slate',
     ];
 
+    /** Propre à l'établissement (colonne etablissement_id, T051) ; partagé tant que la migration n'est pas appliquée. */
+    protected function ownershipRestriction(): ?array
+    {
+        return TenantScope::restrictionReferentiel('periodes_scolaires');
+    }
+
+    public function insert(array $data): int
+    {
+        if (!array_key_exists('etablissement_id', $data) && ($e = TenantScope::valeurInsertion('periodes_scolaires')) !== null) {
+            $data['etablissement_id'] = $e;
+        }
+        return parent::insert($data);
+    }
+
     public function findActive(?string $annee = null): ?\stdClass
     {
+        [$ts, $tp] = TenantScope::referentiel('periodes_scolaires', 'etablissement_id');
         if ($annee !== null) {
             return $this->queryOne(
-                'SELECT * FROM periodes_scolaires WHERE is_active = 1 AND annee_scolaire = ? LIMIT 1',
-                [$annee]
+                'SELECT * FROM periodes_scolaires WHERE is_active = 1 AND annee_scolaire = ?' . $ts . ' LIMIT 1',
+                [$annee, ...$tp]
             ) ?: null;
         }
         return $this->queryOne(
-            'SELECT * FROM periodes_scolaires WHERE is_active = 1 ORDER BY annee_scolaire DESC LIMIT 1'
+            'SELECT * FROM periodes_scolaires WHERE is_active = 1' . $ts . ' ORDER BY annee_scolaire DESC LIMIT 1',
+            $tp
         ) ?: null;
     }
 
     public function findByAnnee(string $annee): array
     {
+        [$ts, $tp] = TenantScope::referentiel('periodes_scolaires', 'etablissement_id');
         return $this->query(
-            'SELECT * FROM periodes_scolaires WHERE annee_scolaire = ? ORDER BY ordre ASC, numero ASC',
-            [$annee]
+            'SELECT * FROM periodes_scolaires WHERE annee_scolaire = ?' . $ts . ' ORDER BY ordre ASC, numero ASC',
+            [$annee, ...$tp]
         );
     }
 
     public function deactiverTous(string $annee): void
     {
+        [$ts, $tp] = TenantScope::referentiel('periodes_scolaires', 'etablissement_id');
         $this->execute(
-            'UPDATE periodes_scolaires SET is_active = 0 WHERE annee_scolaire = ?',
-            [$annee]
+            'UPDATE periodes_scolaires SET is_active = 0 WHERE annee_scolaire = ?' . $ts,
+            [$annee, ...$tp]
         );
     }
 
     public function getAnneesScolaires(): array
     {
+        [$ts, $tp] = TenantScope::referentiel('periodes_scolaires', 'etablissement_id', 'WHERE');
         $rows = $this->query(
-            'SELECT DISTINCT annee_scolaire FROM periodes_scolaires ORDER BY annee_scolaire DESC'
+            'SELECT DISTINCT annee_scolaire FROM periodes_scolaires' . $ts . ' ORDER BY annee_scolaire DESC',
+            $tp
         );
         return array_column($rows, 'annee_scolaire');
     }
@@ -95,9 +116,9 @@ class PeriodeScolaireModel extends Model
                         CONCAT(nom, IF(is_active, ' ★', '')) AS label,
                         statut, is_active
                  FROM periodes_scolaires
-                 WHERE annee_scolaire = ? AND statut != 'archivee'
+                 WHERE annee_scolaire = ? AND statut != 'archivee'" . TenantScope::referentiel('periodes_scolaires', 'etablissement_id')[0] . "
                  ORDER BY ordre ASC, numero ASC",
-                [$annee]
+                [$annee, ...TenantScope::referentiel('periodes_scolaires', 'etablissement_id')[1]]
             );
         }
         return $this->query(
@@ -105,8 +126,9 @@ class PeriodeScolaireModel extends Model
                     CONCAT('[', annee_scolaire, '] ', nom, IF(is_active, ' ★', '')) AS label,
                     statut, is_active
              FROM periodes_scolaires
-             WHERE statut != 'archivee'
-             ORDER BY annee_scolaire DESC, ordre ASC, numero ASC"
+             WHERE statut != 'archivee'" . TenantScope::referentiel('periodes_scolaires', 'etablissement_id')[0] . "
+             ORDER BY annee_scolaire DESC, ordre ASC, numero ASC",
+            TenantScope::referentiel('periodes_scolaires', 'etablissement_id')[1]
         );
     }
 }

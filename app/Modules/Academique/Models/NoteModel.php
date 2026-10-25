@@ -3,6 +3,7 @@
 namespace App\Modules\Academique\Models;
 
 use Core\Model;
+use Core\Tenant\TenantScope;
 
 class NoteModel extends Model
 {
@@ -28,19 +29,25 @@ class NoteModel extends Model
         'verrouillee' => 'lock',
     ];
 
+    /** Une note appartient à l'établissement de la classe de son évaluation (Lot 3). */
+    protected function ownershipRestriction(): ?array
+    {
+        return TenantScope::restrictionEvaluation('evaluation_id');
+    }
+
     public function findByEvaluationEtEleve(int $evaluationId, int $eleveId): ?object
     {
         return $this->queryOne(
-            "SELECT * FROM {$this->table} WHERE evaluation_id = ? AND eleve_id = ? LIMIT 1",
-            [$evaluationId, $eleveId]
+            "SELECT * FROM {$this->table} WHERE evaluation_id = ? AND eleve_id = ?" . TenantScope::evaluation('evaluation_id')[0] . " LIMIT 1",
+            [$evaluationId, $eleveId, ...TenantScope::evaluation('evaluation_id')[1]]
         ) ?: null;
     }
 
     public function findByEvaluation(int $evaluationId): array
     {
         return $this->query(
-            "SELECT * FROM {$this->table} WHERE evaluation_id = ? ORDER BY eleve_id",
-            [$evaluationId]
+            "SELECT * FROM {$this->table} WHERE evaluation_id = ?" . TenantScope::evaluation('evaluation_id')[0] . " ORDER BY eleve_id",
+            [$evaluationId, ...TenantScope::evaluation('evaluation_id')[1]]
         );
     }
 }

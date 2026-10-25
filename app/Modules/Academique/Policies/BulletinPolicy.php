@@ -117,7 +117,22 @@ class BulletinPolicy
             );
         }
 
+        // Direction, secrétariat…: la permission ne suffit pas — l'élève doit appartenir à l'établissement de l'utilisateur (Lot 3)
+        if (!$this->eleveDeLEtablissement($user, $eleveId)) {
+            return false;
+        }
         return $this->canView($user);
+    }
+
+    /** L'élève existe-t-il dans l'établissement de la session ? Refus par défaut (élève inconnu, établissement absent). */
+    private function eleveDeLEtablissement(array $user, int $eleveId): bool
+    {
+        $etab = (int)($user['etablissement_id'] ?? 0);
+        if ($etab <= 0) {
+            return false;
+        }
+        $row = $this->eleveModel->queryOne('SELECT etablissement_id FROM eleves WHERE id = ?', [$eleveId]);
+        return $row !== false && $row !== null && (int)$row->etablissement_id === $etab;
     }
 
     /** Peut publier un bulletin (le rendre visible aux parents/élèves). */

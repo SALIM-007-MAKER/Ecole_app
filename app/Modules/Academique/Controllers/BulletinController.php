@@ -191,7 +191,7 @@ class BulletinController extends Controller
         $eleveId   = (int)$eleveId;
         $periodeId = (int)$periodeId;
 
-        if (!$this->policy->canAddDirecteurAppreciation($user)) {
+        if (!$this->policy->canAddDirecteurAppreciation($user) || !$this->policy->canViewForParent($user, $eleveId, $periodeId)) {
             http_response_code(403);
             $this->render('errors/403', ['title' => 'Permission insuffisante'], 'none');
             return;
@@ -229,7 +229,7 @@ class BulletinController extends Controller
         $eleveId   = (int)$eleveId;
         $periodeId = (int)$periodeId;
 
-        if (!$this->policy->canAddDirecteurAppreciation($user)) {
+        if (!$this->policy->canAddDirecteurAppreciation($user) || !$this->policy->canViewForParent($user, $eleveId, $periodeId)) {
             http_response_code(403);
             $this->render('errors/403', ['title' => 'Permission insuffisante'], 'none');
             return;

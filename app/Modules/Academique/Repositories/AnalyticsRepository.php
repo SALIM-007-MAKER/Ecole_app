@@ -60,6 +60,7 @@ class AnalyticsRepository
             FROM eleves e
             JOIN evaluations ev ON ev.classe_id = e.classe_id
                 AND ev.periode_scolaire_id = :periode_id
+                AND ev.classe_id IN (SELECT id FROM classes WHERE etablissement_id = COALESCE(:tid, etablissement_id))
                 AND " . self::STATUT_OK . "
             LEFT JOIN matieres cm ON cm.id = ev.matiere_id
             LEFT JOIN notes_v2 n ON n.eleve_id = e.id AND n.evaluation_id = ev.id
@@ -93,6 +94,7 @@ class AnalyticsRepository
             JOIN eleves e ON e.classe_id = c.id
             JOIN evaluations ev ON ev.classe_id = c.id
                 AND ev.periode_scolaire_id = :periode_id
+                AND ev.classe_id IN (SELECT id FROM classes WHERE etablissement_id = COALESCE(:tid, etablissement_id))
                 AND " . self::STATUT_OK . "
             LEFT JOIN matieres cm ON cm.id = ev.matiere_id
             LEFT JOIN notes_v2 n ON n.eleve_id = e.id AND n.evaluation_id = ev.id
@@ -127,6 +129,7 @@ class AnalyticsRepository
             FROM matieres m
             JOIN evaluations ev ON ev.matiere_id = m.id
                 AND ev.periode_scolaire_id = :periode_id
+                AND ev.classe_id IN (SELECT id FROM classes WHERE etablissement_id = COALESCE(:tid, etablissement_id))
                 AND " . self::STATUT_OK . "
             JOIN eleves e ON e.classe_id = ev.classe_id
             LEFT JOIN matieres cm ON cm.id = ev.matiere_id
@@ -157,6 +160,7 @@ class AnalyticsRepository
             JOIN eleves e ON e.classe_id = c.id
             JOIN evaluations ev ON ev.classe_id = c.id
                 AND ev.periode_scolaire_id = :periode_id
+                AND ev.classe_id IN (SELECT id FROM classes WHERE etablissement_id = COALESCE(:tid, etablissement_id))
                 AND " . self::STATUT_OK . "
             LEFT JOIN matieres cm ON cm.id = ev.matiere_id
             LEFT JOIN notes_v2 n ON n.eleve_id = e.id AND n.evaluation_id = ev.id
@@ -196,6 +200,7 @@ class AnalyticsRepository
                 FROM notes_v2 n
                 JOIN evaluations ev ON ev.id = n.evaluation_id
                     AND ev.periode_scolaire_id = :periode_id
+                AND ev.classe_id IN (SELECT id FROM classes WHERE etablissement_id = COALESCE(:tid, etablissement_id))
                     AND " . self::STATUT_OK . "
                 WHERE n.est_absent = 0
                   AND n.valeur IS NOT NULL
@@ -225,6 +230,7 @@ class AnalyticsRepository
             FROM eleves e
             JOIN evaluations ev ON ev.classe_id = e.classe_id
                 AND ev.periode_scolaire_id = :periode_id
+                AND ev.classe_id IN (SELECT id FROM classes WHERE etablissement_id = COALESCE(:tid, etablissement_id))
                 AND " . self::STATUT_OK . "
             LEFT JOIN notes_v2 n ON n.eleve_id = e.id AND n.evaluation_id = ev.id
             WHERE 1=1 $filter
@@ -289,6 +295,7 @@ class AnalyticsRepository
             JOIN classes c ON c.id = e.classe_id
             JOIN evaluations ev ON ev.classe_id = e.classe_id
                 AND ev.periode_scolaire_id = :periode_id
+                AND ev.classe_id IN (SELECT id FROM classes WHERE etablissement_id = COALESCE(:tid, etablissement_id))
                 AND " . self::STATUT_OK . "
             LEFT JOIN matieres cm ON cm.id = ev.matiere_id
             LEFT JOIN notes_v2 n ON n.eleve_id = e.id AND n.evaluation_id = ev.id
@@ -319,6 +326,7 @@ class AnalyticsRepository
             JOIN classes c ON c.id = e.classe_id
             JOIN evaluations ev ON ev.classe_id = e.classe_id
                 AND ev.periode_scolaire_id = :periode_id
+                AND ev.classe_id IN (SELECT id FROM classes WHERE etablissement_id = COALESCE(:tid, etablissement_id))
                 AND " . self::STATUT_OK . "
             LEFT JOIN matieres cm ON cm.id = ev.matiere_id
             LEFT JOIN notes_v2 n ON n.eleve_id = e.id AND n.evaluation_id = ev.id
@@ -349,6 +357,7 @@ class AnalyticsRepository
             JOIN evaluations ev ON ev.matiere_id = m.id
                 AND ev.classe_id = pm.classe_id
                 AND ev.periode_scolaire_id = :periode_id
+                AND ev.classe_id IN (SELECT id FROM classes WHERE etablissement_id = COALESCE(:tid, etablissement_id))
                 AND " . self::STATUT_OK . "
             JOIN eleves e ON e.classe_id = c.id
             LEFT JOIN matieres cm ON cm.id = ev.matiere_id
@@ -381,9 +390,9 @@ class AnalyticsRepository
     {
         $sql = "
             SELECT
-                (SELECT COUNT(*) FROM classes) AS nb_classes,
-                (SELECT COUNT(*) FROM eleves)  AS nb_eleves,
-                (SELECT COUNT(DISTINCT niveau) FROM classes) AS nb_niveaux
+                (SELECT COUNT(*) FROM classes WHERE etablissement_id = COALESCE(:tid, etablissement_id)) AS nb_classes,
+                (SELECT COUNT(*) FROM eleves WHERE etablissement_id = COALESCE(:tid, etablissement_id))  AS nb_eleves,
+                (SELECT COUNT(DISTINCT niveau) FROM classes WHERE etablissement_id = COALESCE(:tid, etablissement_id)) AS nb_niveaux
         ";
         return $this->safe($sql, [], fn($s) => $s->fetch(\PDO::FETCH_ASSOC) ?: []);
     }
@@ -398,6 +407,8 @@ class AnalyticsRepository
     private function safe(string $sql, array $params, callable $extract): mixed
     {
         try {
+            // Lot 3 : :tid = établissement courant (NULL sans contexte => COALESCE neutralise le filtre)
+            if (str_contains($sql, ':tid')) { $params[':tid'] = \Core\Tenant\TenantScope::id(); }
             $stmt = $this->db->prepare($sql);
             $stmt->execute($params);
             return $extract($stmt);

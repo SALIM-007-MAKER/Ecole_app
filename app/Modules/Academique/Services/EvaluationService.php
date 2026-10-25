@@ -36,6 +36,8 @@ class EvaluationService
 
     public function creer(EvaluationDTO $dto, int $userId): int
     {
+        $this->verifierReferences($dto);
+
         // Valider la période
         $periode = $this->periodeModel->findById($dto->periodeScolaireId);
         if (!$periode) {
@@ -110,6 +112,7 @@ class EvaluationService
         if (!$evaluation) {
             throw new \RuntimeException("Évaluation introuvable (id={$evaluationId}).");
         }
+        $this->verifierReferences($dto);
         if ($evaluation->statut === 'archivee') {
             throw new \RuntimeException("Impossible de modifier une évaluation archivée.");
         }
@@ -285,6 +288,29 @@ class EvaluationService
     }
 
     // ─── Helper privé ────────────────────────────────────────────────────────
+
+    /**
+     * Isolation (Lot 3) : tous les identifiants soumis par le formulaire doivent appartenir à l'établissement courant — classe,
+     * matière, enseignant, période et type d'évaluation. Un identifiant étranger est traité comme inexistant.
+     */
+    private function verifierReferences(EvaluationDTO $dto): void
+    {
+        if (!$this->repo->classeAppartient($dto->classeId)) {
+            throw new \RuntimeException("Classe introuvable.");
+        }
+        if ($this->repo->matiereEstConduite($dto->matiereId) === null) {
+            throw new \RuntimeException("Matière introuvable.");
+        }
+        if ($dto->enseignantId !== null && !$this->repo->enseignantAppartient($dto->enseignantId)) {
+            throw new \RuntimeException("Enseignant introuvable.");
+        }
+        if (!$this->periodeModel->findById($dto->periodeScolaireId)) {
+            throw new \RuntimeException("Période scolaire introuvable.");
+        }
+        if (!$this->typeModel->findById($dto->typeEvaluationId)) {
+            throw new \RuntimeException("Type d'évaluation introuvable.");
+        }
+    }
 
     /** Conduite : coefficient d'évaluation 1 et note maximale 20. */
     private function conduiteImposee(EvaluationDTO $dto): EvaluationDTO

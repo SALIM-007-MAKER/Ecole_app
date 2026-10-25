@@ -20,7 +20,7 @@ class PeriodeScolaireFiltersDTO
             typePeriode:   trim($data['type_periode']   ?? ''),
             page:          max(1, (int)($data['page']     ?? 1)),
             perPage:       in_array((int)($data['per_page'] ?? 20), [10, 20, 50], true)
-                           ? (int)$data['per_page'] : 20,
+                           ? (int)($data['per_page'] ?? 20) : 20,   // sans per_page, l'ancien code lisait une clé absente (avertissement) et obtenait 0 : liste vide
         );
     }
 
