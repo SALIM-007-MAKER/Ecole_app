@@ -293,7 +293,7 @@ check(!$ep->canDeverrouiller($ens, $evCv) && $ep->canDeverrouiller($sansAdmin($a
     check((int)$one('SELECT COUNT(*) FROM enseignements') === $nbEns, 'affectation d\'un enseignement de Conduite (POST direct, professeur) : refusée');
     check((int)$one('SELECT COUNT(*) FROM enseignements WHERE matiere_id = ?', [$conduite]) === (int)$source->query('SELECT COUNT(*) FROM enseignements WHERE matiere_id = ' . $conduite)->fetchColumn(), 'affectations historiques de la Conduite conservées');
     $totalHeures = (int)$one('SELECT SUM(volume_horaire) FROM matieres WHERE etablissement_id = 1');
-    check($totalHeures === (int)$source->query('SELECT SUM(volume_horaire) FROM matieres WHERE etablissement_id = 1')->fetchColumn() - 2, 'totaux d\'heures : les 2 h parasites de la Conduite disparaissent');
+    check($totalHeures === (int)$source->query("SELECT SUM(volume_horaire) - SUM(CASE WHEN LOWER(nom) = 'conduite' THEN volume_horaire ELSE 0 END) FROM matieres WHERE etablissement_id = 1")->fetchColumn() && (int)$one('SELECT volume_horaire FROM matieres WHERE id = ?', [$conduite]) === 0, 'totaux d\'heures : la Conduite ne compte plus aucune heure (valable que la source soit migrée ou non)');
 
     // ═════════════════════════════════════════════════════════════════════
     section('5. Emplois du temps — la Conduite n\'y figure jamais (liste et garde serveur)');

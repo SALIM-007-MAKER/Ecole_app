@@ -59,6 +59,9 @@ class Application
     {
         $request = new Request();
 
+        // Lot 3 : établissement courant déduit de la SESSION authentifiée (revérifié en base), avant toute route.
+        $this->appliquerContexteEtablissement();
+
         // Charger les routes V1
         $router = $this->router;
         require ROOT_PATH . '/config/routes.php';
@@ -80,6 +83,40 @@ class Application
         }
 
         $this->router->dispatch($request);
+    }
+
+    /**
+     * Positionne TenantContext depuis l'utilisateur connecté (voir Core\Tenant\SessionTenantGuard). Un contexte absent ou
+     * invalide n'est JAMAIS remplacé par un établissement par défaut : la session est invalidée et l'utilisateur renvoyé à la
+     * connexion. Visiteurs et routes /platform/* (PlatformAuth, règle distincte) ne sont pas concernés.
+     */
+    private function appliquerContexteEtablissement(): void
+    {
+        $uri = (string)($_SERVER['REQUEST_URI'] ?? '/');
+        if (Tenant\SessionTenantGuard::routeSansContexte($uri, $this->getBasePath())) {
+            return;
+        }
+        $user = Session::getUser();
+        if ($user === null) {
+            return;
+        }
+
+        $decision = (new Tenant\SessionTenantGuard(Database::getInstance()->getConnection()))->evaluer($user);
+        if ($decision['ok']) {
+            Tenant\TenantContext::set((int)$decision['etablissement_id'], $decision['etablissement']);
+            return;
+        }
+
+        Logger::security(
+            'TENANT_CONTEXT_REFUSED',
+            sprintf('raison=%s user_id=%d etablissement_id=%s uri=%s', $decision['raison'], (int)($user['id'] ?? 0),
+                (string)($user['etablissement_id'] ?? 'null'), (string)parse_url($uri, PHP_URL_PATH))
+        );
+        Session::delete('_auth_user');
+        Session::flash('error', 'Votre session n\'est plus valide pour cet établissement. Veuillez vous reconnecter.');
+        http_response_code(302);
+        header('Location: ' . rtrim((string)$this->config['url'], '/') . '/login');
+        exit;
     }
 
     public function handleError(int $errno, string $errstr, string $errfile, int $errline): bool

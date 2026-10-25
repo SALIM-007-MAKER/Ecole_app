@@ -69,6 +69,12 @@ if ($role !== 'guest') {   // « guest » = visiteur non connecté (pages publiq
     $u = $stmt->fetch();
     if (!$u) { echo 'RESULT:' . json_encode(['error' => 'utilisateur introuvable']) . "\n"; exit(2); }
     $etab = (int)$u['etablissement_id'];
+    // Test d'isolation : établissement de SESSION différent de celui de l'utilisateur (copies jetables uniquement)
+    if (($surcharge = getenv('REQUEST_AS_ETAB')) !== false && $surcharge !== '') {
+        if (getenv('REQUEST_AS_DB') === false || getenv('REQUEST_AS_DB') === '') { fwrite(STDERR, "REFUS : REQUEST_AS_ETAB exige REQUEST_AS_DB (copie)
+"); exit(9); }
+        $etab = (int)$surcharge;
+    }
     $perms = (new \App\Models\UserModel())->getPermissions($role, (int)$uid, $etab);
 }
 
