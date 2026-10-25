@@ -463,10 +463,11 @@ class ActivityRepository
 
     public function findAllCategories(): array
     {
+        [$ts, $tp] = \Core\Tenant\TenantScope::referentiel('vs_activite_categories', 'etablissement_id');
         $stmt = $this->db->prepare("
-            SELECT * FROM vs_activite_categories WHERE actif = 1 ORDER BY nom
+            SELECT * FROM vs_activite_categories WHERE actif = 1" . $ts . " ORDER BY nom
         ");
-        $stmt->execute();
+        $stmt->execute($tp);
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
@@ -487,10 +488,14 @@ class ActivityRepository
             FROM vs_activite_categories c
             LEFT JOIN vs_activites a ON a.categorie_id = c.id
                 AND a.annee_scolaire = :annee2 AND a.deleted_at IS NULL
+            WHERE 1 = 1" . (\Core\Tenant\TenantScope::id() === null ? '' : ' AND c.etablissement_id = :tid_scope') . "
             GROUP BY c.id, c.nom, c.couleur
             ORDER BY nb_activites DESC
         ");
-        $stmt->execute([':annee' => $annee, ':annee2' => $annee]);
+        $tid = \Core\Tenant\TenantScope::id();
+        $params = [':annee' => $annee, ':annee2' => $annee, ':tid' => $tid];
+        if ($tid !== null) { $params[':tid_scope'] = $tid; }
+        $stmt->execute($params);
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
@@ -500,6 +505,7 @@ class ActivityRepository
     {
         $conditions = ['a.deleted_at IS NULL'];
         $params     = [];
+        if (($t = \Core\Tenant\TenantScope::conditionUtilisateur('a.cree_par')) !== null) { $conditions[] = $t[0]; $params += $t[1]; }
 
         if ($f->categorieId !== null) {
             $conditions[] = 'a.categorie_id = :cat';

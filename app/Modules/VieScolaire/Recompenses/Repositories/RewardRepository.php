@@ -204,17 +204,19 @@ class RewardRepository
 
     public function findAllCategories(): array
     {
+        [$ts, $tp] = \Core\Tenant\TenantScope::referentiel('vs_recompense_categories', 'etablissement_id');
         $stmt = $this->db->prepare("
-            SELECT * FROM vs_recompense_categories WHERE actif = 1 ORDER BY nom ASC
+            SELECT * FROM vs_recompense_categories WHERE actif = 1" . $ts . " ORDER BY nom ASC
         ");
-        $stmt->execute();
+        $stmt->execute($tp);
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
     public function findCategoryById(int $id): ?array
     {
-        $stmt = $this->db->prepare("SELECT * FROM vs_recompense_categories WHERE id = :id");
-        $stmt->execute([':id' => $id]);
+        [$ts, $tp] = \Core\Tenant\TenantScope::referentiel('vs_recompense_categories', 'etablissement_id');
+        $stmt = $this->db->prepare("SELECT * FROM vs_recompense_categories WHERE id = ?" . $ts);
+        $stmt->execute([$id, ...$tp]);
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
         return $row ?: null;
     }
@@ -331,6 +333,7 @@ class RewardRepository
     {
         $conditions = ['r.deleted_at IS NULL'];
         $params     = [];
+        if (($t = \Core\Tenant\TenantScope::conditionClasse('r.classe_id')) !== null) { $conditions[] = $t[0]; $params += $t[1]; }
 
         if ($f->eleveId !== null) {
             $conditions[] = 'r.eleve_id = :eleve_id';

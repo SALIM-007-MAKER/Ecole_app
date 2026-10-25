@@ -297,6 +297,7 @@ class LateRepository
     {
         $conditions = ['r.deleted_at IS NULL'];
         $params     = [];
+        if (($t = \Core\Tenant\TenantScope::conditionClasse('r.classe_id')) !== null) { $conditions[] = $t[0]; $params += $t[1]; }
 
         if ($f->eleveId !== null) {
             $conditions[] = 'r.eleve_id = :eleve_id';

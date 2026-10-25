@@ -38,13 +38,16 @@ class SalleController extends Controller
         $this->requirePermission('timetable.view');
 
         $db = Database::getInstance()->getConnection();
-        $salles = $db->query(
+        [$ts, $tp] = \Core\Tenant\TenantScope::referentiel('vs_edt_salles', 'etablissement_id', 'WHERE');
+        $stmt = $db->prepare(
             "SELECT s.*, COUNT(cr.id) AS nb_seances
              FROM vs_edt_salles s
-             LEFT JOIN vs_edt_creneaux cr ON cr.salle_id = s.id AND cr.deleted_at IS NULL
+             LEFT JOIN vs_edt_creneaux cr ON cr.salle_id = s.id AND cr.deleted_at IS NULL" . str_replace('etablissement_id', 's.etablissement_id', $ts) . "
              GROUP BY s.id
              ORDER BY s.nom"
-        )->fetchAll(\PDO::FETCH_OBJ);
+        );
+        $stmt->execute($tp);
+        $salles = $stmt->fetchAll(\PDO::FETCH_OBJ);
 
         $this->render('VieScolaire::emplois_du_temps/salles/index', [
             'title'  => 'Salles',

@@ -34,8 +34,10 @@ class ActivityController extends Controller
         $data    = $this->service->paginateActivities($filters);
         $cats    = $this->service->categories();
         $db      = Database::getInstance()->getConnection();
-        $classes = $db->query("SELECT id, nom FROM classes ORDER BY nom")->fetchAll(\PDO::FETCH_ASSOC);
-        $annees  = $db->query("SELECT DISTINCT annee_scolaire FROM vs_activites ORDER BY annee_scolaire DESC")->fetchAll(\PDO::FETCH_ASSOC);
+        $classes = \Core\Tenant\TenantScope::lister($db, 'SELECT id, nom FROM classes', 'classes', 'ORDER BY nom');
+        $stA = $db->prepare("SELECT DISTINCT annee_scolaire FROM vs_activites" . (\Core\Tenant\TenantScope::id() === null ? '' : ' WHERE cree_par IN (SELECT id FROM users WHERE etablissement_id = ?)') . " ORDER BY annee_scolaire DESC");
+        $stA->execute(\Core\Tenant\TenantScope::id() === null ? [] : [\Core\Tenant\TenantScope::id()]);
+        $annees  = $stA->fetchAll(\PDO::FETCH_ASSOC);
 
         $this->render('VieScolaire::activites/index', array_merge($data, [
             'user'       => $user,
@@ -247,7 +249,7 @@ class ActivityController extends Controller
         }
 
         $db    = Database::getInstance()->getConnection();
-        $eleves = $db->query("SELECT e.id, e.nom, e.prenom, e.matricule FROM eleves e ORDER BY e.nom, e.prenom")->fetchAll(\PDO::FETCH_ASSOC);
+        $eleves = \Core\Tenant\TenantScope::lister($db, 'SELECT e.id, e.nom, e.prenom, e.matricule FROM eleves e', 'eleves', 'ORDER BY e.nom, e.prenom');
 
         $this->render('VieScolaire::activites/inscrire', [
             'user'     => $user,
@@ -382,8 +384,9 @@ class ActivityController extends Controller
     private function formData(): array
     {
         $db   = Database::getInstance()->getConnection();
-        $classes = $db->query("SELECT id, nom FROM classes ORDER BY nom")->fetchAll(\PDO::FETCH_ASSOC);
-        $enseignants = $db->query("SELECT u.id, u.nom, u.prenom FROM users u JOIN user_roles ur ON ur.user_id = u.id JOIN roles r ON r.id = ur.role_id WHERE r.nom = 'enseignant' ORDER BY u.nom")->fetchAll(\PDO::FETCH_ASSOC);
+        $classes = \Core\Tenant\TenantScope::lister($db, 'SELECT id, nom FROM classes', 'classes', 'ORDER BY nom');
+        // Enseignants de l'établissement courant (rôle porté par users.role ; l'ancienne jointure user_roles/roles visait des tables absentes)
+        $enseignants = \Core\Tenant\TenantScope::enseignants($db);
         $categories  = $this->service->categories();
         return [$classes, $enseignants, $categories];
     }

@@ -328,18 +328,18 @@ class TimetableRepository
     public function findAllPlages(): array
     {
         $stmt = $this->db->prepare("
-            SELECT * FROM vs_edt_plages_horaires WHERE actif = 1 ORDER BY ordre ASC
+            SELECT * FROM vs_edt_plages_horaires WHERE actif = 1" . \Core\Tenant\TenantScope::referentiel('vs_edt_plages_horaires', 'etablissement_id')[0] . " ORDER BY ordre ASC
         ");
-        $stmt->execute();
+        $stmt->execute(\Core\Tenant\TenantScope::referentiel('vs_edt_plages_horaires', 'etablissement_id')[1]);
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
     public function findAllSalles(): array
     {
         $stmt = $this->db->prepare("
-            SELECT * FROM vs_edt_salles WHERE actif = 1 ORDER BY nom ASC
+            SELECT * FROM vs_edt_salles WHERE actif = 1" . \Core\Tenant\TenantScope::referentiel('vs_edt_salles', 'etablissement_id')[0] . " ORDER BY nom ASC
         ");
-        $stmt->execute();
+        $stmt->execute(\Core\Tenant\TenantScope::referentiel('vs_edt_salles', 'etablissement_id')[1]);
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
@@ -562,6 +562,7 @@ class TimetableRepository
     {
         $conditions = ['e.deleted_at IS NULL'];
         $params     = [];
+        if (($t = \Core\Tenant\TenantScope::conditionClasse('e.classe_id')) !== null) { $conditions[] = $t[0]; $params += $t[1]; }
 
         if ($f->classeId !== null) {
             $conditions[] = 'e.classe_id = :classe_id';

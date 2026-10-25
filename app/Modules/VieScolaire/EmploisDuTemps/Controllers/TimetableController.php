@@ -35,7 +35,7 @@ class TimetableController extends Controller
         $data    = $this->service->paginateEdts($filters);
         $db      = Database::getInstance()->getConnection();
 
-        $classes = $db->query("SELECT id, nom FROM classes ORDER BY nom")->fetchAll(\PDO::FETCH_ASSOC);
+        $classes = \Core\Tenant\TenantScope::lister($db, 'SELECT id, nom FROM classes', 'classes', 'ORDER BY nom');
         $annees  = $db->query("SELECT DISTINCT annee_scolaire FROM vs_emplois_du_temps ORDER BY annee_scolaire DESC")->fetchAll(\PDO::FETCH_ASSOC);
 
         $this->render('VieScolaire::emplois_du_temps/index', array_merge($data, [
@@ -55,7 +55,7 @@ class TimetableController extends Controller
         $this->requirePermission('timetable.create');
 
         $db      = Database::getInstance()->getConnection();
-        $classes = $db->query("SELECT id, nom FROM classes ORDER BY nom")->fetchAll(\PDO::FETCH_ASSOC);
+        $classes = \Core\Tenant\TenantScope::lister($db, 'SELECT id, nom FROM classes', 'classes', 'ORDER BY nom');
         $periodes = $db->query("SELECT id, nom FROM periodes_scolaires ORDER BY date_debut")->fetchAll(\PDO::FETCH_ASSOC);
 
         $this->render('VieScolaire::emplois_du_temps/create', [
@@ -139,7 +139,7 @@ class TimetableController extends Controller
         try {
             $matieres    = $this->service->matieresPlanifiables((int)($user['etablissement_id'] ?? 0));
             $enseignants = Database::getInstance()->getConnection()
-                ->query("SELECT id, nom, prenom FROM users WHERE role = 'enseignant' ORDER BY nom")->fetchAll(\PDO::FETCH_ASSOC);
+                ->query(\Core\Tenant\TenantScope::sqlEnseignants())->fetchAll(\PDO::FETCH_ASSOC);
             $plages = $this->service->plages();
             $salles = $this->service->salles();
         } catch (\PDOException $e) {
@@ -313,7 +313,7 @@ class TimetableController extends Controller
         $stmt->execute([$enseignantId]);
         $enseignant = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-        $enseignants = $db->query("SELECT id, nom, prenom FROM users WHERE role = 'enseignant' ORDER BY nom")->fetchAll(\PDO::FETCH_ASSOC);
+        $enseignants = $db->query(\Core\Tenant\TenantScope::sqlEnseignants())->fetchAll(\PDO::FETCH_ASSOC);
 
         $this->render('VieScolaire::emplois_du_temps/enseignant', [
             'user'         => $user,
@@ -339,7 +339,7 @@ class TimetableController extends Controller
         $remplacements = $this->service->remplacementsDuJour($date);
 
         $db   = Database::getInstance()->getConnection();
-        $enseignants = $db->query("SELECT id, nom, prenom FROM users WHERE role = 'enseignant' ORDER BY nom")->fetchAll(\PDO::FETCH_ASSOC);
+        $enseignants = $db->query(\Core\Tenant\TenantScope::sqlEnseignants())->fetchAll(\PDO::FETCH_ASSOC);
         $salles = $this->service->salles();
 
         $creneaux = $db->query("SELECT cr.id, cr.jour, p.libelle AS plage, c.nom AS classe, m.nom AS matiere FROM vs_edt_creneaux cr JOIN vs_edt_plages_horaires p ON p.id = cr.plage_id JOIN classes c ON c.id = cr.classe_id JOIN matieres m ON m.id = cr.matiere_id WHERE cr.deleted_at IS NULL ORDER BY c.nom, cr.jour, p.ordre")->fetchAll(\PDO::FETCH_ASSOC);
@@ -429,7 +429,7 @@ class TimetableController extends Controller
         $annee    = $_GET['annee'] ?? date('Y') . '-' . (date('Y') + 1);
 
         $db      = Database::getInstance()->getConnection();
-        $classes = $db->query("SELECT id, nom FROM classes ORDER BY nom")->fetchAll(\PDO::FETCH_ASSOC);
+        $classes = \Core\Tenant\TenantScope::lister($db, 'SELECT id, nom FROM classes', 'classes', 'ORDER BY nom');
         $stats   = $classeId ? $this->service->statistiquesClasse($classeId, $annee) : [];
 
         $this->render('VieScolaire::emplois_du_temps/statistiques', [

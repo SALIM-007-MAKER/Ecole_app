@@ -292,9 +292,10 @@ class AbsenceRepository
 
     public function findAllMotifs(): array
     {
-        return $this->pdo->query(
-            "SELECT * FROM vs_motifs_absence WHERE actif = 1 ORDER BY libelle ASC"
-        )->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        [$ts, $tp] = \Core\Tenant\TenantScope::referentiel('vs_motifs_absence', 'etablissement_id');
+        $stmt = $this->pdo->prepare("SELECT * FROM vs_motifs_absence WHERE actif = 1" . $ts . " ORDER BY libelle ASC");
+        $stmt->execute($tp);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
@@ -303,6 +304,7 @@ class AbsenceRepository
     {
         $conditions = ['a.deleted_at IS NULL'];
         $params     = [];
+        if (($t = \Core\Tenant\TenantScope::conditionClasse('a.classe_id')) !== null) { $conditions[] = $t[0]; $params += $t[1]; }
 
         if ($filters->eleveId !== null) {
             $conditions[] = 'a.eleve_id = :eleve_id';

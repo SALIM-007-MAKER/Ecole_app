@@ -77,6 +77,58 @@ final class TenantScope
         return self::id() === null ? [] : [self::id()];
     }
 
+    // ── Conditions à paramètres NOMMÉS (dépôts qui construisent [where, params]) : [fragment, [':tid_scope' => id]] ou null ──
+
+    public static function conditionClasse(string $colonneClasse): ?array
+    {
+        $id = self::id();
+        return $id === null ? null : ["{$colonneClasse} IN (SELECT id FROM classes WHERE etablissement_id = :tid_scope)", [':tid_scope' => $id]];
+    }
+
+    /** Ressource créée par un utilisateur de l'établissement courant (ex. activités : cree_par). */
+    public static function conditionUtilisateur(string $colonneUtilisateur): ?array
+    {
+        $id = self::id();
+        return $id === null ? null : ["{$colonneUtilisateur} IN (SELECT id FROM users WHERE etablissement_id = :tid_scope)", [':tid_scope' => $id]];
+    }
+
+    /** Fragment « l'utilisateur $alias appartient à l'établissement courant » (colonne ou appartenance active) ; paramètres via parametresUtilisateur(). */
+    public static function utilisateurs(string $alias, string $connecteur = 'AND'): string
+    {
+        return self::id() === null ? '' : " {$connecteur} ({$alias}.etablissement_id = ? OR EXISTS (SELECT 1 FROM user_etablissements ue_t WHERE ue_t.user_id = {$alias}.id AND ue_t.etablissement_id = ? AND ue_t.left_at IS NULL))";
+    }
+
+    /** @return list<int> */
+    public static function parametresUtilisateur(): array
+    {
+        return self::id() === null ? [] : [self::id(), self::id()];
+    }
+
+    /** SELECT simple sur une table portant etablissement_id : « $debut [WHERE etablissement_id = ?] $fin » (sans contexte : non filtré). */
+    public static function lister(PDO $pdo, string $debut, string $table, string $fin = ''): array
+    {
+        [$ts, $tp] = self::colonne($table, 'etablissement_id', 'WHERE');
+        $stmt = $pdo->prepare($debut . $ts . ' ' . $fin);
+        $stmt->execute($tp);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** SQL littéral (identifiant entier du contexte inliné) listant les enseignants de l'établissement courant. */
+    public static function sqlEnseignants(): string
+    {
+        $t = self::id();
+        $cond = $t === null ? '' : " AND (etablissement_id = {$t} OR EXISTS (SELECT 1 FROM user_etablissements ue_t WHERE ue_t.user_id = users.id AND ue_t.etablissement_id = {$t} AND ue_t.left_at IS NULL))";
+        return "SELECT id, nom, prenom FROM users WHERE role = 'enseignant'" . $cond . ' ORDER BY nom';
+    }
+
+    /** Enseignants (utilisateurs de rôle enseignant) de l'établissement courant. */
+    public static function enseignants(\PDO $pdo): array
+    {
+        $stmt = $pdo->prepare("SELECT u_t.id, u_t.nom, u_t.prenom FROM users u_t WHERE u_t.role = 'enseignant'" . self::utilisateurs('u_t') . ' ORDER BY u_t.nom');
+        $stmt->execute(self::parametresUtilisateur());
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
     // ── Variantes « sans connecteur » pour Core\Model::ownershipRestriction() : [fragment, paramètres] ou null ──
 
     public static function restrictionReferentiel(string $table, string $expression = 'etablissement_id'): ?array

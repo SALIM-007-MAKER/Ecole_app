@@ -128,6 +128,12 @@ class Router
             return;
         }
 
+        // Lot 3 : toute ressource désignée par identifiant (route ou formulaire) doit appartenir à l'établissement courant
+        if (!\Core\Tenant\ResourceGuard::autoriser($class, $method, $params, array_merge($_GET, $_POST))) {
+            $this->handleNotFound();
+            return;
+        }
+
         call_user_func_array([$controller, $method], $params);
     }
 

@@ -328,6 +328,7 @@ class AttendanceRepository
     {
         $conditions = ['a.deleted_at IS NULL'];
         $params     = [];
+        if (($t = \Core\Tenant\TenantScope::conditionClasse('a.classe_id')) !== null) { $conditions[] = $t[0]; $params += $t[1]; }
 
         if ($filters->classeId !== null) {
             $conditions[] = 'a.classe_id = :classe_id';

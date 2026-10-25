@@ -28,9 +28,10 @@ class PlageHoraireController extends Controller
         $this->requirePermission('timetable.view');
 
         $db = Database::getInstance()->getConnection();
-        $plages = $db->query(
-            "SELECT * FROM vs_edt_plages_horaires ORDER BY ordre ASC"
-        )->fetchAll(\PDO::FETCH_OBJ);
+        [$ts, $tp] = \Core\Tenant\TenantScope::referentiel('vs_edt_plages_horaires', 'etablissement_id', 'WHERE');
+        $stmt = $db->prepare("SELECT * FROM vs_edt_plages_horaires" . $ts . " ORDER BY ordre ASC");
+        $stmt->execute($tp);
+        $plages = $stmt->fetchAll(\PDO::FETCH_OBJ);
 
         $this->render('VieScolaire::emplois_du_temps/plages/index', [
             'title'  => 'Plages horaires',
