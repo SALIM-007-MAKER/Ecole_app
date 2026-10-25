@@ -97,6 +97,17 @@ $pageTitle = htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8');
     }
     </script>
 
+    <!-- Sidebar : état figé AVANT le premier rendu (pas de clignotement ni de décalage entre deux pages) -->
+    <script>
+    (function () {
+        try {
+            var h = document.documentElement;
+            h.classList.add('sb-preload');
+            if (window.innerWidth >= 1024 && localStorage.getItem('ecole_sidebar_collapsed') === '1') h.classList.add('sb-collapsed-init');
+        } catch (e) {}
+    })();
+    </script>
+
     <!-- Design System — chargé APRÈS Tailwind pour avoir priorité -->
     <?php $cssV = @filemtime($_SERVER['DOCUMENT_ROOT'] . '/ecole_app/public/assets/css/app.css') ?: '1'; ?>
     <link href="<?= BASE_URL ?>/assets/css/app.css?v=<?= $cssV ?>" rel="stylesheet">

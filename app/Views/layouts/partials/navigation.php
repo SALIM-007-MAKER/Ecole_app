@@ -47,7 +47,7 @@ if (empty($menus)): ?>
 
             <div class="nav-group-content"
                  id="sg-<?= htmlspecialchars($item['id'] ?? '', ENT_QUOTES) ?>"
-                 <?= $groupActive ? 'style="max-height:500px"' : '' ?>>
+                 <?= $groupActive ? 'style="max-height:none"' : '' ?>>
                 <?php foreach ($item['children'] as $child): ?>
                     <?php
                     $childClass = MenuService::getMenuItemClass($child['url'] ?? '', $activeItemUrl, true);
@@ -86,3 +86,25 @@ if (empty($menus)): ?>
 </nav>
 
 <?php endif; ?>
+
+<script>
+/* Défilement de la sidebar conservé d'une page à l'autre (restauré avant le premier rendu) */
+(function () {
+    var nav = document.querySelector('#sidebar .sidebar-nav');
+    if (!nav) return;
+    var KEY = 'ecole_sidebar_scroll';
+    var saved = null;
+    try { saved = sessionStorage.getItem(KEY); } catch (e) {}
+    if (saved !== null && !isNaN(parseInt(saved, 10))) {
+        nav.scrollTop = parseInt(saved, 10);
+    }
+    var actif = nav.querySelector('.nav-active');
+    if (actif && actif.offsetParent !== null) {
+        var r = actif.getBoundingClientRect(), n = nav.getBoundingClientRect();
+        if (r.top < n.top || r.bottom > n.bottom) { nav.scrollTop += (r.top - n.top) - (n.height / 2); }
+    }
+    var save = function () { try { sessionStorage.setItem(KEY, String(nav.scrollTop)); } catch (e) {} };
+    nav.addEventListener('click', save, true);
+    window.addEventListener('pagehide', save);
+})();
+</script>

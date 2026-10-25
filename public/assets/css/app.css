@@ -110,7 +110,23 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 #sidebar, .app-header, .mobile-bottom-nav, .main-wrapper, .card, .btn, .dropdown-item, .nav-item, .nav-sub, .modal-card { transition: all 220ms cubic-bezier(.2,.8,.2,1); }
 @media (min-width: 1024px) { #sidebar { transform: translateX(0); } }
 
+/* Sidebar figée entre deux pages : pas d'animation au chargement, mode réduit appliqué dès le premier rendu */
+html.sb-preload #sidebar, html.sb-preload #sidebar *, html.sb-preload .main-wrapper { transition: none !important; }
+@media (min-width: 1024px) {
+    html.sb-collapsed-init #sidebar { width: var(--sidebar-w-collapsed); }
+    html.sb-collapsed-init .main-wrapper { padding-left: var(--sidebar-w-collapsed); }
+    html.sb-collapsed-init #sidebar .sidebar-brand-name,
+    html.sb-collapsed-init #sidebar .sidebar-user-name,
+    html.sb-collapsed-init #sidebar .sidebar-user-role,
+    html.sb-collapsed-init #sidebar .nav-item-text,
+    html.sb-collapsed-init #sidebar .nav-group-arrow,
+    html.sb-collapsed-init #sidebar .sidebar-close-btn,
+    html.sb-collapsed-init #sidebar .nav-group-content { display: none; }
+}
+
 .app-sidebar .sidebar-nav { padding-bottom: 5rem; }
+/* Le défilement de la sidebar ne se propage jamais à la page principale (fin de liste atteinte, ou pointeur sur l'en-tête/le pied) */
+#sidebar, .sidebar-nav { overscroll-behavior: contain; }
 
 /* Sidebar brand */
 .sidebar-brand {

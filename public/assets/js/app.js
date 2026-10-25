@@ -131,6 +131,10 @@ const EcoleApp = {
         // ── État initial (persisté sur desktop uniquement) ──
         const stored = isDesktop() ? localStorage.getItem(STORAGE_KEY) : null;
         applyCollapsed(stored === '1');
+
+        // L'état est maintenant porté par #sidebar : on libère les règles de pré-rendu, puis on réactive les transitions
+        document.documentElement.classList.remove('sb-collapsed-init');
+        requestAnimationFrame(() => requestAnimationFrame(() => document.documentElement.classList.remove('sb-preload')));
     },
 
     initThemeToggle() {
