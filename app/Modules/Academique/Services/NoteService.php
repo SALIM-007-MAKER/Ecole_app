@@ -51,8 +51,21 @@ class NoteService
 
         $bareme  = new BaremeValue((float)$evaluation->note_max);
         $results = ['created' => 0, 'updated' => 0, 'errors' => []];
+        $conduite = $this->repo->evaluationEstConduite($batch->evaluationId);
 
         foreach ($batch->notes as $dto) {
+            // Conduite : pas de case « absent » (une note de comportement est toujours attribuée). Une ligne laissée
+            // vide n'est pas enregistrée : la note reste « non saisie ».
+            if ($conduite) {
+                if ($dto->estAbsent) {
+                    $results['errors'][$dto->eleveId] = $this->refusConduite($dto);
+                    continue;
+                }
+                if ($dto->valeur === null) {
+                    continue;
+                }
+            }
+
             // AN-C-001 : une note ne peut être rattachée qu'à un élève
             // activement inscrit pour l'année scolaire de la période.
             if ($anneeScolaire !== null
@@ -94,6 +107,10 @@ class NoteService
             throw new \RuntimeException("Évaluation associée introuvable.");
         }
         $this->assertSaisieOuverte($evaluation);
+
+        if ($this->repo->evaluationEstConduite((int)$note->evaluation_id) && ($motif = $this->refusConduite($dto)) !== null) {
+            throw new \RuntimeException($motif);
+        }
 
         $bareme    = new BaremeValue((float)$evaluation->note_max);
         $noteValue = new NoteValue($dto->estAbsent ? null : $dto->valeur, $bareme);
@@ -246,6 +263,18 @@ class NoteService
     }
 
     // ─── Privé ───────────────────────────────────────────────────────────────
+
+    /** Motif de refus d'une ligne de note de Conduite, ou null si elle est acceptable. */
+    private function refusConduite(NoteDTO $dto): ?string
+    {
+        if ($dto->estAbsent) {
+            return "La mention « absent » n'existe pas pour la Conduite : saisir une note de 0 au barème.";
+        }
+        if ($dto->valeur === null) {
+            return "La note de Conduite est obligatoire : saisir une valeur de 0 au barème.";
+        }
+        return null;
+    }
 
     private function assertSaisieOuverte(object $evaluation): void
     {

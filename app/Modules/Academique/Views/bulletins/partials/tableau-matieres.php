@@ -4,6 +4,7 @@
 $totalCoef    = 0.0;
 $totalMoyCoef = 0.0;
 foreach ($lignesMatieres as $l) {
+    if (!empty($l['non_saisie'])) { continue; }   // Conduite non saisie : hors total des coefficients (exclue de la moyenne)
     $totalCoef += (float)($l['coefficient'] ?? 0);
     if (($l['moyenne'] ?? null) !== null) {
         $totalMoyCoef += (float)$l['moyenne'] * (float)($l['coefficient'] ?? 0);
@@ -30,7 +31,7 @@ foreach ($lignesMatieres as $l) {
             <td><?= e((string)$l['coefficient']) ?></td>
             <td><?= fmtMoy($l['moyenne_classe'] ?? null) ?></td>
             <td><?= fmtMoy($l['compo'] ?? null) ?></td>
-            <td class="moy20"><?= fmtMoy($l['moyenne'] ?? null) ?></td>
+            <td class="moy20"><?= !empty($l['non_saisie']) ? '<em>Non saisie</em>' : fmtMoy($l['moyenne'] ?? null) ?></td>
             <td><?= ($l['moyenne'] ?? null) !== null ? fmtMoy((float)$l['moyenne'] * (float)$l['coefficient']) : '—' ?></td>
             <td><?= ordinal($l['rang'] ?? null) ?></td>
             <?php /* Volontairement vide : appréciation rédigée à la main par le professeur après impression. */ ?>

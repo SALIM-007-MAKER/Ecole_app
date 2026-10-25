@@ -20,6 +20,21 @@ class BulletinRepository
         $this->db = Database::getInstance()->getConnection();
     }
 
+    /** Connexion partagée (transaction de publication : mêmes verrous et même session que les lectures). */
+    public function connection(): \PDO
+    {
+        return $this->db;
+    }
+
+    /**
+     * Complétude de la Conduite d'une classe pour une période (voir ConduiteCompletudeService). Avec $verrouiller = true,
+     * prend les verrous de plage de la publication (à n'utiliser que dans la transaction REPEATABLE READ de publication).
+     */
+    public function etatConduite(int $classeId, int $periodeId, bool $verrouiller = false): array
+    {
+        return (new \App\Modules\Academique\Services\ConduiteCompletudeService($this->db))->etatClasse($classeId, $periodeId, $verrouiller);
+    }
+
     // ─────────────────────────────────────────────────────────────────
     //  Lecture — données sources
     // ─────────────────────────────────────────────────────────────────
@@ -36,6 +51,7 @@ class BulletinRepository
                 m.nom          AS matiere_nom,
                 m.coefficient  AS coeff_matiere,
                 m.categorie    AS matiere_categorie,
+                m.est_conduite AS matiere_est_conduite,
                 ev.id          AS evaluation_id,
                 ev.note_max,
                 ev.coefficient AS coeff_eval,

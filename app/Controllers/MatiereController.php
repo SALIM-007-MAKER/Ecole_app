@@ -7,6 +7,7 @@ use Core\Session;
 use App\Models\MatiereModel;
 use App\Models\ProfesseurModel;
 use App\Models\EnseignementModel;
+use App\Modules\Academique\Services\ConduiteProtectionStatus;
 
 class MatiereController extends Controller
 {
@@ -64,8 +65,22 @@ class MatiereController extends Controller
         $this->requirePermission('matieres.create');
         $this->verifyCsrf();
 
-        $data   = $this->collectFormData();
-        $errors = $this->validateMatiere($data);
+        $data     = $this->collectFormData();
+        $conduite = !empty($data['est_conduite']);
+        $errors   = [];
+
+        if ($conduite) {
+            if (!$this->can('academique.conduite.manage')) {
+                $errors['est_conduite'][] = 'Créer la matière de Conduite est réservé aux profils autorisés à gérer la Conduite.';
+            } elseif ($this->matiereModel->findConduite()) {
+                $errors['est_conduite'][] = 'Cet établissement possède déjà une matière de Conduite.';
+            }
+            // Conduite : coefficient 1 et 0 heure imposés (jamais saisis)
+            $data['coefficient']    = '1';
+            $data['volume_horaire'] = 0;
+        }
+
+        $errors = array_merge($errors, $this->validateMatiere($data, $conduite));
 
         if ($this->matiereModel->nomExists($data['nom'])) {
             $errors['nom'][] = 'Une matière avec ce nom existe déjà.';
@@ -78,7 +93,7 @@ class MatiereController extends Controller
             return;
         }
 
-        $id = $this->matiereModel->insert($this->toDbData($data));
+        $id = $this->matiereModel->insert($this->toDbData($data) + ['est_conduite' => $conduite ? 1 : null]);
         Session::flash('success', 'Matière créée avec succès.');
         $this->redirect(BASE_URL . '/matieres/' . $id);
     }
@@ -100,10 +115,24 @@ class MatiereController extends Controller
 
         $enseignements = $this->ensModel->findByMatiereId((int)$id);
 
+        // État de la protection SQL de la Conduite : calculé à chaque affichage, jamais stocké ni supposé
+        $protection = null;
+        if ((int)($matiere->est_conduite ?? 0) === 1 && $this->can('academique.conduite.manage')) {
+            try {
+                $protection = ConduiteProtectionStatus::check(\Core\Database::getInstance()->getConnection());
+                if (!$protection['ok']) {
+                    \Core\Logger::error('CRITIQUE — ' . $protection['message']);
+                }
+            } catch (\Throwable $e) {
+                \Core\Logger::error('Contrôle de la protection de la Conduite impossible : ' . $e->getMessage());
+            }
+        }
+
         $this->render('matieres/show', [
             'title'        => $matiere->nom,
             'matiere'      => $matiere,
             'enseignements'=> $enseignements,
+            'protection'   => $protection,
         ]);
     }
 
@@ -120,6 +149,9 @@ class MatiereController extends Controller
             Session::flash('error', 'Matière introuvable.');
             $this->redirect(BASE_URL . '/matieres');
             return;
+        }
+        if ((int)($matiere->est_conduite ?? 0) === 1) {
+            $this->requirePermission('academique.conduite.manage');
         }
 
         $this->render('matieres/edit', [
@@ -142,8 +174,16 @@ class MatiereController extends Controller
             return;
         }
 
-        $data   = $this->collectFormData();
-        $errors = $this->validateMatiere($data);
+        $data     = $this->collectFormData();
+        $conduite = (int)($matiere->est_conduite ?? 0) === 1;
+        if ($conduite) {
+            // Matière de Conduite : modifiable seulement par academique.conduite.manage ; coefficient 1 et 0 heure
+            // imposés, marqueur jamais modifiable ici (libellé, catégorie, responsable, description restent libres).
+            $this->requirePermission('academique.conduite.manage');
+            $data['coefficient']    = '1';
+            $data['volume_horaire'] = 0;
+        }
+        $errors = $this->validateMatiere($data, $conduite);
 
         if ($this->matiereModel->nomExists($data['nom'], (int)$id)) {
             $errors['nom'][] = 'Une autre matière avec ce nom existe déjà.';
@@ -176,6 +216,12 @@ class MatiereController extends Controller
             return;
         }
 
+        if ((int)($matiere->est_conduite ?? 0) === 1) {
+            Session::flash('error', 'La matière de Conduite ne peut pas être supprimée.');
+            $this->redirect(BASE_URL . '/matieres/' . $id);
+            return;
+        }
+
         $enseignements = $this->ensModel->findByMatiereId((int)$id);
         if (!empty($enseignements)) {
             Session::flash('error', 'Impossible de supprimer : cette matière est utilisée dans ' . count($enseignements) . ' enseignement(s).');
@@ -201,6 +247,7 @@ class MatiereController extends Controller
             'responsable_id' => $this->request->post('responsable_id', '') ?: null,
             'categorie'      => $this->request->post('categorie', 'autre'),
             'description'    => trim($this->request->post('description', '')) ?: null,
+            'est_conduite'   => $this->request->post('est_conduite', '') ? 1 : 0,
         ];
     }
 
@@ -216,7 +263,7 @@ class MatiereController extends Controller
         ];
     }
 
-    private function validateMatiere(array $data): array
+    private function validateMatiere(array $data, bool $conduite = false): array
     {
         $errors = [];
 
@@ -231,7 +278,11 @@ class MatiereController extends Controller
             $errors['coefficient'][] = 'Le coefficient doit être entre 0.5 et 20.';
         }
 
-        if ($data['volume_horaire'] < 1 || $data['volume_horaire'] > 30) {
+        if ($conduite) {
+            if ($data['volume_horaire'] !== 0) {
+                $errors['volume_horaire'][] = 'La Conduite n\'a pas d\'heures de cours (0 h/semaine).';
+            }
+        } elseif ($data['volume_horaire'] < 1 || $data['volume_horaire'] > 30) {
             $errors['volume_horaire'][] = 'Le volume horaire doit être entre 1 et 30 h/semaine.';
         }
 

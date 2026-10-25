@@ -135,7 +135,7 @@ class ProfesseurController extends Controller
         $enseignements  = $this->ensModel->findByProfesseurId((int)$id, $annee);
         $historique     = $this->ensModel->findHistoriqueByProfesseurId((int)$id);
         $classes        = $this->classeModel->findForSelect();
-        $matieres       = $this->matiereModel->findForSelect();
+        $matieres       = $this->matiereModel->findForSelect(true);   // sans la Conduite
 
         $this->render('professeurs/show', [
             'title'        => $prof->prenom . ' ' . $prof->nom,
@@ -252,7 +252,9 @@ class ProfesseurController extends Controller
         $annee    = trim($this->request->post('annee_scolaire', date('Y') . '-' . (date('Y') + 1)));
 
         if ($profId && $matId && $classeId && $annee) {
-            if ($this->ensModel->exists($profId, $matId, $classeId, $annee)) {
+            if ($this->matiereModel->estConduite($matId)) {
+                Session::flash('error', "La Conduite n'est pas une matière d'enseignement : aucun enseignant ne peut y être affecté.");
+            } elseif ($this->ensModel->exists($profId, $matId, $classeId, $annee)) {
                 Session::flash('error', 'Cet enseignement existe déjà pour cette classe et cette année.');
             } else {
                 $this->ensModel->insert([

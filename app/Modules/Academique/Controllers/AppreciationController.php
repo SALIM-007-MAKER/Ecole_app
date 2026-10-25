@@ -110,8 +110,11 @@ class AppreciationController extends Controller
         $professeur = $this->professeurModel->findByUserId((int)$user['id']);
         $profId     = $professeur->id ?? null;
 
-        if (!$this->policy->canSaisir($user, $profId, $matiereId, $classeId, $periode->annee_scolaire)) {
-            Session::flash('error', "Vous n'êtes pas affecté à cette matière pour cette classe.");
+        $conduite = (int)($matiere->est_conduite ?? 0) === 1;
+        if (!$this->policy->canSaisir($user, $profId, $matiereId, $classeId, $periode->annee_scolaire, $conduite)) {
+            Session::flash('error', $conduite
+                ? "Les appréciations de Conduite sont réservées aux profils autorisés à gérer la Conduite."
+                : "Vous n'êtes pas affecté à cette matière pour cette classe.");
             $this->redirect(BASE_URL . "/v2/academique/classes/{$classeId}/matieres/{$matiereId}/appreciations?periode_id={$periodeId}");
             return;
         }

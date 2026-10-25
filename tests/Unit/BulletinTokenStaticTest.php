@@ -98,7 +98,7 @@ foreach ($code as $path => $src) {
 check($suspects === [], 'aucune ligne de journalisation ne contient un jeton sans passer par fingerprint()' . ($suspects ? ' — ' . implode(', ', $suspects) : ''));
 
 $handler = $code['app/Modules/Academique/Listeners/BulletinHandler.php'] ?? '';
-check(!preg_match("/'token'\s*=>/", $handler) && substr_count($handler, "'jeton_empreinte'") === 4, 'BulletinHandler : 4 événements d\'audit, tous avec une empreinte (clé « jeton_empreinte »), aucune clé « token »');
+check(!preg_match("/'token'\s*=>/", $handler) && substr_count($handler, "'jeton_empreinte'") === 5, 'BulletinHandler : 5 événements d\'audit, tous avec une empreinte (clé « jeton_empreinte »), aucune clé « token »');
 check(!preg_match('/RuntimeException\([^;]*\$verificationToken/', $gen), 'BulletinGenerator : aucun message d\'exception ne contient le jeton');
 $repo = $code['app/Modules/Academique/Repositories/BulletinRepository.php'] ?? '';
 check(!preg_match('/RuntimeException\([^;]*(getMessage|verificationToken|\$token)/', $repo), 'BulletinRepository : aucun message d\'exception ne reprend un texte SQL (qui peut contenir un jeton) ni le jeton');

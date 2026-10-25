@@ -23,7 +23,7 @@ class NoteRepository
                        ev.statut AS eval_statut, ev.notes_saisie_ouverte,
                        ev.classe_id, ev.matiere_id, ev.periode_scolaire_id,
                        te.nom AS type_nom, te.couleur AS type_couleur, te.icone AS type_icone,
-                       m.nom AS matiere_nom,
+                       m.nom AS matiere_nom, m.est_conduite AS matiere_est_conduite,
                        c.nom AS classe_nom
                 FROM notes_v2 n
                 JOIN eleves e     ON e.id = n.eleve_id
@@ -37,6 +37,16 @@ class NoteRepository
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([$noteId]);
         return $stmt->fetch(\PDO::FETCH_OBJ) ?: null;
+    }
+
+    /** L'évaluation porte-t-elle sur la matière de Conduite (marqueur matieres.est_conduite) ? */
+    public function evaluationEstConduite(int $evaluationId): bool
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT m.est_conduite FROM evaluations ev JOIN matieres m ON m.id = ev.matiere_id WHERE ev.id = ?"
+        );
+        $stmt->execute([$evaluationId]);
+        return (int)$stmt->fetchColumn() === 1;
     }
 
     public function listElevesAvecNotes(int $evaluationId): array
@@ -78,7 +88,7 @@ class NoteRepository
                           e.nom AS eleve_nom, e.prenom AS eleve_prenom, e.matricule,
                           ev.libelle AS eval_libelle, ev.note_max, ev.coefficient,
                           ev.date_evaluation, ev.matiere_id, ev.classe_id,
-                          m.nom  AS matiere_nom,
+                          m.nom  AS matiere_nom, m.est_conduite AS matiere_est_conduite,
                           c.nom  AS classe_nom,
                           te.nom AS type_nom, te.couleur AS type_couleur
                    FROM notes_v2 n

@@ -6,6 +6,9 @@ $policy          = $policy          ?? null;
 $user            = $user            ?? [];
 
 if (!$evaluation) return;
+
+// Conduite : note de comportement, toujours attribuée — pas de mention « absent » (refusée aussi côté serveur)
+$estConduite = (int)($evaluation->matiere_est_conduite ?? 0) === 1;
 ?>
 
 <div class="flex items-center gap-3 mb-6">
@@ -55,6 +58,7 @@ if (!$evaluation) return;
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-3 mb-4 flex flex-wrap items-center gap-3">
         <span class="text-sm text-slate-500"><?= count($elevesAvecNotes) ?> élève(s)</span>
         <div class="flex gap-2 ml-auto">
+            <?php if (!$estConduite): ?>
             <button type="button" id="btnMarquerTousAbsents"
                     class="btn btn-secondary text-xs">
                 <i data-lucide="user-x" class="w-3 h-3"></i>Tout absent
@@ -63,6 +67,7 @@ if (!$evaluation) return;
                     class="btn btn-secondary text-xs">
                 <i data-lucide="user-check" class="w-3 h-3"></i>Tout présent
             </button>
+            <?php endif; ?>
             <button type="submit" class="btn btn-primary text-sm">
                 <i data-lucide="save" class="w-4 h-4"></i>Enregistrer
             </button>
@@ -75,7 +80,9 @@ if (!$evaluation) return;
                 <tr>
                     <th class="text-left px-4 py-3 font-medium text-slate-600 w-1/3">Élève</th>
                     <th class="text-center px-4 py-3 font-medium text-slate-600 w-24">Note /<?= number_format((float)$evaluation->note_max, 0) ?></th>
+                    <?php if (!$estConduite): ?>
                     <th class="text-center px-4 py-3 font-medium text-slate-600 w-20">Absent</th>
+                    <?php endif; ?>
                     <th class="text-left px-4 py-3 font-medium text-slate-600">Commentaire</th>
                     <th class="text-center px-4 py-3 font-medium text-slate-600 w-24">Statut</th>
                 </tr>
@@ -108,6 +115,7 @@ if (!$evaluation) return;
                                <?= $hasNote && $row->statut === 'verrouillee' ? 'disabled' : '' ?>
                                <?= $hasNote && (int)$row->est_absent ? 'disabled' : '' ?>>
                     </td>
+                    <?php if (!$estConduite): ?>
                     <td class="px-4 py-2.5 text-center">
                         <input type="checkbox"
                                name="notes[<?= $row->eleve_id ?>][est_absent]"
@@ -117,6 +125,7 @@ if (!$evaluation) return;
                                <?= $hasNote && $row->statut === 'verrouillee' ? 'disabled' : '' ?>
                                onchange="toggleAbsent(this)">
                     </td>
+                    <?php endif; ?>
                     <td class="px-4 py-2.5">
                         <input type="text"
                                name="notes[<?= $row->eleve_id ?>][commentaire]"

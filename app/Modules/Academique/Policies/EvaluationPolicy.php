@@ -4,16 +4,25 @@ namespace App\Modules\Academique\Policies;
 
 class EvaluationPolicy
 {
+    /** Permission dédiée à la matière de Conduite (migration T049). */
+    public const PERMISSION_CONDUITE = 'academique.conduite.manage';
+
     /**
-     * Matière « Conduite » : circuit réservé au Directeur/Admin (académique.
-     * evaluations.admin) — un enseignant ne peut ni créer ni modifier une
-     * évaluation de Conduite, contrairement aux autres matières où
-     * academique.evaluations.manage suffit. Voir aussi NotePolicy (même
-     * restriction côté saisie des notes).
+     * Matière de Conduite : identifiée par le marqueur `matieres.est_conduite` (jamais par son libellé).
+     * Toutes les actions sur ses évaluations exigent `academique.conduite.manage` (Admin et Directeur),
+     * en plus du droit de base du module. Les autres matières ne changent pas.
+     * Voir aussi NotePolicy (même règle côté notes).
+     *
+     * @param int|bool|string|null $marqueur valeur de `matieres.est_conduite` (ou `matiere_est_conduite` d'une requête)
      */
-    public function estConduite(?string $matiereNom): bool
+    public function estConduite(int|bool|string|null $marqueur): bool
     {
-        return $matiereNom !== null && mb_strtolower(trim($matiereNom)) === 'conduite';
+        return (int)$marqueur === 1;
+    }
+
+    private function conduiteDe(?\stdClass $evaluation): bool
+    {
+        return $evaluation !== null && $this->estConduite($evaluation->matiere_est_conduite ?? null);
     }
 
     public function canView(array $user): bool
@@ -23,20 +32,15 @@ class EvaluationPolicy
     }
 
     /**
-     * @param string|null $matiereNom Nom de la matière ciblée, quand connu
-     *                                (ex : soumission du formulaire de création).
-     *                                Laisser null pour un contrôle d'accès générique
-     *                                (ex : affichage du formulaire avant sélection).
+     * @param bool $conduite true quand la matière ciblée est la Conduite (ex : soumission du formulaire de
+     *                       création). Laisser false pour un contrôle d'accès générique (affichage du formulaire).
      */
-    public function canCreate(array $user, ?string $matiereNom = null): bool
+    public function canCreate(array $user, bool $conduite = false): bool
     {
         if (!$this->hasPermission($user, 'academique.evaluations.manage')) {
             return false;
         }
-        if ($this->estConduite($matiereNom)) {
-            return $this->hasPermission($user, 'academique.evaluations.admin');
-        }
-        return true;
+        return !$conduite || $this->hasPermission($user, self::PERMISSION_CONDUITE);
     }
 
     public function canUpdate(array $user, ?\stdClass $evaluation = null): bool
@@ -47,12 +51,12 @@ class EvaluationPolicy
         if (!$evaluation) {
             return true;
         }
-        if ($this->estConduite($evaluation->matiere_nom ?? null)) {
-            return $this->hasPermission($user, 'academique.evaluations.admin');
-        }
-        // Archivée : aucune modification possible
+        // Archivée : aucune modification possible (Conduite comprise)
         if ($evaluation->statut === 'archivee') {
             return false;
+        }
+        if ($this->conduiteDe($evaluation)) {
+            return $this->hasPermission($user, self::PERMISSION_CONDUITE);
         }
         // Verrouillée : admin uniquement
         if ($evaluation->statut === 'verrouillee') {
@@ -66,6 +70,9 @@ class EvaluationPolicy
         if (!$this->hasPermission($user, 'academique.evaluations.manage')) {
             return false;
         }
+        if ($this->conduiteDe($evaluation) && !$this->hasPermission($user, self::PERMISSION_CONDUITE)) {
+            return false;
+        }
         return $evaluation && $evaluation->statut === 'brouillon';
     }
 
@@ -74,12 +81,16 @@ class EvaluationPolicy
         if (!$this->hasPermission($user, 'academique.evaluations.manage')) {
             return false;
         }
+        if ($this->conduiteDe($evaluation) && !$this->hasPermission($user, self::PERMISSION_CONDUITE)) {
+            return false;
+        }
         return $evaluation && $evaluation->statut === 'publiee';
     }
 
     public function canDeverrouiller(array $user, ?\stdClass $evaluation = null): bool
     {
-        if (!$this->hasPermission($user, 'academique.evaluations.admin')) {
+        $droit = $this->conduiteDe($evaluation) ? self::PERMISSION_CONDUITE : 'academique.evaluations.admin';
+        if (!$this->hasPermission($user, $droit)) {
             return false;
         }
         return $evaluation && $evaluation->statut === 'verrouillee';
@@ -87,7 +98,8 @@ class EvaluationPolicy
 
     public function canArchiver(array $user, ?\stdClass $evaluation = null): bool
     {
-        if (!$this->hasPermission($user, 'academique.evaluations.admin')) {
+        $droit = $this->conduiteDe($evaluation) ? self::PERMISSION_CONDUITE : 'academique.evaluations.admin';
+        if (!$this->hasPermission($user, $droit)) {
             return false;
         }
         return $evaluation && $evaluation->statut !== 'archivee';

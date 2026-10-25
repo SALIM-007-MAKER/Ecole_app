@@ -48,7 +48,7 @@ if (!$evaluation) return;
             <i data-lucide="upload" class="w-4 h-4"></i>Import CSV
         </a>
         <?php endif; ?>
-        <?php if ($policy && $policy->canPublier($user) && ($stats['saisies'] ?? 0) > 0): ?>
+        <?php if ($policy && $policy->canPublier($user, $evaluation) && ($stats['saisies'] ?? 0) > 0): ?>
         <form method="POST"
               action="<?= BASE_URL ?>/v2/academique/evaluations/<?= $evaluation->id ?>/notes/publier"
               onsubmit="return confirm('Publier toutes les notes en statut « saisie » ?')">
@@ -58,7 +58,7 @@ if (!$evaluation) return;
             </button>
         </form>
         <?php endif; ?>
-        <?php if ($policy && $policy->canVerrouiller($user) && ($stats['publiees'] ?? 0) > 0
+        <?php if ($policy && $policy->canVerrouiller($user, $evaluation) && ($stats['publiees'] ?? 0) > 0
                 && $evaluation->statut === 'verrouillee'): ?>
         <form method="POST"
               action="<?= BASE_URL ?>/v2/academique/evaluations/<?= $evaluation->id ?>/notes/verrouiller"

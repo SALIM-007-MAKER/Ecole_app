@@ -136,6 +136,8 @@ class TimetableService
             throw new \RuntimeException('Emploi du temps inaccessible.');
         }
 
+        $this->refuserConduite($dto->matiereId);
+
         $conflits = $this->detecterConflits($dto);
         if (!empty($conflits)) {
             foreach ($conflits as $conflit) {
@@ -174,6 +176,8 @@ class TimetableService
         if ($creneau === null) {
             throw new \RuntimeException('Créneau introuvable.');
         }
+
+        $this->refuserConduite($dto->matiereId);
 
         $conflits = $this->detecterConflits($dto, $creneauId);
         if (!empty($conflits)) {
@@ -220,6 +224,10 @@ class TimetableService
             throw new \RuntimeException('Créneau introuvable.');
         }
 
+        if ($dto->matiereRemplacementId) {
+            $this->refuserConduite((int)$dto->matiereRemplacementId);
+        }
+
         $remplacementId = $this->repo->insertRemplacement([
             'creneau_id'              => $dto->creneauId,
             'date_remplacement'       => $dto->dateRemplacement,
@@ -244,6 +252,14 @@ class TimetableService
     }
 
     // ── Référentiels ──────────────────────────────────────────────────────────
+
+    /** La Conduite est une note de comportement, sans heures de cours : jamais dans un emploi du temps (garde serveur). */
+    private function refuserConduite(int $matiereId): void
+    {
+        if ($this->repo->matiereEstConduite($matiereId)) {
+            throw new \RuntimeException("La Conduite n'est pas une matière d'enseignement : elle ne peut pas figurer dans un emploi du temps.");
+        }
+    }
 
     public function plages(): array  { return $this->repo->findAllPlages(); }
     public function salles(): array  { return $this->repo->findAllSalles(); }

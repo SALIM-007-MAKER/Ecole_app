@@ -42,6 +42,7 @@ class EvaluationRepository
                     te.icone        AS type_icone,
                     te.code         AS type_code,
                     m.nom           AS matiere_nom,
+                    m.est_conduite  AS matiere_est_conduite,
                     m.coefficient   AS matiere_coef,
                     cl.nom          AS classe_nom,
                     cl.niveau       AS classe_niveau,
@@ -81,6 +82,7 @@ class EvaluationRepository
                     te.icone        AS type_icone,
                     te.est_eliminatoire AS type_eliminatoire,
                     m.nom           AS matiere_nom,
+                    m.est_conduite  AS matiere_est_conduite,
                     m.coefficient   AS matiere_coef,
                     cl.nom          AS classe_nom,
                     cl.niveau       AS classe_niveau,
@@ -175,20 +177,36 @@ class EvaluationRepository
      */
     public function listMatieresForSelect(bool $inclureConduite = true): array
     {
-        $sql = "SELECT id, nom, coefficient FROM `matieres`";
+        $sql = "SELECT id, nom, coefficient, est_conduite FROM `matieres`";
         if (!$inclureConduite) {
-            $sql .= " WHERE nom <> 'Conduite'";
+            $sql .= " WHERE est_conduite IS NULL";
         }
         $sql .= " ORDER BY nom ASC";
         return $this->pdo->query($sql)->fetchAll(PDO::FETCH_OBJ);
     }
 
-    public function findMatiereNom(int $matiereId): ?string
+    /** true / false selon le marqueur `est_conduite` de la matière ; null si la matière n'existe pas. */
+    public function matiereEstConduite(int $matiereId): ?bool
     {
-        $stmt = $this->pdo->prepare("SELECT nom FROM `matieres` WHERE id = ?");
+        $stmt = $this->pdo->prepare("SELECT est_conduite FROM `matieres` WHERE id = ?");
         $stmt->execute([$matiereId]);
-        $nom = $stmt->fetchColumn();
-        return $nom !== false ? $nom : null;
+        $v = $stmt->fetch(PDO::FETCH_NUM);
+        return $v === false ? null : ((int)$v[0] === 1);
+    }
+
+    /**
+     * Existe-t-il déjà, pour cette classe et cette période, une évaluation de Conduite non archivée
+     * (brouillon compris) ? $exceptId exclut l'évaluation en cours de modification.
+     */
+    public function conduiteExisteDeja(int $classeId, int $periodeId, ?int $exceptId = null): bool
+    {
+        $sql = "SELECT COUNT(*) FROM `evaluations` ev JOIN `matieres` m ON m.id = ev.matiere_id
+                 WHERE m.est_conduite = 1 AND ev.classe_id = ? AND ev.periode_scolaire_id = ? AND ev.statut <> 'archivee'";
+        $params = [$classeId, $periodeId];
+        if ($exceptId !== null) { $sql .= " AND ev.id <> ?"; $params[] = $exceptId; }
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return (int)$stmt->fetchColumn() > 0;
     }
 
     public function listClassesForSelect(): array

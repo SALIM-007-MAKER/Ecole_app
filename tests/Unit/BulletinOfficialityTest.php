@@ -156,7 +156,9 @@ try {
     } else {
         $nouveau = function (string $statut, int $version = 2, ?string $tokenForce = null) use ($fx, $per, $svc): array {
             $eid = $fx->eleve('SECRETNOM');
-            return $fx->bulletin($eid, $per, $tokenForce ?? $svc->issue(1, $eid, $per), $statut, $version);
+            $b = $fx->bulletin($eid, $per, $tokenForce ?? $svc->issue(1, $eid, $per), $statut, $version);
+            $fx->rendrePubliable($b['id'], $eid, $per);   // règle Conduite : chaque élève de la classe de test a sa note ; instantané à jour
+            return $b;
         };
         $voir = ['academique.bulletin.view', 'academique.bulletin.generate'];
 

@@ -8,6 +8,7 @@ use App\Modules\Academique\Events\BulletinGenerated;
 use App\Modules\Academique\Events\BulletinPublished;
 use App\Modules\Academique\Events\BulletinArchived;
 use App\Modules\Academique\Events\BulletinAppreciationUpdated;
+use App\Modules\Academique\Events\BulletinRegenerated;
 use App\Modules\Academique\Services\BulletinTokenService;
 use App\Services\AuditService;
 
@@ -36,6 +37,8 @@ class BulletinHandler implements Listener
             $this->onArchived($event);
         } elseif ($event instanceof BulletinAppreciationUpdated) {
             $this->onAppreciationUpdated($event);
+        } elseif ($event instanceof BulletinRegenerated) {
+            $this->onRegenerated($event);
         }
     }
 
@@ -90,6 +93,23 @@ class BulletinHandler implements Listener
                 'periode_id'  => $event->periodeId,
                 'jeton_empreinte'    => BulletinTokenService::fingerprint($event->verificationToken),
                 'archived_at' => $event->archivedAt,
+            ]
+        );
+    }
+
+    private function onRegenerated(BulletinRegenerated $event): void
+    {
+        $this->audit->log(
+            $event->regeneratedById,
+            'regenerer_pour_publication',
+            'academique',
+            'bulletin',
+            $event->eleveId,
+            null,
+            [
+                'classe_id'  => $event->classeId,
+                'periode_id' => $event->periodeId,
+                'jeton_empreinte' => BulletinTokenService::fingerprint($event->verificationToken),
             ]
         );
     }

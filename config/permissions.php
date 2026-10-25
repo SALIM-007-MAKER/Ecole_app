@@ -54,6 +54,7 @@ return [
         'academique.periodes.view', 'academique.periodes.manage',
         'academique.evaluations.view', 'academique.evaluations.manage', 'academique.evaluations.admin',
         'academique.notes.view', 'academique.notes.manage', 'academique.notes.admin',
+        'academique.conduite.manage',   // Conduite : évaluations, notes, appréciations (T049)
         'academique.moyennes.view', 'academique.moyennes.recalcul',
         'academique.classement.view', 'academique.classement.generer',
         'academique.bulletin.view', 'academique.bulletin.generer', 'academique.bulletin.publier',
@@ -173,6 +174,7 @@ return [
         'academique.periodes.view', 'academique.periodes.manage',
         'academique.evaluations.view', 'academique.evaluations.manage', 'academique.evaluations.admin',
         'academique.notes.view', 'academique.notes.manage', 'academique.notes.admin',
+        'academique.conduite.manage',   // Conduite : évaluations, notes, appréciations (T049)
         'academique.moyennes.view', 'academique.moyennes.recalcul',
         'academique.classement.view', 'academique.classement.generer',
         'academique.bulletin.view', 'academique.bulletin.generer', 'academique.bulletin.publier',

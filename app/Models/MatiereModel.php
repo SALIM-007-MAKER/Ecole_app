@@ -48,13 +48,33 @@ class MatiereModel extends Model
         );
     }
 
-    public function findForSelect(): array
+    /**
+     * @param bool $sansConduite true : écarte la matière de Conduite (listes d'affectation d'enseignement et
+     *                           d'emploi du temps — la Conduite n'a ni heures de cours ni enseignant affecté)
+     */
+    public function findForSelect(bool $sansConduite = false): array
     {
         return $this->query(
             "SELECT id, CONCAT(nom, ' (coef. ', coefficient, ')') AS label
              FROM `matieres`
-             WHERE etablissement_id = ?
+             WHERE etablissement_id = ?" . ($sansConduite ? " AND est_conduite IS NULL" : "") . "
              ORDER BY nom",
+            [$this->tenantId()]
+        );
+    }
+
+    /** La matière est-elle la matière de Conduite (marqueur est_conduite) ? */
+    public function estConduite(int $id): bool
+    {
+        $row = $this->queryOne("SELECT est_conduite FROM `matieres` WHERE id = ?", [$id]);
+        return $row !== false && $row !== null && (int)$row->est_conduite === 1;
+    }
+
+    /** La Conduite (marqueur est_conduite = 1) de l'établissement courant, ou false. */
+    public function findConduite(): object|false
+    {
+        return $this->queryOne(
+            "SELECT * FROM `matieres` WHERE etablissement_id = ? AND est_conduite = 1 LIMIT 1",
             [$this->tenantId()]
         );
     }

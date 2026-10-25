@@ -121,6 +121,7 @@ class NoteController extends Controller
     public function publier(string $id): void
     {
         $this->requirePermission('academique.notes.manage');
+        $this->exigerConduiteSiBesoin((int)$id);
         $this->verifyCsrf();
 
         try {
@@ -138,7 +139,7 @@ class NoteController extends Controller
 
     public function verrouiller(string $id): void
     {
-        $this->requirePermission('academique.notes.admin');
+        $this->requirePermission($this->droitAdminOuConduite((int)$id, 'academique.notes.admin'));
         $this->verifyCsrf();
 
         try {
@@ -162,8 +163,8 @@ class NoteController extends Controller
         $user       = $this->currentUser();
 
         if (!$this->policy->canImporter($user, $evaluation)) {
-            Session::flash('error', $this->policy->estConduite($evaluation->matiere_nom ?? null)
-                ? "L'import des notes de Conduite est réservé au Directeur."
+            Session::flash('error', $this->policy->estConduite($evaluation->matiere_est_conduite ?? null)
+                ? "L'import des notes de Conduite est réservé aux profils autorisés à gérer la Conduite."
                 : "Import impossible : saisie fermée.");
             $this->redirect(BASE_URL . '/v2/academique/evaluations/' . $id . '/notes');
         }
@@ -184,8 +185,8 @@ class NoteController extends Controller
         $user       = $this->currentUser();
 
         if (!$this->policy->canImporter($user, $evaluation)) {
-            Session::flash('error', $this->policy->estConduite($evaluation->matiere_nom ?? null)
-                ? "L'import des notes de Conduite est réservé au Directeur."
+            Session::flash('error', $this->policy->estConduite($evaluation->matiere_est_conduite ?? null)
+                ? "L'import des notes de Conduite est réservé aux profils autorisés à gérer la Conduite."
                 : "Import impossible : saisie fermée.");
             $this->redirect(BASE_URL . '/v2/academique/evaluations/' . $id . '/notes');
         }
@@ -280,10 +281,15 @@ class NoteController extends Controller
 
     public function destroy(string $id): void
     {
-        $this->requirePermission('academique.notes.admin');
+        $this->requireAuth();
+        $note = $this->repo->findWithDetails((int)$id);
+        $this->requirePermission(
+            ($note && $this->policy->estConduite($note->matiere_est_conduite ?? null))
+                ? NotePolicy::PERMISSION_CONDUITE
+                : 'academique.notes.admin'
+        );
         $this->verifyCsrf();
 
-        $note = $this->repo->findWithDetails((int)$id);
         if (!$note) {
             Session::flash('error', "Note introuvable.");
             $this->redirect(BASE_URL . '/v2/academique/evaluations');
@@ -357,17 +363,37 @@ class NoteController extends Controller
     // ─── Privé ───────────────────────────────────────────────────────────────
 
     /**
-     * Message explicite selon le motif du refus : Conduite réservée au
-     * Directeur/Admin (academique.notes.admin), sinon saisie fermée/évaluation
-     * non publiée. Accepte un objet évaluation ou note (les deux exposent
-     * matiere_nom et notes_saisie_ouverte/statut selon le contexte).
+     * Message explicite selon le motif du refus : Conduite réservée aux profils
+     * `academique.conduite.manage`, sinon saisie fermée/évaluation non publiée.
+     * Accepte un objet évaluation ou note (les deux exposent matiere_est_conduite
+     * et notes_saisie_ouverte/statut selon le contexte).
      */
     private function messageSaisieRefusee(object $evaluationOuNote): string
     {
-        if ($this->policy->estConduite($evaluationOuNote->matiere_nom ?? null)) {
-            return "La saisie des notes de Conduite est réservée au Directeur.";
+        if ($this->policy->estConduite($evaluationOuNote->matiere_est_conduite ?? null)
+            && !$this->can(NotePolicy::PERMISSION_CONDUITE)) {
+            return "La saisie des notes de Conduite est réservée aux profils autorisés à gérer la Conduite.";
         }
         return "La saisie de notes est fermée pour cette évaluation.";
+    }
+
+    /** Évaluation de Conduite : exige `academique.conduite.manage` en plus du droit de base. */
+    private function exigerConduiteSiBesoin(int $evaluationId): void
+    {
+        $evaluation = $this->evalRepo->findWithDetails($evaluationId);
+        if ($evaluation && $this->policy->estConduite($evaluation->matiere_est_conduite ?? null)) {
+            $this->requirePermission(NotePolicy::PERMISSION_CONDUITE);
+        }
+    }
+
+    /** Droit exigé pour verrouiller : $droitOrdinaire pour une matière ordinaire, `conduite.manage` pour la Conduite. */
+    private function droitAdminOuConduite(int $evaluationId, string $droitOrdinaire): string
+    {
+        $this->requireAuth();
+        $evaluation = $this->evalRepo->findWithDetails($evaluationId);
+        return ($evaluation && $this->policy->estConduite($evaluation->matiere_est_conduite ?? null))
+            ? NotePolicy::PERMISSION_CONDUITE
+            : $droitOrdinaire;
     }
 
     private function loadEvaluation(int $id): object

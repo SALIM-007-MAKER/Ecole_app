@@ -21,7 +21,7 @@ $enseignements = $enseignements ?? [];
         <a href="<?= BASE_URL ?>/matieres" class="btn btn-secondary">
             <i data-lucide="arrow-left" class="w-4 h-4"></i>Liste
         </a>
-        <?php if (showmp($perms, 'matieres.delete') && $matiere->nb_enseignements == 0): ?>
+        <?php if (showmp($perms, 'matieres.delete') && $matiere->nb_enseignements == 0 && (int)($matiere->est_conduite ?? 0) !== 1): ?>
         <button class="btn btn-outline text-red-500 border-red-200 hover:bg-red-50"
                 onclick="document.getElementById('deleteModal').classList.add('active');document.body.style.overflow='hidden'">
             <i data-lucide="trash-2" class="w-4 h-4"></i>Supprimer
@@ -29,6 +29,27 @@ $enseignements = $enseignements ?? [];
         <?php endif; ?>
     </div>
 </div>
+
+<?php if ((int)($matiere->est_conduite ?? 0) === 1): ?>
+<div class="mb-4 rounded-xl border border-violet-200 bg-violet-50 p-4 text-sm text-violet-900 flex items-start gap-3">
+    <i data-lucide="shield-check" class="w-5 h-5 shrink-0 mt-0.5"></i>
+    <div>
+        <p class="font-semibold">Matière de Conduite</p>
+        <p>Note de comportement : coefficient 1, 0 heure de cours, absente des emplois du temps et des affectations d'enseignement. Elle ne peut pas être supprimée.</p>
+        <?php if (isset($protection)): ?>
+        <p class="mt-1 font-medium <?= $protection['ok'] ? 'text-emerald-700' : 'text-red-700' ?>">
+            Protection SQL : <?= $protection['ok'] ? 'opérationnelle' : 'NON opérationnelle' ?>
+        </p>
+        <?php if (!$protection['ok']): ?>
+        <p class="mt-1 rounded-lg bg-red-50 border border-red-200 text-red-800 p-2 text-xs">
+            Les déclencheurs de protection de la Conduite sont absents ou modifiés : <?= htmlspecialchars(implode(' ; ', array_map(fn($k, $v) => "$k : $v", array_keys($protection['details']), $protection['details'])), ENT_QUOTES) ?>.
+            Relancer <code>database/migrate.php</code> puis vérifier avec <code>database/tools/conduite_protection.php --check</code>.
+        </p>
+        <?php endif; ?>
+        <?php endif; ?>
+    </div>
+</div>
+<?php endif; ?>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
@@ -181,7 +202,7 @@ $enseignements = $enseignements ?? [];
 </div>
 
 <!-- Modal suppression -->
-<?php if (showmp($perms, 'matieres.delete') && $matiere->nb_enseignements == 0): ?>
+<?php if (showmp($perms, 'matieres.delete') && $matiere->nb_enseignements == 0 && (int)($matiere->est_conduite ?? 0) !== 1): ?>
 <div id="deleteModal" class="modal-overlay fixed inset-0 z-[9000] hidden items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm [&.active]:flex">
     <div class="w-full max-w-lg rounded-xl border border-slate-200 bg-white shadow-2xl" style="max-width:420px">
         <div class="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">

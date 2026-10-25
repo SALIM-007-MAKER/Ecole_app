@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Modules\Academique\Controllers;
 
 use App\Modules\Academique\Events\BulletinAppreciationUpdated;
+use App\Modules\Academique\Events\BulletinRegenerated;
+use App\Modules\Academique\Services\ConduiteIncompleteException;
 use App\Modules\Academique\Models\PeriodeScolaireModel;
 use App\Modules\Academique\Policies\BulletinPolicy;
 use App\Modules\Academique\Repositories\BulletinRepository;
@@ -110,6 +112,10 @@ class BulletinController extends Controller
             && (int)($row['token_version'] ?? 1) === BulletinTokenService::VERSION
             && BulletinPublicationGate::isOpen()
             && $this->policy->canPublish($user);
+        // Bouton « Régénérer en vue de la publication » : brouillon + droit de génération + même établissement
+        $peutRegenerer = $statut === 'brouillon'
+            && $this->policy->canGenerate($user)
+            && (int)($row['etablissement_id'] ?? 0) === (int)($user['etablissement_id'] ?? -1);
 
         $this->auditerImpression($user, $eleveId, $periodeId, $statut, $officiel);
 
@@ -125,7 +131,7 @@ class BulletinController extends Controller
             'Academique::bulletins/imprimer',
             $this->buildViewModel(
                 $bulletin, $periode, $appreciationDirecteur, $this->policy->canAddDirecteurAppreciation($user),
-                $qrSvg, $officiel, $peutPublier
+                $qrSvg, $officiel, $peutPublier, $peutRegenerer
             ),
             'none'
         );
@@ -366,6 +372,60 @@ class BulletinController extends Controller
         $this->changerStatut('archiver', (int)$eleveId, (int)$periodeId);
     }
 
+    /**
+     * Régénère explicitement un bulletin EN BROUILLON en vue de sa publication : exige la Conduite complète de la classe,
+     * applique le format d'instantané à jour et conserve le jeton. Ne publie JAMAIS. Protections : authentification, CSRF,
+     * droit de génération, établissement de l'élève = établissement de l'utilisateur, statut brouillon.
+     */
+    public function regenerer(string $eleveId, string $periodeId): void
+    {
+        $this->requireAuth();
+        $this->verifyCsrf();
+        $user      = $this->currentUser();
+        $eleveId   = (int)$eleveId;
+        $periodeId = (int)$periodeId;
+        $ctx       = "action=regenerer eleve={$eleveId} periode={$periodeId} user=" . (int)($user['id'] ?? 0) . ' role=' . ($user['role'] ?? '');
+
+        if (!$this->policy->canGenerate($user)) {
+            Logger::security('BULLETIN_REGENERATION_REFUSED', "raison=droits_insuffisants {$ctx}");
+            $this->refuser();
+            return;
+        }
+
+        $retour = BASE_URL . "/v2/academique/bulletins/{$eleveId}/{$periodeId}/imprimer";
+        $row = $this->repo->findByEleveEtPeriode($eleveId, $periodeId);
+        if (!$row) {
+            Session::flash('error', 'Bulletin introuvable : générez-le d\'abord.');
+            $this->redirect($retour);
+        }
+        if ((int)($row['etablissement_id'] ?? 0) !== (int)($user['etablissement_id'] ?? -1)) {
+            Logger::security('BULLETIN_REGENERATION_REFUSED', "raison=autre_etablissement {$ctx}");
+            $this->refuser();
+            return;
+        }
+        if (($row['statut'] ?? '') !== 'brouillon') {
+            Session::flash('error', 'Seul un bulletin en brouillon peut être régénéré : celui-ci est déjà publié ou archivé.');
+            $this->redirect($retour);
+        }
+
+        try {
+            $generator = BulletinEngineFactory::make((int)$user['etablissement_id']);
+            $bulletin  = $generator->genererBulletin($eleveId, $periodeId, (int)$user['id'], pourPublication: true);
+            EventDispatcher::dispatch(new BulletinRegenerated(
+                eleveId: $eleveId, classeId: $bulletin->classeId, periodeId: $periodeId,
+                verificationToken: $bulletin->verificationToken, regeneratedById: (int)$user['id'],
+            ));
+            Session::flash('success', 'Bulletin régénéré en vue de la publication — il reste en brouillon (non publié).');
+        } catch (ConduiteIncompleteException $e) {
+            Logger::security('BULLETIN_REGENERATION_REFUSED', 'raison=conduite_incomplete ' . $ctx);
+            Session::flash('error', $e->getMessage());
+        } catch (BulletinTokenException | \RuntimeException $e) {
+            Logger::security('BULLETIN_REGENERATION_REFUSED', 'raison=' . substr($e->getMessage(), 0, 120) . " {$ctx}");
+            Session::flash('error', $e->getMessage());
+        }
+        $this->redirect($retour);
+    }
+
     private function changerStatut(string $action, int $eleveId, int $periodeId): void
     {
         $this->requireAuth();
@@ -425,10 +485,13 @@ class BulletinController extends Controller
         string       $qrSvg = '',
         bool         $estOfficiel = false,
         bool         $peutPublier = false,
+        bool         $peutRegenerer = false,
     ): array {
         return [
             'estOfficiel'                 => $estOfficiel,
             'peutPublier'                 => $peutPublier,
+            'peutRegenerer'               => $peutRegenerer,
+            'conduiteComplete'            => $b->conduiteComplete,
             'csrfToken'                   => Session::getCsrfToken(),
             'eleveId'                     => $b->eleveId,
             'periodeId'                   => $b->periodeId,

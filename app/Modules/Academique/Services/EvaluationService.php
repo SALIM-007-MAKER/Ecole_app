@@ -68,6 +68,17 @@ class EvaluationService
             );
         }
 
+        // Conduite (marqueur matieres.est_conduite) : coefficient 1 et barème 20 imposés à la création, et une seule
+        // évaluation non archivée par classe et par période (les doublons historiques ne sont jamais touchés).
+        $estConduite = $this->repo->matiereEstConduite($dto->matiereId);
+        if ($estConduite === null) {
+            throw new \RuntimeException("Matière introuvable.");
+        }
+        if ($estConduite) {
+            $dto = $this->conduiteImposee($dto);
+            $this->refuserSecondeConduite($dto->classeId, $dto->periodeScolaireId, null);
+        }
+
         $data = array_merge($dto->toArray(), [
             'statut'             => 'brouillon',
             'notes_saisie_ouverte' => 0,
@@ -117,6 +128,25 @@ class EvaluationService
             if ($periode->statut === 'archivee' || ($periode->verrouille_par ?? null) !== null) {
                 $motif = $periode->statut === 'archivee' ? 'archivée' : 'verrouillée';
                 throw new \RuntimeException("Impossible de déplacer l'évaluation vers une période {$motif}.");
+            }
+        }
+
+        // Règle d'unicité de la Conduite : uniquement si la modification change la matière, la classe ou la période
+        // (modifier le libellé d'une évaluation historique ne touche ni son coefficient ni sa note maximale).
+        $matiereChange  = (int)$evaluation->matiere_id !== $dto->matiereId;
+        $contexteChange = $matiereChange
+            || (int)$evaluation->classe_id !== $dto->classeId
+            || (int)$evaluation->periode_scolaire_id !== $dto->periodeScolaireId;
+        if ($contexteChange) {
+            $estConduite = $this->repo->matiereEstConduite($dto->matiereId);
+            if ($estConduite === null) {
+                throw new \RuntimeException("Matière introuvable.");
+            }
+            if ($estConduite) {
+                if ($matiereChange) {
+                    $dto = $this->conduiteImposee($dto);
+                }
+                $this->refuserSecondeConduite($dto->classeId, $dto->periodeScolaireId, $evaluationId);
             }
         }
 
@@ -255,6 +285,33 @@ class EvaluationService
     }
 
     // ─── Helper privé ────────────────────────────────────────────────────────
+
+    /** Conduite : coefficient d'évaluation 1 et note maximale 20. */
+    private function conduiteImposee(EvaluationDTO $dto): EvaluationDTO
+    {
+        return new EvaluationDTO(
+            periodeScolaireId: $dto->periodeScolaireId,
+            typeEvaluationId:  $dto->typeEvaluationId,
+            matiereId:         $dto->matiereId,
+            classeId:          $dto->classeId,
+            enseignantId:      $dto->enseignantId,
+            libelle:           $dto->libelle,
+            description:       $dto->description,
+            dateEvaluation:    $dto->dateEvaluation,
+            coefficient:       1.00,
+            noteMax:           20.00,
+        );
+    }
+
+    private function refuserSecondeConduite(int $classeId, int $periodeId, ?int $exceptId): void
+    {
+        if ($this->repo->conduiteExisteDeja($classeId, $periodeId, $exceptId)) {
+            throw new \RuntimeException(
+                "Une évaluation de Conduite existe déjà pour cette classe et cette période. "
+                . "Une seule évaluation de Conduite non archivée est autorisée par classe et par période."
+            );
+        }
+    }
 
     private function diff(array $avant, array $apres): array
     {

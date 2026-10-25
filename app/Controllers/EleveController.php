@@ -202,6 +202,17 @@ class EleveController extends Controller
 
         $this->eleveModel->update((int)$id, $this->prepareDbData($data));
 
+        // Désactiver / réactiver un élève change l'effectif exigé pour la Conduite : changement tracé dans le journal d'audit
+        $ancienActif = (bool)(int)($eleve->actif ?? 1);
+        $nouvelActif = (bool)(int)($data['actif'] ?? 1);
+        if ($ancienActif !== $nouvelActif) {
+            \Core\EventDispatcher::dispatch(new \App\Events\EleveActifChanged(
+                eleveId: (int)$id, ancienActif: $ancienActif, nouvelActif: $nouvelActif,
+                changedById: (int)($this->currentUser()['id'] ?? 0), source: 'modification',
+                classeId: isset($eleve->classe_id) ? (int)$eleve->classe_id : null,
+            ));
+        }
+
         Session::flash('success', "L'élève {$data['nom']} {$data['prenom']} a été mis à jour.");
         $this->redirect(BASE_URL . '/eleves/' . $id);
     }

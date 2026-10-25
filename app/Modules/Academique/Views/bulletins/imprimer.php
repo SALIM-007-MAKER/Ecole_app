@@ -71,6 +71,8 @@ if (!function_exists('ordinal')) {
 }
 $estOfficiel = $estOfficiel ?? false;
 $peutPublier = $peutPublier ?? false;
+$peutRegenerer = $peutRegenerer ?? false;
+$conduiteComplete = $conduiteComplete ?? null;
 $csrfToken   = $csrfToken   ?? '';
 ?>
 <!DOCTYPE html>
@@ -230,6 +232,16 @@ table { border-collapse: collapse; width: 100%; }
 
 <div class="no-print">
     <?php if (!$estOfficiel): ?><span class="badge-brouillon">BROUILLON — non officiel, sans QR de vérification</span><?php endif; ?>
+    <?php if ($conduiteComplete === false && !$estOfficiel): ?>
+    <span class="badge-brouillon" title="Des notes de Conduite manquent dans la classe : la Conduite est exclue de la moyenne tant qu'elle n'est pas saisie. La publication est bloquée.">Conduite incomplète — publication bloquée</span>
+    <?php endif; ?>
+    <?php if ($peutRegenerer): ?>
+    <form method="post" action="<?= e(BASE_URL) ?>/v2/academique/bulletins/<?= (int)$eleveId ?>/<?= (int)$periodeId ?>/regenerer" style="margin:0"
+          onsubmit="return confirm('Régénérer ce brouillon en vue de la publication ? Il restera en brouillon (non publié).');">
+        <input type="hidden" name="_csrf_token" value="<?= e($csrfToken) ?>">
+        <button type="submit" class="btn-print">↻ Régénérer en vue de la publication</button>
+    </form>
+    <?php endif; ?>
     <?php if ($peutPublier): ?>
     <form method="post" action="<?= e(BASE_URL) ?>/v2/academique/bulletins/<?= (int)$eleveId ?>/<?= (int)$periodeId ?>/publier" style="margin:0"
           onsubmit="return confirm('Publier ce bulletin ? Il deviendra officiel et recevra un QR de vérification.');">

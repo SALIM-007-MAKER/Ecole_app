@@ -85,15 +85,15 @@ class EvaluationController extends Controller
     {
         $this->requirePermission('academique.evaluations.manage');
 
-        $user    = $this->currentUser();
-        $isAdmin = in_array('academique.evaluations.admin', $user['permissions'] ?? [], true);
+        $user = $this->currentUser();
+        $peutConduite = in_array(EvaluationPolicy::PERMISSION_CONDUITE, $user['permissions'] ?? [], true);
 
         $this->render('Academique::evaluations/form', [
             'title'       => 'Nouvelle évaluation',
             'evaluation'  => null,
             'periodes'    => $this->repo->listPeriodesForSelect(),
             'types'       => $this->repo->listTypesForSelect(),
-            'matieres'    => $this->repo->listMatieresForSelect($isAdmin),
+            'matieres'    => $this->repo->listMatieresForSelect($peutConduite),
             'classes'     => $this->repo->listClassesForSelect(),
             'enseignants' => $this->repo->listEnseignantsForSelect(),
             'statuts'     => EvaluationModel::STATUT_LABELS,
@@ -116,10 +116,9 @@ class EvaluationController extends Controller
             $this->redirect(BASE_URL . '/v2/academique/evaluations/create');
         }
 
-        $user       = $this->currentUser();
-        $matiereNom = $this->repo->findMatiereNom($dto->matiereId);
-        if (!$this->policy->canCreate($user, $matiereNom)) {
-            Session::flash('errors', ['global' => ["La création d'une évaluation de Conduite est réservée au Directeur."]]);
+        $user = $this->currentUser();
+        if (!$this->policy->canCreate($user, $this->repo->matiereEstConduite($dto->matiereId) === true)) {
+            Session::flash('errors', ['global' => ["La création d'une évaluation de Conduite est réservée aux profils autorisés à gérer la Conduite."]]);
             Session::flash('old', $_POST);
             $this->redirect(BASE_URL . '/v2/academique/evaluations/create');
         }
@@ -146,17 +145,15 @@ class EvaluationController extends Controller
         }
 
         $user = $this->currentUser();
-        if (!$this->policy->canUpdate($user, $evaluation)) {
-            $this->requirePermission('academique.evaluations.admin');
-        }
-        $isAdmin = in_array('academique.evaluations.admin', $user['permissions'] ?? [], true);
+        $this->exigerModification($user, $evaluation);
+        $peutConduite = in_array(EvaluationPolicy::PERMISSION_CONDUITE, $user['permissions'] ?? [], true);
 
         $this->render('Academique::evaluations/form', [
             'title'       => 'Modifier — ' . $evaluation->libelle,
             'evaluation'  => $evaluation,
             'periodes'    => $this->repo->listPeriodesForSelect(),
             'types'       => $this->repo->listTypesForSelect(),
-            'matieres'    => $this->repo->listMatieresForSelect($isAdmin),
+            'matieres'    => $this->repo->listMatieresForSelect($peutConduite),
             'classes'     => $this->repo->listClassesForSelect(),
             'enseignants' => $this->repo->listEnseignantsForSelect(),
             'statuts'     => EvaluationModel::STATUT_LABELS,
@@ -176,9 +173,7 @@ class EvaluationController extends Controller
         }
 
         $user = $this->currentUser();
-        if (!$this->policy->canUpdate($user, $evaluation)) {
-            $this->requirePermission('academique.evaluations.admin');
-        }
+        $this->exigerModification($user, $evaluation);
 
         $this->verifyCsrf();
 
@@ -191,15 +186,15 @@ class EvaluationController extends Controller
             $this->redirect(BASE_URL . '/v2/academique/evaluations/' . $evaluationId . '/edit');
         }
 
-        $isAdmin = in_array('academique.evaluations.admin', $user['permissions'] ?? [], true);
+        $peutConduite = in_array(EvaluationPolicy::PERMISSION_CONDUITE, $user['permissions'] ?? [], true);
+        $conduiteActuelle = $this->policy->estConduite($evaluation->matiere_est_conduite ?? null);
+        $isAdmin = in_array('academique.evaluations.admin', $user['permissions'] ?? [], true) || ($conduiteActuelle && $peutConduite);
 
-        if (!$isAdmin && $dto->matiereId !== (int)$evaluation->matiere_id) {
-            $nouvelleMatiereNom = $this->repo->findMatiereNom($dto->matiereId);
-            if ($this->policy->estConduite($nouvelleMatiereNom)) {
-                Session::flash('errors', ['global' => ["Le passage en matière Conduite est réservé au Directeur."]]);
-                Session::flash('old', $_POST);
-                $this->redirect(BASE_URL . '/v2/academique/evaluations/' . $evaluationId . '/edit');
-            }
+        if (!$peutConduite && $dto->matiereId !== (int)$evaluation->matiere_id
+            && $this->repo->matiereEstConduite($dto->matiereId) === true) {
+            Session::flash('errors', ['global' => ["Le passage en matière Conduite est réservé aux profils autorisés à gérer la Conduite."]]);
+            Session::flash('old', $_POST);
+            $this->redirect(BASE_URL . '/v2/academique/evaluations/' . $evaluationId . '/edit');
         }
 
         try {
@@ -218,6 +213,7 @@ class EvaluationController extends Controller
     public function publier(string $id): void
     {
         $this->requirePermission('academique.evaluations.manage');
+        $this->exigerDroitConduite((int)$id);
         $this->verifyCsrf();
 
         try {
@@ -234,6 +230,7 @@ class EvaluationController extends Controller
     public function verrouiller(string $id): void
     {
         $this->requirePermission('academique.evaluations.manage');
+        $this->exigerDroitConduite((int)$id);
         $this->verifyCsrf();
 
         try {
@@ -249,7 +246,7 @@ class EvaluationController extends Controller
 
     public function deverrouiller(string $id): void
     {
-        $this->requirePermission('academique.evaluations.admin');
+        $this->requirePermission($this->droitAdminOuConduite((int)$id));
         $this->verifyCsrf();
 
         try {
@@ -265,7 +262,7 @@ class EvaluationController extends Controller
 
     public function archiver(string $id): void
     {
-        $this->requirePermission('academique.evaluations.admin');
+        $this->requirePermission($this->droitAdminOuConduite((int)$id));
         $this->verifyCsrf();
 
         try {
@@ -277,5 +274,41 @@ class EvaluationController extends Controller
         }
 
         $this->redirect(BASE_URL . '/v2/academique/evaluations');
+    }
+
+    // ─── Conduite : droit dédié (marqueur matieres.est_conduite) ──────────────
+
+    /** Matière ordinaire : comportement historique (droit .admin). Conduite : `academique.conduite.manage` exclusivement. */
+    private function exigerModification(array $user, \stdClass $evaluation): void
+    {
+        if ($this->policy->canUpdate($user, $evaluation)) {
+            return;
+        }
+        if ($this->policy->estConduite($evaluation->matiere_est_conduite ?? null)) {
+            \Core\Logger::security('ACCESS_DENIED', 'Modification refusée sur une évaluation de Conduite (academique.conduite.manage requis)');
+            http_response_code(403);
+            $this->render('errors/403', ['title' => 'Permission insuffisante'], 'none');
+            exit;
+        }
+        $this->requirePermission('academique.evaluations.admin');
+    }
+
+    /** Évaluation de Conduite (publier, verrouiller) : exige en plus `academique.conduite.manage`. */
+    private function exigerDroitConduite(int $evaluationId): void
+    {
+        $evaluation = $this->repo->findWithDetails($evaluationId);
+        if ($evaluation && $this->policy->estConduite($evaluation->matiere_est_conduite ?? null)) {
+            $this->requirePermission(EvaluationPolicy::PERMISSION_CONDUITE);
+        }
+    }
+
+    /** Droit exigé pour déverrouiller / archiver : `.admin` pour une matière ordinaire, `conduite.manage` pour la Conduite. */
+    private function droitAdminOuConduite(int $evaluationId): string
+    {
+        $this->requireAuth();
+        $evaluation = $this->repo->findWithDetails($evaluationId);
+        return ($evaluation && $this->policy->estConduite($evaluation->matiere_est_conduite ?? null))
+            ? EvaluationPolicy::PERMISSION_CONDUITE
+            : 'academique.evaluations.admin';
     }
 }

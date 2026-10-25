@@ -3,6 +3,8 @@ $errors      = $errors      ?? [];
 $old         = $old         ?? [];
 $professeurs = $professeurs ?? [];
 
+$estConduite = (int)($matiere->est_conduite ?? 0) === 1;   // Conduite : coefficient 1 et 0 h imposés (aussi côté serveur)
+
 function editM(array $old, string $key, $obj): string {
     $v = $old[$key] ?? ($obj->{$key} ?? '');
     return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
@@ -79,7 +81,7 @@ function editM(array $old, string $key, $obj): string {
                             <input type="number" id="coefficient" name="coefficient"
                                    class="form-input pr-8 <?= isset($errors['coefficient']) ? 'border-red-400' : '' ?>"
                                    value="<?= editM($old, 'coefficient', $matiere) ?>"
-                                   min="0.5" max="20" step="0.5" required>
+                                   min="0.5" max="20" step="0.5" required <?= $estConduite ? 'readonly' : '' ?>>
                             <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none">×</span>
                         </div>
                         <?php if (isset($errors['coefficient'])): ?>
@@ -95,7 +97,7 @@ function editM(array $old, string $key, $obj): string {
                             <input type="number" id="volume_horaire" name="volume_horaire"
                                    class="form-input pr-14 <?= isset($errors['volume_horaire']) ? 'border-red-400' : '' ?>"
                                    value="<?= editM($old, 'volume_horaire', $matiere) ?>"
-                                   min="1" max="30" required>
+                                   min="<?= $estConduite ? 0 : 1 ?>" max="30" required <?= $estConduite ? 'readonly' : '' ?>>
                             <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none">h/sem</span>
                         </div>
                         <?php if (isset($errors['volume_horaire'])): ?>

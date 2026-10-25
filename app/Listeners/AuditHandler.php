@@ -6,6 +6,7 @@ use Core\Event;
 use Core\Listener;
 use App\Services\AuditService;
 use App\Events\EleveCreated;
+use App\Events\EleveActifChanged;
 use App\Events\DocumentGenere;
 use App\Events\ImportCsvCompleted;
 
@@ -26,6 +27,16 @@ class AuditHandler implements Listener
                 'eleves',
                 'eleves',
                 $event->eleveId,
+                $event->toArray()
+            ),
+
+            $event instanceof EleveActifChanged => $this->audit->log(
+                $event->changedById,
+                $event->nouvelActif ? 'reactiver' : 'desactiver',
+                'eleves',
+                'eleves',
+                $event->eleveId,
+                ['actif' => $event->ancienActif ? 1 : 0],
                 $event->toArray()
             ),
 

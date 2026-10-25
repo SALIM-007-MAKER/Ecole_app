@@ -104,6 +104,8 @@ try {
     foreach ($periodeIds as $semestre => $periodeId) {
         foreach ($matieres as $nom => [$offset]) {
             foreach (['devoir' => [1.0, 12], 'examen' => [2.0, 20]] as $code => [$coef, $jour]) {
+                // Conduite : une SEULE évaluation par période (coefficient 1, barème 20) — jamais de doublon actif
+                if ($nom === 'Conduite' && $code !== 'devoir') { continue; }
                 $libelle = "[TEST BULLETIN {$annee} S{$semestre}] {$nom} - {$code}";
                 $find = $pdo->prepare('SELECT id FROM evaluations WHERE libelle = ? LIMIT 1');
                 $find->execute([$libelle]);

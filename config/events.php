@@ -1,6 +1,7 @@
 <?php
 
 use App\Events\EleveCreated;
+use App\Events\EleveActifChanged;
 use App\Events\DocumentGenere;
 use App\Events\ImportCsvCompleted;
 use App\Listeners\AuditHandler;
@@ -56,6 +57,7 @@ use App\Modules\Academique\Events\BulletinGenerated;
 use App\Modules\Academique\Events\BulletinPublished;
 use App\Modules\Academique\Events\BulletinArchived;
 use App\Modules\Academique\Events\BulletinAppreciationUpdated;
+use App\Modules\Academique\Events\BulletinRegenerated;
 use App\Modules\Academique\Listeners\BulletinHandler;
 use App\Modules\Academique\Events\AnalyticsGenerated;
 use App\Modules\Academique\Events\StatisticsUpdated;
@@ -162,6 +164,10 @@ $events = [
     EleveCreated::class => [
         new AuditHandler(),
         new StatsCacheHandler(),
+    ],
+
+    EleveActifChanged::class => [
+        new AuditHandler(),
     ],
 
     DocumentGenere::class => [
@@ -403,6 +409,10 @@ $events = [
     ],
 
     BulletinAppreciationUpdated::class => [
+        new BulletinHandler(),
+    ],
+
+    BulletinRegenerated::class => [
         new BulletinHandler(),
     ],
 

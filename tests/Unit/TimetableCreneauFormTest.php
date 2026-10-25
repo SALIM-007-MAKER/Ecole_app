@@ -18,7 +18,9 @@ ini_set('display_errors', '1');
 
 define('ROOT', dirname(__DIR__, 2));
 require ROOT . '/tests/Support/DbCopy.php';
+require ROOT . '/tests/Support/ConduiteCopy.php';
 
+use Tests\Support\ConduiteCopy;
 use Tests\Support\DbCopy;
 
 $pass = 0; $fail = 0;
@@ -57,6 +59,7 @@ try {
     $db = $copy->name;
     $pdo = $copy->pdo();
     $pdo->exec("SET NAMES utf8mb4");
+    ConduiteCopy::migrer($pdo, ROOT);   // le code lit matieres.est_conduite : la copie reçoit T048-T050 si la source ne les a pas encore
 
     $admin = (int)$pdo->query("SELECT id FROM users WHERE role='admin' AND etablissement_id=1 ORDER BY id LIMIT 1")->fetchColumn();
     $ens   = (int)$pdo->query("SELECT id FROM users WHERE role='enseignant' AND etablissement_id=1 ORDER BY id LIMIT 1")->fetchColumn();
@@ -87,9 +90,9 @@ try {
     check('le formulaire contient le jeton CSRF', str_contains($body, '_csrf_token'));
     $ids = [];
     if (preg_match('/<select[^>]*name="matiere_id".*?<\/select>/s', $body, $m)) { preg_match_all('/<option value="(\d+)"/', $m[0], $o); $ids = array_map('intval', $o[1]); }
-    $attendues = array_map('intval', $pdo->query("SELECT id FROM matieres WHERE etablissement_id=1")->fetchAll(PDO::FETCH_COLUMN));
+    $attendues = array_map('intval', $pdo->query("SELECT id FROM matieres WHERE etablissement_id=1 AND est_conduite IS NULL")->fetchAll(PDO::FETCH_COLUMN));   // la Conduite n'a pas d'heures de cours : exclue (Lot 2)
     sort($ids); sort($attendues);
-    check('toutes les matières de l\'établissement sont proposées (' . count($attendues) . ')', $ids === $attendues, 'obtenu: ' . implode(',', $ids));
+    check('toutes les matières d\'enseignement de l\'établissement sont proposées (' . count($attendues) . ', Conduite exclue)', $ids === $attendues, 'obtenu: ' . implode(',', $ids));
 
     section('Création d\'un créneau avec une matière ordinaire');
     [$r] = http($db, 'admin', $admin, 'POST', "/ecole_app/v2/vie-scolaire/emplois-du-temps/$edt/creneaux",
@@ -145,10 +148,10 @@ try {
     check('autre établissement : uniquement sa matière', $nomsA === ['MatiereAutreEtabLot1'], json_encode($nomsA));
     check('établissement inconnu (0) : liste vide (échec fermé)', $repo->matieresPlanifiables(0) === []);
     $ordre = array_column($repo->matieresPlanifiables(1), 'nom');
-    $ordreSql = $pdo->query("SELECT nom FROM matieres WHERE etablissement_id = 1 ORDER BY nom ASC, id ASC")->fetchAll(PDO::FETCH_COLUMN);
+    $ordreSql = $pdo->query("SELECT nom FROM matieres WHERE etablissement_id = 1 AND est_conduite IS NULL ORDER BY nom ASC, id ASC")->fetchAll(PDO::FETCH_COLUMN);
     check('liste complète pour l’établissement 1', count($ordre) === count($attendues));
     check('ordre alphabétique (collation MySQL) respecté, comparé à ORDER BY nom', $ordre === $ordreSql);
-    check('Conduite non filtrée au Lot 1 (traitée au Lot 2)', in_array('Conduite', $noms1, true));
+    check('Conduite exclue de la liste (marqueur est_conduite, Lot 2)', !in_array('Conduite', $noms1, true));
 } finally {
     $copy->drop();
 }

@@ -241,6 +241,8 @@ class RankingEngine
                 'seuil_eliminatoire' => isset($row['seuil_eliminatoire'])
                     ? (float)$row['seuil_eliminatoire']
                     : null,
+                // Conduite : une note manquante est EXCLUE du calcul (jamais comptée zéro), quelle que soit l'option globale
+                'conduite'           => (int)($row['matiere_est_conduite'] ?? 0) === 1,
             ];
         }
         return $grouped;

@@ -346,6 +346,7 @@ class TimetableRepository
     /**
      * Matières proposables dans le formulaire de créneau : celles de l'établissement, triées par nom.
      * La table matieres n'a ni colonne « actif » ni « couleur » : seules les colonnes réelles sont lues.
+     * La matière de Conduite (marqueur est_conduite) n'a pas d'heures de cours : elle est exclue.
      * Sans établissement identifié, la liste est vide (échec fermé).
      */
     public function matieresPlanifiables(int $etablissementId): array
@@ -354,10 +355,18 @@ class TimetableRepository
             return [];
         }
         $stmt = $this->db->prepare("
-            SELECT id, nom FROM matieres WHERE etablissement_id = :etab ORDER BY nom ASC, id ASC
+            SELECT id, nom FROM matieres WHERE etablissement_id = :etab AND est_conduite IS NULL ORDER BY nom ASC, id ASC
         ");
         $stmt->execute([':etab' => $etablissementId]);
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    /** La matière est-elle la matière de Conduite (marqueur est_conduite) ? Une matière inexistante n'en est pas une. */
+    public function matiereEstConduite(int $matiereId): bool
+    {
+        $stmt = $this->db->prepare("SELECT est_conduite FROM matieres WHERE id = :id");
+        $stmt->execute([':id' => $matiereId]);
+        return (int)$stmt->fetchColumn() === 1;
     }
 
     // ── EDT par enseignant ────────────────────────────────────────────────────

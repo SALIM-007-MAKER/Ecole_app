@@ -130,6 +130,11 @@ class StubBulletinRepository extends BulletinRepository
     }
 
     public function infoEleve(int $eleveId): ?object    { return $this->eleve; }
+    /** Double sans base : aucun contrôle de la Conduite (établissement sans matière de Conduite marquée). */
+    public function etatConduite(int $classeId, int $periodeId, bool $verrouiller = false): array
+    {
+        return ['concerne' => false, 'complete' => true, 'raison' => 'non_concerne', 'message' => '', 'matiere_id' => null, 'evaluations' => [], 'manquants' => []];
+    }
     public function infoPeriode(int $periodeId): ?object { return $this->periode; }
     public function infoEtablissement(): array           { return ['nom' => 'Lycée Test', 'adresse' => '1 rue Test', 'logo' => null]; }
     public function elevesParClasse(int $classeId): array { return $this->eleve ? [$this->eleve->id] : []; }

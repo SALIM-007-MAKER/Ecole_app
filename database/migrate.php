@@ -42,6 +42,14 @@ if (file_exists($envFile)) {
     }
 }
 
+// Cible alternative RÉSERVÉE aux tests : une copie jetable (ecole_app_copy_*), jamais une autre base.
+$cibleCopie = getenv('MIGRATE_DB');
+if ($cibleCopie !== false && $cibleCopie !== '') {
+    if (!preg_match('/^ecole_app_copy_[a-f0-9]+$/', $cibleCopie)) { fwrite(STDERR, "REFUS : MIGRATE_DB doit être une copie ecole_app_copy_*
+"); exit(2); }
+    $_ENV['DB_DATABASE'] = $cibleCopie;
+}
+
 // Aligne le fuseau horaire sur celui de l'application (Core\Application::run()
 // l'applique pour les requêtes HTTP réelles ; ce script CLI tourne hors de ce
 // bootstrap et utilisait jusqu'ici le défaut PHP nu — trouvé Phase 15.1 (RC1).

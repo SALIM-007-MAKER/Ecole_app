@@ -19,7 +19,7 @@ interface BulletinGeneratorInterface
      * Génère et persiste le bulletin d'un élève pour une période.
      * Dispatch BulletinGenerated.
      */
-    public function genererBulletin(int $eleveId, int $periodeId, int $userId): BulletinData;
+    public function genererBulletin(int $eleveId, int $periodeId, int $userId, bool $pourPublication = false): BulletinData;
 
     /**
      * Génère les bulletins de toute une classe en un seul passage.
