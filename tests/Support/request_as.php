@@ -23,6 +23,13 @@ foreach (file(ROOT_PATH . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES
     $_ENV[trim($k)] = trim($v, " \t\n\r\0\x0B\"'");
 }
 
+// Cible alternative réservée aux tests : une COPIE isolée (ecole_app_copy_*), jamais une autre base.
+$cibleCopie = getenv('REQUEST_AS_DB');
+if ($cibleCopie !== false && $cibleCopie !== '') {
+    if (!preg_match('/^ecole_app_copy_[a-f0-9]+$/', $cibleCopie)) { fwrite(STDERR, "REFUS : REQUEST_AS_DB doit être une copie ecole_app_copy_*\n"); exit(9); }
+    $_ENV['DB_DATABASE'] = $cibleCopie;
+}
+
 spl_autoload_register(function (string $c): void {
     $map = [
         'Core\\' => '/core/', 'App\\Controllers\\' => '/app/Controllers/', 'App\\Models\\' => '/app/Models/',
@@ -40,7 +47,7 @@ spl_autoload_register(function (string $c): void {
 
 parse_str((string)parse_url($uri, PHP_URL_QUERY), $_GET);
 $_POST = $method === 'POST' ? (json_decode($postJson, true) ?: []) : [];
-if ($method === 'POST') { $_POST['_csrf_token'] = 'test-csrf-token'; }
+if ($method === 'POST' && getenv('REQUEST_AS_NO_CSRF') !== '1') { $_POST['_csrf_token'] = 'test-csrf-token'; }   // REQUEST_AS_NO_CSRF=1 : requête sans jeton (test de refus)
 $_REQUEST = array_merge($_GET, $_POST);
 $_SERVER['REQUEST_METHOD']  = $method;
 $_SERVER['REQUEST_URI']     = $uri;
@@ -79,6 +86,7 @@ register_shutdown_function(function () use ($role, $uri, $method, &$transactionT
         $transactionTest->rollBack();
     }
     $body = ob_get_clean();
+    if (($sortie = getenv('REQUEST_AS_BODY_OUT')) !== false && $sortie !== '') { file_put_contents($sortie, (string)$body); }
     $code = http_response_code() ?: 200;
     $txt  = trim(preg_replace('/\s+/', ' ', strip_tags((string)$body)));
     echo 'RESULT:' . json_encode([

@@ -123,53 +123,62 @@ class TimetableController extends Controller
 
     // ── Ajout de créneau ─────────────────────────────────────────────────────
 
-    public function ajouterCreneauForm(int $edtId): void
+    public function ajouterCreneauForm(int $id): void
     {
         $this->requireAuth();
         $user = $this->currentUser();
         $this->requirePermission('timetable.update');
 
-        $edt = $this->service->findEdt($edtId);
+        $edt = $this->service->findEdt($id);
         if ($edt === null || !$this->policy->canModifyEdt($user, $edt)) {
             \Core\Session::flash('error', 'Action non autorisée.');
-            $this->redirect("/v2/vie-scolaire/emplois-du-temps/{$edtId}");
+            $this->redirect("/v2/vie-scolaire/emplois-du-temps/{$id}");
             exit;
         }
 
-        $db       = Database::getInstance()->getConnection();
-        $matieres = $db->query("SELECT id, nom, couleur FROM matieres WHERE actif = 1 ORDER BY nom")->fetchAll(\PDO::FETCH_ASSOC);
-        $enseignants = $db->query("SELECT id, nom, prenom FROM users WHERE role = 'enseignant' ORDER BY nom")->fetchAll(\PDO::FETCH_ASSOC);
+        try {
+            $matieres    = $this->service->matieresPlanifiables((int)($user['etablissement_id'] ?? 0));
+            $enseignants = Database::getInstance()->getConnection()
+                ->query("SELECT id, nom, prenom FROM users WHERE role = 'enseignant' ORDER BY nom")->fetchAll(\PDO::FETCH_ASSOC);
+            $plages = $this->service->plages();
+            $salles = $this->service->salles();
+        } catch (\PDOException $e) {
+            \Core\Logger::error('EDT formulaire créneau : chargement des listes impossible — ' . $e->getMessage());
+            \Core\Session::flash('error', 'Impossible de charger le formulaire du créneau. Veuillez réessayer ou contacter l\'administrateur.');
+            $this->redirect("/v2/vie-scolaire/emplois-du-temps/{$id}");
+            exit;
+        }
 
         $this->render('VieScolaire::emplois_du_temps/creneaux/ajouter', [
             'user'        => $user,
             'edt'         => $edt,
             'matieres'    => $matieres,
             'enseignants' => $enseignants,
-            'plages'      => $this->service->plages(),
-            'salles'      => $this->service->salles(),
+            'plages'      => $plages,
+            'salles'      => $salles,
         ]);
     }
 
-    public function storeCreneau(int $edtId): void
+    public function storeCreneau(int $id): void
     {
         $this->requireAuth();
         $user = $this->currentUser();
         $this->requirePermission('timetable.update');
         $this->verifyCsrf();
 
-        $edt = $this->service->findEdt($edtId);
+        $edt = $this->service->findEdt($id);
         if ($edt === null || !$this->policy->canModifyEdt($user, $edt)) {
             \Core\Session::flash('error', 'Action non autorisée.');
-            $this->redirect("/v2/vie-scolaire/emplois-du-temps/{$edtId}");
+            $this->redirect("/v2/vie-scolaire/emplois-du-temps/{$id}");
             exit;
         }
 
-        $dto    = CreneauDTO::fromRequest($_POST + ['emploi_du_temps_id' => $edtId, 'classe_id' => $edt['classe_id'], 'annee_scolaire' => $edt['annee_scolaire']]);
+        $dto    = CreneauDTO::fromRequest($_POST + ['emploi_du_temps_id' => $id, 'classe_id' => $edt['classe_id'], 'annee_scolaire' => $edt['annee_scolaire']]);
         $errors = $dto->validate();
 
         if (!empty($errors)) {
             \Core\Session::flash('error', implode('<br>', $errors));
-            $this->redirect("/v2/vie-scolaire/emplois-du-temps/{$edtId}/creneaux/ajouter");
+            $this->redirect("/v2/vie-scolaire/emplois-du-temps/{$id}/creneaux/ajouter");
             exit;
         }
 
@@ -179,13 +188,13 @@ class TimetableController extends Controller
         } catch (\RuntimeException $e) {
             \Core\Session::flash('error', $e->getMessage());
         }
-        $this->redirect("/v2/vie-scolaire/emplois-du-temps/{$edtId}");
+        $this->redirect("/v2/vie-scolaire/emplois-du-temps/{$id}");
         exit;
     }
 
     // ── Modification de créneau ───────────────────────────────────────────────
 
-    public function modifierCreneau(int $creneauId): void
+    public function modifierCreneau(int $id): void
     {
         $this->requireAuth();
         $user = $this->currentUser();
@@ -194,7 +203,7 @@ class TimetableController extends Controller
 
         $db      = Database::getInstance()->getConnection();
         $stmt    = $db->prepare("SELECT * FROM vs_edt_creneaux WHERE id = ? AND deleted_at IS NULL");
-        $stmt->execute([$creneauId]);
+        $stmt->execute([$id]);
         $creneau = $stmt->fetch(\PDO::FETCH_ASSOC);
 
         if (!$creneau) {
@@ -224,7 +233,7 @@ class TimetableController extends Controller
         }
 
         try {
-            $this->service->modifierCreneau($creneauId, $dto, $user['id']);
+            $this->service->modifierCreneau($id, $dto, $user['id']);
             \Core\Session::flash('success', 'Créneau modifié.');
         } catch (\RuntimeException $e) {
             \Core\Session::flash('error', $e->getMessage());
@@ -235,7 +244,7 @@ class TimetableController extends Controller
 
     // ── Suppression (soft) de créneau ─────────────────────────────────────────
 
-    public function supprimerCreneau(int $creneauId): void
+    public function supprimerCreneau(int $id): void
     {
         $this->requireAuth();
         $user = $this->currentUser();
@@ -244,13 +253,13 @@ class TimetableController extends Controller
 
         $db   = Database::getInstance()->getConnection();
         $stmt = $db->prepare("SELECT emploi_du_temps_id FROM vs_edt_creneaux WHERE id = ? AND deleted_at IS NULL");
-        $stmt->execute([$creneauId]);
+        $stmt->execute([$id]);
         $row  = $stmt->fetch(\PDO::FETCH_ASSOC);
 
         $edtId = $row['emploi_du_temps_id'] ?? 0;
 
         try {
-            $this->service->supprimerCreneau($creneauId, $user['id']);
+            $this->service->supprimerCreneau($id, $user['id']);
             \Core\Session::flash('success', 'Créneau supprimé.');
         } catch (\RuntimeException $e) {
             \Core\Session::flash('error', $e->getMessage());

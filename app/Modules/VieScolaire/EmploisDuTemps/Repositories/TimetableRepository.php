@@ -343,6 +343,23 @@ class TimetableRepository
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Matières proposables dans le formulaire de créneau : celles de l'établissement, triées par nom.
+     * La table matieres n'a ni colonne « actif » ni « couleur » : seules les colonnes réelles sont lues.
+     * Sans établissement identifié, la liste est vide (échec fermé).
+     */
+    public function matieresPlanifiables(int $etablissementId): array
+    {
+        if ($etablissementId <= 0) {
+            return [];
+        }
+        $stmt = $this->db->prepare("
+            SELECT id, nom FROM matieres WHERE etablissement_id = :etab ORDER BY nom ASC, id ASC
+        ");
+        $stmt->execute([':etab' => $etablissementId]);
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
     // ── EDT par enseignant ────────────────────────────────────────────────────
 
     public function findCreneauxByEnseignant(int $enseignantId, string $annee): array

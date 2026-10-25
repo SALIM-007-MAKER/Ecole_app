@@ -247,6 +247,7 @@ class TimetableService
 
     public function plages(): array  { return $this->repo->findAllPlages(); }
     public function salles(): array  { return $this->repo->findAllSalles(); }
+    public function matieresPlanifiables(int $etablissementId): array { return $this->repo->matieresPlanifiables($etablissementId); }
 
     public function edtParEnseignant(int $enseignantId, string $annee): array
     {
