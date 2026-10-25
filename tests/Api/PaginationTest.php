@@ -135,6 +135,40 @@ $req    = makeRequest(['filter' => ['nom' => ['starts' => 'Ali']]]);
 $result = $filter->parse($req, ['nom'], '');
 t('F14 starts binding',         $result['bindings'] === ['Ali%']);
 
+// ─── F15–F30 : FilterService, opérateurs restants et entrées malformées ──────
+// Format : filter[champ][opérateur]=valeur (voir FilterTest.php pour les cas de robustesse détaillés).
+
+$sqlOps = ['gt' => '>', 'gte' => '>=', 'lt' => '<', 'lte' => '<=', 'neq' => '!='];
+$n = 15;
+foreach ($sqlOps as $op => $sql) {
+    $result = $filter->parse(makeRequest(['filter' => ['age' => [$op => '18']]]), ['age'], '');
+    t(sprintf('F%02d %s condition', $n++, $op), ($result['conditions'][0] ?? '') === "`age` $sql ?");
+    t(sprintf('F%02d %s binding', $n++, $op),   $result['bindings'] === ['18']);
+}
+
+$result = $filter->parse(makeRequest(['filter' => ['deleted_at' => ['not_null' => '']]]), ['deleted_at'], '');
+t('F25 not_null condition',     ($result['conditions'][0] ?? '') === '`deleted_at` IS NOT NULL');
+t('F26 not_null no bindings',   $result['bindings'] === []);
+
+$result = $filter->parse(makeRequest(['filter' => ['statut' => ['in' => ' , ']]]), ['statut'], '');
+t('F27 IN vide ignoré',         $result['conditions'] === [] && $result['bindings'] === []);
+
+$result = $filter->parse(makeRequest(['filter' => 'abc']), ['nom'], '');
+t('F28 filter non tableau',     $result === ['conditions' => [], 'bindings' => []]);
+
+// Entrées malformées : aucune exception, aucune condition invalide, aucune injection.
+// F29 : filter[nom][]=x (clé d'opérateur entière)   F30 : filter[nom][like][]=x (valeur tableau)
+foreach ([
+    'F29 opérateur numérique (filter[nom][]=x)'   => ['nom' => ['x']],
+    'F30 valeur tableau (filter[nom][like][]=x)'  => ['nom' => ['like' => ['x']]],
+] as $label => $malforme) {
+    $erreur = null; $result = null;
+    try { $result = $filter->parse(makeRequest(['filter' => $malforme]), ['nom'], 'e'); }
+    catch (\Throwable $e) { $erreur = get_class($e); }
+    t($label . ' : aucune exception',  $erreur === null, $erreur ? "[$erreur]" : '');
+    t($label . ' : ignoré proprement', $result !== null && $result['conditions'] === [] && $result['bindings'] === []);
+}
+
 // ─── S01–S06 : SortService ───────────────────────────────────────────────────
 
 $sorter = new SortService();
