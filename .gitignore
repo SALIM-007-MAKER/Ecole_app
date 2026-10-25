@@ -1,5 +1,6 @@
 # Secrets et configuration locale — ne jamais versionner
 .env
+.env.production
 
 # Cache, files d'attente, sauvegardes et stockage tenant générés à l'exécution
 storage/cache/*
