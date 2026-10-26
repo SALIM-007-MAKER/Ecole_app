@@ -9,6 +9,7 @@ use App\Models\EleveModel;
 use App\Models\MatiereModel;
 use App\Models\ProfesseurModel;
 use App\Models\EnseignementModel;
+use App\Services\EnseignantPortee;
 
 class ClasseController extends Controller
 {
@@ -37,6 +38,10 @@ class ClasseController extends Controller
         $this->requirePermission('classes.view');
 
         $classes = $this->classeModel->findWithStats();
+        $portee  = EnseignantPortee::classeIds();   // null = pas de restriction (hors enseignant)
+        if ($portee !== null) {
+            $classes = array_values(array_filter($classes, fn($c) => in_array((int)$c->id, $portee, true)));
+        }
 
         $this->render('classes/index', [
             'title'   => 'Gestion des classes',
@@ -95,13 +100,17 @@ class ClasseController extends Controller
         $this->requirePermission('classes.view');
 
         $classe = $this->classeModel->findWithDetails((int)$id);
+        // Un enseignant ne consulte que ses classes ; message identique à « introuvable » (pas de fuite d'existence).
+        if ($classe && !EnseignantPortee::peutVoirClasse((int)$id)) {
+            $classe = null;
+        }
         if (!$classe) {
             Session::flash('error', 'Classe introuvable.');
             $this->redirect(BASE_URL . '/classes');
             return;
         }
 
-        $eleves     = $this->classeModel->getEleves((int)$id);
+        $eleves     =$this->classeModel->getEleves((int)$id);
         $disponibles = $this->classeModel->getElevesDisponibles((int)$id);
         $enseignements = $this->ensModel->findByClasseId((int)$id);
         $matieres   = $this->matiereModel->findForSelect(true);   // sans la Conduite

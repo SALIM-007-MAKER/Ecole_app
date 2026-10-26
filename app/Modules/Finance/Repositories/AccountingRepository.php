@@ -2,6 +2,8 @@
 
 namespace App\Modules\Finance\Repositories;
 
+use Core\Tenant\TenantScope;
+
 use Core\Database;
 
 class AccountingRepository
@@ -11,6 +13,7 @@ class AccountingRepository
     public function __construct()
     {
         $this->pdo = Database::getInstance()->getConnection();
+        \Core\Tenant\ComptabiliteAmorcage::assurer($this->pdo);   // plan comptable / journaux / règles d'un établissement récent
     }
 
     public function getPdo(): \PDO
@@ -24,7 +27,7 @@ class AccountingRepository
     {
         $stmt = $this->pdo->prepare(
             "SELECT * FROM finance_exercices
-             WHERE statut IN ('ouvert','reouvert')
+             WHERE statut IN ('ouvert','reouvert') AND " . TenantScope::sqlEtab('finance_exercices', 'etablissement_id') . "
              ORDER BY date_debut DESC
              LIMIT 1"
         );
@@ -46,7 +49,7 @@ class AccountingRepository
              LEFT JOIN finance_ecritures ec           ON ec.exercice_id = e.id
              LEFT JOIN finance_lignes_ecriture le     ON le.ecriture_id = ec.id
              LEFT JOIN finance_comptes c              ON c.id = le.compte_id
-             WHERE e.id = ?
+             WHERE e.id = ? AND " . TenantScope::sqlEtab('finance_exercices', 'e.etablissement_id') . "
              GROUP BY e.id"
         );
         $stmt->execute([$id]);
@@ -63,6 +66,7 @@ class AccountingRepository
              FROM finance_exercices e
              LEFT JOIN finance_periodes_comptables p ON p.exercice_id = e.id
              LEFT JOIN finance_ecritures ec          ON ec.exercice_id = e.id
+             WHERE " . TenantScope::sqlEtab('finance_exercices', 'e.etablissement_id') . "
              GROUP BY e.id
              ORDER BY e.date_debut DESC"
         );
@@ -71,10 +75,11 @@ class AccountingRepository
 
     public function insertExercice(array $data): int
     {
+        $etab = TenantScope::avecEtab('finance_exercices', [])['etablissement_id'] ?? null;
         $stmt = $this->pdo->prepare(
-            "INSERT INTO finance_exercices
-             (libelle, date_debut, date_fin, statut, solde_report, note, ouvert_par)
-             VALUES (?, ?, ?, 'ouvert', ?, ?, ?)"
+            'INSERT INTO finance_exercices
+             (libelle, date_debut, date_fin, statut, solde_report, note, ouvert_par' . ($etab !== null ? ', etablissement_id' : '') . ")
+             VALUES (?, ?, ?, 'ouvert', ?, ?, ?" . ($etab !== null ? ', ?' : '') . ')'
         );
         $stmt->execute([
             $data['libelle'],
@@ -83,6 +88,7 @@ class AccountingRepository
             $data['solde_report'] ?? 0,
             $data['note'] ?? null,
             $data['ouvert_par'] ?? null,
+            ...($etab !== null ? [$etab] : []),
         ]);
         return (int)$this->pdo->lastInsertId();
     }
@@ -111,7 +117,7 @@ class AccountingRepository
 
     public function findPeriode(int $id): ?object
     {
-        $stmt = $this->pdo->prepare("SELECT * FROM finance_periodes_comptables WHERE id = ?");
+        $stmt = $this->pdo->prepare('SELECT * FROM finance_periodes_comptables WHERE id = ? AND ' . TenantScope::sqlExercice('exercice_id'));
         $stmt->execute([$id]);
         return $stmt->fetch(\PDO::FETCH_OBJ) ?: null;
     }
@@ -172,7 +178,7 @@ class AccountingRepository
     public function findJournalByCode(string $code): ?object
     {
         $stmt = $this->pdo->prepare(
-            "SELECT * FROM finance_journaux_comptables WHERE code = ? AND actif = 1"
+            'SELECT * FROM finance_journaux_comptables WHERE code = ? AND actif = 1 AND ' . TenantScope::sqlEtab('finance_journaux_comptables', 'etablissement_id')
         );
         $stmt->execute([$code]);
         return $stmt->fetch(\PDO::FETCH_OBJ) ?: null;
@@ -181,7 +187,7 @@ class AccountingRepository
     public function listJournaux(): array
     {
         return $this->pdo->query(
-            "SELECT * FROM finance_journaux_comptables WHERE actif = 1 ORDER BY code"
+            'SELECT * FROM finance_journaux_comptables WHERE actif = 1 AND ' . TenantScope::sqlEtab('finance_journaux_comptables', 'etablissement_id') . ' ORDER BY code'
         )->fetchAll(\PDO::FETCH_OBJ);
     }
 
@@ -190,7 +196,7 @@ class AccountingRepository
     public function findCompteByCode(string $code): ?object
     {
         $stmt = $this->pdo->prepare(
-            "SELECT * FROM finance_comptes WHERE code = ?"
+            'SELECT * FROM finance_comptes c WHERE code = ? AND ' . TenantScope::sqlEtab('finance_comptes', 'c.etablissement_id')
         );
         $stmt->execute([$code]);
         return $stmt->fetch(\PDO::FETCH_OBJ) ?: null;
@@ -198,7 +204,7 @@ class AccountingRepository
 
     public function listComptes(bool $actifOnly = true): array
     {
-        $where = $actifOnly ? 'WHERE actif = 1' : '';
+        $where = 'WHERE ' . TenantScope::sqlEtab('finance_comptes', 'etablissement_id') . ($actifOnly ? ' AND actif = 1' : '');
         return $this->pdo->query(
             "SELECT * FROM finance_comptes {$where} ORDER BY code ASC"
         )->fetchAll(\PDO::FETCH_OBJ);
@@ -212,11 +218,10 @@ class AccountingRepository
                     COALESCE(SUM(le.credit), 0) AS total_credit,
                     COALESCE(SUM(le.debit - le.credit), 0) AS solde
              FROM finance_comptes c
-             LEFT JOIN finance_lignes_ecriture le ON le.compte_id = c.id
-             LEFT JOIN finance_ecritures e        ON e.id = le.ecriture_id
+             LEFT JOIN (finance_lignes_ecriture le JOIN finance_ecritures e ON e.id = le.ecriture_id
                AND e.exercice_id = ?
-               AND e.statut NOT IN ('extourne')
-             WHERE c.actif = 1
+               AND e.statut NOT IN ('extourne')) ON le.compte_id = c.id
+             WHERE c.actif = 1 AND " . TenantScope::sqlEtab('finance_comptes', 'c.etablissement_id') . "
              GROUP BY c.id
              ORDER BY c.code ASC"
         );
@@ -231,11 +236,10 @@ class AccountingRepository
                     COALESCE(SUM(le.debit),  0) AS solde_debit,
                     COALESCE(SUM(le.credit), 0) AS solde_credit
              FROM finance_comptes c
-             LEFT JOIN finance_lignes_ecriture le ON le.compte_id = c.id
-             LEFT JOIN finance_ecritures e        ON e.id = le.ecriture_id
+             LEFT JOIN (finance_lignes_ecriture le JOIN finance_ecritures e ON e.id = le.ecriture_id
                AND e.exercice_id = ?
-               AND e.statut NOT IN ('extourne')
-             WHERE c.classe = ? AND c.actif = 1
+               AND e.statut NOT IN ('extourne')) ON le.compte_id = c.id
+             WHERE c.classe = ? AND c.actif = 1 AND " . TenantScope::sqlEtab('finance_comptes', 'c.etablissement_id') . "
              GROUP BY c.id
              HAVING (solde_debit > 0 OR solde_credit > 0)
              ORDER BY c.code ASC"
@@ -249,7 +253,7 @@ class AccountingRepository
     public function findRegle(string $typeSource): ?object
     {
         $stmt = $this->pdo->prepare(
-            "SELECT * FROM finance_regles_comptables WHERE type_source = ? AND actif = 1"
+            'SELECT * FROM finance_regles_comptables WHERE type_source = ? AND actif = 1 AND ' . TenantScope::sqlEtab('finance_regles_comptables', 'etablissement_id')
         );
         $stmt->execute([$typeSource]);
         return $stmt->fetch(\PDO::FETCH_OBJ) ?: null;
@@ -259,15 +263,12 @@ class AccountingRepository
 
     public function genererNumero(int $annee): string
     {
-        $this->pdo->exec(
-            "INSERT INTO finance_sequences (type, annee, valeur)
-             VALUES ('ECR', {$annee}, 1)
-             ON DUPLICATE KEY UPDATE valeur = valeur + 1"
-        );
-        $row = $this->pdo->query(
-            "SELECT valeur FROM finance_sequences WHERE type='ECR' AND annee={$annee}"
-        )->fetch(\PDO::FETCH_OBJ);
-        return sprintf('ECR-%d-%04d', $annee, $row->valeur);
+        $cle  = TenantScope::cleSequence('ECR');   // compteur propre à l'établissement
+        $stmt = $this->pdo->prepare('INSERT INTO finance_sequences (type, annee, valeur) VALUES (?, ?, 1) ON DUPLICATE KEY UPDATE valeur = valeur + 1');
+        $stmt->execute([$cle, $annee]);
+        $stmt = $this->pdo->prepare('SELECT valeur FROM finance_sequences WHERE type = ? AND annee = ?');
+        $stmt->execute([$cle, $annee]);
+        return sprintf('%s-%d-%04d', $cle, $annee, (int)$stmt->fetchColumn());
     }
 
     public function insertEcriture(array $data): int
@@ -333,7 +334,7 @@ class AccountingRepository
              JOIN finance_exercices ex          ON ex.id = e.exercice_id
              JOIN finance_periodes_comptables p ON p.id  = e.periode_id
              LEFT JOIN finance_lignes_ecriture le ON le.ecriture_id = e.id
-             WHERE e.id = ?
+             WHERE e.id = ? AND " . TenantScope::sqlExercice('e.exercice_id') . "
              GROUP BY e.id, j.code, j.libelle, ex.libelle, p.libelle"
         );
         $stmt->execute([$id]);
@@ -343,8 +344,8 @@ class AccountingRepository
     public function findEcritureByReference(string $reference, string $source): ?object
     {
         $stmt = $this->pdo->prepare(
-            "SELECT * FROM finance_ecritures
-             WHERE reference = ? AND source = ? AND statut = 'valide'
+            "SELECT * FROM finance_ecritures e
+             WHERE reference = ? AND source = ? AND statut = 'valide' AND " . TenantScope::sqlExercice('e.exercice_id') . "
              LIMIT 1"
         );
         $stmt->execute([$reference, $source]);
@@ -366,7 +367,7 @@ class AccountingRepository
 
     public function paginateEcritures(array $filters, int $page, int $perPage): array
     {
-        $where  = ['1=1'];
+        $where  = [TenantScope::sqlExercice('e.exercice_id')];
         $params = [];
 
         if (!empty($filters['exercice_id'])) {
@@ -454,7 +455,7 @@ class AccountingRepository
 
     public function getGrandLivre(array $filters): array
     {
-        $where  = ["e.statut NOT IN ('extourne')"];
+        $where  = ["e.statut NOT IN ('extourne')", TenantScope::sqlExercice('e.exercice_id'), TenantScope::sqlEtab('finance_comptes', 'c.etablissement_id')];
         $params = [];
 
         if (!empty($filters['exercice_id'])) {
@@ -521,11 +522,10 @@ class AccountingRepository
                 COALESCE(SUM(le.credit), 0) AS total_credit,
                 COALESCE(SUM(le.debit - le.credit), 0) AS solde
              FROM finance_comptes c
-             LEFT JOIN finance_lignes_ecriture le ON le.compte_id = c.id
-             LEFT JOIN finance_ecritures e        ON e.id = le.ecriture_id
+             LEFT JOIN (finance_lignes_ecriture le JOIN finance_ecritures e ON e.id = le.ecriture_id
                AND e.exercice_id = ?
-               AND e.statut NOT IN ('extourne')
-             WHERE c.actif = 1
+               AND e.statut NOT IN ('extourne')) ON le.compte_id = c.id
+             WHERE c.actif = 1 AND " . TenantScope::sqlEtab('finance_comptes', 'c.etablissement_id') . "
              GROUP BY c.id, c.code, c.libelle, c.type, c.classe
              HAVING (total_debit > 0 OR total_credit > 0)
              ORDER BY c.code ASC"
@@ -548,7 +548,8 @@ class AccountingRepository
              FROM finance_ecritures e
              JOIN finance_lignes_ecriture le ON le.ecriture_id = e.id
              JOIN finance_comptes c          ON c.id = le.compte_id
-             WHERE e.exercice_id = ? AND e.statut NOT IN ('extourne')"
+             WHERE e.exercice_id = ? AND e.statut NOT IN ('extourne') AND " . TenantScope::sqlExercice('e.exercice_id') . "
+             AND " . TenantScope::sqlEtab('finance_comptes', 'c.etablissement_id')
         );
         $stmt->execute([$exerciceId]);
         return $stmt->fetch(\PDO::FETCH_OBJ) ?: (object)[
@@ -571,7 +572,7 @@ class AccountingRepository
              FROM finance_ecritures e
              JOIN finance_journaux_comptables j  ON j.id = e.journal_id
              LEFT JOIN finance_lignes_ecriture le ON le.ecriture_id = e.id
-             WHERE e.exercice_id = ?
+             WHERE e.exercice_id = ? AND " . TenantScope::sqlExercice('e.exercice_id') . "
              GROUP BY e.id, j.code, j.libelle
              ORDER BY e.date_ecriture DESC, e.id DESC
              LIMIT {$limit}"
@@ -610,7 +611,7 @@ class AccountingRepository
     public function findModeCategorie(string $code): string
     {
         $stmt = $this->pdo->prepare(
-            "SELECT categorie FROM finance_modes_paiement WHERE code = ?"
+            'SELECT categorie FROM finance_modes_paiement WHERE code = ? AND ' . TenantScope::sqlEtab('finance_modes_paiement', 'etablissement_id')
         );
         $stmt->execute([$code]);
         $row = $stmt->fetch(\PDO::FETCH_OBJ);

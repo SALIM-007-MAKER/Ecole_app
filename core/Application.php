@@ -98,12 +98,14 @@ class Application
         }
         $user = Session::getUser();
         if ($user === null) {
+            $this->appliquerContextePublic();
             return;
         }
 
         $decision = (new Tenant\SessionTenantGuard(Database::getInstance()->getConnection()))->evaluer($user);
         if ($decision['ok']) {
             Tenant\TenantContext::set((int)$decision['etablissement_id'], $decision['etablissement']);
+            $this->rafraichirDroitsSession($user, (int)$decision['etablissement_id']);
             return;
         }
 
@@ -117,6 +119,69 @@ class Application
         http_response_code(302);
         header('Location: ' . rtrim((string)$this->config['url'], '/') . '/login');
         exit;
+    }
+
+    /**
+     * Visiteur non connecté : avec le mode multi-établissements activé (config/tenant.php 'enabled'), l'établissement est déduit du NOM D'HÔTE
+     * (sous-domaine / domaine personnalisé vérifié) afin que connexion, inscription et mot de passe oublié s'adressent aux comptes DE CET
+     * établissement. Hôte non reconnu (localhost, IP, domaine principal) : comportement historique (établissement par défaut). Établissement
+     * suspendu, annulé ou au plan expiré : 503, aucune page publique.
+     */
+    private function appliquerContextePublic(): void
+    {
+        $cfg = require ROOT_PATH . '/config/tenant.php';
+        if (empty($cfg['enabled'])) {
+            return;
+        }
+        try {
+            $etab = (new Tenant\TenantResolver(new Tenant\TenantRepository(), $cfg))->resolveParHote();
+        } catch (\Throwable $e) {
+            Logger::error('Résolution publique de l\'établissement impossible : ' . $e->getMessage());
+            return;
+        }
+        if ($etab === null) {
+            return;
+        }
+        if ($etab->isSuspended() || $etab->isCancelled() || $etab->isPlanExpired()) {
+            http_response_code(503);
+            exit('Cet établissement est momentanément indisponible.');
+        }
+        Tenant\TenantContext::set($etab->id, $etab);
+    }
+
+    /**
+     * Relit en base le rôle et les permissions de l'utilisateur connecté (au plus toutes les `session.auth_refresh` secondes) :
+     * une rétrogradation, un changement de rôle ou de permissions s'applique aux sessions déjà ouvertes, au lieu de rester
+     * figé jusqu'à la prochaine connexion. Même résolution qu'à la connexion (AuthController::completeLogin).
+     */
+    private function rafraichirDroitsSession(array $user, int $etablissementId): void
+    {
+        $intervalle = (int)($this->config['session']['auth_refresh'] ?? 60);
+        $dernier    = (int)Session::get('_auth_refreshed_at', 0);
+        if ($dernier > 0 && time() - $dernier < $intervalle) {
+            return;
+        }
+        try {
+            $userId = (int)($user['id'] ?? 0);
+            $pdo    = Database::getInstance()->getConnection();
+            $role   = Tenant\TenantMembershipService::make()->roleForUser($userId, $etablissementId);
+            if ($role === null) {
+                $stmt = $pdo->prepare('SELECT role FROM users WHERE id = ?');
+                $stmt->execute([$userId]);
+                $role = (string)$stmt->fetchColumn();
+            }
+            $permissions = (new \App\Models\UserModel())->getPermissions($role, $userId, $etablissementId);
+
+            if ($role !== ($user['role'] ?? null) || $permissions != ($user['permissions'] ?? [])) {
+                Logger::security('SESSION_RIGHTS_REFRESHED', sprintf(
+                    'user_id=%d role %s -> %s', $userId, (string)($user['role'] ?? ''), $role
+                ));
+                Session::setUser(array_merge($user, ['role' => $role, 'permissions' => $permissions]));
+            }
+            Session::set('_auth_refreshed_at', time());
+        } catch (\Throwable $e) {
+            Logger::error('Relecture des droits de session impossible : ' . $e->getMessage());
+        }
     }
 
     public function handleError(int $errno, string $errstr, string $errfile, int $errline): bool

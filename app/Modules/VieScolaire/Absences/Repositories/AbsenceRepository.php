@@ -75,7 +75,7 @@ class AbsenceRepository
     {
         $stmt = $this->pdo->prepare(
             "SELECT * FROM vs_absences
-             WHERE eleve_id = :eleve_id AND date_absence = :date AND deleted_at IS NULL"
+             WHERE eleve_id = :eleve_id AND date_absence = :date AND deleted_at IS NULL AND " . \Core\Tenant\TenantScope::sqlEleve('eleve_id')
         );
         $stmt->execute([':eleve_id' => $eleveId, ':date' => $date]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];

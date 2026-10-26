@@ -73,9 +73,18 @@ abstract class Model
         $tenantId = $this->tenantId();
         $sql = "SELECT * FROM `{$this->table}`";
         $params = [];
+        $conds = [];
         if ($tenantId !== null) {
-            $sql .= " WHERE `{$this->tenantColumn}` = ?";
+            $conds[] = "`{$this->tenantColumn}` = ?";
             $params[] = $tenantId;
+        }
+        // Propriété par jointure / référentiel : appliquée aussi aux listes complètes (comme findById / findBy).
+        if (($own = $this->ownershipRestriction()) !== null) {
+            $conds[] = "({$own[0]})";
+            array_push($params, ...$own[1]);
+        }
+        if ($conds) {
+            $sql .= ' WHERE ' . implode(' AND ', $conds);
         }
         if ($orderBy !== '' && preg_match('/^[a-zA-Z0-9_. ,]+$/', $orderBy)) {
             $direction = strtoupper($direction) === 'DESC' ? 'DESC' : 'ASC';

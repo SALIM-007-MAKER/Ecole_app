@@ -96,7 +96,10 @@ abstract class Controller
     protected function requireAuth(): void
     {
         if (!Session::isLogged()) {
-            Session::flash('error', 'Vous devez être connecté pour accéder à cette page.');
+            // Ne pas écraser un message plus précis (ex. session expirée par inactivité).
+            if (!Session::hasFlash('error')) {
+                Session::flash('error', 'Vous devez être connecté pour accéder à cette page.');
+            }
             $this->redirect(BASE_URL . '/login');
         }
     }

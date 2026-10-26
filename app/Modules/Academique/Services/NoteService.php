@@ -54,6 +54,11 @@ class NoteService
         $conduite = $this->repo->evaluationEstConduite($batch->evaluationId);
 
         foreach ($batch->notes as $dto) {
+            // Une valeur non numérique est REFUSÉE (jamais convertie en 0, jamais écrasée sur une note existante)
+            if ($dto->valeurInvalide) {
+                $results['errors'][$dto->eleveId] = "Valeur non numérique : la note n'a pas été modifiée.";
+                continue;
+            }
             // Lot 3 : l'élève doit appartenir à la classe de l'évaluation (donc à l'établissement courant)
             if (!$this->repo->eleveDansClasseDeLEvaluation($batch->evaluationId, $dto->eleveId)) {
                 $results['errors'][$dto->eleveId] = "Élève introuvable dans la classe de cette évaluation.";
@@ -113,6 +118,9 @@ class NoteService
         }
         $this->assertSaisieOuverte($evaluation);
 
+        if ($dto->valeurInvalide) {
+            throw new \RuntimeException("Valeur non numérique : la note n'a pas été modifiée.");
+        }
         if ($this->repo->evaluationEstConduite((int)$note->evaluation_id) && ($motif = $this->refusConduite($dto)) !== null) {
             throw new \RuntimeException($motif);
         }

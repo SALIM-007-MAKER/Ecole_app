@@ -3,10 +3,17 @@
 namespace App\Models;
 
 use Core\Model;
+use Core\Tenant\TenantScope;
 
 class AnnonceModel extends Model
 {
     protected string $table = 'annonces';
+
+    /** Une annonce appartient à l'établissement de son auteur (annonces.publie_par) : findById/update/delete sont ainsi bornés. */
+    protected function ownershipRestriction(): ?array
+    {
+        return TenantScope::id() === null ? null : [TenantScope::sqlUtilisateur('publie_par'), []];
+    }
 
     const AUDIENCES = [
         'tous'         => ['label' => 'Tous',                'icon' => 'people-fill',      'color' => 'primary'],
@@ -29,7 +36,7 @@ class AnnonceModel extends Model
         ?int $userId = null,
         array $classeIds = []
     ): array {
-        $where  = ['a.actif = 1'];
+        $where  = ['a.actif = 1', TenantScope::sqlUtilisateur('a.publie_par')];
         $params = [];
 
         if ($roleAudience && $roleAudience !== 'tous') {
@@ -80,6 +87,7 @@ class AnnonceModel extends Model
              FROM `annonces` a
              LEFT JOIN `users` u ON u.id = a.publie_par
              LEFT JOIN `classes` c ON c.id = a.classe_id
+             WHERE " . TenantScope::sqlUtilisateur('a.publie_par') . "
              ORDER BY a.published_at DESC"
         );
     }
@@ -92,7 +100,7 @@ class AnnonceModel extends Model
              FROM `annonces` a
              LEFT JOIN `users` u ON u.id = a.publie_par
              LEFT JOIN `classes` c ON c.id = a.classe_id
-             WHERE a.id = ?",
+             WHERE a.id = ? AND " . TenantScope::sqlUtilisateur('a.publie_par'),
             [$id]
         );
     }
@@ -100,8 +108,8 @@ class AnnonceModel extends Model
     public function countRecentes(int $days = 7): int
     {
         $r = $this->queryOne(
-            'SELECT COUNT(*) AS n FROM `annonces`
-             WHERE `actif` = 1 AND `published_at` >= DATE_SUB(NOW(), INTERVAL ? DAY)',
+            'SELECT COUNT(*) AS n FROM `annonces` a
+             WHERE `actif` = 1 AND `published_at` >= DATE_SUB(NOW(), INTERVAL ? DAY) AND ' . TenantScope::sqlUtilisateur('a.publie_par'),
             [$days]
         );
         return (int)($r?->n ?? 0);

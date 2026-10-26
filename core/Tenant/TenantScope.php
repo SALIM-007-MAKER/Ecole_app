@@ -79,6 +79,67 @@ final class TenantScope
 
     // ── Conditions à paramètres NOMMÉS (dépôts qui construisent [where, params]) : [fragment, [':tid_scope' => id]] ou null ──
 
+    // ── Fragments SQL LITTÉRAUX (identifiant entier du contexte inliné : aucun paramètre à transmettre). Sans contexte : « 1 = 1 ». ──
+
+    /** « la colonne désigne un élève de l'établissement courant » (propriété des données financières par l'élève). */
+    public static function sqlEleve(string $colonneEleve): string
+    {
+        $t = self::id();
+        return $t === null ? '1 = 1' : "{$colonneEleve} IN (SELECT id FROM eleves WHERE etablissement_id = " . (int)$t . ')';
+    }
+
+    /**
+     * Clé de séquence de numérotation (finance_sequences.type, 20 car.) : inchangée pour l'établissement par défaut / sans contexte
+     * (numéros historiques « FAC-2026-0001 »), « <TYPE>-E<id> » pour les autres (« FAC-E2-2026-0001 ») — compteurs séparés et numéros
+     * toujours uniques entre établissements (les index uniques sur `numero` sont globaux).
+     */
+    public static function cleSequence(string $type): string
+    {
+        $t = self::id();
+        if ($t === null) { return $type; }
+        static $defaut = null;
+        $defaut ??= (int)((require ROOT_PATH . '/config/tenant.php')['default_id'] ?? 1);
+        return $t === $defaut ? $type : substr($type, 0, 20 - strlen('-E' . $t)) . '-E' . $t;
+    }
+
+    /** « la colonne désigne un exercice comptable de l'établissement courant » (base non migrée / sans contexte : « 1 = 1 »). */
+    public static function sqlExercice(string $colonneExercice): string
+    {
+        $t = self::id();
+        return ($t === null || !self::colonneEtablissement('finance_exercices')) ? '1 = 1' : "{$colonneExercice} IN (SELECT ex_t.id FROM finance_exercices ex_t WHERE ex_t.etablissement_id = " . (int)$t . ')';
+    }
+
+    /** Ajoute etablissement_id aux données d'un INSERT dans une table de catalogue qui porte la colonne (sinon : inchangé). */
+    public static function avecEtab(string $table, array $data): array
+    {
+        $t = self::id();
+        if ($t !== null && !array_key_exists('etablissement_id', $data) && self::colonneEtablissement($table)) {
+            $data['etablissement_id'] = $t;
+        }
+        return $data;
+    }
+
+    /** « la colonne désigne une facture d'un élève de l'établissement courant ». */
+    public static function sqlFacture(string $colonneFacture): string
+    {
+        return self::id() === null ? '1 = 1' : "{$colonneFacture} IN (SELECT ff_t.id FROM finance_factures ff_t WHERE " . self::sqlEleve('ff_t.eleve_id') . ')';
+    }
+
+    /** « l'utilisateur désigné par la colonne appartient à l'établissement courant » (colonne ou appartenance active). */
+    public static function sqlUtilisateur(string $colonneUtilisateur): string
+    {
+        $t = self::id();
+        return $t === null ? '1 = 1' : "{$colonneUtilisateur} IN (SELECT u_t.id FROM users u_t WHERE u_t.etablissement_id = " . (int)$t
+            . ' OR EXISTS (SELECT 1 FROM user_etablissements ue_t WHERE ue_t.user_id = u_t.id AND ue_t.etablissement_id = ' . (int)$t . ' AND ue_t.left_at IS NULL))';
+    }
+
+    /** Table portant etablissement_id : « $expression = <courant> » ; base non migrée (colonne absente) ou sans contexte : « 1 = 1 ». */
+    public static function sqlEtab(string $table, string $expression): string
+    {
+        $t = self::id();
+        return ($t === null || !self::colonneEtablissement($table)) ? '1 = 1' : "{$expression} = " . (int)$t;
+    }
+
     public static function conditionClasse(string $colonneClasse): ?array
     {
         $id = self::id();

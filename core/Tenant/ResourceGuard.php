@@ -48,11 +48,23 @@ final class ResourceGuard
         'vs_activites' => 'SELECT u.etablissement_id FROM vs_activites x JOIN users u ON u.id = x.cree_par WHERE x.id = ?',
         'vs_activite_inscriptions' => 'SELECT u.etablissement_id FROM vs_activite_inscriptions i JOIN vs_activites x ON x.id = i.activite_id JOIN users u ON u.id = x.cree_par WHERE i.id = ?',
         'vs_appels'  => 'SELECT c.etablissement_id FROM vs_appels x JOIN classes c ON c.id = x.classe_id WHERE x.id = ?',   // séance de présence
+        // Finance : propriété par l'élève (factures, paiements, reçus, avoirs, frais V1) ou par l'utilisateur (caisse, décaissements)
+        'finance_factures' => 'SELECT e.etablissement_id FROM finance_factures x JOIN eleves e ON e.id = x.eleve_id WHERE x.id = ?',
+        'finance_paiements' => 'SELECT e.etablissement_id FROM finance_paiements p JOIN finance_factures x ON x.id = p.facture_id JOIN eleves e ON e.id = x.eleve_id WHERE p.id = ?',
+        'finance_recus' => 'SELECT e.etablissement_id FROM finance_recus r JOIN eleves e ON e.id = r.eleve_id WHERE r.id = ?',
+        'finance_avoirs' => 'SELECT e.etablissement_id FROM finance_avoirs a JOIN eleves e ON e.id = a.eleve_id WHERE a.id = ?',
+        'finance_ecritures' => 'SELECT ex.etablissement_id FROM finance_ecritures x JOIN finance_exercices ex ON ex.id = x.exercice_id WHERE x.id = ?',
+        'finance_periodes_comptables' => 'SELECT ex.etablissement_id FROM finance_periodes_comptables x JOIN finance_exercices ex ON ex.id = x.exercice_id WHERE x.id = ?',
+        'finance_decaissements' => 'SELECT u.etablissement_id FROM finance_decaissements d JOIN users u ON u.id = d.saisi_par WHERE d.id = ?',
+        'finance_sessions_caisse' => 'SELECT u.etablissement_id FROM finance_sessions_caisse s JOIN users u ON u.id = s.caissier_id WHERE s.id = ?',
+        'frais_eleves' => 'SELECT e.etablissement_id FROM frais_eleves x JOIN eleves e ON e.id = x.eleve_id WHERE x.id = ?',
+        'paiements' => 'SELECT e.etablissement_id FROM paiements x JOIN eleves e ON e.id = x.eleve_id WHERE x.id = ?',
     ];
 
     /** Référentiels PROPRES à l'établissement : colonne etablissement_id (partagés tant que la colonne est absente). */
     private const REFERENTIELS = [
         'periodes_scolaires', 'types_evaluations', 'periodes_scolaires_config',
+        'finance_exercices', 'finance_frais_types', 'finance_categories_frais', 'finance_modes_paiement', 'finance_categories_depenses', 'finance_fournisseurs', 'annonces', 'frais_types',
         'vs_edt_salles', 'vs_edt_plages_horaires', 'vs_motifs_absence', 'vs_discipline_categories', 'vs_recompense_categories', 'vs_activite_categories',
     ];
 
@@ -64,6 +76,9 @@ final class ResourceGuard
         'salle_id' => 'vs_edt_salles', 'salle_remplacement_id' => 'vs_edt_salles', 'plage_id' => 'vs_edt_plages_horaires',
         'emploi_du_temps_id' => 'vs_emplois_du_temps', 'creneau_id' => 'vs_edt_creneaux',
         'dossier_id' => 'vs_dossiers_discipline', 'incident_id' => 'vs_incidents_discipline', 'sanction_id' => 'vs_sanctions_discipline',
+        'facture_id' => 'finance_factures', 'facture_origine_id' => 'finance_factures', 'paiement_id' => 'finance_paiements', 'avoir_id' => 'finance_avoirs',
+        'mode_paiement_id' => 'finance_modes_paiement', 'session_id' => 'finance_sessions_caisse', 'frais_eleve_id' => 'frais_eleves',
+        'exercice_id' => 'finance_exercices', 'ecriture_id' => 'finance_ecritures',
         'absence_id' => 'vs_absences', 'retard_id' => 'vs_retards', 'activite_id' => 'vs_activites', 'motif_id' => 'vs_motifs_absence',
         'enseignant_id' => 'users', 'remplacant_id' => 'users', 'enseignant_absent_id' => 'users', 'organisateur_id' => 'users', 'parent_id' => 'users',
     ];
@@ -75,10 +90,17 @@ final class ResourceGuard
         'ActivityController'   => ['categorie_id' => 'vs_activite_categories'],
         'EvaluationController' => ['enseignant_id' => 'professeurs'],
         'AppreciationController' => ['professeur_id' => 'professeurs'],
-        'EleveController'      => ['parent_id' => 'users'],
+        'EleveController'      => ['parent_id' => 'users', 'user_id' => 'users'],
+        'FactureController'    => ['frais_type_id' => 'finance_frais_types', 'frais_type_ids' => 'finance_frais_types', 'fraisTypeIds' => 'finance_frais_types'],
+        'FraisController'      => ['categorie_id' => 'finance_categories_frais'],
+        'DecaissementController' => ['categorie_id' => 'finance_categories_depenses', 'fournisseur_id' => 'finance_fournisseurs'],
+        'FraisEleveController' => ['frais_type_id' => 'frais_types'],
     ];
 
     /** Tableaux de saisie dont les CLÉS sont des identifiants (presences[eleveId] = …). */
+    /** Propriété par jointure sur une colonne ajoutée par migration : tant qu'elle manque, aucune garde (ressource partagée). */
+    private const DEPEND_COLONNE = ['finance_ecritures' => 'finance_exercices', 'finance_periodes_comptables' => 'finance_exercices'];
+
     private const TABLEAUX_PAR_CLE = ['presences' => 'eleves', 'notes' => 'eleves', 'appreciations' => 'eleves', 'eleves' => 'eleves', 'pointages' => 'eleves'];
 
     /** Paramètres de route par contrôleur : [regex de méthode ou '*'] => [paramètre => table]. */
@@ -100,6 +122,13 @@ final class ResourceGuard
         'RewardController'   => ['*' => ['id' => 'vs_recompenses']],
         'TimetableController' => ['/^(modifierCreneau|supprimerCreneau)$/' => ['id' => 'vs_edt_creneaux'], '*' => ['id' => 'vs_emplois_du_temps']],
         'SalleController'    => ['*' => ['id' => 'vs_edt_salles']],
+        'FactureController'  => ['*' => ['id' => 'finance_factures']],
+        'PaiementController' => ['/^parFacture$/' => ['factureId' => 'finance_factures'], '*' => ['id' => 'finance_paiements']],
+        'FraisController'    => ['/^(updateCategorie|toggleCategorie)$/' => ['id' => 'finance_categories_frais'], '*' => ['id' => 'finance_frais_types']],
+        'DecaissementController' => ['/^(updateCategorie|toggleCategorie)$/' => ['id' => 'finance_categories_depenses'], '/^(updateFournisseur|toggleFournisseur)$/' => ['id' => 'finance_fournisseurs'], '*' => ['id' => 'finance_decaissements']],
+        'CaisseController'   => ['*' => ['id' => 'finance_sessions_caisse']],
+        'ComptabiliteController' => ['/^(showEcriture|extourner)$/' => ['id' => 'finance_ecritures'], '/^(cloturerPeriode)$/' => ['id' => 'finance_periodes_comptables'], '*' => ['id' => 'finance_exercices']],
+        'AnnonceController'  => ['*' => ['id' => 'annonces']],
         'PlageHoraireController' => ['*' => ['id' => 'vs_edt_plages_horaires']],
         'ActivityController' => ['/^annulerInscription$/' => ['id' => 'vs_activite_inscriptions'], '*' => ['id' => 'vs_activites']],
         'EvaluationController' => ['*' => ['id' => 'evaluations']],
@@ -167,6 +196,7 @@ final class ResourceGuard
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
             return $row === false || (int)$row['etablissement_id'] === $tenant || (int)$row['membre'] === 1;
         }
+        if (isset(self::DEPEND_COLONNE[$table]) && !self::colonne($pdo, self::DEPEND_COLONNE[$table])) { return true; }   // base non migrée : comptabilité partagée
         if (in_array($table, self::REFERENTIELS, true)) {
             if (!self::colonne($pdo, $table)) { return true; }   // base non migrée : référentiel partagé
             $stmt = $pdo->prepare("SELECT etablissement_id FROM `$table` WHERE id = ?");

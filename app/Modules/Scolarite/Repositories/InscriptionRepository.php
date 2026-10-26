@@ -3,6 +3,7 @@
 namespace App\Modules\Scolarite\Repositories;
 
 use Core\Database;
+use Core\Tenant\TenantScope;
 use PDO;
 
 class InscriptionRepository
@@ -117,6 +118,25 @@ class InscriptionRepository
         );
         $stmt->execute([$eleveId, $anneeScolaire]);
         $row = $stmt->fetch(PDO::FETCH_OBJ);
+        return $row ?: $this->inscriptionImplicite($eleveId, $anneeScolaire);
+    }
+
+    /**
+     * Inscription IMPLICITE (écran Élèves / Classes de la V1, module Scolarité désactivé) : un élève actif affecté à une classe de l'année
+     * est inscrit pour cette année tant qu'AUCUNE ligne `inscriptions` ne le concerne pour cette année. Une ligne explicite (annulée, rejetée…)
+     * l'emporte toujours : elle n'est jamais contournée par ce repli.
+     */
+    private function inscriptionImplicite(int $eleveId, string $anneeScolaire): ?\stdClass
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT e.id AS eleve_id, e.classe_id, c.annee_scolaire, 'validee' AS statut, 1 AS implicite
+               FROM `eleves` e JOIN `classes` c ON c.id = e.classe_id
+              WHERE e.id = ? AND e.actif = 1 AND c.annee_scolaire = ? AND " . TenantScope::sqlEtab('eleves', 'e.etablissement_id') . "
+                AND NOT EXISTS (SELECT 1 FROM `inscriptions` i WHERE i.eleve_id = e.id AND i.annee_scolaire = c.annee_scolaire)
+              LIMIT 1"
+        );
+        $stmt->execute([$eleveId, $anneeScolaire]);
+        $row = $stmt->fetch(PDO::FETCH_OBJ);
         return $row ?: null;
     }
 
@@ -178,6 +198,17 @@ class InscriptionRepository
              WHERE classe_id = ? AND annee_scolaire = ?
                AND statut IN ('en_attente', 'validee')
              LIMIT 1"
+        );
+        $stmt->execute([$classeId, $anneeScolaire]);
+        if ((bool)$stmt->fetchColumn()) {
+            return true;
+        }
+        // Repli V1 (voir inscriptionImplicite) : élèves actifs de la classe sans ligne `inscriptions` pour l'année.
+        $stmt = $this->pdo->prepare(
+            "SELECT 1 FROM `eleves` e JOIN `classes` c ON c.id = e.classe_id
+              WHERE c.id = ? AND c.annee_scolaire = ? AND e.actif = 1 AND " . TenantScope::sqlEtab('classes', 'c.etablissement_id') . "
+                AND NOT EXISTS (SELECT 1 FROM `inscriptions` i WHERE i.eleve_id = e.id AND i.annee_scolaire = c.annee_scolaire)
+              LIMIT 1"
         );
         $stmt->execute([$classeId, $anneeScolaire]);
         return (bool)$stmt->fetchColumn();

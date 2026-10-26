@@ -49,7 +49,7 @@ class TypeEvaluationRepository
         $offset = ($page - 1) * $perPage;
         $stmt   = $this->pdo->prepare(
             "SELECT te.*,
-                    (SELECT COUNT(*) FROM `controles` c WHERE c.type = te.code) AS nb_controles_v1
+                    (SELECT COUNT(*) FROM `controles` c WHERE c.type COLLATE utf8mb4_unicode_ci = te.code COLLATE utf8mb4_unicode_ci) AS nb_controles_v1
              FROM `types_evaluations` te
              {$where}
              ORDER BY te.est_archive ASC, te.actif DESC, te.ordre ASC, te.nom ASC
@@ -70,7 +70,7 @@ class TypeEvaluationRepository
     {
         $stmt = $this->pdo->prepare(
             "SELECT te.*,
-                    (SELECT COUNT(*) FROM `controles` c WHERE c.type = te.code) AS nb_controles_v1
+                    (SELECT COUNT(*) FROM `controles` c WHERE c.type COLLATE utf8mb4_unicode_ci = te.code COLLATE utf8mb4_unicode_ci) AS nb_controles_v1
              FROM `types_evaluations` te
              WHERE te.id = ?" . TenantScope::referentiel('types_evaluations', 'te.etablissement_id')[0]
         );

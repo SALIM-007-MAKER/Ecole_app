@@ -29,7 +29,7 @@ $__base = defined('BASE_URL') ? BASE_URL : '';
         <!-- Title -->
         <h1 class="text-2xl font-bold text-slate-900 mb-3">Accès refusé</h1>
         <p class="text-slate-500 text-sm leading-relaxed mb-8">
-            Vous n'avez pas les permissions nécessaires pour accéder à cette page.
+            <?= htmlspecialchars($detail ?? "Vous n'avez pas les permissions nécessaires pour accéder à cette page.", ENT_QUOTES) ?>
         </p>
         <!-- Actions -->
         <div class="flex items-center justify-center gap-3">

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Modules\Academique\Repositories\AnalyticsRepository;
 use App\Modules\Finance\Repositories\FinancialReportRepository;
 use Core\Model;
+use Core\Tenant\TenantScope;
 
 class RapportModel extends Model
 {
@@ -38,13 +39,13 @@ class RapportModel extends Model
                     SUM(actif = 1)    AS actifs,
                     SUM(sexe = 'M')   AS garcons,
                     SUM(sexe = 'F')   AS filles
-             FROM `eleves`"
+             FROM `eleves` WHERE " . TenantScope::sqlEtab('eleves', 'etablissement_id')
         );
-        $classes = $this->queryOne("SELECT COUNT(*) AS n FROM `classes`");
-        $profs   = $this->queryOne("SELECT COUNT(*) AS n FROM `professeurs`");
+        $classes = $this->queryOne("SELECT COUNT(*) AS n FROM `classes` WHERE " . TenantScope::sqlEtab('classes', 'etablissement_id'));
+        $profs   = $this->queryOne("SELECT COUNT(*) AS n FROM `professeurs` WHERE " . TenantScope::sqlEtab('professeurs', 'etablissement_id'));
         $absToday = $this->queryOne(
             "SELECT COUNT(*) AS n FROM `vs_absences`
-             WHERE `date_absence` = CURDATE() AND `type` = 'absence' AND `deleted_at` IS NULL"
+             WHERE `date_absence` = CURDATE() AND `type` = 'absence' AND `deleted_at` IS NULL AND " . TenantScope::sqlEleve('eleve_id')
         );
 
         return [
@@ -85,7 +86,7 @@ class RapportModel extends Model
      */
     public function getKpiReussite(?int $periodeId = null): array
     {
-        $where  = $periodeId ? "WHERE b.periode_id = ?" : "";
+        $where  = 'WHERE ' . TenantScope::sqlEleve('b.eleve_id') . ($periodeId ? ' AND b.periode_id = ?' : '');
         $params = $periodeId ? [$periodeId] : [];
 
         $r = $this->queryOne(
@@ -118,6 +119,7 @@ class RapportModel extends Model
                     SUM(e.sexe='F') AS filles
              FROM `classes` c
              LEFT JOIN `eleves` e ON e.classe_id = c.id AND e.actif = 1
+             WHERE " . TenantScope::sqlEtab('classes', 'c.etablissement_id') . "
              GROUP BY c.id ORDER BY " . \App\Models\ClasseModel::ordreNiveauSql('c.niveau') . ", c.nom"
         );
     }
@@ -127,14 +129,14 @@ class RapportModel extends Model
         return $this->query(
             "SELECT c.niveau, COUNT(e.id) AS nb
              FROM `eleves` e JOIN `classes` c ON c.id = e.classe_id
-             WHERE e.actif = 1
+             WHERE e.actif = 1 AND " . TenantScope::sqlEtab('eleves', 'e.etablissement_id') . "
              GROUP BY c.niveau ORDER BY " . \App\Models\ClasseModel::ordreNiveauSql('c.niveau')
         );
     }
 
     public function getDistributionNotes(?int $periodeId): ?object
     {
-        $where  = $periodeId ? "AND b.periode_id = ?" : "";
+        $where  = 'AND ' . TenantScope::sqlEleve('b.eleve_id') . ($periodeId ? ' AND b.periode_id = ?' : '');
         $params = $periodeId ? [$periodeId] : [];
 
         return $this->queryOne(
@@ -226,6 +228,7 @@ class RapportModel extends Model
              LEFT JOIN `eleves` e ON e.classe_id = c.id AND e.actif = 1
              LEFT JOIN `vs_absences` a
                     ON a.eleve_id = e.id AND a.type = 'absence' AND a.deleted_at IS NULL
+             WHERE " . TenantScope::sqlEtab('classes', 'c.etablissement_id') . "
              GROUP BY c.id ORDER BY nb_absences DESC"
         );
     }
@@ -238,14 +241,14 @@ class RapportModel extends Model
                     COUNT(*)                   AS absences
              FROM `vs_absences`
              WHERE date_absence >= DATE_SUB(CURDATE(), INTERVAL ? WEEK)
-               AND type = 'absence' AND deleted_at IS NULL
+               AND type = 'absence' AND deleted_at IS NULL AND " . TenantScope::sqlEleve('eleve_id') . "
              GROUP BY semaine_num ORDER BY semaine_num",
             [$nbWeeks]
         );
         $retRows = $this->query(
             "SELECT YEARWEEK(date_retard, 1) AS semaine_num, COUNT(*) AS retards
              FROM `vs_retards`
-             WHERE date_retard >= DATE_SUB(CURDATE(), INTERVAL ? WEEK) AND deleted_at IS NULL
+             WHERE date_retard >= DATE_SUB(CURDATE(), INTERVAL ? WEEK) AND deleted_at IS NULL AND " . TenantScope::sqlEleve('eleve_id') . "
              GROUP BY semaine_num",
             [$nbWeeks]
         );
@@ -275,10 +278,10 @@ class RapportModel extends Model
                     SUM(a.statut = 'justifiee')  AS justifiees,
                     SUM(a.statut != 'justifiee') AS non_justifiees
              FROM `vs_absences` a
-             WHERE a.type = 'absence' AND a.deleted_at IS NULL"
+             WHERE a.type = 'absence' AND a.deleted_at IS NULL AND " . TenantScope::sqlEleve('a.eleve_id')
         );
         $retards = $this->queryOne(
-            "SELECT COUNT(*) AS n FROM `vs_retards` WHERE deleted_at IS NULL"
+            "SELECT COUNT(*) AS n FROM `vs_retards` WHERE deleted_at IS NULL AND " . TenantScope::sqlEleve('eleve_id')
         );
 
         $result = (array)($r ?? new \stdClass());
@@ -298,7 +301,7 @@ class RapportModel extends Model
              FROM `vs_absences` a
              JOIN `eleves` e ON e.id = a.eleve_id
              LEFT JOIN `classes` c ON c.id = e.classe_id
-             WHERE a.type = 'absence' AND a.deleted_at IS NULL
+             WHERE a.type = 'absence' AND a.deleted_at IS NULL AND " . TenantScope::sqlEtab('eleves', 'e.etablissement_id') . "
              GROUP BY a.eleve_id
              ORDER BY nb_absences DESC LIMIT ?",
             [$n]
@@ -309,7 +312,7 @@ class RapportModel extends Model
 
     public function getReussiteParClasse(?int $periodeId = null): array
     {
-        $where  = $periodeId ? "AND b.periode_id = ?" : "";
+        $where  = 'AND ' . TenantScope::sqlEleve('b.eleve_id') . ($periodeId ? ' AND b.periode_id = ?' : '');
         $params = $periodeId ? [$periodeId] : [];
 
         return $this->query(
@@ -333,7 +336,7 @@ class RapportModel extends Model
      */
     public function getMentionsDistrib(?int $periodeId = null): array
     {
-        $where  = $periodeId ? "WHERE periode_id = ?" : "";
+        $where  = 'WHERE ' . TenantScope::sqlEleve('eleve_id') . ($periodeId ? ' AND periode_id = ?' : '');
         $params = $periodeId ? [$periodeId] : [];
 
         $rows = $this->query(
@@ -374,7 +377,7 @@ class RapportModel extends Model
 
     public function getProgressionParPeriode(?int $classeId = null): array
     {
-        $where  = $classeId ? "AND b.classe_id = ?" : "";
+        $where  = 'AND ' . TenantScope::sqlEleve('b.eleve_id') . ($classeId ? ' AND b.classe_id = ?' : '');
         $params = $classeId ? [$classeId] : [];
 
         return $this->query(

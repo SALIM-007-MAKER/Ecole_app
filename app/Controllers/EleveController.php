@@ -10,6 +10,7 @@ use App\Events\ImportCsvCompleted;
 use App\Models\EleveModel;
 use App\Models\ClasseModel;
 use App\Models\UserModel;
+use App\Services\EnseignantPortee;
 use App\Services\UploadService;
 
 class EleveController extends Controller
@@ -37,9 +38,13 @@ class EleveController extends Controller
         $filters = $this->collectFilters();
         $page    = max(1, (int)$this->request->get('page', 1));
         $perPage = 15;
+        $portee  = EnseignantPortee::classeIds();   // null = pas de restriction (hors enseignant)
 
         $pagination = $this->eleveModel->paginateFiltered($page, $perPage, $filters);
         $classes    = $this->classeModel->findForSelect();
+        if ($portee !== null) {
+            $classes = array_values(array_filter($classes, fn($c) => in_array((int)$c->id, $portee, true)));
+        }
 
         $this->render('eleves/index', [
             'title'      => 'Élèves',
@@ -47,9 +52,9 @@ class EleveController extends Controller
             'filters'    => $filters,
             'classes'    => $classes,
             'stats'      => [
-                'total'  => $this->eleveModel->count('actif = 1'),
-                'garcons'=> (int)($this->countSexe('M')),
-                'filles' => (int)($this->countSexe('F')),
+                'total'  => $this->eleveModel->countScoped($portee),
+                'garcons'=> $this->eleveModel->countScoped($portee, 'M'),
+                'filles' => $this->eleveModel->countScoped($portee, 'F'),
             ],
         ]);
     }
@@ -66,6 +71,7 @@ class EleveController extends Controller
             'title'      => 'Nouvel élève',
             'classes'    => $this->classeModel->findForSelect(),
             'parents'    => $this->userModel->findAllWithRole('parent'),
+            'comptesEleves' => $this->comptesEleveLibres(),
             'matricule'  => $this->eleveModel->generateMatricule(),
             'errors'     => Session::getFlash('errors', []),
             'old'        => Session::getFlash('old', []),
@@ -122,6 +128,10 @@ class EleveController extends Controller
         $this->requirePermission('eleves.view');
 
         $eleve = $this->eleveModel->findWithDetails((int)$id);
+        // Un enseignant ne consulte que les élèves de ses classes ; message identique à « introuvable » (pas de fuite d'existence).
+        if ($eleve && !EnseignantPortee::peutVoirClasse(isset($eleve->classe_id) ? (int)$eleve->classe_id : null)) {
+            $eleve = false;
+        }
         if (!$eleve) {
             Session::flash('error', 'Élève introuvable.');
             $this->redirect(BASE_URL . '/eleves');
@@ -152,6 +162,7 @@ class EleveController extends Controller
             'eleve'   => $eleve,
             'classes' => $this->classeModel->findForSelect(),
             'parents' => $this->userModel->findAllWithRole('parent'),
+            'comptesEleves' => $this->comptesEleveLibres((int)$eleve->id),
             'errors'  => Session::getFlash('errors', []),
             'old'     => Session::getFlash('old', []),
         ]);
@@ -169,7 +180,7 @@ class EleveController extends Controller
         }
 
         $data   = $this->collectFormData();
-        $errors = $this->validateEleve($data);
+        $errors = $this->validateEleve($data, (int)$id);
 
         // Vérifier l'unicité du matricule (sauf pour le même élève)
         if (!empty($data['matricule']) && $this->eleveModel->matriculeExists($data['matricule'], (int)$id)) {
@@ -447,6 +458,7 @@ class EleveController extends Controller
             'email'          => trim($this->request->sanitize('email')),
             'classe_id'      => $this->request->post('classe_id') ?: null,
             'parent_id'      => $this->request->post('parent_id') ?: null,
+            'user_id'        => $this->request->post('user_id') ?: null,
             'actif'          => (int)(bool)$this->request->post('actif', 0),
         ];
     }
@@ -466,13 +478,23 @@ class EleveController extends Controller
             'parent_id'      => $data['parent_id'] ? (int)$data['parent_id'] : null,
             'actif'          => $data['actif'] ?? 1,
         ];
+        if (array_key_exists('user_id', $data)) {
+            $db['user_id'] = $data['user_id'] ? (int)$data['user_id'] : null;   // lien fiable fiche ↔ compte (EspaceEleveController)
+        }
         if (isset($data['photo'])) {
             $db['photo'] = $data['photo'];
         }
         return $db;
     }
 
-    private function validateEleve(array $data): array
+    /** Comptes de rôle « élève » de l'établissement qui ne sont rattachés à aucune fiche (plus celui de la fiche en cours de modification). */
+    private function comptesEleveLibres(?int $exceptEleveId = null): array
+    {
+        $pris = array_map('intval', array_column($this->eleveModel->query('SELECT user_id FROM `eleves` WHERE user_id IS NOT NULL AND etablissement_id = ?' . ($exceptEleveId ? ' AND id <> ' . (int)$exceptEleveId : ''), [\Core\Tenant\TenantContext::current() ?? 1]), 'user_id'));
+        return array_values(array_filter($this->userModel->findAllWithRole('eleve'), fn($u) => !in_array((int)$u->id, $pris, true)));
+    }
+
+    private function validateEleve(array $data, ?int $exceptEleveId = null): array
     {
         $errors = $this->validate($data, [
             'matricule'      => 'required|min:3|max:20',
@@ -494,6 +516,14 @@ class EleveController extends Controller
             $errors['email'][] = 'Adresse email invalide.';
         }
 
+        // Compte élève rattaché à la fiche : doit exister dans l'établissement, avoir le rôle « élève » et ne pas être déjà rattaché ailleurs
+        if (!empty($data['user_id'])) {
+            $libres = array_map(fn($u) => (int)$u->id, $this->comptesEleveLibres($exceptEleveId));
+            if (!in_array((int)$data['user_id'], $libres, true)) {
+                $errors['user_id'][] = 'Compte élève invalide ou déjà rattaché à une autre fiche.';
+            }
+        }
+
         return $errors;
     }
 
@@ -511,21 +541,18 @@ class EleveController extends Controller
 
     private function collectFilters(): array
     {
-        return [
+        $filters = [
             'q'         => trim($this->request->get('q', '')),
             'classe_id' => $this->request->get('classe_id', ''),
             'sexe'      => $this->request->get('sexe', ''),
             'actif'     => $this->request->get('actif', '1'),
         ];
-    }
-
-    private function countSexe(string $sexe): int
-    {
-        $row = $this->eleveModel->queryOne(
-            "SELECT COUNT(*) AS n FROM `eleves` WHERE sexe = ? AND actif = 1",
-            [$sexe]
-        );
-        return $row ? (int)$row->n : 0;
+        // Périmètre enseignant imposé par le serveur (jamais lu depuis la requête) ; s'applique aussi aux exports.
+        $portee = EnseignantPortee::classeIds();
+        if ($portee !== null) {
+            $filters['classe_ids'] = $portee;
+        }
+        return $filters;
     }
 
     private function downloadCsvTemplate(): void

@@ -266,6 +266,19 @@ class ParentController extends Controller
     /** Génère un aperçu de bulletin sans persister ; null si aucune donnée exploitable. */
     private function previewBulletinSafe(int $eleveId, int $periodeId): ?\App\Modules\Academique\DTO\BulletinData
     {
+        // Un bulletin PUBLIÉ ou ARCHIVÉ est un document figé : les familles voient exactement ce qui a été émis (moyenne, rang, coefficients
+        // du jour de la publication), jamais un recalcul fait avec les coefficients ou les notes d'aujourd'hui.
+        try {
+            $row = (new BulletinRepository())->findByEleveEtPeriode($eleveId, $periodeId);
+            if ($row && in_array($row['statut'] ?? '', ['publie', 'archive'], true)) {
+                $figé = json_decode((string)($row['data_json'] ?? ''), true);
+                if (is_array($figé) && $figé !== []) {
+                    return \App\Modules\Academique\DTO\BulletinData::fromArray($figé);
+                }
+            }
+        } catch (\Throwable) {
+            // repli sur l'aperçu ci-dessous
+        }
         try {
             $etablissementId = (int)($this->currentUser()['etablissement_id'] ?? 1);
             $generator = BulletinEngineFactory::make($etablissementId);

@@ -17,6 +17,8 @@ return [
     'session' => [
         'lifetime' => (int)($_ENV['SESSION_LIFETIME'] ?? 7200),
         'name'     => $_ENV['SESSION_NAME'] ?? 'ecole_session',
+        // Intervalle maximal (s) entre deux relectures du rôle et des permissions en base (0 = à chaque requête).
+        'auth_refresh' => (int)($_ENV['AUTH_REFRESH_SECONDS'] ?? 60),
     ],
 
     'upload' => [

@@ -79,9 +79,10 @@ class BulletinController extends Controller
                 $generator = BulletinEngineFactory::make((int)$user['etablissement_id']);
                 $generator->genererBulletin($eleveId, $periodeId, (int)$user['id']);
             } catch (BulletinTokenException $e) {
-                // BULLETIN_TOKEN_SECRET absent ou invalide : aucune génération persistée n'est possible.
+                // BULLETIN_TOKEN_SECRET absent ou invalide : aucune génération persistée n'est possible (contrat testé :
+                // échec explicite, aucun jeton par défaut, aucun bulletin créé).
                 Logger::critical('Génération de bulletin impossible : ' . $e->getMessage());
-                $this->indisponible('Génération impossible : la configuration des jetons de vérification est incomplète.');
+                $this->indisponible('Génération impossible : la configuration des jetons de vérification est incomplète (BULLETIN_TOKEN_SECRET).');
                 return;
             }
             $row = $this->repo->findByEleveEtPeriode($eleveId, $periodeId);
@@ -435,7 +436,7 @@ class BulletinController extends Controller
 
         if (!BulletinPublicationGate::isOpen()) {
             Logger::security('BULLETIN_PUBLICATION_REFUSED', "raison=interrupteur_ferme {$ctx}");
-            $this->refuser();
+            $this->refuser('Publication désactivée', 'La publication des bulletins est désactivée sur ce site (interrupteur BULLETIN_PUBLICATION_ENABLED fermé). Contactez l\'administrateur technique.');
             return;
         }
         $autorise = $action === 'publier' ? $this->policy->canPublish($user) : $this->policy->canArchive($user);
@@ -468,10 +469,10 @@ class BulletinController extends Controller
         $this->redirect($retour);
     }
 
-    private function refuser(): void
+    private function refuser(string $titre = 'Permission insuffisante', ?string $detail = null): void
     {
         http_response_code(403);
-        $this->render('errors/403', ['title' => 'Permission insuffisante'], 'none');
+        $this->render('errors/403', ['title' => $titre, 'detail' => $detail], 'none');
     }
 
     // ─────────────────────────────────────────────────────────────────

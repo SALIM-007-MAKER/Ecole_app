@@ -10,15 +10,29 @@ final class NoteDTO
         public readonly ?float  $valeur,
         public readonly bool    $estAbsent,
         public readonly ?string $commentaire,
+        /** Une valeur a été fournie mais n'est pas un nombre : elle ne doit JAMAIS être convertie en 0. */
+        public readonly bool    $valeurInvalide = false,
     ) {}
+
+    /** Nombre décimal saisi à la française (« 12,5 ») ou à l'anglaise ; null si ce n'est pas un nombre fini. */
+    public static function nombre(mixed $brut): ?float
+    {
+        if (!is_scalar($brut)) {
+            return null;
+        }
+        $t = str_replace(',', '.', trim((string)$brut));
+        return ($t !== '' && is_numeric($t) && is_finite((float)$t)) ? (float)$t : null;
+    }
 
     public static function fromRequest(array $data): self
     {
         $estAbsent = !empty($data['est_absent']) && $data['est_absent'] !== '0';
         $valeur    = null;
+        $invalide  = false;
 
-        if (!$estAbsent && isset($data['valeur']) && $data['valeur'] !== '') {
-            $valeur = (float)$data['valeur'];
+        if (!$estAbsent && isset($data['valeur']) && trim((string)$data['valeur']) !== '') {
+            $valeur   = self::nombre($data['valeur']);
+            $invalide = $valeur === null;
         }
 
         $commentaire = isset($data['commentaire']) && trim($data['commentaire']) !== ''
@@ -31,6 +45,7 @@ final class NoteDTO
             valeur:       $valeur,
             estAbsent:    $estAbsent,
             commentaire:  $commentaire,
+            valeurInvalide: $invalide,
         );
     }
 

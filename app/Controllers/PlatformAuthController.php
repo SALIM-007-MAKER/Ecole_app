@@ -46,9 +46,26 @@ class PlatformAuthController extends PlatformController
         $email = trim($this->request->sanitize('email'));
         $password = $this->request->post('password', '');
 
+        // Anti-force-brute (compte opérateur plateforme).
+        $throttle = new \App\Shared\Http\LoginThrottle(ROOT_PATH . '/storage/cache/throttle');
+        $ip       = $this->request->ip();
+        $cles     = ['pec:' . strtolower($email) . '|' . $ip => 5, 'pip:' . $ip => 20, 'pe:' . strtolower($email) => 15];
+        $attente  = 0;
+        foreach ($cles as $cle => $limite) {
+            $attente = max($attente, $throttle->retryAfter($cle, $limite));
+        }
+        if ($attente > 0) {
+            \Core\Logger::security('PLATFORM_LOGIN_THROTTLED', "Connexion plateforme bloquée pour : {$email} depuis {$ip}");
+            Session::flash('errors', ['Trop de tentatives. Réessayez dans ' . (int)ceil($attente / 60) . ' minute(s).']);
+            $this->redirect(BASE_URL . '/platform/login');
+        }
+
         $user = $this->userModel->findByEmail($email);
 
         if (!$user || !password_verify($password, $user->password) || (int)$user->actif === 0) {
+            foreach (array_keys($cles) as $cle) {
+                $throttle->recordFailure($cle);
+            }
             \Core\Logger::security('PLATFORM_LOGIN_FAILED', "Tentative échouée pour : {$email}");
             Session::flash('errors', ['Identifiants invalides ou accès non autorisé.']);
             $this->redirect(BASE_URL . '/platform/login');
@@ -60,6 +77,8 @@ class PlatformAuthController extends PlatformController
             Session::flash('errors', ['Identifiants invalides ou accès non autorisé.']);
             $this->redirect(BASE_URL . '/platform/login');
         }
+
+        $throttle->clear('pec:' . strtolower($email) . '|' . $ip);
 
         PlatformAuth::login([
             'id'       => $operator['id'],

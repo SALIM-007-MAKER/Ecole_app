@@ -3,6 +3,7 @@
 namespace App\Modules\Finance\Repositories;
 
 use Core\Database;
+use Core\Tenant\TenantScope;
 use PDO;
 
 class FraisRepository
@@ -27,7 +28,7 @@ class FraisRepository
         int    $page           = 1,
         int    $perPage        = 25
     ): array {
-        $where  = [];
+        $where  = [TenantScope::sqlEtab('finance_frais_types', 'fft.etablissement_id')];   // catalogue de l'établissement courant
         $params = [];
 
         if ($q !== '') {
@@ -104,7 +105,7 @@ class FraisRepository
                     fcf.code    AS categorie_code
              FROM `finance_frais_types` fft
              LEFT JOIN `finance_categories_frais` fcf ON fcf.id = fft.categorie_id
-             WHERE fft.id = ?"
+             WHERE fft.id = ? AND " . TenantScope::sqlEtab('finance_frais_types', 'fft.etablissement_id')
         );
         $stmt->execute([$id]);
         $row = $stmt->fetch(PDO::FETCH_OBJ);
@@ -163,7 +164,8 @@ class FraisRepository
 
         $sql = "SELECT id FROM `finance_frais_types` fft
                 WHERE fft.id != ? $whereCat $whereAnnee
-                AND fft.statut != 'archive'";
+                AND fft.statut != 'archive'
+                AND " . TenantScope::sqlEtab('finance_frais_types', 'fft.etablissement_id');
 
         $params = [$excludeId];
         if ($categorieId !== null)   $params[] = $categorieId;
@@ -223,11 +225,11 @@ class FraisRepository
                 SUM(statut = 'archive')           AS archives,
                 SUM(est_obligatoire = 1)          AS obligatoires,
                 SUM(est_obligatoire = 0)          AS optionnels
-             FROM `finance_frais_types`"
+             FROM `finance_frais_types` fft WHERE " . TenantScope::sqlEtab('finance_frais_types', 'fft.etablissement_id')
         )->fetch(PDO::FETCH_OBJ);
 
         $nbCats = (int)$this->pdo->query(
-            "SELECT COUNT(*) FROM `finance_categories_frais` WHERE actif = 1"
+            "SELECT COUNT(*) FROM `finance_categories_frais` fcf WHERE actif = 1 AND " . TenantScope::sqlEtab('finance_categories_frais', 'fcf.etablissement_id')
         )->fetchColumn();
 
         return [
@@ -247,7 +249,7 @@ class FraisRepository
     {
         $offset = ($page - 1) * $perPage;
         $total  = (int)$this->pdo->query(
-            "SELECT COUNT(*) FROM `finance_categories_frais`"
+            "SELECT COUNT(*) FROM `finance_categories_frais` fcf WHERE " . TenantScope::sqlEtab('finance_categories_frais', 'fcf.etablissement_id')
         )->fetchColumn();
 
         $stmt = $this->pdo->prepare(
@@ -255,6 +257,7 @@ class FraisRepository
                     COUNT(fft.id) AS nb_frais
              FROM `finance_categories_frais` fcf
              LEFT JOIN `finance_frais_types` fft ON fft.categorie_id = fcf.id
+             WHERE " . TenantScope::sqlEtab('finance_categories_frais', 'fcf.etablissement_id') . "
              GROUP BY fcf.id
              ORDER BY fcf.nom
              LIMIT $perPage OFFSET $offset"

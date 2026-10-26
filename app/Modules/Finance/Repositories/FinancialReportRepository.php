@@ -3,6 +3,7 @@
 namespace App\Modules\Finance\Repositories;
 
 use Core\Database;
+use Core\Tenant\TenantScope;
 
 class FinancialReportRepository
 {
@@ -29,7 +30,7 @@ class FinancialReportRepository
                 COUNT(CASE WHEN DATE(p.date_paiement) = ? THEN 1 END)                                                                               AS nb_paiements_jour,
                 COUNT(CASE WHEN YEAR(p.date_paiement) = ? AND MONTH(p.date_paiement) = ? THEN 1 END)                                                AS nb_paiements_mois
              FROM finance_paiements p
-             WHERE p.statut = 'complete'"
+             WHERE p.statut = 'complete' AND " . TenantScope::sqlFacture('p.facture_id')
         );
         $stmt->execute([$date, $annee, $mois, $annee, $date, $annee, $mois]);
         $paiStats = $stmt->fetch(\PDO::FETCH_OBJ);
@@ -42,14 +43,14 @@ class FinancialReportRepository
                 COUNT(CASE WHEN statut = 'en_retard' THEN 1 END)                                                                               AS impayes_nb,
                 COALESCE(SUM(CASE WHEN statut NOT IN ('brouillon','annulee') THEN montant_paye ELSE 0 END), 0)                                 AS total_encaisse,
                 COALESCE(SUM(CASE WHEN statut NOT IN ('brouillon','annulee') THEN montant_total ELSE 0 END), 0)                                AS total_emis
-             FROM finance_factures"
+             FROM finance_factures ff WHERE " . TenantScope::sqlEleve('ff.eleve_id')
         );
         $facStats = $stmt2->fetch(\PDO::FETCH_OBJ);
 
         $stmt3 = $this->pdo->query(
             "SELECT COALESCE(SUM(solde_theorique), 0) AS tresorerie_caisse
              FROM finance_sessions_caisse
-             WHERE statut IN ('ouverte','en_activite')"
+             WHERE statut IN ('ouverte','en_activite') AND " . TenantScope::sqlUtilisateur('caissier_id')
         );
         $caisseStats = $stmt3->fetch(\PDO::FETCH_OBJ);
 
@@ -81,7 +82,7 @@ class FinancialReportRepository
                 COALESCE(SUM(p.montant_applique), 0)    AS recettes,
                 COUNT(p.id)                             AS nb_paiements
              FROM finance_paiements p
-             WHERE p.statut = 'complete' AND YEAR(p.date_paiement) = ?
+             WHERE p.statut = 'complete' AND YEAR(p.date_paiement) = ? AND " . TenantScope::sqlFacture('p.facture_id') . "
              GROUP BY DATE_FORMAT(p.date_paiement, '%Y-%m')
              ORDER BY mois_key ASC"
         );
@@ -100,7 +101,7 @@ class FinancialReportRepository
              FROM finance_factures ff
              JOIN eleves e           ON e.id  = ff.eleve_id
              LEFT JOIN classes c     ON c.id  = e.classe_id
-             WHERE ff.statut IN ('emise','partiellement_payee','en_retard')
+             WHERE ff.statut IN ('emise','partiellement_payee','en_retard') AND " . TenantScope::sqlEleve('ff.eleve_id') . "
              GROUP BY e.id
              ORDER BY montant_du DESC
              LIMIT ?"
@@ -120,7 +121,7 @@ class FinancialReportRepository
                 COALESCE(SUM(p.montant_applique), 0) AS total
              FROM finance_paiements p
              JOIN finance_modes_paiement mp ON mp.id = p.mode_paiement_id
-             WHERE p.statut = 'complete'
+             WHERE p.statut = 'complete' AND " . TenantScope::sqlFacture('p.facture_id') . "
              GROUP BY mp.id
              ORDER BY total DESC"
         );
@@ -222,7 +223,7 @@ class FinancialReportRepository
 
     private function buildPaiementsWhere(array $f): array
     {
-        $where  = ['1=1'];
+        $where  = ['1=1', TenantScope::sqlEleve('ff.eleve_id')];   // propriété par l'élève
         $params = [];
 
         if (!empty($f['statut'])) {
@@ -340,7 +341,7 @@ class FinancialReportRepository
 
     private function buildFacturesWhere(array $f): array
     {
-        $where  = ["ff.statut != 'brouillon'"];
+        $where  = ["ff.statut != 'brouillon'", TenantScope::sqlEleve('ff.eleve_id')];
         $params = [];
 
         if (!empty($f['statut'])) {
@@ -385,7 +386,7 @@ class FinancialReportRepository
 
     public function getImpayes(array $f): array
     {
-        $where  = ["ff.statut IN ('emise','partiellement_payee','en_retard')"];
+        $where  = ["ff.statut IN ('emise','partiellement_payee','en_retard')", TenantScope::sqlEleve('ff.eleve_id')];
         $params = [];
 
         if (!empty($f['annee_scolaire'])) {
@@ -443,10 +444,10 @@ class FinancialReportRepository
 
     public function getImpayesAging(array $f = []): array
     {
-        $filterClause = '';
+        $filterClause = 'AND ' . TenantScope::sqlEleve('ff.eleve_id');
         $params = [];
         if (!empty($f['annee_scolaire'])) {
-            $filterClause = 'AND ff.annee_scolaire = ?';
+            $filterClause .= ' AND ff.annee_scolaire = ?';
             $params[] = $f['annee_scolaire'];
         }
 
@@ -473,7 +474,7 @@ class FinancialReportRepository
 
     public function paginateSessions(array $f, int $page, int $perPage): array
     {
-        $where  = ['1=1'];
+        $where  = [TenantScope::sqlUtilisateur('s.caissier_id')];
         $params = [];
 
         if (!empty($f['statut'])) {
@@ -521,7 +522,7 @@ class FinancialReportRepository
 
     public function getStatsCaisse(array $f = []): object
     {
-        $where  = ['1=1'];
+        $where  = [TenantScope::sqlUtilisateur('s.caissier_id')];
         $params = [];
         if (!empty($f['date_debut'])) { $where[] = 's.date_ouverture >= ?'; $params[] = $f['date_debut']; }
         if (!empty($f['date_fin']))   { $where[] = 's.date_ouverture <= ?'; $params[] = $f['date_fin'];   }
@@ -555,7 +556,7 @@ class FinancialReportRepository
                 COALESCE(SUM(p.montant_applique), 0) AS recettes,
                 COUNT(p.id)                          AS nb_paiements
              FROM finance_paiements p
-             WHERE p.statut = 'complete' AND YEAR(p.date_paiement) IN ({$placeholders})
+             WHERE p.statut = 'complete' AND " . TenantScope::sqlFacture('p.facture_id') . " AND YEAR(p.date_paiement) IN ({$placeholders})
              GROUP BY YEAR(p.date_paiement)
              ORDER BY annee ASC"
         );
@@ -579,7 +580,7 @@ class FinancialReportRepository
              FROM finance_factures ff
              JOIN eleves e      ON e.id = ff.eleve_id
              LEFT JOIN classes c ON c.id = e.classe_id
-             WHERE ff.statut NOT IN ('brouillon','annulee') AND ff.annee_scolaire = ?
+             WHERE ff.statut NOT IN ('brouillon','annulee') AND ff.annee_scolaire = ? AND " . TenantScope::sqlEleve('ff.eleve_id') . "
              GROUP BY c.id
              ORDER BY montant_total DESC"
         );
@@ -600,7 +601,7 @@ class FinancialReportRepository
                     MONTH(p.date_paiement) AS mois,
                     SUM(p.montant_applique) AS recettes_reelles
                 FROM finance_paiements p
-                WHERE p.statut = 'complete' AND YEAR(p.date_paiement) = ?
+                WHERE p.statut = 'complete' AND YEAR(p.date_paiement) = ? AND " . TenantScope::sqlFacture('p.facture_id') . "
                 GROUP BY YEAR(p.date_paiement), MONTH(p.date_paiement)
              ) mp
              ORDER BY mp.annee, mp.mois"
@@ -628,7 +629,7 @@ class FinancialReportRepository
         $stmt = $this->pdo->prepare(
             "SELECT COALESCE(SUM(p.montant_applique), 0) AS total
              FROM finance_paiements p
-             WHERE p.statut = 'complete'
+             WHERE p.statut = 'complete' AND " . TenantScope::sqlFacture('p.facture_id') . "
                AND ((YEAR(p.date_paiement) = ? AND MONTH(p.date_paiement) >= 9)
                  OR (YEAR(p.date_paiement) = ? AND MONTH(p.date_paiement) < 9))"
         );
@@ -638,7 +639,7 @@ class FinancialReportRepository
         $stmt = $this->pdo->prepare(
             "SELECT COALESCE(SUM(d.montant), 0) AS total
              FROM finance_decaissements d
-             WHERE d.statut = 'paye' AND d.deleted_at IS NULL
+             WHERE d.statut = 'paye' AND d.deleted_at IS NULL AND " . TenantScope::sqlUtilisateur('d.saisi_par') . "
                AND ((YEAR(d.date_depense) = ? AND MONTH(d.date_depense) >= 9)
                  OR (YEAR(d.date_depense) = ? AND MONTH(d.date_depense) < 9))"
         );
@@ -647,16 +648,16 @@ class FinancialReportRepository
 
         $stmt = $this->pdo->prepare(
             "SELECT COALESCE(SUM(montant_total), 0) AS total
-             FROM finance_factures
-             WHERE statut != 'brouillon' AND annee_scolaire = ?"
+             FROM finance_factures ff
+             WHERE statut != 'brouillon' AND annee_scolaire = ? AND " . TenantScope::sqlEleve('ff.eleve_id')
         );
         $stmt->execute([$anneeScolaire]);
         $fraisTotal = (float)$stmt->fetchColumn();
 
         $stmt = $this->pdo->prepare(
             "SELECT COALESCE(SUM(montant_total - montant_paye), 0) AS total
-             FROM finance_factures
-             WHERE statut IN ('emise','partiellement_payee','en_retard') AND annee_scolaire = ?"
+             FROM finance_factures ff
+             WHERE statut IN ('emise','partiellement_payee','en_retard') AND annee_scolaire = ? AND " . TenantScope::sqlEleve('ff.eleve_id')
         );
         $stmt->execute([$anneeScolaire]);
         $impayes = (float)$stmt->fetchColumn();
@@ -678,7 +679,7 @@ class FinancialReportRepository
         $stmt = $this->pdo->prepare(
             "SELECT DATE_FORMAT(p.date_paiement, '%Y-%m') AS mois, SUM(p.montant_applique) AS total
              FROM finance_paiements p
-             WHERE p.statut = 'complete'
+             WHERE p.statut = 'complete' AND " . TenantScope::sqlFacture('p.facture_id') . "
                AND ((YEAR(p.date_paiement) = ? AND MONTH(p.date_paiement) >= 9)
                  OR (YEAR(p.date_paiement) = ? AND MONTH(p.date_paiement) < 9))
              GROUP BY mois"
@@ -689,7 +690,7 @@ class FinancialReportRepository
         $stmt = $this->pdo->prepare(
             "SELECT DATE_FORMAT(d.date_depense, '%Y-%m') AS mois, SUM(d.montant) AS total
              FROM finance_decaissements d
-             WHERE d.statut = 'paye' AND d.deleted_at IS NULL
+             WHERE d.statut = 'paye' AND d.deleted_at IS NULL AND " . TenantScope::sqlUtilisateur('d.saisi_par') . "
                AND ((YEAR(d.date_depense) = ? AND MONTH(d.date_depense) >= 9)
                  OR (YEAR(d.date_depense) = ? AND MONTH(d.date_depense) < 9))
              GROUP BY mois"
@@ -708,9 +709,10 @@ class FinancialReportRepository
             "SELECT dc.nom, dc.couleur, COALESCE(SUM(d.montant), 0) AS total
              FROM finance_categories_depenses dc
              LEFT JOIN finance_decaissements d ON d.categorie_id = dc.id
-                AND d.statut = 'paye' AND d.deleted_at IS NULL
+                AND d.statut = 'paye' AND d.deleted_at IS NULL AND " . TenantScope::sqlUtilisateur('d.saisi_par') . "
                 AND ((YEAR(d.date_depense) = ? AND MONTH(d.date_depense) >= 9)
                   OR (YEAR(d.date_depense) = ? AND MONTH(d.date_depense) < 9))
+             WHERE " . TenantScope::sqlEtab('finance_categories_depenses', 'dc.etablissement_id') . "
              GROUP BY dc.id
              HAVING total > 0
              ORDER BY total DESC"
@@ -735,7 +737,7 @@ class FinancialReportRepository
              FROM finance_lignes_facture fl
              JOIN finance_factures ff    ON ff.id = fl.facture_id
              JOIN finance_frais_types ft ON ft.id = fl.frais_type_id
-             WHERE ff.statut != 'brouillon' AND ff.annee_scolaire = ?
+             WHERE ff.statut != 'brouillon' AND ff.annee_scolaire = ? AND " . TenantScope::sqlEleve('ff.eleve_id') . "
              GROUP BY ft.id
              ORDER BY montant_total DESC"
         );
@@ -748,21 +750,21 @@ class FinancialReportRepository
     public function getAnneesScolaires(): array
     {
         $stmt = $this->pdo->query(
-            "SELECT DISTINCT annee_scolaire FROM finance_factures ORDER BY annee_scolaire DESC"
+            "SELECT DISTINCT annee_scolaire FROM finance_factures ff WHERE " . TenantScope::sqlEleve('ff.eleve_id') . " ORDER BY annee_scolaire DESC"
         );
         return $stmt->fetchAll(\PDO::FETCH_COLUMN);
     }
 
     public function getClasses(): array
     {
-        $stmt = $this->pdo->query("SELECT id, nom, niveau FROM classes ORDER BY " . \App\Models\ClasseModel::ordreNiveauSql() . ", nom");
+        $stmt = $this->pdo->query("SELECT id, nom, niveau FROM classes WHERE " . TenantScope::sqlEtab('classes', 'etablissement_id') . " ORDER BY " . \App\Models\ClasseModel::ordreNiveauSql() . ", nom");
         return $stmt->fetchAll(\PDO::FETCH_OBJ);
     }
 
     public function getNiveaux(): array
     {
         $stmt = $this->pdo->query(
-            "SELECT DISTINCT niveau FROM classes WHERE niveau IS NOT NULL AND niveau != '' ORDER BY " . \App\Models\ClasseModel::ordreNiveauSql()
+            "SELECT DISTINCT niveau FROM classes WHERE niveau IS NOT NULL AND niveau != '' AND " . TenantScope::sqlEtab('classes', 'etablissement_id') . " ORDER BY " . \App\Models\ClasseModel::ordreNiveauSql()
         );
         return $stmt->fetchAll(\PDO::FETCH_COLUMN);
     }
@@ -770,7 +772,7 @@ class FinancialReportRepository
     public function getModesPaiement(): array
     {
         $stmt = $this->pdo->query(
-            "SELECT id, code, nom, icone FROM finance_modes_paiement WHERE actif = 1 ORDER BY nom"
+            "SELECT id, code, nom, icone FROM finance_modes_paiement WHERE actif = 1 AND " . TenantScope::sqlEtab('finance_modes_paiement', 'etablissement_id') . " ORDER BY nom"
         );
         return $stmt->fetchAll(\PDO::FETCH_OBJ);
     }

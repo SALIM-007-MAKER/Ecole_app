@@ -16,6 +16,11 @@ class Session
 
         $basePath = parse_url($config['url'] ?? '/', PHP_URL_PATH) ?: '/';
 
+        $duree = max(60, (int)($config['session']['lifetime'] ?? 7200));
+        // Le ramasse-miettes PHP ne doit pas supprimer une session avant la durée d'inactivité autorisée.
+        ini_set('session.gc_maxlifetime', (string)$duree);
+        ini_set('session.use_strict_mode', '1');
+
         session_name($config['session']['name']);
         session_set_cookie_params([
             'lifetime' => 0,          // Cookie de session (supprimé à la fermeture du navigateur)
@@ -27,6 +32,16 @@ class Session
 
         session_start();
         self::$started = true;
+
+        // Expiration par inactivité, appliquée côté serveur (indépendante du ramasse-miettes et du cookie).
+        $maintenant = time();
+        $derniere   = (int)($_SESSION['_last_activity'] ?? 0);
+        if ($derniere > 0 && $maintenant - $derniere > $duree
+            && (isset($_SESSION['_auth_user']) || isset($_SESSION['_platform_operator']))) {
+            unset($_SESSION['_auth_user'], $_SESSION['_platform_operator'], $_SESSION['_pending_auth_user_id'], $_SESSION['_auth_refreshed_at']);
+            $_SESSION['_flash']['error'] = 'Votre session a expiré après une période d\'inactivité. Veuillez vous reconnecter.';
+        }
+        $_SESSION['_last_activity'] = $maintenant;
 
         // Régénérer l'ID périodiquement pour prévenir la fixation
         if (!isset($_SESSION['_last_regen'])) {
@@ -125,6 +140,18 @@ class Session
     public static function isLogged(): bool
     {
         return self::has('_auth_user');
+    }
+
+    /**
+     * Nouvel identifiant de session (l'ancien est détruit), à appeler à chaque élévation de privilège (connexion).
+     * Les données de session sont conservées. Sans effet hors session HTTP active (CLI, tests).
+     */
+    public static function regenerate(): void
+    {
+        if (session_status() === PHP_SESSION_ACTIVE && !headers_sent()) {
+            session_regenerate_id(true);
+            $_SESSION['_last_regen'] = time();
+        }
     }
 
     public static function logout(): void

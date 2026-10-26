@@ -6,6 +6,8 @@
  */
 return [
     'admin' => [
+        // Parité avec le RBAC en base (etab_*), qui les attribue déjà : évite un écart config ↔ base (RbacTenantTest)
+        'comptabilite.view', 'comptabilite.create', 'comptabilite.edit',
         'eleves.view', 'eleves.create', 'eleves.edit', 'eleves.delete',
         'enseignants.view', 'enseignants.create', 'enseignants.edit', 'enseignants.delete',
         'classes.view', 'classes.create', 'classes.edit', 'classes.delete',
@@ -51,7 +53,8 @@ return [
         'inscriptions.view', 'inscriptions.create', 'inscriptions.update',
         'familles.view', 'familles.manage',
         // ── Académique V2 ───────────────────────────────────────────────────────
-        'academique.periodes.view', 'academique.periodes.manage',
+        'academique.periodes.view', 'academique.periodes.manage', 'academique.periodes.admin',
+        'academique.types_evaluations.view', 'academique.types_evaluations.manage',
         'academique.evaluations.view', 'academique.evaluations.manage', 'academique.evaluations.admin',
         'academique.notes.view', 'academique.notes.manage', 'academique.notes.admin',
         'academique.conduite.manage',   // Conduite : évaluations, notes, appréciations (T049)
@@ -130,6 +133,9 @@ return [
         'portal.eleve.access', 'portal.parent.access', 'portal.comptabilite.access', 'portal.rh.access',
     ],
     'directeur' => [
+        // Parité avec le RBAC en base (etab_*), qui les attribue déjà : évite un écart config ↔ base (RbacTenantTest)
+        'comptabilite.view', 'comptabilite.create', 'comptabilite.edit',
+        'settings.securite.view', 'settings.securite.update', 'settings.sauvegarde.view', 'settings.sauvegarde.update', 'settings.avance.view', 'settings.avance.update',
         'eleves.view', 'eleves.create', 'eleves.edit', 'eleves.delete',
         'enseignants.view', 'enseignants.create', 'enseignants.edit', 'enseignants.delete',
         'classes.view', 'classes.create', 'classes.edit', 'classes.delete',
@@ -171,7 +177,8 @@ return [
         'finance.comptabilite.view', 'finance.comptabilite.exercice',
         'finance.rapports.view', 'finance.rapports.export',
         // ── Académique V2 ───────────────────────────────────────────────────────
-        'academique.periodes.view', 'academique.periodes.manage',
+        'academique.periodes.view', 'academique.periodes.manage', 'academique.periodes.admin',
+        'academique.types_evaluations.view', 'academique.types_evaluations.manage',
         'academique.evaluations.view', 'academique.evaluations.manage', 'academique.evaluations.admin',
         'academique.notes.view', 'academique.notes.manage', 'academique.notes.admin',
         'academique.conduite.manage',   // Conduite : évaluations, notes, appréciations (T049)
@@ -257,6 +264,8 @@ return [
         'portal.direction.access', 'portal.rh.access',
     ],
     'secretaire' => [
+        // Parité avec le RBAC en base (etab_*), qui les attribue déjà : évite un écart config ↔ base (RbacTenantTest)
+        'comptabilite.view', 'comptabilite.create',
         'eleves.view', 'eleves.create', 'eleves.edit',
         'classes.view', 'matieres.view',
         'notes.view', 'bulletins.view',
@@ -336,6 +345,8 @@ return [
         'portal.comptabilite.access',
     ],
     'comptable' => [
+        // Parité avec le RBAC en base (etab_*), qui les attribue déjà : évite un écart config ↔ base (RbacTenantTest)
+        'comptabilite.view', 'comptabilite.create', 'comptabilite.edit',
         'eleves.view', 'classes.view', 'matieres.view', 'enseignants.view', 'rapports.view',
         'annonces.view',
         // ── Finance V2 ──────────────────────────────────────────────────────────

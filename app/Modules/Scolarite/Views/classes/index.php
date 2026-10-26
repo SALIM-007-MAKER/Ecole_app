@@ -163,7 +163,7 @@ function fillColorIdx(int $actuel, int $max): string {
                 <?php endif; ?>
                 <?php if (cpermV2idx($perms, 'classes.delete')): ?>
                 <button type="button"
-                        onclick="openDeleteModal(<?= $c->id ?>, '<?= htmlspecialchars($c->niveau . ' ' . $c->nom, ENT_JS) ?>', <?= $actuel ?>)"
+                        onclick="openDeleteModal(<?= $c->id ?>, <?= htmlspecialchars(json_encode((string)($c->niveau . ' ' . $c->nom), JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP), ENT_QUOTES) ?>, <?= $actuel ?>)"
                         class="flex-1 text-center text-xs text-red-500 hover:text-red-700 py-1 rounded hover:bg-red-50 transition">
                     <i data-lucide="trash-2" class="w-3.5 h-3.5 inline"></i> Supprimer
                 </button>

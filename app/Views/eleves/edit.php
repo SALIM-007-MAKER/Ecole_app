@@ -121,6 +121,18 @@ function editVal(array $old, string $key, $eleve, string $col = ''): string {
                             <?php endforeach; ?>
                         </select>
                     </div>
+                    <div class="mb-4">
+                        <label class="form-label" for="user_id">Compte de connexion de l'élève</label>
+                        <select id="user_id" name="user_id" class="form-input">
+                            <option value="">— Aucun compte rattaché —</option>
+                            <?php foreach ($comptesEleves ?? [] as $u): ?>
+                            <option value="<?= $u->id ?>" <?= (($old['user_id'] ?? ($eleve->user_id ?? '')) == $u->id) ? 'selected' : '' ?>>
+                                <?= htmlspecialchars(trim(($u->prenom ?? '') . ' ' . $u->nom) . ' — ' . $u->email, ENT_QUOTES) ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <p class="text-xs text-slate-400 mt-1">Compte « Élève » qui consulte ses notes et son bulletin (un compte par fiche)</p>
+                    </div>
                 </div>
             </div>
 

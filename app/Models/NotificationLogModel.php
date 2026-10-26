@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Core\Model;
+use Core\Tenant\TenantScope;
 
 class NotificationLogModel extends Model
 {
@@ -76,7 +77,7 @@ class NotificationLogModel extends Model
                     SUM(statut = 'echoue') AS ko,
                     SUM(statut = 'en_attente') AS attente,
                     SUM(DATE(created_at) = CURDATE()) AS today
-             FROM `notification_logs`"
+             FROM `notification_logs` WHERE " . TenantScope::sqlUtilisateur('user_id')
         );
 
         $byCanal = $this->query(
@@ -84,13 +85,13 @@ class NotificationLogModel extends Model
                     COUNT(*) AS total,
                     SUM(statut = 'envoye') AS ok,
                     SUM(statut = 'echoue') AS ko
-             FROM `notification_logs`
+             FROM `notification_logs` WHERE " . TenantScope::sqlUtilisateur('user_id') . "
              GROUP BY canal"
         );
 
         $byTrigger = $this->query(
             "SELECT trigger_type, COUNT(*) AS total
-             FROM `notification_logs`
+             FROM `notification_logs` WHERE " . TenantScope::sqlUtilisateur('user_id') . "
              GROUP BY trigger_type ORDER BY total DESC"
         );
 
@@ -108,14 +109,14 @@ class NotificationLogModel extends Model
     public function deleteOld(int $days = 90): void
     {
         $this->execute(
-            "DELETE FROM `notification_logs` WHERE created_at < DATE_SUB(NOW(), INTERVAL ? DAY)",
+            "DELETE FROM `notification_logs` WHERE created_at < DATE_SUB(NOW(), INTERVAL ? DAY) AND " . TenantScope::sqlUtilisateur('user_id'),
             [$days]
         );
     }
 
     private function buildWhere(array $f): array
     {
-        $c = []; $p = [];
+        $c = [TenantScope::sqlUtilisateur('l.user_id')]; $p = [];   // journal borné aux utilisateurs de l'établissement courant
 
         if (!empty($f['q'])) {
             $t = '%' . $f['q'] . '%';

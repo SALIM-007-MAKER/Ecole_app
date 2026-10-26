@@ -3,6 +3,7 @@
 namespace App\Modules\Finance\Repositories;
 
 use Core\Database;
+use Core\Tenant\TenantScope;
 use App\Modules\Finance\DTO\PaymentFiltersDTO;
 
 class PaymentRepository
@@ -19,7 +20,7 @@ class PaymentRepository
     // ----------------------------------------------------------------
     public function paginate(PaymentFiltersDTO $f): array
     {
-        $where  = ['1=1'];
+        $where  = ['1=1', TenantScope::sqlEleve('ff.eleve_id')];   // propriété par l'élève de la facture
         $params = [];
 
         if ($f->q) {
@@ -143,7 +144,7 @@ class PaymentRepository
              LEFT JOIN `users` ue ON ue.id = p.encaisse_par
              LEFT JOIN `users` uv ON uv.id = p.valide_par
              LEFT JOIN `users` ua ON ua.id = p.annule_par
-             WHERE p.id = ?"
+             WHERE p.id = ? AND " . TenantScope::sqlEleve('ff.eleve_id')
         );
         $stmt->execute([$id]);
         return $stmt->fetch(\PDO::FETCH_OBJ) ?: null;
@@ -182,7 +183,7 @@ class PaymentRepository
              JOIN `eleves` e               ON e.id  = ff.eleve_id
              LEFT JOIN `finance_modes_paiement` mp ON mp.id = p.mode_paiement_id
              LEFT JOIN `users` ue           ON ue.id = r.emis_par
-             WHERE r.paiement_id = ?"
+             WHERE r.paiement_id = ? AND " . TenantScope::sqlEleve('ff.eleve_id')
         );
         $stmt->execute([$paiementId]);
         return $stmt->fetch(\PDO::FETCH_OBJ) ?: null;
@@ -225,7 +226,7 @@ class PaymentRepository
     public function getModesPaiement(): array
     {
         $stmt = $this->pdo->query(
-            "SELECT * FROM `finance_modes_paiement` WHERE `actif` = 1 ORDER BY `ordre`"
+            "SELECT * FROM `finance_modes_paiement` WHERE `actif` = 1 AND " . TenantScope::sqlEtab('finance_modes_paiement', 'etablissement_id') . " ORDER BY `ordre`"
         );
         return $stmt->fetchAll(\PDO::FETCH_OBJ);
     }
@@ -255,7 +256,7 @@ class PaymentRepository
 
     public function statsGlobal(?string $dateDebut = null, ?string $dateFin = null): object
     {
-        $where  = ['1=1'];
+        $where  = [TenantScope::sqlFacture('p.facture_id')];
         $params = [];
         if ($dateDebut) { $where[] = 'p.date_paiement >= ?'; $params[] = $dateDebut; }
         if ($dateFin)   { $where[] = 'p.date_paiement <= ?'; $params[] = $dateFin; }
@@ -279,7 +280,7 @@ class PaymentRepository
 
     public function statsParMode(?string $dateDebut = null, ?string $dateFin = null): array
     {
-        $where  = ["p.statut = 'complete'"];
+        $where  = ["p.statut = 'complete'", TenantScope::sqlFacture('p.facture_id')];
         $params = [];
         if ($dateDebut) { $where[] = 'p.date_paiement >= ?'; $params[] = $dateDebut; }
         if ($dateFin)   { $where[] = 'p.date_paiement <= ?'; $params[] = $dateFin; }
@@ -306,7 +307,7 @@ class PaymentRepository
             "SELECT ff.*, CONCAT(e.prenom,' ',e.nom) AS eleve_nom
              FROM `finance_factures` ff
              JOIN `eleves` e ON e.id = ff.eleve_id
-             WHERE ff.id = ?"
+             WHERE ff.id = ? AND " . TenantScope::sqlEleve('ff.eleve_id')
         );
         $stmt->execute([$factureId]);
         return $stmt->fetch(\PDO::FETCH_OBJ) ?: null;
@@ -394,6 +395,7 @@ class PaymentRepository
     // ----------------------------------------------------------------
     public function genererNumero(string $type, int $annee): string
     {
+        $type = TenantScope::cleSequence($type);   // compteur (et préfixe du numéro) propre à l'établissement
         $stmt = $this->pdo->prepare(
             "INSERT INTO `finance_sequences` (`type`, `annee`, `valeur`) VALUES (?, ?, 1)
              ON DUPLICATE KEY UPDATE `valeur` = `valeur` + 1"

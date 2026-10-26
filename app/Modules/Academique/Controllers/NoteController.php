@@ -106,9 +106,9 @@ class NoteController extends Controller
             $results = $this->service->saisirBatch($batch, (int)$user['id']);
             $msg     = "{$results['created']} note(s) créée(s), {$results['updated']} mise(s) à jour.";
             if (!empty($results['errors'])) {
-                $msg .= " " . count($results['errors']) . " erreur(s).";
+                $msg .= " " . count($results['errors']) . " erreur(s) : " . implode(' ; ', array_slice(array_values($results['errors']), 0, 3)) . '.';
             }
-            Session::flash('success', $msg);
+            Session::flash(empty($results['errors']) ? 'success' : 'error', $msg);
         } catch (\RuntimeException $e) {
             Session::flash('error', $e->getMessage());
         }

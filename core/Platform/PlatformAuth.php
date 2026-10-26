@@ -34,6 +34,7 @@ final class PlatformAuth
     /** @param array{id:int, user_id:int, email:string, nom:string, niveau:string} $operator */
     public static function login(array $operator): void
     {
+        Session::regenerate();   // anti-fixation : nouvel identifiant à la connexion opérateur
         Session::set(self::SESSION_KEY, $operator);
     }
 

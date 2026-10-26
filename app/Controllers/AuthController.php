@@ -63,14 +63,39 @@ class AuthController extends Controller
             $this->redirect(BASE_URL . '/login');
         }
 
+        // Anti-force-brute : contrôle AVANT toute vérification du mot de passe.
+        $throttle = new \App\Shared\Http\LoginThrottle(ROOT_PATH . '/storage/cache/throttle');
+        $ip       = $this->request->ip();
+        $cles     = [
+            'ec:' . strtolower($email) . '|' . $ip => 5,   // ce compte depuis cette adresse
+            'ip:' . $ip                            => 30,  // cette adresse, tous comptes confondus
+            'e:' . strtolower($email)              => 20,  // ce compte, attaque répartie sur plusieurs adresses
+        ];
+        $attente = 0;
+        foreach ($cles as $cle => $limite) {
+            $attente = max($attente, $throttle->retryAfter($cle, $limite));
+        }
+        if ($attente > 0) {
+            \Core\Logger::security('LOGIN_THROTTLED', "Connexion bloquée (trop d'échecs) pour : {$email} depuis {$ip}");
+            $minutes = (int)ceil($attente / 60);
+            Session::flash('errors', ['auth' => ["Trop de tentatives de connexion. Réessayez dans {$minutes} minute(s)."]]);
+            Session::flash('old', ['email' => $email]);
+            $this->redirect(BASE_URL . '/login');
+        }
+
         $user = $this->userModel->findByEmail($email);
 
         if (!$user || !password_verify($password, $user->password)) {
+            foreach (array_keys($cles) as $cle) {
+                $throttle->recordFailure($cle);
+            }
             \Core\Logger::security('LOGIN_FAILED', "Tentative échouée pour : {$email}");
             Session::flash('errors', ['auth' => ['Email ou mot de passe incorrect.']]);
             Session::flash('old', ['email' => $email]);
             $this->redirect(BASE_URL . '/login');
         }
+
+        $throttle->clear('ec:' . strtolower($email) . '|' . $ip);
 
         if ((int)$user->actif === 0) {
             \Core\Logger::security('LOGIN_DISABLED', "Compte désactivé : {$email}");
@@ -103,6 +128,7 @@ class AuthController extends Controller
         // encore ouverte — l'utilisateur doit choisir explicitement son
         // établissement avant d'obtenir le moindre accès (Session::isLogged()
         // reste false tant que ce choix n'est pas fait).
+        Session::regenerate();
         Session::set('_pending_auth_user_id', (int)$user->id);
         \Core\Logger::security('LOGIN_PENDING_SCHOOL_CHOICE', "En attente de choix d'établissement : {$email} ({$user->id})");
         $this->redirect(BASE_URL . '/choisir-etablissement');
@@ -122,6 +148,9 @@ class AuthController extends Controller
             : $user->role;
 
         $permissions = $this->userModel->getPermissions($role, (int)$user->id, $etablissementId);
+
+        // Anti-fixation : nouvel identifiant de session dès que les privilèges changent (connexion).
+        Session::regenerate();
 
         $schools = $etablissementId !== null ? $this->membership->listForUser((int)$user->id) : [];
 
@@ -284,11 +313,11 @@ class AuthController extends Controller
 
             $resetUrl = BASE_URL . '/reset-password/' . $token;
 
-            // En développement : afficher le lien directement
+            // Le lien ne doit JAMAIS apparaître dans la réponse HTTP (prise de contrôle anonyme du compte).
+            // En développement, il est seulement écrit dans le journal serveur.
             $config = require ROOT_PATH . '/config/app.php';
             if ($config['debug']) {
-                Session::flash('info', 'Lien de réinitialisation (mode développement) : ' . $resetUrl);
-                $this->redirect(BASE_URL . '/forgot-password');
+                error_log('[reset-password] ' . $email . ' => ' . $resetUrl);
             }
 
             // En production : envoyer un email (configurer un mailer)
@@ -484,6 +513,16 @@ class AuthController extends Controller
     {
         $this->verifyCsrf();
 
+        // Anti-spam : 3 inscriptions par heure et par adresse IP, 30 par heure au total.
+        $limiteur = new \App\Shared\Http\PublicThrottle(ROOT_PATH . '/storage/cache/throttle', 3, 3600);
+        $global   = new \App\Shared\Http\PublicThrottle(ROOT_PATH . '/storage/cache/throttle', 30, 3600);
+        $ip       = $this->request->ip();
+        if (!$limiteur->hit('register', $ip)['allowed'] || !$global->hit('register-global', 'all')['allowed']) {
+            \Core\Logger::security('REGISTER_THROTTLED', "Inscription bloquée (trop de demandes) depuis {$ip}");
+            Session::flash('error', 'Trop de demandes d\'inscription. Réessayez plus tard.');
+            $this->redirect(BASE_URL . '/register');
+        }
+
         $nom      = trim($this->request->sanitize('nom'));
         $email    = trim($this->request->sanitize('email'));
         $password = $this->request->post('password', '');
@@ -493,14 +532,17 @@ class AuthController extends Controller
             ['nom' => 'required|min:2|max:100', 'email' => 'required|email', 'password' => 'required|min:' . $this->passwordMinLength()]
         );
 
-        if ($this->userModel->findByEmail($email)) {
-            $errors['email'][] = 'Cet email est déjà utilisé.';
-        }
-
         if (!empty($errors)) {
             Session::flash('errors', $errors);
             Session::flash('old', ['nom' => $nom, 'email' => $email]);
             $this->redirect(BASE_URL . '/register');
+        }
+
+        // Même réponse que l'e-mail existe déjà ou non (pas d'énumération des comptes) ; aucun compte n'est créé en double.
+        if ($this->userModel->findByEmail($email)) {
+            \Core\Logger::security('REGISTER_DUPLICATE', "Inscription sur un e-mail existant : {$email}");
+            Session::flash('success', 'Compte créé. Il sera activé par un administrateur.');
+            $this->redirect(BASE_URL . '/login');
         }
 
         $this->userModel->insert([
@@ -517,40 +559,17 @@ class AuthController extends Controller
 
     // ─── Helpers privés ───────────────────────────────────────────────────────
 
+    /**
+     * Avatar du profil : validation par le type MIME réel, extension DÉDUITE du MIME (jamais du nom fourni par le client)
+     * et nom aléatoire, via UploadService (comme les photos d'élèves et de professeurs).
+     */
     private function handlePhotoUpload(array $file, array &$errors): ?string
     {
-        $allowed   = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-        $maxSize   = 2 * 1024 * 1024; // 2 Mo
-
-        if ($file['error'] !== UPLOAD_ERR_OK) {
-            $errors['photo'][] = 'Erreur lors du téléversement de la photo.';
+        try {
+            return (new \App\Services\UploadService())->upload($file, 'avatar', 'avatar_' . Session::getUser()['id'] . '_');
+        } catch (\RuntimeException $e) {
+            $errors['photo'][] = $e->getMessage();
             return null;
         }
-
-        if (!in_array(mime_content_type($file['tmp_name']), $allowed, true)) {
-            $errors['photo'][] = 'Format accepté : JPG, PNG, GIF, WebP.';
-            return null;
-        }
-
-        if ($file['size'] > $maxSize) {
-            $errors['photo'][] = 'La photo ne doit pas dépasser 2 Mo.';
-            return null;
-        }
-
-        $uploadDir = ROOT_PATH . '/storage/uploads/avatars/';
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0755, true);
-        }
-
-        $ext      = pathinfo($file['name'], PATHINFO_EXTENSION);
-        $filename = 'avatar_' . Session::getUser()['id'] . '_' . time() . '.' . strtolower($ext);
-        $dest     = $uploadDir . $filename;
-
-        if (!move_uploaded_file($file['tmp_name'], $dest)) {
-            $errors['photo'][] = 'Impossible d\'enregistrer la photo.';
-            return null;
-        }
-
-        return 'storage/uploads/avatars/' . $filename;
     }
 }
