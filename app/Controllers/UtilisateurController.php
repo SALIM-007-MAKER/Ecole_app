@@ -259,6 +259,12 @@ class UtilisateurController extends Controller
             $this->redirect(BASE_URL . '/utilisateurs');
         }
 
+        // Même règle que update() : seul un admin peut agir sur un compte admin (sinon un directeur pourrait verrouiller l'administrateur).
+        if (($currentUser['role'] ?? '') !== 'admin' && $user->role === 'admin') {
+            Session::flash('error', 'Seul un administrateur peut activer ou désactiver un compte administrateur.');
+            $this->redirect(BASE_URL . '/utilisateurs');
+        }
+
         $newActif = (int)$user->actif === 1 ? 0 : 1;
         $this->userModel->update($userId, ['actif' => $newActif, 'updated_at' => date('Y-m-d H:i:s')]);
 
