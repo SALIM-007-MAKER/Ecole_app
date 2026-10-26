@@ -71,7 +71,9 @@ try {
     check(array_sum(array_map($colonne, $tables)) === 0, 'état de départ : aucune colonne etablissement_id sur les six référentiels');
     foreach (['/v2/vie-scolaire/absences', '/v2/vie-scolaire/absences/create', '/v2/vie-scolaire/retards', '/v2/vie-scolaire/discipline', '/v2/vie-scolaire/discipline/create',
               '/v2/vie-scolaire/recompenses', '/v2/vie-scolaire/recompenses/create', '/v2/vie-scolaire/emplois-du-temps', '/v2/vie-scolaire/emplois-du-temps/salles',
-              '/v2/vie-scolaire/emplois-du-temps/plages', '/v2/vie-scolaire/activites', '/v2/vie-scolaire/activites/create', '/v2/vie-scolaire/emplois-du-temps/remplacements'] as $u) {
+              '/v2/vie-scolaire/emplois-du-temps/plages', '/v2/vie-scolaire/activites', '/v2/vie-scolaire/activites/create', '/v2/vie-scolaire/emplois-du-temps/remplacements',
+              '/v2/vie-scolaire/activites/statistiques', '/v2/vie-scolaire/absences/statistiques', '/v2/vie-scolaire/retards/statistiques', '/v2/vie-scolaire/discipline/statistiques',
+              '/v2/vie-scolaire/recompenses/statistiques', '/v2/vie-scolaire/recompenses/classement', '/v2/vie-scolaire/emplois-du-temps/statistiques'] as $u) {
         [$r, $b] = $http('admin', 1, 'GET', $u);
         check(($r['status'] ?? 0) === 200 && !preg_match('/SQLSTATE|Unknown column|Fatal error/i', $b), "$u : 200 sans erreur SQL sur une base non migrée", 'statut ' . ($r['status'] ?? '?') . ' ' . (preg_match('/(SQLSTATE|Unknown column|Fatal error)[^<]{0,120}/', $b, $mm) ? $mm[0] : ''));
     }
@@ -117,6 +119,14 @@ try {
         check((int)$one("SELECT COUNT(*) FROM `$t` WHERE etablissement_id = 1") >= $nbCodes - 1 && (int)$one("SELECT COUNT(*) FROM `$t` WHERE etablissement_id = $E2") === $nbCodes, "$t : chaque établissement dispose d'une copie de chaque code du catalogue ($nbCodes codes)");
         check((int)$one("SELECT COUNT(*) FROM (SELECT code FROM `$t` WHERE etablissement_id IS NULL GROUP BY code HAVING COUNT(*) > 1) d") <= 1, "$t : pas de doublon de gabarit non référencé");
     }
+    // Les statistiques filtrent le catalogue par établissement : elles doivent aussi répondre APRÈS la migration, pour chaque établissement.
+    foreach ([['admin', 1, 'établissement 1'], ['admin', $U2, 'établissement 2']] as [$roleStat, $uidStat, $libStat]) {
+        foreach (['/v2/vie-scolaire/activites/statistiques', '/v2/vie-scolaire/absences/statistiques', '/v2/vie-scolaire/recompenses/statistiques'] as $u) {
+            [$r, $b] = $http($roleStat, $uidStat, 'GET', $u);
+            check(($r['status'] ?? 0) === 200 && !preg_match('/SQLSTATE|Unknown column|Fatal error/i', $b), "$u : 200 sans erreur SQL après migration ($libStat)");
+        }
+    }
+
 
     section('3. Idempotence et retour arrière exact');
     ob_start(); $h1 = DbCopy::allDataHashes($db); ($m54['run'])($db); ($m55['run'])($db); ob_end_clean();

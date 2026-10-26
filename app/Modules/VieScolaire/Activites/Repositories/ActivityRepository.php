@@ -473,6 +473,9 @@ class ActivityRepository
 
     public function statsByAnnee(string $annee): array
     {
+        // Catalogue propre à l'établissement seulement si la colonne existe (base migrée T054) ; sinon catalogue partagé.
+        $tid = \Core\Tenant\TenantScope::id();
+        $filtrerCategories = $tid !== null && \Core\Tenant\TenantScope::colonneEtablissement('vs_activite_categories');
         $stmt = $this->db->prepare("
             SELECT
                 c.nom     AS categorie_nom,
@@ -488,13 +491,12 @@ class ActivityRepository
             FROM vs_activite_categories c
             LEFT JOIN vs_activites a ON a.categorie_id = c.id
                 AND a.annee_scolaire = :annee2 AND a.deleted_at IS NULL
-            WHERE 1 = 1" . (\Core\Tenant\TenantScope::id() === null ? '' : ' AND c.etablissement_id = :tid_scope') . "
+            WHERE 1 = 1" . ($filtrerCategories ? ' AND c.etablissement_id = :tid_scope' : '') . "
             GROUP BY c.id, c.nom, c.couleur
             ORDER BY nb_activites DESC
         ");
-        $tid = \Core\Tenant\TenantScope::id();
-        $params = [':annee' => $annee, ':annee2' => $annee, ':tid' => $tid];
-        if ($tid !== null) { $params[':tid_scope'] = $tid; }
+        $params = [':annee' => $annee, ':annee2' => $annee];
+        if ($filtrerCategories) { $params[':tid_scope'] = $tid; }
         $stmt->execute($params);
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
