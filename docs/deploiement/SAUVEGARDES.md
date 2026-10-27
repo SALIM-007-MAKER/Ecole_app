@@ -63,6 +63,19 @@ Planificateur de tâches Windows) qui pousse une tâche `PlatformBackupJob` (typ
 `MULTI_TENANT_CACHE_QUEUE_IMPLEMENTATION_REPORT.md` pour le détail du mécanisme de
 file d'attente.
 
+### Sauvegarde autonome (recommandée)
+
+`database/backup.php` fait un dump complet (`mysqldump --single-transaction`), contrôle la fin du fichier, applique une rétention et,
+avec `--verify-restore`, restaure le dump dans une base temporaire, compare tables et lignes puis la supprime. **Une sauvegarde n'est
+valide que si cette vérification a réussi.**
+
+```bat
+REM Planificateur de tâches Windows — tous les jours à 02h00
+schtasks /Create /SC DAILY /ST 02:00 /TN "Scolaris sauvegarde" /TR "C:\wamp64\bin\php\php8.2.29\php.exe C:\wamp64\wwwcole_app\database\backup.php --keep=14 --verify-restore"
+```
+
+Copier régulièrement `database/backups/auto_*.sql` hors du serveur. Les dumps manuels (sans préfixe `auto_`) ne sont jamais purgés.
+
 ## 5. Sauvegarde avant migration
 
 Le blueprint prévoit une sauvegarde automatique de type `pre_migration` avant toute

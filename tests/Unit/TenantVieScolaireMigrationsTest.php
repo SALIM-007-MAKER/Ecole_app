@@ -100,6 +100,10 @@ try {
     $db->exec("INSERT INTO vs_absences (eleve_id, classe_id, annee_scolaire, date_absence, saisie_par, statut) VALUES ($EL2, $C2, '2025-2026', '2026-01-12', $U2, 'non_justifiee')"); $abs2 = (int)$db->lastInsertId();
     $motifUtilise = (int)$one("SELECT id FROM vs_motifs_absence WHERE id NOT IN (SELECT motif_id FROM vs_justifications_absences WHERE motif_id IS NOT NULL) ORDER BY id LIMIT 1");   // motif encore inutilisé
     $db->exec("INSERT INTO vs_justifications_absences (absence_id, motif_id, soumis_par) VALUES ($abs2, $motifUtilise, $U2)");
+    // L'incident dont le dossier n'existe pas (anomalie des données réelles) a été archivé puis retiré par T062 : on le recrée sur la copie.
+    if ((int)$one('SELECT COUNT(*) FROM vs_incidents_discipline WHERE categorie_id = 2') === 0) {
+        $db->exec("INSERT INTO vs_incidents_discipline (dossier_id, categorie_id, gravite, description, date_incident, signale_par, statut) VALUES (999999, 2, 'moyen', 'incident orphelin (test)', '2026-07-11', 1, 'ouvert')");
+    }
     $avant = ['schema' => DbCopy::schema($db, $tables), 'data' => DbCopy::allDataHashes($db)];
     $nbSalles = (int)$one('SELECT COUNT(*) FROM vs_edt_salles');
 
