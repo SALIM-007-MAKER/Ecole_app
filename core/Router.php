@@ -52,8 +52,12 @@ class Router
 
     private function pathToRegex(string $path): string
     {
-        // Convertir {param} en groupe de capture nommé
-        $pattern = preg_replace('/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/', '(?P<$1>[^/]+)', $path);
+        // Convertir {param} en groupe de capture nommé. Les identifiants numériques ({id}, {eleveId}, {classeId}…) n'acceptent que des
+        // chiffres : un segment textuel (« generer », « create ») n'est jamais pris pour un identifiant (404 au lieu d'une redirection ou d'une erreur).
+        $pattern = preg_replace_callback('/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/', static function (array $m): string {
+            $numerique = $m[1] === 'id' || preg_match('/[a-z]Id$/', $m[1]) === 1;
+            return '(?P<' . $m[1] . '>' . ($numerique ? '[0-9]+' : '[^/]+') . ')';
+        }, $path);
         return '#^' . $pattern . '$#u';
     }
 

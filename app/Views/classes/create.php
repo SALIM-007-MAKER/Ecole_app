@@ -2,7 +2,7 @@
 $errors  = $errors  ?? [];
 $old     = $old     ?? [];
 $niveaux = $niveaux ?? [];
-$annee   = date('Y') . '-' . (date('Y') + 1);
+$annee   = $annee ?? (date('Y') . '-' . (date('Y') + 1));
 ?>
 
 <!-- Page header -->

@@ -45,7 +45,7 @@ class MatiereModel extends Model
              WHERE m.id = ? AND m.etablissement_id = ?
              GROUP BY m.id",
             [$id, $this->tenantId()]
-        );
+        ) ?: null;
     }
 
     /**

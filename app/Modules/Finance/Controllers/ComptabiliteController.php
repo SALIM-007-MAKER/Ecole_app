@@ -101,7 +101,7 @@ class ComptabiliteController extends Controller
 
         $ecriture = $this->repo->findEcriture($id);
         if (!$ecriture) {
-            $this->redirect('/v2/finance/comptabilite/journal', 'Écriture introuvable.', 'error');
+            $this->redirectAvecMessage('/v2/finance/comptabilite/journal', 'Écriture introuvable.', 'error');
             return;
         }
 
@@ -194,7 +194,7 @@ class ComptabiliteController extends Controller
 
         $exercice = $this->repo->findExercice($id);
         if (!$exercice) {
-            $this->redirect('/v2/finance/comptabilite/exercices', 'Exercice introuvable.', 'error');
+            $this->redirectAvecMessage('/v2/finance/comptabilite/exercices', 'Exercice introuvable.', 'error');
             return;
         }
 
@@ -208,7 +208,7 @@ class ComptabiliteController extends Controller
     {
         $user = $this->currentUser();
         if (!$this->policy->canGererExercice($user)) {
-            $this->redirect('/v2/finance/comptabilite/exercices', 'Permission insuffisante.', 'error');
+            $this->redirectAvecMessage('/v2/finance/comptabilite/exercices', 'Permission insuffisante.', 'error');
             return;
         }
         $this->render('Finance::comptabilite/exercice_form', ['user' => $user, 'errors' => [], 'old' => []]);
@@ -218,7 +218,7 @@ class ComptabiliteController extends Controller
     {
         $user = $this->currentUser();
         if (!$this->policy->canGererExercice($user)) {
-            $this->redirect('/v2/finance/comptabilite/exercices', 'Permission insuffisante.', 'error');
+            $this->redirectAvecMessage('/v2/finance/comptabilite/exercices', 'Permission insuffisante.', 'error');
             return;
         }
         $this->verifyCsrf();
@@ -233,7 +233,7 @@ class ComptabiliteController extends Controller
 
         try {
             $id = $this->service->creerExercice($dto, (int)$user['id']);
-            $this->redirect("/v2/finance/comptabilite/exercices/{$id}", "Exercice créé avec succès.", 'success');
+            $this->redirectAvecMessage("/v2/finance/comptabilite/exercices/{$id}", "Exercice créé avec succès.", 'success');
         } catch (\InvalidArgumentException $e) {
             $this->render('Finance::comptabilite/exercice_form', ['user' => $user, 'errors' => ['general' => $e->getMessage()], 'old' => $_POST]);
         }
@@ -254,7 +254,7 @@ class ComptabiliteController extends Controller
             $redirect = $periode ? "/v2/finance/comptabilite/exercices/{$periode->exercice_id}" : '/v2/finance/comptabilite/exercices';
             $this->redirect($redirect, "Période clôturée avec succès.", 'success');
         } catch (\DomainException $e) {
-            $this->redirect('/v2/finance/comptabilite/exercices', $e->getMessage(), 'error');
+            $this->redirectAvecMessage('/v2/finance/comptabilite/exercices', $e->getMessage(), 'error');
         }
     }
 
@@ -262,16 +262,16 @@ class ComptabiliteController extends Controller
     {
         $user = $this->currentUser();
         if (!$this->policy->canCloturerExercice($user)) {
-            $this->redirect('/v2/finance/comptabilite/exercices', 'Permission insuffisante.', 'error');
+            $this->redirectAvecMessage('/v2/finance/comptabilite/exercices', 'Permission insuffisante.', 'error');
             return;
         }
         $this->verifyCsrf();
 
         try {
             $this->service->cloturerExercice($id, (int)$user['id']);
-            $this->redirect("/v2/finance/comptabilite/exercices/{$id}", "Exercice clôturé avec succès.", 'success');
+            $this->redirectAvecMessage("/v2/finance/comptabilite/exercices/{$id}", "Exercice clôturé avec succès.", 'success');
         } catch (\DomainException $e) {
-            $this->redirect("/v2/finance/comptabilite/exercices/{$id}", $e->getMessage(), 'error');
+            $this->redirectAvecMessage("/v2/finance/comptabilite/exercices/{$id}", $e->getMessage(), 'error');
         }
     }
 
@@ -279,22 +279,29 @@ class ComptabiliteController extends Controller
     {
         $user = $this->currentUser();
         if (!$this->policy->canExtourner($user)) {
-            $this->redirect('/v2/finance/comptabilite/journal', 'Permission insuffisante.', 'error');
+            $this->redirectAvecMessage('/v2/finance/comptabilite/journal', 'Permission insuffisante.', 'error');
             return;
         }
         $this->verifyCsrf();
 
         $motif = trim($_POST['motif'] ?? '');
         if ($motif === '') {
-            $this->redirect("/v2/finance/comptabilite/ecritures/{$id}", 'Le motif d\'extourne est obligatoire.', 'error');
+            $this->redirectAvecMessage("/v2/finance/comptabilite/ecritures/{$id}", 'Le motif d\'extourne est obligatoire.', 'error');
             return;
         }
 
         try {
             $newId = $this->service->extourner($id, $motif, (int)$user['id']);
-            $this->redirect("/v2/finance/comptabilite/ecritures/{$newId}", "Écriture d'extourne #{$newId} créée.", 'success');
+            $this->redirectAvecMessage("/v2/finance/comptabilite/ecritures/{$newId}", "Écriture d'extourne #{$newId} créée.", 'success');
         } catch (\DomainException $e) {
-            $this->redirect("/v2/finance/comptabilite/ecritures/{$id}", $e->getMessage(), 'error');
+            $this->redirectAvecMessage("/v2/finance/comptabilite/ecritures/{$id}", $e->getMessage(), 'error');
         }
+    }
+
+    /** Redirection avec message flash (Controller::redirect() n'accepte qu'une URL et un code HTTP). */
+    private function redirectAvecMessage(string $chemin, string $message, string $type = 'error'): void
+    {
+        \Core\Session::flash($type, $message);
+        $this->redirect(BASE_URL . $chemin);
     }
 }

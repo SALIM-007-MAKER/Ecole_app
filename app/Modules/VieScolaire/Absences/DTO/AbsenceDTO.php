@@ -42,6 +42,9 @@ class AbsenceDTO
         } elseif (!\DateTime::createFromFormat('Y-m-d', $this->dateAbsence)) {
             $errors[] = "Format de date invalide (attendu YYYY-MM-DD).";
         }
+        if (!empty($this->dateAbsence) && $this->dateAbsence > date('Y-m-d')) {
+            $errors[] = "La date d'absence ne peut pas être dans le futur.";
+        }
         if (!in_array($this->type, ['absence', 'retard', 'dispense'], true)) {
             $errors[] = "Type d'absence invalide.";
         }

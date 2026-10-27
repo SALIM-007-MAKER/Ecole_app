@@ -85,6 +85,7 @@ class EleveController extends Controller
 
         $data   = $this->collectFormData();
         $errors = $this->validateEleve($data);
+        $errors = array_merge_recursive($errors, $this->verifierCapacite($data, null));
 
         // Vérifier l'unicité du matricule
         if (!empty($data['matricule']) && $this->eleveModel->matriculeExists($data['matricule'])) {
@@ -181,6 +182,7 @@ class EleveController extends Controller
 
         $data   = $this->collectFormData();
         $errors = $this->validateEleve($data, (int)$id);
+        $errors = array_merge_recursive($errors, $this->verifierCapacite($data, $eleve));
 
         // Vérifier l'unicité du matricule (sauf pour le même élève)
         if (!empty($data['matricule']) && $this->eleveModel->matriculeExists($data['matricule'], (int)$id)) {
@@ -485,6 +487,24 @@ class EleveController extends Controller
             $db['photo'] = $data['photo'];
         }
         return $db;
+    }
+
+    /** Capacité de la classe visée : refus si elle est pleine (sauf si l'élève y est déjà, actif, lors d'une modification). */
+    private function verifierCapacite(array $data, ?object $existant): array
+    {
+        if (empty($data['classe_id']) || empty($data['actif'])) {
+            return [];
+        }
+        $classeId = (int)$data['classe_id'];
+        if ($existant && (int)($existant->classe_id ?? 0) === $classeId && (int)($existant->actif ?? 0) === 1) {
+            return [];
+        }
+        $places = $this->classeModel->placesRestantes($classeId, $existant ? (int)$existant->id : null);
+        if ($places !== null && $places <= 0) {
+            $classe = $this->classeModel->findById($classeId);
+            return ['classe_id' => ["Capacité maximale (" . (int)$classe->max_eleves . " élèves) atteinte pour cette classe."]];
+        }
+        return [];
     }
 
     /** Comptes de rôle « élève » de l'établissement qui ne sont rattachés à aucune fiche (plus celui de la fiche en cours de modification). */

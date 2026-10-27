@@ -42,7 +42,7 @@ class PeriodeController extends Controller
         $user       = $this->currentUser();
 
         $couverture = null;
-        if (!empty($filters->anneeScolaire)) {
+        if (!empty($filters->anneeScolaire) && preg_match('/^\d{4}-\d{4}$/', (string)$filters->anneeScolaire)) {   // format invalide : pas de contrôle de couverture
             $couverture = $this->service->verifierCouverture($filters->anneeScolaire);
         }
 

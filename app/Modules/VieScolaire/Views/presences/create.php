@@ -45,7 +45,7 @@ $csrfToken = \Core\Session::getCsrfToken();
                     <option value="">Choisir une classe…</option>
                     <?php foreach ($classes as $c): ?>
                     <option value="<?= $c->id ?>" <?= ($old['classe_id'] ?? '') == $c->id ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($c->nom, ENT_QUOTES) ?>
+                        <?= htmlspecialchars($c->label, ENT_QUOTES) ?>
                     </option>
                     <?php endforeach; ?>
                 </select>
@@ -82,8 +82,8 @@ $csrfToken = \Core\Session::getCsrfToken();
                         class="w-full rounded-lg border border-slate-200 text-sm px-3 py-2 bg-white focus:ring-2 focus:ring-violet-300 focus:outline-none <?= isset($errors['matiere_id']) ? 'border-red-400' : '' ?>">
                     <option value="">-- Choisir une matière --</option>
                     <?php foreach ($matieres as $m): ?>
-                    <option value="<?= $m['id'] ?>" <?= ($old['matiere_id'] ?? '') == $m['id'] ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($m['nom'], ENT_QUOTES) ?>
+                    <option value="<?= $m->id ?>" <?= ($old['matiere_id'] ?? '') == $m->id ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($m->label, ENT_QUOTES) ?>
                     </option>
                     <?php endforeach; ?>
                 </select>

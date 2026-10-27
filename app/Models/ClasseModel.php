@@ -82,7 +82,7 @@ class ClasseModel extends Model
              WHERE c.id = ? AND c.etablissement_id = ?
              GROUP BY c.id",
             [$id, $this->tenantId()]
-        );
+        ) ?: null;
     }
 
     public function getEleves(int $classeId): array
@@ -94,6 +94,33 @@ class ClasseModel extends Model
              ORDER BY e.nom, e.prenom",
             [$classeId, $this->tenantId()]
         );
+    }
+
+    /**
+     * Places restantes dans la classe d'après sa capacité (max_eleves) et ses élèves ACTIFS ; null = pas de limite (capacité ≤ 0 ou classe
+     * introuvable). $exceptEleveId : élève à ne pas compter (celui dont on modifie la fiche).
+     */
+    /** Une autre classe de l'établissement porte-t-elle déjà ce nom pour ce niveau et cette année ? (clé unique uq_classe_nom_niveau_annee) */
+    public function existeDoublon(string $nom, string $niveau, string $annee, ?int $exceptId = null): bool
+    {
+        $r = $this->queryOne(
+            'SELECT id FROM `classes` WHERE etablissement_id = ? AND nom = ? AND niveau = ? AND annee_scolaire = ? AND id <> ? LIMIT 1',
+            [$this->tenantId(), $nom, $niveau, $annee, $exceptId ?? 0]
+        );
+        return (bool)$r;
+    }
+
+    public function placesRestantes(int $classeId, ?int $exceptEleveId = null): ?int
+    {
+        $classe = $this->findById($classeId);
+        if (!$classe || (int)$classe->max_eleves <= 0) {
+            return null;
+        }
+        $row = $this->queryOne(
+            'SELECT COUNT(*) AS n FROM `eleves` WHERE classe_id = ? AND actif = 1 AND etablissement_id = ?' . ($exceptEleveId ? ' AND id <> ' . (int)$exceptEleveId : ''),
+            [$classeId, $this->tenantId()]
+        );
+        return (int)$classe->max_eleves - (int)($row->n ?? 0);
     }
 
     public function getElevesDisponibles(int $classeId): array

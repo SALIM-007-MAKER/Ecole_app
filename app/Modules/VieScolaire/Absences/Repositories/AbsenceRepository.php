@@ -71,6 +71,15 @@ class AbsenceRepository
         return (int)$stmt->fetchColumn();
     }
 
+    /** Classe actuelle de l'élève dans l'établissement courant (null si l'élève est introuvable ou sans classe). */
+    public function classeDeLEleve(int $eleveId): ?int
+    {
+        $stmt = $this->pdo->prepare('SELECT classe_id FROM eleves WHERE id = ? AND ' . \Core\Tenant\TenantScope::sqlEtab('eleves', 'etablissement_id'));
+        $stmt->execute([$eleveId]);
+        $v = $stmt->fetchColumn();
+        return ($v === false || $v === null) ? null : (int)$v;
+    }
+
     public function findByEleveAndDate(int $eleveId, string $date): array
     {
         $stmt = $this->pdo->prepare(

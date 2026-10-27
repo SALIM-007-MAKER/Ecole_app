@@ -235,7 +235,11 @@ check(!$ep->canDeverrouiller($ens, $evCv) && $ep->canDeverrouiller($sansAdmin($a
     $http('admin', $ADMIN, 'POST', "/v2/academique/notes/$nC1/delete");
     check($note($brC, 1) === false, 'G8 admin : suppression d\'une note de Conduite acceptée (conduite.manage)');
     $http('admin', $ADMIN, 'POST', "/v2/academique/notes/$nO1/delete");
-    check($note($brO, 1) !== false, 'G8 admin : suppression d\'une note ordinaire inchangée (notes.admin absent du palier actif) — témoin');
+    // Témoin dépendant du palier RBAC actif : avant T059, `academique.notes.admin` est absent du rôle admin (suppression d'une note ordinaire
+    // inchangée) ; depuis T059, il est accordé (config/permissions.php) et la suppression est acceptée. Dans les deux cas la règle de la Conduite
+    // (conduite.manage) est indépendante de ce droit.
+    $notesAdmin = (int)$one("SELECT COUNT(*) FROM etab_role_permissions rp JOIN etab_roles r ON r.id = rp.role_id JOIN etab_permissions p ON p.id = rp.permission_id WHERE r.code = 'admin' AND p.code = 'academique.notes.admin'") > 0;
+    check($notesAdmin ? ($note($brO, 1) === false) : ($note($brO, 1) !== false), $notesAdmin ? 'G8 admin : suppression d\'une note ordinaire acceptée (notes.admin accordé par T059) — témoin' : 'G8 admin : suppression d\'une note ordinaire inchangée (notes.admin absent du palier actif) — témoin');
     $db->exec("DELETE FROM notes_v2 WHERE evaluation_id = $brC");
     $db->exec("UPDATE evaluations SET statut = 'publiee' WHERE id = $brC");
     $http('enseignant', $ENS, 'POST', "/v2/academique/evaluations/$brC/archiver");

@@ -68,6 +68,25 @@ class AbsenceService
             throw new \InvalidArgumentException(implode(' | ', $errors));
         }
 
+        // Cohérence élève ↔ classe : l'absence est rattachée à la classe ACTUELLE de l'élève
+        $classeEleve = $this->repo->classeDeLEleve($dto->eleveId);
+        if ($classeEleve === null || $classeEleve !== $classeId) {
+            throw new \InvalidArgumentException("L'élève n'appartient pas à cette classe.");
+        }
+
+        // Doublon : même élève, même jour, même type, plages horaires identiques ou qui se chevauchent (une absence sans horaire couvre la journée)
+        foreach ($this->repo->findByEleveAndDate($dto->eleveId, $dto->dateAbsence) as $existante) {
+            if (($existante['type'] ?? '') !== $dto->type) {
+                continue;
+            }
+            $d1 = $existante['heure_debut'] ?? null; $f1 = $existante['heure_fin'] ?? null;
+            $d2 = $dto->heureDebut;                  $f2 = $dto->heureFin;
+            $journee = ($d1 === null || $f1 === null || $d2 === null || $f2 === null);
+            if ($journee || (strtotime((string)$d2) < strtotime((string)$f1) && strtotime((string)$d1) < strtotime((string)$f2))) {
+                throw new \InvalidArgumentException("Une absence identique ou qui se chevauche est déjà enregistrée pour cet élève à cette date.");
+            }
+        }
+
         $data = array_merge($dto->toArray(), [
             'classe_id'      => $classeId,
             'annee_scolaire' => $anneeScolaire,

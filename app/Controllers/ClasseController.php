@@ -66,6 +66,7 @@ class ClasseController extends Controller
         $this->render('classes/create', [
             'title'   => 'Nouvelle classe',
             'niveaux' => ClasseModel::NIVEAUX,
+            'annee'   => \App\Services\AnneeScolaireActive::pour(),   // année active des Paramètres
             'errors'  => Session::getFlash('errors', []),
             'old'     => Session::getFlash('old', []),
         ]);
@@ -166,7 +167,7 @@ class ClasseController extends Controller
         }
 
         $data   = $this->collectFormData();
-        $errors = $this->validateClasse($data);
+        $errors = $this->validateClasse($data, (int)$id);
 
         if (!empty($errors)) {
             Session::flash('errors', $errors);
@@ -224,9 +225,9 @@ class ClasseController extends Controller
 
         if ($classe && $eleve) {
             $maxEleves = (int)$classe->max_eleves;
-            $nbActuels = count($this->classeModel->getEleves($classeId));
+            $places    = $this->classeModel->placesRestantes($classeId, $eleveId);   // élèves actifs seulement, hors l'élève concerné
 
-            if ($maxEleves > 0 && $nbActuels >= $maxEleves) {
+            if ($places !== null && $places <= 0 && !((int)$eleve->classe_id === $classeId)) {
                 Session::flash('error', "Capacité maximale ({$maxEleves} élèves) atteinte pour cette classe.");
             } else {
                 $this->eleveModel->update($eleveId, ['classe_id' => $classeId]);
@@ -318,7 +319,7 @@ class ClasseController extends Controller
         ];
     }
 
-    private function validateClasse(array $data): array
+    private function validateClasse(array $data, ?int $exceptId = null): array
     {
         $errors = [];
 
@@ -340,6 +341,11 @@ class ClasseController extends Controller
 
         if ($data['max_eleves'] < 1 || $data['max_eleves'] > 100) {
             $errors['max_eleves'][] = 'La capacité doit être entre 1 et 100.';
+        }
+
+        if (empty($errors['nom']) && empty($errors['niveau']) && empty($errors['annee_scolaire'])
+            && $this->classeModel->existeDoublon($data['nom'], $data['niveau'], $data['annee_scolaire'], $exceptId)) {
+            $errors['nom'][] = 'Une classe « ' . $data['niveau'] . ' ' . $data['nom'] . ' » existe déjà pour l\'année ' . $data['annee_scolaire'] . '.';
         }
 
         return $errors;
