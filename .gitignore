@@ -15,6 +15,7 @@ database/backups/
 # Fichiers uploadés par les utilisateurs
 public/uploads/*
 !public/uploads/.gitkeep
+!public/uploads/.htaccess
 
 # Logs
 *.log

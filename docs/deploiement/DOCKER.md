@@ -3,7 +3,7 @@
 > **Statut** : `Dockerfile`, `docker-compose.yml` et `.dockerignore` existent à
 > la racine du dépôt et sont **vérifiés de bout en bout** (21/08/2026) — build,
 > démarrage avec MySQL, import d'un snapshot de base, migrations, et appel
-> réel à `/api/v1/health` (`{"status":"healthy","database":"ok"}`) dans un
+> réel à `/health` (`{"status":"healthy","database":"ok"}`) dans un
 > conteneur vide. Ce document ne recopie plus leur contenu (pour éviter qu'ils
 > divergent) — il documente les pièges déjà rencontrés et donne la marche à
 > suivre pour un déploiement réel.
@@ -36,7 +36,7 @@ vide) :
 ```bash
 docker compose exec -T db mysql -uroot -p"$DB_ROOT_PASSWORD" ecole_app < snapshot.sql
 docker compose exec app php database/migrate.php
-curl http://localhost:8080/api/v1/health
+curl http://localhost:8080/health
 ```
 
 ## 3. Points de vigilance spécifiques à ce projet
@@ -98,7 +98,7 @@ géré.
 6. **Domaine** : Railway fournit un sous-domaine `*.up.railway.app`
    gratuitement (*Settings → Networking → Generate Domain*) ; un domaine
    personnalisé peut être attaché ensuite.
-7. **Vérification** : `curl https://<domaine>/api/v1/health`, puis `/login`.
+7. **Vérification** : `curl https://<domaine>/health`, puis `/login`.
 
 ## 5. Documents associés
 

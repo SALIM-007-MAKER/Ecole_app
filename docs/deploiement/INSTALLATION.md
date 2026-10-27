@@ -54,7 +54,12 @@ DB_PASSWORD=...
 > sur une base vide échoue sur ~36 migrations (tables référencées
 > introuvables).
 
-**Chemin recommandé, vérifié de bout en bout (conteneur Docker vide → appli
+**Chemin le plus simple — schéma de référence versionné** : `database/schema/ecole_app_schema_v2.0.0_T062.sql`
+(structure complète + rôles/permissions RBAC + journal des migrations, sans donnée personnelle ni compte), à importer dans une base
+**vide** ; `php database/migrate.php` applique ensuite uniquement les migrations postérieures (T051 à T058 à la date de rédaction).
+Le premier établissement et le premier compte administrateur doivent encore être créés (voir §7) : le fichier n'en contient pas.
+
+**Autre chemin, vérifié de bout en bout (conteneur Docker vide → appli
 fonctionnelle)** : partir d'un export complet d'un environnement déjà à jour
 plutôt que de rejouer l'historique SQL.
 
@@ -115,8 +120,8 @@ votre propre compte administrateur puis désactivez celui-ci.
 ## 8. Vérification de l'installation
 
 ```bash
-curl https://votre-domaine.tld/api/v1/health
-# Attendu : {"success":true,"data":{"status":"healthy",...}}
+curl https://votre-domaine.tld/health
+# Attendu : {"status":"healthy","database":"ok"} (HTTP 200 ; 503 si la base est injoignable)
 ```
 
 Puis connectez-vous via `/login` et vérifiez le tableau de bord.

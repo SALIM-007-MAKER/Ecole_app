@@ -645,5 +645,26 @@ function debounce(fn, delay = 300) {
 function openModal(id)  { EcoleApp.openModal(id);  }
 function closeModal(id) { EcoleApp.closeModal(id); }
 
+// Déconnexion : les pages mises en cache (listes d'élèves, factures, notes…) ne doivent pas survivre à la session sur un poste partagé.
+document.addEventListener('submit', (e) => {
+    const f = e.target;
+    if (f && f.tagName === 'FORM' && /\/logout\/?$/.test(f.getAttribute('action') || '')) {
+        try { navigator.serviceWorker?.controller?.postMessage({ type: 'CLEAR_CACHE' }); } catch (_) { /* hors ligne ou SW absent : sans effet */ }
+        if (window.caches) { caches.keys().then((ks) => ks.forEach((k) => caches.delete(k))).catch(() => {}); }
+    }
+}, true);
+
+// Accessibilité : champs sans étiquette programmatique → nom accessible déduit du libellé voisin, du placeholder ou du nom du champ.
+function nommerChampsSansEtiquette(racine = document) {
+    racine.querySelectorAll('input:not([type=hidden]):not([type=submit]):not([type=button]):not([type=checkbox]):not([type=radio]), select, textarea').forEach((el) => {
+        if ((el.labels && el.labels.length) || el.getAttribute('aria-label') || el.getAttribute('aria-labelledby') || el.title) return;
+        const proche = el.closest('div, td, th, p, li');
+        const lib = proche ? proche.querySelector('label') : null;
+        const nom = (lib && lib.textContent.trim()) || el.getAttribute('placeholder') || (el.name || el.id || '').replace(/[_\[\]-]+/g, ' ').trim();
+        if (nom) el.setAttribute('aria-label', nom.replace(/\s*\*\s*$/, ''));
+    });
+}
+document.addEventListener('DOMContentLoaded', () => nommerChampsSansEtiquette());
+
 // ─── Lancement ───────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => EcoleApp.init());

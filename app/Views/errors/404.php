@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>404 — Page introuvable</title>
 <?php
-$__logoPng = $_SERVER['DOCUMENT_ROOT'] . '/ecole_app/public/assets/img/edunova-logo.png';
-$__logoSvg = $_SERVER['DOCUMENT_ROOT'] . '/ecole_app/public/assets/img/edunova-logo.svg';
+$__logoPng = ROOT_PATH . '/public/assets/img/edunova-logo.png';
+$__logoSvg = ROOT_PATH . '/public/assets/img/edunova-logo.svg';
 $__brandWeb = file_exists($__logoSvg) ? '/assets/img/edunova-logo.svg' : '/assets/img/edunova-logo.png';
 $__base = defined('BASE_URL') ? BASE_URL : '';
 ?>

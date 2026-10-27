@@ -24,7 +24,7 @@ $fmtMontant = fn(float $v): string => number_format($v, 0, ',', ' ') . ' XOF';
                 <i data-lucide="file-text" class="w-5 h-5 text-violet-600"></i>
             </div>
             <div>
-                <h1 class="text-2xl font-bold text-slate-800">Factures</h1>
+                <h2 class="text-2xl font-bold text-slate-800">Factures</h2>
                 <p class="text-sm text-slate-500 mt-0.5"><?= $result['total'] ?> facture(s) trouvée(s)</p>
             </div>
         </div>

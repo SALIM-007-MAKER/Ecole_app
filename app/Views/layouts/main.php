@@ -109,7 +109,7 @@ $pageTitle = htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8');
     </script>
 
     <!-- Design System — chargé APRÈS Tailwind pour avoir priorité -->
-    <?php $cssV = @filemtime($_SERVER['DOCUMENT_ROOT'] . '/ecole_app/public/assets/css/app.css') ?: '1'; ?>
+    <?php $cssV = @filemtime(ROOT_PATH . '/public/assets/css/app.css') ?: '1'; ?>
     <link href="<?= BASE_URL ?>/assets/css/app.css?v=<?= $cssV ?>" rel="stylesheet">
 
     <!-- Branding tenant — couleurs (Phase 14.5, blueprint §10.1/§10.2) -->

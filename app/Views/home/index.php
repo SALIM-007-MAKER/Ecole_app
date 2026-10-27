@@ -6,8 +6,8 @@
     <title>EduNova — Gestion scolaire</title>
     <meta name="theme-color" content="#7c3aed">
     <?php
-    $__logoPng = $_SERVER['DOCUMENT_ROOT'] . '/ecole_app/public/assets/img/edunova-logo.png';
-    $__logoSvg = $_SERVER['DOCUMENT_ROOT'] . '/ecole_app/public/assets/img/edunova-logo.svg';
+    $__logoPng = ROOT_PATH . '/public/assets/img/edunova-logo.png';
+    $__logoSvg = ROOT_PATH . '/public/assets/img/edunova-logo.svg';
     $__brandWeb = file_exists($__logoSvg) ? '/assets/img/edunova-logo.svg' : '/assets/img/edunova-logo.png';
     ?>
     <link rel="icon" href="<?= BASE_URL ?><?= $__brandWeb ?>">

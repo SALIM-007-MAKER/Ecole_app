@@ -14,7 +14,7 @@
    ```
    Idempotent — les migrations déjà appliquées (table `migrations_log`) sont
    ignorées automatiquement.
-4. Vérifier : `curl https://votre-domaine/api/v1/health`, puis un contrôle
+4. Vérifier : `curl https://votre-domaine/health`, puis un contrôle
    fonctionnel des écrans principaux.
 5. En cas de problème : restaurer la sauvegarde préalable
    (`docs/deploiement/RESTAURATION.md`) et revenir au code précédent.
@@ -61,6 +61,23 @@ bascule contrôlée, pas comme une simple mise à jour de routine.
 # la clé 'rollback' du fichier de migration concerné via un script ad hoc,
 # ou restaurer la sauvegarde pre-migration (méthode recommandée).
 ```
+
+## 5 bis. Retour à une version précédente (code + base)
+
+À préparer AVANT toute mise à jour — la version cible d'un retour arrière doit exister avant d'en avoir besoin :
+
+1. **Figer la version en production** : `git tag -a prod-AAAAMMJJ -m "Version en production avant mise à jour"` (et la noter dans le journal d'exploitation).
+2. **Sauvegarder et vérifier** : `php database/backup.php --verify-restore` (une sauvegarde n'est valide que si la restauration de contrôle réussit).
+3. **Mettre à jour** (code puis `php database/migrate.php`).
+
+Retour arrière si le contrôle `/health` ou les parcours métier échouent :
+
+1. Mettre l'application en maintenance (ou couper l'accès web).
+2. **Code** : `git checkout prod-AAAAMMJJ` (ou redéployer l'image/l'archive précédente).
+3. **Base** : si des migrations ont été appliquées depuis, restaurer la sauvegarde de l'étape 2 (`docs/deploiement/RESTAURATION.md`) — méthode recommandée.
+   Pour une migration réversible seulement, exécuter sa clé `rollback` ; les migrations sans `rollback` (M001, M002, P001, T037–T041) ou marquées
+   `reversible=false` (T031) ne se retirent que par restauration.
+4. Vérifier : `curl https://votre-domaine/health`, puis connexion et un parcours métier. Consigner l'incident.
 
 ## 6. Documents associés
 

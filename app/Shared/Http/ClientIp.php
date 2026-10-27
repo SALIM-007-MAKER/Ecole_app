@@ -53,6 +53,28 @@ final class ClientIp
         return $remote;                           // toute la chaîne est constituée de proxys connus
     }
 
+    /**
+     * La requête a-t-elle été faite en HTTPS ? Directement (HTTPS), ou via un proxy de confiance qui termine le TLS
+     * (X-Forwarded-Proto: https, lu seulement si REMOTE_ADDR figure dans TRUSTED_PROXIES).
+     *
+     * @param array<string,mixed> $server
+     * @param string[]            $trusted
+     */
+    public static function isHttps(array $server, array $trusted = []): bool
+    {
+        $https = strtolower((string)($server['HTTPS'] ?? ''));
+        if ($https !== '' && $https !== 'off') {
+            return true;
+        }
+        $remote  = self::normalize((string)($server['REMOTE_ADDR'] ?? ''));
+        $trusted = array_values(array_filter($trusted, [self::class, 'isAcceptableRule']));
+        if ($remote === null || $trusted === [] || !self::inList($remote, $trusted)) {
+            return false;
+        }
+        $proto = strtolower(trim(explode(',', (string)($server['HTTP_X_FORWARDED_PROTO'] ?? ''))[0]));
+        return $proto === 'https';
+    }
+
     /** Liste des proxys de confiance depuis TRUSTED_PROXIES ($_ENV puis getenv()). */
     public static function trustedFromEnvironment(?array $env = null): array
     {

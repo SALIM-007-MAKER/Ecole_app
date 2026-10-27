@@ -12,6 +12,7 @@ $router->get('/dashboard', 'HomeController@dashboard');
 $router->get('/uploads/serve/{type}/{filename}', 'UploadController@serve');
 
 // ─── Authentification ─────────────────────────────────────────────────────────
+$router->get('/health',    'HealthController@index');   // contrôle de santé (sans authentification, sans donnée sensible)
 $router->get('/login',     'AuthController@showLogin');
 $router->post('/login',    'AuthController@login');
 $router->post('/logout',   'AuthController@logout');

@@ -36,10 +36,10 @@ function buildQuery(array $base, array $override = []): string {
         <?php endif; ?>
         <?php if (ep($perms,'eleves.view')): ?>
         <a href="<?= BASE_URL ?>/eleves/export/excel<?= buildQuery($filters) ?>" class="btn btn-ghost">
-            <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600"></i>Excel
+            <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600"></i>Excel (CSV)
         </a>
         <a href="<?= BASE_URL ?>/eleves/export/pdf<?= buildQuery($filters) ?>" class="btn btn-ghost" target="_blank">
-            <i data-lucide="file-text" class="w-4 h-4 text-red-500"></i>PDF
+            <i data-lucide="file-text" class="w-4 h-4 text-red-500"></i>Imprimer / PDF
         </a>
         <?php endif; ?>
     </div>

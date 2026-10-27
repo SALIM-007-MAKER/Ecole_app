@@ -37,7 +37,7 @@ $f = fn($n) => number_format((float)$n, 0, ',', ' ');
         </select>
         <a href="<?= BASE_URL ?>/rapports/export/pdf?annee=<?= urlencode($annee) ?>&periode_id=<?= (int)$periodeId ?>"
            class="btn btn-outline text-red-600 border-red-200 hover:bg-red-50" target="_blank">
-            <i data-lucide="file-text" class="w-4 h-4"></i>PDF
+            <i data-lucide="file-text" class="w-4 h-4"></i>Imprimer / PDF
         </a>
     </form>
 </div>

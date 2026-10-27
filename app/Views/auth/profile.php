@@ -203,7 +203,7 @@ $roleLabel = UserModel::roleLabel($role);
                                    autocomplete="new-password">
                             <button type="button"
                                     class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                                    onclick="toggleVis('new_password')">
+                                    onclick="toggleVis('new_password')" aria-label="Afficher ou masquer le mot de passe">
                                 <i data-lucide="eye" class="w-3.5 h-3.5"></i>
                             </button>
                         </div>

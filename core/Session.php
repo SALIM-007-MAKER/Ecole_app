@@ -25,7 +25,7 @@ class Session
         session_set_cookie_params([
             'lifetime' => 0,          // Cookie de session (supprimé à la fermeture du navigateur)
             'path'     => $basePath,  // Limité au répertoire de l'app
-            'secure'   => isset($_SERVER['HTTPS']),
+            'secure'   => \App\Shared\Http\ClientIp::isHttps($_SERVER, \App\Shared\Http\ClientIp::trustedFromEnvironment()),   // aussi derrière un proxy de confiance
             'httponly' => true,
             'samesite' => 'Strict',
         ]);

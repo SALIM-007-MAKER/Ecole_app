@@ -48,7 +48,7 @@ git fetch && git checkout v2.x.x
 # 3. Appliquer les migrations (idempotent)
 php database/migrate.php
 # 4. Vérifier
-curl https://votre-domaine/api/v1/health
+curl https://votre-domaine/health
 ```
 
 Détail, y compris activation d'un module actuellement désactivé :

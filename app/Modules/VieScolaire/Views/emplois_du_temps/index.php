@@ -5,7 +5,7 @@
   <!-- En-tête -->
   <div class="flex items-center justify-between">
     <div>
-      <h1 class="text-2xl font-bold text-slate-800">Emplois du temps</h1>
+      <h2 class="text-2xl font-bold text-slate-800">Emplois du temps</h2>
       <p class="text-slate-500 text-sm mt-1">Planification hebdomadaire par classe</p>
     </div>
     <?php if (in_array('timetable.create', $user['permissions'] ?? [])): ?>

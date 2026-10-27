@@ -27,7 +27,7 @@ const CACHE_PAGES  = `ecole-pages-${CACHE_VER}`;  // Pages HTML PHP (Network Fir
 const CACHE_IMAGES = `ecole-images-${CACHE_VER}`; // Images uploadées
 const CACHE_SHELL  = `ecole-shell-${CACHE_VER}`;  // App Shell hors-ligne
 
-const BASE        = '/ecole_app';
+const BASE        = new URL('./', self.location.href).pathname.replace(/\/$/, '');   // dossier d'installation, déduit de l'URL du service worker
 const OFFLINE_URL = `${BASE}/offline.html`;
 const NF_TIMEOUT  = 5000; // ms — Network First : timeout avant fallback cache
 
@@ -337,7 +337,7 @@ self.addEventListener('notificationclick', event => {
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then(cs => {
             for (const c of cs) {
-                if (c.url.includes('/ecole_app/') && 'focus' in c) {
+                if (c.url.includes(BASE + '/') && 'focus' in c) {
                     c.navigate(url);
                     return c.focus();
                 }
