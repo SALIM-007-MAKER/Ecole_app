@@ -8,6 +8,13 @@
  *   --verify-restore  restaure le dump dans une base temporaire « <base>_verif_<hex> », compare tables / lignes, puis la supprime
  *
  * Fichiers : database/backups/auto_<base>_AAAAMMJJ_HHMMSS.sql (dossier ignoré par git). Code de sortie ≠ 0 en cas d'échec.
+ * Ce que fait --verify-restore : crée une base TEMPORAIRE « <base>_verif_<hex> » sur le même serveur MySQL, y rejoue le dump, compare le nombre de
+ * tables et le nombre de lignes de CHAQUE table avec la base source, puis supprime la base temporaire (y compris en cas d'échec).
+ * Limites : comparaison par comptage (pas de somme de contrôle du contenu) ; le dump est du SQL en clair, NON chiffré ; une écriture survenue
+ * pendant la sauvegarde peut provoquer un écart de comptage (relancer). La base source n'est qu'en lecture (--single-transaction).
+ *
+ * Variables (facultatives) : MYSQLDUMP_BIN, MYSQL_BIN (chemins des clients) ; BACKUP_DB + BACKUP_DIR réservées aux tests (BACKUP_DB doit être
+ * une copie jetable ecole_app_copy_*).
  * Une sauvegarde n'est considérée valide que si --verify-restore a réussi.
  */
 
@@ -24,12 +31,19 @@ if (is_file(ROOT_PATH . '/.env')) {
 }
 $host = $env['DB_HOST'] ?? '127.0.0.1'; $port = $env['DB_PORT'] ?? '3306'; $db = $env['DB_DATABASE'] ?? 'ecole_app';
 $user = $env['DB_USERNAME'] ?? 'root'; $pass = $env['DB_PASSWORD'] ?? '';
+$cible = getenv('BACKUP_DB');
+if ($cible !== false && $cible !== '') {
+    if (!preg_match('/^ecole_app_copy_[a-f0-9]+$/', $cible)) { fwrite(STDERR, "REFUS : BACKUP_DB doit être une copie jetable ecole_app_copy_*\n"); exit(2); }
+    $db = $cible;
+}
 $keep = 14; $verify = in_array('--verify-restore', $argv, true);
 foreach ($argv as $a) if (preg_match('/^--keep=(\d+)$/', $a, $m)) $keep = max(1, (int)$m[1]);
 
 function fail(string $m): never { fwrite(STDERR, "ECHEC : $m\n"); exit(1); }
 function bin(string $name): string
 {
+    $force = getenv($name === 'mysqldump' ? 'MYSQLDUMP_BIN' : 'MYSQL_BIN');
+    if ($force !== false && $force !== '') return $force;
     foreach (glob('C:/wamp64/bin/mysql/*/bin/' . $name . '.exe') ?: [] as $p) return $p;
     return $name;   // dans le PATH (Linux / conteneur)
 }
@@ -44,7 +58,7 @@ function run(array $cmd, ?string $in = null, ?string $out = null, array $env = [
     return proc_close($p);
 }
 
-$dir = ROOT_PATH . '/database/backups';
+$dir = (getenv('BACKUP_DB') && getenv('BACKUP_DIR')) ? rtrim((string)getenv('BACKUP_DIR'), '/\\') : ROOT_PATH . '/database/backups';
 if (!is_dir($dir) && !mkdir($dir, 0775, true)) fail('dossier de sauvegarde non créable');
 $file = sprintf('%s/auto_%s_%s.sql', $dir, $db, date('Ymd_His'));
 $auth = ["--host=$host", "--port=$port", "--user=$user"];
@@ -60,10 +74,10 @@ echo 'Sauvegarde : ' . basename($file) . ' (' . round(filesize($file) / 1024) . 
 if ($verify) {
     $tmp = $db . '_verif_' . bin2hex(random_bytes(4));
     $pdo = new PDO("mysql:host=$host;port=$port;charset=utf8mb4", $user, $pass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-    $ok = false;
+    $ok = false; $erreur = null;
     try {
         $pdo->exec("CREATE DATABASE `$tmp` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-        if (run(array_merge([bin('mysql')], $auth, ['--default-character-set=utf8mb4', $tmp]), $file, null, $penv) !== 0) fail('restauration de contrôle impossible');
+        if (run(array_merge([bin('mysql')], $auth, ['--default-character-set=utf8mb4', $tmp]), $file, null, $penv) !== 0) throw new RuntimeException('restauration de contrôle impossible');
         $ts = $pdo->query("SELECT table_name FROM information_schema.tables WHERE table_schema='$db' AND table_type='BASE TABLE'")->fetchAll(PDO::FETCH_COLUMN);
         $bad = [];
         foreach ($ts as $t) {
@@ -73,12 +87,20 @@ if ($verify) {
         $nt = (int)$pdo->query("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$tmp' AND table_type='BASE TABLE'")->fetchColumn();
         $ok = $nt === count($ts) && !$bad;
         echo "Restauration de contrôle : $nt/" . count($ts) . ' tables' . ($bad ? ', écarts : ' . implode(', ', $bad) : ', lignes identiques') . "\n";
+    } catch (Throwable $e) {
+        $erreur = $e->getMessage();
     } finally {
-        if (preg_match('/^' . preg_quote($db, '/') . '_verif_[0-9a-f]{8}$/', $tmp)) $pdo->exec("DROP DATABASE IF EXISTS `$tmp`");
+        if (preg_match('/^' . preg_quote($db, '/') . '_verif_[0-9a-f]{8}$/', $tmp)) $pdo->exec("DROP DATABASE IF EXISTS `$tmp`");   // toujours exécuté : plus de base temporaire orpheline
     }
-    if (!$ok) fail('la sauvegarde n\'est PAS validée (voir ci-dessus)');
+    if ($erreur !== null || !$ok) {
+        // Un dump non validé ne doit jamais être pris pour une sauvegarde valable ni évincer une sauvegarde validée lors de la purge.
+        $invalide = preg_replace('/\.sql$/', '.NON_VALIDE.sql', $file);
+        @rename($file, $invalide);
+        fail('la sauvegarde n\'est PAS validée' . ($erreur !== null ? " : $erreur" : ' (voir ci-dessus)') . ' — fichier renommé ' . basename($invalide));
+    }
     echo "Sauvegarde validée par restauration.\n";
 }
 
-$auto = glob($dir . '/auto_' . $db . '_*.sql') ?: []; rsort($auto);
+// Les dumps « .NON_VALIDE.sql » ne sont ni comptés ni supprimés : ils ne doivent jamais évincer une sauvegarde valide.
+$auto = array_values(array_filter(glob($dir . '/auto_' . $db . '_*.sql') ?: [], fn($p) => !str_contains(basename($p), '.NON_VALIDE.'))); rsort($auto);
 foreach (array_slice($auto, $keep) as $old) { @unlink($old); echo 'Purge : ' . basename($old) . "\n"; }

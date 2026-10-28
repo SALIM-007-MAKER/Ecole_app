@@ -94,3 +94,17 @@ une reprise après sinistre complet (voir `docs/deploiement/RESTAURATION.md`).
 ## 7. Documents associés
 
 `docs/deploiement/RESTAURATION.md`, `docs/technique/MULTI_TENANT.md` §8.
+
+### Ce que fait réellement `backup.php --verify-restore` (vérifié par tests/Unit/BackupScriptTest.php)
+
+1. `mysqldump --single-transaction --routines --triggers` de la base : **lecture seule**, sans verrou sur les tables InnoDB ; l'application peut continuer à tourner.
+2. Contrôle que le fichier se termine par « Dump completed » (dump non tronqué).
+3. Crée une base **temporaire** `<base>_verif_<hex>` sur le même serveur, y rejoue le dump, compare le **nombre de tables et le nombre de lignes de chaque table**
+   avec la base source, puis supprime la base temporaire — **y compris en cas d'échec**.
+4. Si la vérification échoue, le fichier est renommé `.NON_VALIDE.sql` (jamais pris pour une sauvegarde valable, jamais compté ni supprimé par la purge).
+5. Purge : conserve les `--keep=N` dernières sauvegardes `auto_<base>_*.sql` valides ; ne touche ni aux sauvegardes manuelles ni à celles d'une autre base.
+
+Limites à connaître : comparaison par **comptage** (pas de somme de contrôle du contenu — le test automatisé, lui, compare `CHECKSUM TABLE` table par table) ;
+le dump est du **SQL en clair, non chiffré** (contient des données personnelles : droits restreints, chiffrement et copie hors site avant tout transfert) ;
+une écriture survenue pendant la sauvegarde peut provoquer un écart de comptage (relancer) ; la base temporaire exige les droits CREATE/DROP DATABASE.
+Sur une base réelle, la commande crée donc temporairement une seconde copie complète des données sur le même serveur MySQL (espace disque à prévoir).
