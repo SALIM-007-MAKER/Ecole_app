@@ -303,8 +303,8 @@ check(!$ep->canDeverrouiller($ens, $evCv) && $ep->canDeverrouiller($sansAdmin($a
     section('5. Emplois du temps — la Conduite n\'y figure jamais (liste et garde serveur)');
     $http('admin', $ADMIN, 'POST', '/v2/vie-scolaire/emplois-du-temps', ['classe_id' => 131, 'annee_scolaire' => '2025-2026', 'periode_id' => 90, 'semaine_type' => 'standard']);
     $edt = (int)$one('SELECT MAX(id) FROM vs_emplois_du_temps');
-    $plage = (int)$one('SELECT id FROM vs_edt_plages_horaires WHERE actif = 1 ORDER BY id LIMIT 1');
-    $salle = (int)$one('SELECT id FROM vs_edt_salles WHERE actif = 1 ORDER BY id LIMIT 1');
+    $plage = (int)$one('SELECT id FROM vs_edt_plages_horaires WHERE actif = 1 AND etablissement_id = 1 ORDER BY id LIMIT 1');   // depuis T055 : les gabarits (sans établissement) ne sont pas utilisables par l'établissement 1
+    $salle = (int)$one('SELECT id FROM vs_edt_salles WHERE actif = 1 AND etablissement_id = 1 ORDER BY id LIMIT 1');
     $prof = (int)$one("SELECT id FROM users WHERE role = 'enseignant' ORDER BY id LIMIT 1");
     [$r, $body] = $http('admin', $ADMIN, 'GET', "/v2/vie-scolaire/emplois-du-temps/$edt/creneaux/ajouter");
     $ids = [];
@@ -316,7 +316,8 @@ check(!$ep->canDeverrouiller($ens, $evCv) && $ep->canDeverrouiller($sansAdmin($a
     $creneau = (int)$one('SELECT id FROM vs_edt_creneaux LIMIT 1');
     check($creneau > 0, 'créneau d\'une matière ordinaire : toujours accepté (témoin)');
     $http('admin', $ADMIN, 'POST', "/v2/vie-scolaire/emplois-du-temps/creneaux/$creneau/modifier", ['matiere_id' => $conduite, 'enseignant_id' => $prof, 'jour' => 2, 'plage_id' => $plage, 'salle_id' => $salle, 'type_cours' => 'cours']);
-    check((int)$one('SELECT matiere_id FROM vs_edt_creneaux WHERE id = ?', [$creneau]) === $ordinaire, 'modification d\'un créneau vers la Conduite : refusée');
+    $apresMod = (int)$one('SELECT matiere_id FROM vs_edt_creneaux WHERE id = ?', [$creneau]);
+    check($apresMod === $ordinaire, 'modification d\'un créneau vers la Conduite : refusée', "matiere après = $apresMod ; ordinaire = $ordinaire ; conduite = $conduite ; créneau = $creneau");
 
     // ═════════════════════════════════════════════════════════════════════
     section('6. A1/A2/R2 — complétude stricte (service, sur la copie)');

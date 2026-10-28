@@ -68,8 +68,8 @@ final class PlatformPlanService
         }
 
         $stmt = $this->pdo->prepare(
-            "INSERT INTO platform_plans (code, nom, max_users, max_eleves, storage_quota_mb, api_calls_per_day, prix_mensuel, prix_annuel, actif)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)"
+            "INSERT INTO platform_plans (code, nom, max_users, max_eleves, storage_quota_mb, api_calls_per_day, prix_mensuel, prix_annuel, modules_inclus, actif)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)"
         );
         $stmt->execute([
             $code,
@@ -80,6 +80,7 @@ final class PlatformPlanService
             max(1, (int)($data['api_calls_per_day'] ?? 10000)),
             (float)($data['prix_mensuel'] ?? 0),
             (float)($data['prix_annuel'] ?? 0),
+            json_encode(array_values((array)($data['modules_inclus'] ?? []))),   // colonne JSON obligatoire sans valeur par défaut (refusée en mode SQL strict)
         ]);
         $id = (int)$this->pdo->lastInsertId();
 

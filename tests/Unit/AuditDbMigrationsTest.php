@@ -51,6 +51,8 @@ try {
 
     section('État initial de la copie (ramenée à l\'état « avant T060–T062 »)');
     // La base réelle peut déjà porter ces migrations : on les retire sur la COPIE, puis on recrée les anomalies.
+    // T063 (clés étrangères) référence vs_appels & co : elle doit être retirée AVANT le retour arrière de T060 (copie uniquement).
+    if ((int)$un("SELECT COUNT(*) FROM information_schema.referential_constraints WHERE constraint_schema = DATABASE() AND constraint_name LIKE 'fk63\_%'") > 0) { $m('T063')['rollback']($db); }
     if ($tbl('audit_orphelins_archive')) { $m('T062')['rollback']($db); $db->exec('DROP TABLE audit_orphelins_archive'); }
     if ($tbl('vs_appels')) { $db->exec('DELETE FROM vs_presences_historique'); $db->exec('DELETE FROM vs_presences'); $db->exec('DELETE FROM vs_appels'); $m('T060')['rollback']($db); }
     $m('T061')['rollback']($db);

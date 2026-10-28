@@ -31,6 +31,8 @@ variable était absente. `.env` doit toujours fixer explicitement sa valeur.*
 | Variable | Défaut | Description |
 |---|---|---|
 | `SESSION_LIFETIME` | `7200` | Secondes (2h) |
+| `DB_SQL_MODE` | *(absent)* | Absent = `sql_mode` du serveur. `strict` = `STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION` pour la connexion de l'application. **À n'activer qu'après avoir testé tous les formulaires d'écriture** : le mode strict a déjà révélé un défaut (création d'un plan de la plateforme, corrigé) et d'autres peuvent subsister. |
+| `LOG_RETENTION_DAYS` | `90` | Durée de conservation des journaux (7 jours minimum) |
 | `SESSION_NAME` | `ecole_session` | Nom du cookie |
 
 ## Upload (V1)

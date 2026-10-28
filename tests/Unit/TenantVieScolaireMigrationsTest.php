@@ -18,6 +18,7 @@ chdir(ROOT_PATH);
 define('BASE_URL', '/ecole_app');
 require_once ROOT_PATH . '/tests/Support/DbCopy.php';
 require_once ROOT_PATH . '/tests/Support/ConduiteCopy.php';
+require_once ROOT_PATH . '/tests/Support/Lot3Copy.php';
 
 use Tests\Support\ConduiteCopy;
 use Tests\Support\DbCopy;
@@ -57,6 +58,7 @@ try {
     $db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
     $db->exec('SET NAMES utf8mb4');
     ConduiteCopy::migrer($db, ROOT_PATH);
+    \Tests\Support\Lot3Copy::retourAvantLot3($db, ROOT_PATH);   // la base réelle porte désormais T051–T058 : la copie est ramenée à l'état « avant »
     $nom = $copy->name;
     $http = fn(string $role, int $uid, string $m, string $u) => ConduiteCopy::http(ROOT_PATH, $nom, $role, $uid, $m, "/ecole_app{$u}");
     $one = fn(string $sql) => $db->query($sql)->fetchColumn();

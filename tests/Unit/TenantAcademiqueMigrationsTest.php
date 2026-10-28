@@ -18,6 +18,7 @@ chdir(ROOT_PATH);
 define('BASE_URL', '/ecole_app');
 require_once ROOT_PATH . '/tests/Support/DbCopy.php';
 require_once ROOT_PATH . '/tests/Support/ConduiteCopy.php';
+require_once ROOT_PATH . '/tests/Support/Lot3Copy.php';
 
 use Tests\Support\ConduiteCopy;
 use Tests\Support\DbCopy;
@@ -67,6 +68,7 @@ try {
     $db->exec('SET NAMES utf8mb4');
     $_ENV['DB_DATABASE'] = $copy->name;
     ConduiteCopy::migrer($db, ROOT_PATH);
+    \Tests\Support\Lot3Copy::retourAvantLot3($db, ROOT_PATH);   // la base réelle porte désormais T051–T058 : la copie est ramenée à l'état « avant »
     $mig = [];
     foreach (['T051_periodes_scolaires_etablissement', 'T052_types_evaluations_etablissement', 'T053_periodes_config_etablissement'] as $f) { $mig[substr($f, 0, 4)] = require ROOT_PATH . "/database/migrations/$f.php"; }
     $tables = ['periodes_scolaires', 'types_evaluations', 'periodes_scolaires_config'];

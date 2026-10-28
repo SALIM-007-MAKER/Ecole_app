@@ -203,6 +203,15 @@ class Application
             $e->getLine(),
             str_replace("\n", ' | ', $e->getTraceAsString())
         ));
+        // Suppression impossible car des données y sont rattachées (clé étrangère, erreur MySQL 1451) : retour à la page précédente avec un message.
+        if ($e instanceof \PDOException && (int)($e->errorInfo[1] ?? 0) === 1451 && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
+            Session::flash('error', 'Suppression impossible : des données (notes, absences, factures, historique…) y sont rattachées. Archivez ou désactivez plutôt que de supprimer.');
+            $ref  = (string)($_SERVER['HTTP_REFERER'] ?? '');
+            $host = (string)($_SERVER['HTTP_HOST'] ?? '');
+            $ok   = $ref !== '' && $host !== '' && parse_url($ref, PHP_URL_HOST) === parse_url('http://' . $host, PHP_URL_HOST);   // même hôte seulement
+            header('Location: ' . ($ok ? $ref : (defined('BASE_URL') ? BASE_URL : '') . '/dashboard'), true, 302);
+            return;
+        }
         http_response_code(500);
         $view = new View();
         $view->render('errors/500', [

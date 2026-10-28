@@ -19,6 +19,7 @@ chdir(ROOT_PATH);
 define('BASE_URL', '/ecole_app');
 require_once ROOT_PATH . '/tests/Support/DbCopy.php';
 require_once ROOT_PATH . '/tests/Support/ConduiteCopy.php';
+require_once ROOT_PATH . '/tests/Support/Lot3Copy.php';
 
 use Tests\Support\ConduiteCopy;
 use Tests\Support\DbCopy;
@@ -75,6 +76,7 @@ try {
     $db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
     $db->exec('SET NAMES utf8mb4');
     ConduiteCopy::migrer($db, ROOT_PATH);
+    \Tests\Support\Lot3Copy::retourAvantLot3($db, ROOT_PATH);   // la base réelle porte désormais T051–T058 : la copie est ramenée à l'état « avant »
     $nom = $copy->name;
     $one = fn(string $sql, array $p = []) => (function () use ($db, $sql, $p) { $s = $db->prepare($sql); $s->execute($p); return $s->fetchColumn(); })();
     $colonne = fn(string $t) => (int)$one("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = '$t' AND column_name = 'etablissement_id'");
