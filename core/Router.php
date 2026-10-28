@@ -64,6 +64,9 @@ class Router
     public function dispatch(Request $request): void
     {
         $method = $request->getMethod();
+        if ($method === 'HEAD') {
+            $method = 'GET';   // HEAD = GET sans corps (supervision, sondes) : même route ; le serveur web supprime le corps
+        }
         $uri    = $this->stripBasePath($request->getUri());
 
         // Tolérer un slash final (ex: /retards/create/) — évite un 404 sur une simple faute de frappe.
