@@ -87,7 +87,7 @@ function buildQuery(array $base, array $override = []): string {
 
 <!-- Filters -->
 <div class="rounded-xl border border-slate-200 bg-white shadow-sm mb-4">
-    <div class="p-5 p-3">
+    <div class="p-5">
         <form method="GET" action="<?= BASE_URL ?>/eleves"
               class="flex flex-wrap items-end gap-2">
             <div class="flex-1 min-w-40">
@@ -319,7 +319,7 @@ function buildQuery(array $base, array $override = []): string {
 <div id="deleteModal" class="modal-overlay fixed inset-0 z-[9000] hidden items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm [&.active]:flex">
     <div class="w-full max-w-lg rounded-xl border border-slate-200 bg-white shadow-2xl" style="max-width:440px">
         <div class="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
-            <h3 class="text-base font-semibold text-slate-950 flex items-center gap-2 text-red-600">
+            <h3 class="text-base font-semibold flex items-center gap-2 text-red-600">
                 <i data-lucide="alert-triangle" class="w-5 h-5"></i>
                 Confirmer la suppression
             </h3>

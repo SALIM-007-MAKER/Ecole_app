@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Liste des élèves — Ecole App</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { font-size: 13px; }
 
@@ -18,6 +17,8 @@
         }
         @page { size: A4 landscape; margin: 15mm; }
     </style>
+    <!-- Tailwind compilé (tools/tailwind/README.md) : en FIN de <head>, comme le faisait le CDN, pour conserver la même cascade avec app.css -->
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/vendor/tailwind/tailwind-preflight.css?v=<?= @filemtime(ROOT_PATH . '/public/assets/vendor/tailwind/tailwind-preflight.css') ?: 1 ?>">
 </head>
 <body>
 
@@ -82,7 +83,7 @@
         </thead>
         <tbody>
         <?php if (empty($eleves)): ?>
-            <tr><td colspan="10" class="py-4 text-center text-slate-500 border border-slate-300 px-2 py-1">Aucun élève trouvé.</td></tr>
+            <tr><td colspan="10" class="text-center text-slate-500 border border-slate-300 px-2 py-1">Aucun élève trouvé.</td></tr>
         <?php else: ?>
             <?php foreach ($eleves as $i => $e): ?>
             <tr>
@@ -114,7 +115,7 @@
         </tbody>
         <tfoot class="bg-slate-50">
             <tr>
-                <td colspan="10" class="py-2 text-right text-xs text-slate-500 border border-slate-300 px-2 py-1">
+                <td colspan="10" class="text-right text-xs text-slate-500 border border-slate-300 px-2 py-1">
                     Total : <strong><?= $total ?></strong> élève(s) &mdash;
                     <strong><?= $garcons ?></strong> garçons &mdash;
                     <strong><?= $filles ?></strong> filles

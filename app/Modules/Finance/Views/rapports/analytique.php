@@ -106,7 +106,7 @@ $fmt = fn(float $v) => number_format($v, 0, ',', ' ') . ' XOF';
         </div>
         <?php endif; ?>
     </div>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="<?= BASE_URL ?>/assets/vendor/chartjs/chart.umd.js"></script>
 <script>
 const annees      = <?= json_encode(array_column($comparatifAnnuel, 'annee')) ?>;
 const recettes    = <?= json_encode(array_column($comparatifAnnuel, 'recettes')) ?>;

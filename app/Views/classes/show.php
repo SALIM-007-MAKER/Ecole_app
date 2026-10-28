@@ -5,7 +5,7 @@ function showcp(array $p, string $k): bool { return in_array($k, $p, true); }
 $activeTab   = $activeTab ?? 'eleves';
 $pct = $classe->max_eleves > 0
     ? min(100, round($classe->nb_eleves / $classe->max_eleves * 100)) : 0;
-$barColor = $pct >= 90 ? '#ef4444' : ($pct >= 70 ? '#f59e0b' : '#22c55e');
+$barColor = $pct >= 90 ? '#dc2626' : ($pct >= 70 ? '#b45309' : '#15803d');
 $annee    = date('Y') . '-' . (date('Y') + 1);
 ?>
 
@@ -175,7 +175,7 @@ $annee    = date('Y') . '-' . (date('Y') + 1);
                 <i data-lucide="user-plus" class="w-4 h-4 text-violet-600"></i>
                 <span class="font-semibold text-slate-700">Affecter un élève</span>
             </div>
-            <div class="p-5 p-4">
+            <div class="p-5">
                 <?php if (empty($disponibles)): ?>
                 <div class="flex items-start gap-2 text-sm text-slate-400">
                     <i data-lucide="check-circle" class="w-4 h-4 text-emerald-500 mt-0.5 shrink-0"></i>
@@ -285,7 +285,7 @@ $annee    = date('Y') . '-' . (date('Y') + 1);
                 <i data-lucide="plus-circle" class="w-4 h-4 text-sky-600"></i>
                 <span class="font-semibold text-slate-700">Ajouter un enseignement</span>
             </div>
-            <div class="p-5 p-4 space-y-3">
+            <div class="p-5 space-y-3">
                 <form method="POST" action="<?= BASE_URL ?>/classes/<?= $classe->id ?>/affecter-enseignant">
                     <input type="hidden" name="_csrf_token" value="<?= \Core\Session::getCsrfToken() ?>">
                     <div>

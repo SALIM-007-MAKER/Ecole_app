@@ -15,13 +15,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-    tailwind.config = {
-        corePlugins: { preflight: false },
-        theme: { extend: { fontFamily: { sans: ['Inter','system-ui','sans-serif'] } } }
-    }
-    </script>
     <style>
         * { box-sizing: border-box; }
         body { font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
@@ -35,6 +28,8 @@
         .feature-card { transition: transform 0.2s, box-shadow 0.2s; }
         .feature-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.1); }
     </style>
+    <!-- Tailwind compilé (tools/tailwind/README.md) : en FIN de <head>, comme le faisait le CDN, pour conserver la même cascade avec app.css -->
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/vendor/tailwind/tailwind.css?v=<?= @filemtime(ROOT_PATH . '/public/assets/vendor/tailwind/tailwind.css') ?: 1 ?>">
 </head>
 <body class="bg-white text-slate-800 min-h-full">
 
@@ -132,7 +127,7 @@
     &copy; <?= date('Y') ?> EduNova — Tous droits réservés
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/lucide@0.400.0/dist/umd/lucide.min.js"></script>
+<script src="<?= BASE_URL ?>/assets/vendor/lucide/lucide.min.js"></script>
 <script>if(window.lucide)lucide.createIcons();</script>
 </body>
 </html>

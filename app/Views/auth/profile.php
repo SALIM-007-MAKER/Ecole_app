@@ -39,7 +39,7 @@ $roleLabel = UserModel::roleLabel($role);
                 <i data-lucide="user-cog" class="w-4 h-4 text-violet-600"></i>
                 <span class="font-semibold text-slate-700">Informations personnelles</span>
             </div>
-            <div class="p-5 p-6">
+            <div class="p-6">
 
                 <?php
                 $profileKeys   = ['nom','prenom','email','telephone','photo'];

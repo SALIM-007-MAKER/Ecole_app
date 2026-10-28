@@ -12,11 +12,12 @@ $__base = defined('BASE_URL') ? BASE_URL : '';
 ?>
 <link rel="icon" href="<?= $__base ?><?= $__brandWeb ?>">
 <link rel="apple-touch-icon" href="<?= $__base ?><?= $__brandWeb ?>">
-<script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.7.2/css/all.min.css">
+<link rel="stylesheet" href="<?= BASE_URL ?>/assets/vendor/fontawesome/css/all.min.css">
 <style>body { font-family: Inter, system-ui, sans-serif; }</style>
+    <!-- Tailwind compilé (tools/tailwind/README.md) : en FIN de <head>, comme le faisait le CDN, pour conserver la même cascade avec app.css -->
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/vendor/tailwind/tailwind-preflight.css?v=<?= @filemtime(ROOT_PATH . '/public/assets/vendor/tailwind/tailwind-preflight.css') ?: 1 ?>">
 </head>
 <body class="bg-slate-50 min-h-screen flex items-center justify-center p-6">
     <div class="text-center max-w-sm w-full">

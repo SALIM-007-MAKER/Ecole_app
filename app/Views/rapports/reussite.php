@@ -204,7 +204,7 @@ $moy     = (float)($kpiReussite['moy_generale']  ?? 0);
 </div>
 <?php endif; ?>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="<?= BASE_URL ?>/assets/vendor/chartjs/chart.umd.js"></script>
 <script>
 (function() {
     Chart.defaults.font.family = "system-ui, sans-serif";

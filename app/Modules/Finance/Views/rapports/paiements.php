@@ -88,11 +88,11 @@ $statutBadge = [
 
     <!-- Totaux -->
     <div class="grid grid-cols-3 gap-4 mb-6">
-        <div class="bg-white rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-center">
+        <div class="bg-white rounded-xl border border-emerald-200 p-4 text-center">
             <div class="text-2xl font-bold text-emerald-700"><?= $fmt((float)$sommes->total_encaisse) ?></div>
             <div class="text-sm text-emerald-600 mt-1">Total encaissé</div>
         </div>
-        <div class="bg-white rounded-xl border border-blue-200 bg-blue-50 p-4 text-center">
+        <div class="bg-white rounded-xl border border-blue-200 p-4 text-center">
             <div class="text-2xl font-bold text-blue-700"><?= number_format($sommes->nb_paiements) ?></div>
             <div class="text-sm text-blue-600 mt-1">Paiements</div>
         </div>

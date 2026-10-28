@@ -71,7 +71,7 @@ function buildQ(array $filters, array $extra = []): string {
 
 <!-- Filtres -->
 <div class="rounded-xl border border-slate-200 bg-white shadow-sm mb-4">
-    <div class="p-5 p-3">
+    <div class="p-5">
         <form method="GET" action="<?= BASE_URL ?>/professeurs"
               class="flex flex-wrap items-end gap-3">
             <div class="relative flex-1 min-w-48">

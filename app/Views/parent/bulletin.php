@@ -41,7 +41,7 @@ include __DIR__ . '/../bulletins/_choix_semestre.php';
 
 <!-- Selectors -->
 <div class="rounded-xl border border-slate-200 bg-white shadow-sm mb-5">
-    <div class="p-5 p-4">
+    <div class="p-5">
         <form method="GET" class="flex flex-wrap items-center gap-3">
             <div class="flex items-center gap-2 text-sm text-slate-500 font-medium">
                 <i data-lucide="filter" class="w-4 h-4"></i>Filtres :
@@ -88,7 +88,7 @@ include __DIR__ . '/../bulletins/_choix_semestre.php';
 
 <!-- Bulletin summary card -->
 <div class="rounded-xl border border-slate-200 bg-white shadow-sm mb-5">
-    <div class="p-5 p-6">
+    <div class="p-6">
         <div class="flex flex-wrap items-center gap-6">
             <!-- Élève info -->
             <div class="flex items-center gap-4 flex-1">

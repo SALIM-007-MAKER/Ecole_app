@@ -86,16 +86,9 @@ $pageTitle = htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8');
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=<?= urlencode($branding->fontFamily) ?>:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/vendor/fontawesome/css/all.min.css">
 
     <!-- Tailwind CDN (utilitaires pour les vues uniquement) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-    tailwind.config = {
-        corePlugins: { preflight: false },
-        theme: { extend: { fontFamily: { sans: ['<?= addslashes($branding->fontFamily) ?>','ui-sans-serif','system-ui','sans-serif'] } } }
-    }
-    </script>
 
     <!-- Sidebar : état figé AVANT le premier rendu (pas de clignotement ni de décalage entre deux pages) -->
     <script>
@@ -122,6 +115,9 @@ $pageTitle = htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8');
         }
         body { font-family: '<?= addslashes($branding->fontFamily) ?>', ui-sans-serif, system-ui, sans-serif; }
     </style>
+    <!-- Tailwind compilé (tools/tailwind/README.md) : en FIN de <head>, comme le faisait le CDN, pour conserver la même cascade avec app.css -->
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/vendor/tailwind/tailwind.css?v=<?= @filemtime(ROOT_PATH . '/public/assets/vendor/tailwind/tailwind.css') ?: 1 ?>">
+    <style>:root{--font-sans:'<?= addslashes($branding->fontFamily) ?>'}</style>
 </head>
 <body class="app-shell">
 
@@ -356,7 +352,7 @@ $pageTitle = htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8');
 
 <!-- ══ SCRIPTS ═══════════════════════════════════════════════════════════ -->
 <script>window.APP_BASE_URL = '<?= BASE_URL ?>';</script>
-<script src="https://cdn.jsdelivr.net/npm/lucide@0.400.0/dist/umd/lucide.min.js"></script>
+<script src="<?= BASE_URL ?>/assets/vendor/lucide/lucide.min.js"></script>
 <script>if (window.lucide) lucide.createIcons();</script>
 <script src="<?= BASE_URL ?>/assets/js/app.js"></script>
 

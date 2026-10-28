@@ -35,7 +35,7 @@ include __DIR__ . '/../bulletins/_choix_semestre.php';
 
 <!-- Période selector -->
 <div class="rounded-xl border border-slate-200 bg-white shadow-sm mb-5">
-    <div class="p-5 p-4">
+    <div class="p-5">
         <form method="GET" class="flex flex-wrap items-center gap-3">
             <div class="flex items-center gap-2 text-sm text-slate-500 font-medium">
                 <i data-lucide="filter" class="w-4 h-4"></i>Période :
@@ -72,7 +72,7 @@ include __DIR__ . '/../bulletins/_choix_semestre.php';
 
 <!-- Summary card -->
 <div class="rounded-xl border border-slate-200 bg-white shadow-sm mb-5">
-    <div class="p-5 p-6">
+    <div class="p-6">
         <div class="flex flex-wrap items-center gap-6">
             <!-- Avatar -->
             <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-sm">

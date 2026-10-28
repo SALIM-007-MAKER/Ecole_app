@@ -215,7 +215,7 @@ $printUrl  = BASE_URL . '/comptabilite/rapport/print?annee=' . $anneeNum . ($moi
 </div>
 
 <?php if (!empty($catsDep)): ?>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="<?= BASE_URL ?>/assets/vendor/chartjs/chart.umd.js"></script>
 <script>
 (function() {
     var cats = <?= json_encode(array_filter((array)$catsDep, fn($c) => (float)$c->total > 0)) ?>;

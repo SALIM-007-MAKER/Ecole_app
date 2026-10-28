@@ -25,13 +25,6 @@
     <link href="https://fonts.googleapis.com/css2?family=<?= urlencode($branding->fontFamily) ?>:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- Tailwind CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-    tailwind.config = {
-        corePlugins: { preflight: false },
-        theme: { extend: { fontFamily: { sans: ['<?= addslashes($branding->fontFamily) ?>','ui-sans-serif','system-ui','sans-serif'] } } }
-    }
-    </script>
 
     <!-- Design System -->
     <?php $cssV = @filemtime(ROOT_PATH . '/public/assets/css/app.css') ?: '1'; ?>
@@ -62,6 +55,9 @@
         padding: 2.5rem 2rem;
     }
     </style>
+    <!-- Tailwind compilé (tools/tailwind/README.md) : en FIN de <head>, comme le faisait le CDN, pour conserver la même cascade avec app.css -->
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/vendor/tailwind/tailwind.css?v=<?= @filemtime(ROOT_PATH . '/public/assets/vendor/tailwind/tailwind.css') ?: 1 ?>">
+    <style>:root{--font-sans:'<?= addslashes($branding->fontFamily) ?>'}</style>
 </head>
 <body>
 
@@ -118,7 +114,7 @@
 <!-- Toast container -->
 <div id="toast-container"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/lucide@0.400.0/dist/umd/lucide.min.js"></script>
+<script src="<?= BASE_URL ?>/assets/vendor/lucide/lucide.min.js"></script>
 <script>if(window.lucide)lucide.createIcons();</script>
 <script src="<?= BASE_URL ?>/assets/js/app.js"></script>
 </body>

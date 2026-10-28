@@ -56,7 +56,7 @@ $enseignements = $enseignements ?? [];
     <!-- Carte matière (sidebar gauche) -->
     <div>
         <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
-            <div class="p-5 p-6 text-center">
+            <div class="p-6 text-center">
                 <div class="w-20 h-20 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-4">
                     <i data-lucide="book" class="w-10 h-10 text-emerald-500"></i>
                 </div>
@@ -85,7 +85,7 @@ $enseignements = $enseignements ?? [];
             </div>
 
             <?php if (!empty($matiere->responsable_nom) && trim($matiere->responsable_nom) !== ' '): ?>
-            <div class="flex items-center gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4 bg-slate-50 p-4 border-t border-slate-100">
+            <div class="flex items-center gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4 bg-slate-50 p-4 border-t">
                 <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Enseignant responsable</p>
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
@@ -184,7 +184,7 @@ $enseignements = $enseignements ?? [];
                 <i data-lucide="bar-chart-2" class="w-4 h-4 text-violet-500"></i>
                 <span class="font-semibold text-slate-700">Répartition par année scolaire</span>
             </div>
-            <div class="p-5 p-4">
+            <div class="p-5">
                 <div class="flex flex-wrap gap-3">
                     <?php foreach ($annees as $annee):
                         $cnt = count(array_filter($enseignements, fn($e) => $e->annee_scolaire === $annee));

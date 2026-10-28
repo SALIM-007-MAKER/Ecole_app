@@ -11,8 +11,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>tailwind.config = { corePlugins: { preflight: false }, theme: { extend: { fontFamily: { sans: ['Inter','ui-sans-serif','system-ui','sans-serif'] } } } }</script>
     <?php $cssV = @filemtime(ROOT_PATH . '/public/assets/css/app.css') ?: '1'; ?>
     <link href="<?= BASE_URL ?>/assets/css/app.css?v=<?= $cssV ?>" rel="stylesheet">
 
@@ -29,6 +27,8 @@
         .platform-card label { color: #cbd5e1; }
         .platform-card input { background: #1e293b; border-color: #334155; color: #f1f5f9; }
     </style>
+    <!-- Tailwind compilé (tools/tailwind/README.md) : en FIN de <head>, comme le faisait le CDN, pour conserver la même cascade avec app.css -->
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/vendor/tailwind/tailwind.css?v=<?= @filemtime(ROOT_PATH . '/public/assets/vendor/tailwind/tailwind.css') ?: 1 ?>">
 </head>
 <body>
 <div class="platform-bg">
@@ -54,7 +54,7 @@
         Accès réservé aux opérateurs de la plateforme EduNova.
     </p>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/lucide@0.400.0/dist/umd/lucide.min.js"></script>
+<script src="<?= BASE_URL ?>/assets/vendor/lucide/lucide.min.js"></script>
 <script>if(window.lucide)lucide.createIcons();</script>
 </body>
 </html>

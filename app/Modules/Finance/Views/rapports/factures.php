@@ -101,11 +101,11 @@ $statutBadge = [
             <div class="text-xl font-bold text-slate-700"><?= $fmt((float)$stats->total_emis) ?></div>
             <div class="text-xs text-slate-500 mt-1">Total émis</div>
         </div>
-        <div class="bg-white rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-center">
+        <div class="bg-white rounded-xl border border-emerald-200 p-4 text-center">
             <div class="text-xl font-bold text-emerald-700"><?= $fmt((float)$stats->total_encaisse) ?></div>
             <div class="text-xs text-emerald-600 mt-1">Encaissé</div>
         </div>
-        <div class="bg-white rounded-xl border border-amber-200 bg-amber-50 p-4 text-center">
+        <div class="bg-white rounded-xl border border-amber-200 p-4 text-center">
             <div class="text-xl font-bold text-amber-700"><?= $fmt((float)$stats->total_restant) ?></div>
             <div class="text-xs text-amber-600 mt-1">Restant — Tx: <?= $tauxRecouvrement ?>%</div>
         </div>

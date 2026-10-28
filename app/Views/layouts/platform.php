@@ -17,10 +17,6 @@ $branding = BrandingService::make()->get((int)$__etabIdForBranding);
     <meta name="robots" content="noindex, nofollow">
     <meta name="theme-color" content="#0f172a">
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = { corePlugins: { preflight: false }, theme: { extend: { fontFamily: { sans: ['<?= addslashes($branding->fontFamily) ?>','ui-sans-serif','system-ui','sans-serif'] } } } }
-    </script>
     <?php $cssV = @filemtime(ROOT_PATH . '/public/assets/css/app.css') ?: '1'; ?>
     <link href="https://fonts.googleapis.com/css2?family=<?= urlencode($branding->fontFamily) ?>:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="<?= BASE_URL ?>/assets/css/app.css?v=<?= $cssV ?>" rel="stylesheet">
@@ -35,6 +31,9 @@ $branding = BrandingService::make()->get((int)$__etabIdForBranding);
         .platform-main { background: #f1f5f9; min-height: calc(100vh - 3.75rem); padding: 1.5rem; }
         .platform-content { max-width: 1280px; margin: 0 auto; }
     </style>
+    <!-- Tailwind compilé (tools/tailwind/README.md) : en FIN de <head>, comme le faisait le CDN, pour conserver la même cascade avec app.css -->
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/vendor/tailwind/tailwind.css?v=<?= @filemtime(ROOT_PATH . '/public/assets/vendor/tailwind/tailwind.css') ?: 1 ?>">
+    <style>:root{--font-sans:'<?= addslashes($branding->fontFamily) ?>'}</style>
 </head>
 <body>
 
@@ -85,7 +84,7 @@ $branding = BrandingService::make()->get((int)$__etabIdForBranding);
     </div>
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/lucide@0.400.0/dist/umd/lucide.min.js"></script>
+<script src="<?= BASE_URL ?>/assets/vendor/lucide/lucide.min.js"></script>
 <script>if(window.lucide)lucide.createIcons();</script>
 </body>
 </html>

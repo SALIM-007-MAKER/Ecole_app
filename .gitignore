@@ -27,3 +27,7 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Binaire Tailwind autonome (non versionne, voir tools/tailwind/README.md)
+tools/tailwind/tailwindcss.exe
+tools/tailwind/tailwindcss

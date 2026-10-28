@@ -143,7 +143,7 @@ $f = fn($n) => number_format((float)$n, 0, ',', ' ');
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="<?= BASE_URL ?>/assets/vendor/chartjs/chart.umd.js"></script>
 <script>
 (function() {
     Chart.defaults.font.family = "system-ui, sans-serif";

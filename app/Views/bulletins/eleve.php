@@ -118,7 +118,7 @@ function bNoteColor(?float $n): string {
                 <div class="px-4 flex flex-col items-center justify-center">
                     <p class="text-xs text-slate-400 mb-2">Mention</p>
                     <?php if ($mention): ?>
-                    <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold leading-5 whitespace-nowrap <?= bMentionBadge($mention) ?> text-sm px-3 py-1">
+                    <span class="inline-flex items-center gap-1 rounded-full text-xs font-semibold leading-5 whitespace-nowrap <?= bMentionBadge($mention) ?> px-3 py-1">
                         <?= htmlspecialchars($mention, ENT_QUOTES) ?>
                     </span>
                     <?php else: ?>

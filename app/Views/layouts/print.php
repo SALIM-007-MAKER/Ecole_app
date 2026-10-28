@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($title ?? 'Bulletin', ENT_QUOTES) ?></title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @page { size: A4 portrait; margin: 12mm 15mm; }
         body  { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11pt; background: #fff; }
@@ -19,6 +18,8 @@
                     background: #fff; padding: 20mm 18mm; box-shadow: 0 4px 24px rgba(0,0,0,.15); }
         }
     </style>
+    <!-- Tailwind compilé (tools/tailwind/README.md) : en FIN de <head>, comme le faisait le CDN, pour conserver la même cascade avec app.css -->
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/vendor/tailwind/tailwind-preflight.css?v=<?= @filemtime(ROOT_PATH . '/public/assets/vendor/tailwind/tailwind-preflight.css') ?: 1 ?>">
 </head>
 <body>
 

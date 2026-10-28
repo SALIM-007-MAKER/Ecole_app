@@ -7,7 +7,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title><?= htmlspecialchars($document['titre']) ?> — Document partagé</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind compilé (tools/tailwind/README.md) : en FIN de <head>, comme le faisait le CDN, pour conserver la même cascade avec app.css -->
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/vendor/tailwind/tailwind-preflight.css?v=<?= @filemtime(ROOT_PATH . '/public/assets/vendor/tailwind/tailwind-preflight.css') ?: 1 ?>">
 </head>
 <body class="bg-slate-50 min-h-screen flex items-center justify-center p-4">
 

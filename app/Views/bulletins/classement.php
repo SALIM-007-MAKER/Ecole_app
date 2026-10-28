@@ -54,7 +54,7 @@ $medalRing = ['ring-2 ring-amber-300', 'ring-2 ring-slate-300', 'ring-2 ring-ora
 
 <!-- Filtres -->
 <div class="rounded-xl border border-slate-200 bg-white shadow-sm mb-4">
-    <div class="p-5 p-3">
+    <div class="p-3">
         <form method="GET" action="<?= BASE_URL ?>/bulletins/classement" class="flex flex-wrap items-end gap-3">
             <div class="flex-1 min-w-36">
                 <label class="form-label text-xs">Classe</label>
@@ -100,7 +100,7 @@ $medalRing = ['ring-2 ring-amber-300', 'ring-2 ring-slate-300', 'ring-2 ring-ora
     <?php foreach ($top3 as $i => $e): ?>
     <div class="rounded-xl border border-slate-200 bg-white shadow-sm border <?= $medalBg[$i] ?? 'bg-white border-slate-100' ?> text-center py-6 px-4 relative overflow-hidden">
         <!-- Position indicator -->
-        <div class="absolute top-3 right-3 text-xs font-bold opacity-30 text-slate-600 text-4xl leading-none">
+        <div class="absolute top-3 right-3 font-bold opacity-30 text-slate-600 text-4xl leading-none">
             <?= $i + 1 ?>
         </div>
         <div class="text-4xl mb-3 leading-none"><?= $medals[$i] ?></div>

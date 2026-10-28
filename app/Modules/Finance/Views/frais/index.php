@@ -185,9 +185,9 @@
                     </td>
                     <td class="px-4 py-3 text-center">
                         <?php if ($frais->est_obligatoire): ?>
-                        <span class="inline-block w-5 h-5 rounded-full bg-amber-400 text-white text-xs flex items-center justify-center" title="Obligatoire">✓</span>
+                        <span class="w-5 h-5 rounded-full bg-amber-400 text-white text-xs flex items-center justify-center" title="Obligatoire">✓</span>
                         <?php else: ?>
-                        <span class="inline-block w-5 h-5 rounded-full bg-slate-200 text-slate-400 text-xs flex items-center justify-center" title="Optionnel">—</span>
+                        <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-400 text-xs flex items-center justify-center" title="Optionnel">—</span>
                         <?php endif; ?>
                     </td>
                     <td class="px-4 py-3 text-center">

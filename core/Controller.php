@@ -20,7 +20,7 @@ abstract class Controller
             header('X-Frame-Options: SAMEORIGIN');
             header('X-Content-Type-Options: nosniff');
             header('Referrer-Policy: strict-origin-when-cross-origin');
-            header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' cdn.jsdelivr.net cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' cdn.jsdelivr.net cdn.tailwindcss.com fonts.googleapis.com; img-src 'self' data:; font-src 'self' cdn.jsdelivr.net fonts.gstatic.com data:");
+            header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; img-src 'self' data:; font-src 'self' fonts.gstatic.com data:");
         }
     }
 

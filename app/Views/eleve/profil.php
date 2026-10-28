@@ -22,7 +22,7 @@ $csrfToken = \Core\Session::getCsrfToken();
 </div>
 
 <?php $flash = \Core\Session::getFlash('success'); if ($flash): ?>
-<div class="mb-4 flex items-start gap-3 rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800 mb-5">
+<div class="flex items-start gap-3 rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800 mb-5">
     <i data-lucide="check-circle" class="w-4 h-4 shrink-0"></i>
     <span class="flex-1"><?= htmlspecialchars($flash, ENT_QUOTES) ?></span>
 </div>
@@ -32,7 +32,7 @@ $csrfToken = \Core\Session::getCsrfToken();
 
     <!-- Info card -->
     <div class="rounded-xl border border-slate-200 bg-white shadow-sm h-fit">
-        <div class="p-5 p-6 text-center">
+        <div class="p-6 text-center">
             <!-- Avatar -->
             <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center mx-auto mb-4 shadow-md">
                 <i data-lucide="user" class="w-10 h-10 text-white"></i>
@@ -140,7 +140,7 @@ $csrfToken = \Core\Session::getCsrfToken();
                 </div>
                 <span class="font-semibold text-slate-700">Sécurité du compte</span>
             </div>
-            <div class="p-5 p-4">
+            <div class="p-5">
                 <ul class="space-y-2">
                     <?php
                     $secItems = [

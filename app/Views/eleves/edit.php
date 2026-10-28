@@ -95,7 +95,7 @@ function editVal(array $old, string $key, $eleve, string $col = ''): string {
                     <i data-lucide="link" class="w-4 h-4 text-sky-600"></i>
                     <span class="font-semibold text-slate-700">Affectation</span>
                 </div>
-                <div class="p-5 p-4 space-y-3">
+                <div class="p-5 space-y-3">
                     <div class="mb-4">
                         <label class="form-label" for="classe_id">Classe</label>
                         <select id="classe_id" name="classe_id" class="form-input">
@@ -138,7 +138,7 @@ function editVal(array $old, string $key, $eleve, string $col = ''): string {
 
             <!-- Statut -->
             <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
-                <div class="p-5 p-4">
+                <div class="p-5">
                     <label class="flex items-center gap-3 cursor-pointer">
                         <input type="hidden" name="actif" value="0">
                         <input type="checkbox" id="actif" name="actif" value="1"

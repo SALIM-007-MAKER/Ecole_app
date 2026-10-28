@@ -7,7 +7,11 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>Hors ligne - Ecole App</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    // Feuille locale : l'adresse de base vient du service worker qui sert cette page (la page est rendue sous l'URL demandée, pas la sienne).
+    (function () { var b; try { var c = navigator.serviceWorker && navigator.serviceWorker.controller; b = c ? new URL('./', c.scriptURL).pathname : location.pathname.replace(/[^\/]*$/, ''); } catch (e) { b = '/'; }
+      document.write('<link rel="stylesheet" href="' + b + 'assets/vendor/tailwind/tailwind-preflight.css">'); })();
+    </script>
 </head>
 <body class="flex min-h-full items-center justify-center bg-slate-100 px-4 py-8 text-slate-900">
     <main class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-xl">

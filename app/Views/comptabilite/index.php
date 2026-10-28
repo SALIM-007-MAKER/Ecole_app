@@ -233,7 +233,7 @@ if (!empty($statsRec['total_attendu']) && (float)$statsRec['total_attendu'] > 0)
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="<?= BASE_URL ?>/assets/vendor/chartjs/chart.umd.js"></script>
 <script>
 (function() {
     var barData = <?= json_encode($chartBar, JSON_UNESCAPED_UNICODE) ?>;

@@ -98,11 +98,11 @@ ksort($grouped);
         <?php
         $pct      = $classe->max_eleves > 0
             ? min(100, round($classe->nb_eleves / $classe->max_eleves * 100)) : 0;
-        $barColor = $pct >= 90 ? '#ef4444' : ($pct >= 70 ? '#f59e0b' : '#22c55e');
+        $barColor = $pct >= 90 ? '#dc2626' : ($pct >= 70 ? '#b45309' : '#15803d');
         $barBg    = $pct >= 90 ? '#fee2e2' : ($pct >= 70 ? '#fef3c7' : '#dcfce7');
         ?>
         <div class="rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md flex flex-col group">
-            <div class="p-5 p-4 flex-1">
+            <div class="p-5 flex-1">
                 <div class="flex items-start justify-between mb-3">
                     <div class="flex items-center gap-2">
                         <div class="page-icon"
@@ -148,7 +148,7 @@ ksort($grouped);
                 </div>
             </div>
 
-            <div class="flex items-center gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4 bg-slate-50/80 flex items-center gap-1 py-2 px-3 border-t border-slate-100">
+            <div class="flex items-center gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4 bg-slate-50/80 flex items-center border-t">
                 <a href="<?= BASE_URL ?>/classes/<?= $classe->id ?>"
                    class="btn btn-ghost flex-1 justify-center text-xs text-slate-600 hover:text-violet-600">
                     <i data-lucide="eye" class="w-3.5 h-3.5"></i>Détail
