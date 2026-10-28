@@ -113,9 +113,18 @@ Document root → `public/`. `mod_rewrite` activé, `.htaccess` déjà présent 
 
 ## 7. Compte administrateur initial
 
-Un compte `admin@ecole.dz` est créé par les migrations de base (environnement de
-référence) — **changez immédiatement son mot de passe** en production, ou créez
-votre propre compte administrateur puis désactivez celui-ci.
+**Installation neuve** (base importée depuis `database/schema/ecole_app_schema_*.sql`) : créez le premier établissement et son
+administrateur avec le script fourni — aucun compte par défaut n'existe :
+
+```bash
+php database/installer.php --slug=mon-ecole --nom="Mon École" --admin-email=admin@mon-ecole.tld --admin-nom="Nom Prénom"
+# Mot de passe : variable INSTALL_ADMIN_PASSWORD (12 caractères min.), sinon généré et affiché une seule fois.
+```
+
+Le script refuse de s'exécuter si un établissement existe déjà et n'écrit le mot de passe nulle part.
+
+**Base issue de l'environnement de référence** (snapshot complet) : un compte `admin@ecole.dz` et des comptes de démonstration y existent —
+**supprimez-les ou changez leurs mots de passe avant toute mise en ligne**, après avoir créé votre propre administrateur.
 
 ## 8. Vérification de l'installation
 
