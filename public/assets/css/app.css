@@ -35,7 +35,7 @@
     /* Text */
     --txt-1: #111827;
     --txt-2: #4b5563;
-    --txt-3: #9ca3af;
+    --txt-3: #5b6472;
 
     /* Shadows */
     --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
@@ -884,3 +884,18 @@ main { flex: 1; }
     .main-wrapper { padding-left: 0 !important; }
     .card { box-shadow: none; border: 1px solid #ddd; }
 }
+
+/* ─── Accessibilité (WCAG 2.2) : taille des cibles (2.5.8) et contraste du texte secondaire (1.4.3) ─────────────────────────── */
+.btn-icon { min-width: 2rem; min-height: 2rem; flex-shrink: 0; }
+@media (max-width: 768px), (pointer: coarse) {
+    .btn-icon { min-width: 2.25rem; min-height: 2.25rem; }
+    td a, th a { display: inline-block; padding-block: 0.25rem; }   /* les liens déjà en flex (classe .flex) gardent leur affichage */
+    td a.flex, th a.flex { display: flex; padding-block: 0.25rem; }
+}
+/* Textes secondaires : gris plus foncés (ratio ≥ 4,5:1 sur blanc et sur slate-50) ; 'html' relève la spécificité au-dessus des utilitaires CDN. */
+html .text-slate-400 { color: #586579; }
+html .text-slate-500 { color: #526072; }
+html .text-emerald-600 { color: #047857; }   /* montants / statuts positifs : 3,8:1 -> 5,5:1 */
+html .text-amber-600 { color: #b45309; }
+html .text-red-500 { color: #dc2626; }
+html .text-green-500 { color: #15803d; }
