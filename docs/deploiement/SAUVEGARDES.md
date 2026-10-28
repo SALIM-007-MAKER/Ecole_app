@@ -71,8 +71,10 @@ valide que si cette vérification a réussi.**
 
 ```bat
 REM Planificateur de tâches Windows — tous les jours à 02h00
-schtasks /Create /SC DAILY /ST 02:00 /TN "Scolaris sauvegarde" /TR "C:\wamp64\bin\php\php8.2.29\php.exe C:\wamp64\wwwcole_app\database\backup.php --keep=14 --verify-restore"
+schtasks /Create /SC DAILY /ST 02:00 /TN "Scolaris sauvegarde" /TR "C:\wamp64\www\ecole_app\database\backup_quotidien.cmd"
 ```
+
+`backup_quotidien.cmd` lance `backup.php --keep=14 --verify-restore` et écrit dans `storage/logs/backup-auto.log` (code de sortie ≠ 0 = sauvegarde non validée ; à surveiller). Tâche installée sur le poste de développement le 2026-10-28 ; à recréer sur le serveur de production.
 
 Copier régulièrement `database/backups/auto_*.sql` hors du serveur. Les dumps manuels (sans préfixe `auto_`) ne sont jamais purgés.
 
