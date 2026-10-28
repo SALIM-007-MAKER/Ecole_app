@@ -211,6 +211,7 @@ $router->post('/v2/academique/bulletins/{eleveId}/{periodeId}/appreciation-direc
 // POST uniquement ; CSRF + politique (academique.bulletin.publish|admin) + interrupteur BULLETIN_PUBLICATION_ENABLED
 // (fermé par défaut) + statut + jeton officiel — voir BulletinController::changerStatut().
 $router->post('/v2/academique/bulletins/{eleveId}/{periodeId}/publier',  'Academique\Controllers\BulletinController@publier');
+$router->post('/v2/academique/bulletins/classe/{classeId}/{periodeId}/publier-tout', 'Academique\Controllers\BulletinController@publierClasse');
 $router->post('/v2/academique/bulletins/{eleveId}/{periodeId}/archiver', 'Academique\Controllers\BulletinController@archiver');
 // Régénération EXPLICITE d'un brouillon en vue de sa publication (Conduite complète exigée) : ne publie jamais.
 $router->post('/v2/academique/bulletins/{eleveId}/{periodeId}/regenerer', 'Academique\Controllers\BulletinController@regenerer');

@@ -77,3 +77,19 @@ renseignez `TRUSTED_PROXIES` avec l'adresse du proxy, sinon toutes les requêtes
 - Un bulletin n'a un QR officiel qu'une fois **publié** ; l'URL du QR est construite à l'impression à partir de `APP_URL`
   (en production : HTTPS obligatoire, hôte non local).
 - Les jetons n'apparaissent jamais dans les journaux ni dans l'audit : seule une empreinte courte (`jeton_empreinte`) est consignée.
+
+## Publier les bulletins avec leur QR de vérification (parents)
+
+Un QR n'est imprimé que sur un bulletin **publié** : la page publique de vérification n'accepte que les bulletins émis. Procédure, dans l'ordre :
+
+1. **Sauvegarde vérifiée** : `php database/backup.php --verify-restore`.
+2. Poser `BULLETIN_TOKEN_SECRET` dans le `.env` (voir plus haut). `APP_URL` doit être une adresse absolue ; hors développement, en `https://` avec un nom de domaine réel.
+3. **Rotation des jetons v1 → v2** (une seule fois, si des bulletins portent encore l'ancien jeton) :
+   `php database/tools/bulletin_tokens.php --check`, puis `--simulate` (lecture seule, affiche la somme de contrôle), puis
+   `--apply --confirm=<somme> --authorized-by="<nom>"`. Les anciens QR (empreintes SHA-256 conservées dans `bulletin_tokens_retired`) cessent d'être valides.
+4. Ouvrir la publication : `BULLETIN_PUBLICATION_ENABLED=1`.
+5. Sur la page d'une classe (`/bulletins/classe?classe_id=…&periode_id=…`), bouton **« Publier avec QR »** : régénère puis publie tous les bulletins de la classe.
+   Un bulletin en échec (Conduite incomplète, jeton hérité…) est nommé dans le bilan et n'empêche pas les autres ; un second clic ne touche jamais aux bulletins déjà publiés.
+
+Points d'attention : la page de vérification est limitée à 30 requêtes par minute et par adresse IP — à relever si de nombreux parents scannent depuis la même connexion
+(Wi-Fi de l'école). L'impression est une page HTML (pas de génération PDF côté serveur).

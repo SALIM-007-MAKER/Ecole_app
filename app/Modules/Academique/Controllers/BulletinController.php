@@ -10,6 +10,7 @@ use App\Modules\Academique\Services\ConduiteIncompleteException;
 use App\Modules\Academique\Models\PeriodeScolaireModel;
 use App\Modules\Academique\Policies\BulletinPolicy;
 use App\Modules\Academique\Repositories\BulletinRepository;
+use App\Modules\Academique\Services\BulletinClassePublisher;
 use App\Modules\Academique\Services\BulletinEngineFactory;
 use App\Modules\Academique\Services\BulletinPublicationGate;
 use App\Modules\Academique\Services\BulletinTokenException;
@@ -427,6 +428,62 @@ class BulletinController extends Controller
         $this->redirect($retour);
     }
 
+    /**
+     * Publie en une fois tous les bulletins d'une classe pour une période : chaque bulletin est régénéré en vue de la publication
+     * (jeton officiel de version courante, Conduite complète exigée) puis publié, donc imprimé AVEC son QR de vérification.
+     * Mêmes garanties que la publication unitaire : session, CSRF, interrupteur de publication ouvert, droits de génération ET de
+     * publication, classe de l'établissement de l'utilisateur. Un bulletin en échec (Conduite incomplète…) n'arrête pas les autres ;
+     * un bulletin déjà publié ou archivé n'est pas touché. Le bilan est affiché et journalisé (sans jeton).
+     */
+    public function publierClasse(string $classeId, string $periodeId): void
+    {
+        $this->requireAuth();
+        $this->verifyCsrf();
+        $user      = $this->currentUser();
+        $classeId  = (int)$classeId;
+        $periodeId = (int)$periodeId;
+        $ctx       = "action=publier_classe classe={$classeId} periode={$periodeId} user=" . (int)($user['id'] ?? 0) . ' role=' . ($user['role'] ?? '');
+        $retour    = BASE_URL . "/bulletins/classe?classe_id={$classeId}&periode_id={$periodeId}";
+
+        if (!BulletinPublicationGate::isOpen()) {
+            Logger::security('BULLETIN_PUBLICATION_REFUSED', "raison=interrupteur_ferme {$ctx}");
+            $this->refuser('Publication désactivée', 'La publication des bulletins est désactivée sur ce site (interrupteur BULLETIN_PUBLICATION_ENABLED fermé). Contactez l\'administrateur.');
+            return;
+        }
+        if (!$this->policy->canGenerate($user) || !$this->policy->canPublish($user)) {
+            Logger::security('BULLETIN_PUBLICATION_REFUSED', "raison=droits_insuffisants {$ctx}");
+            $this->refuser();
+            return;
+        }
+        $classe = (new \App\Models\ClasseModel())->findById($classeId);   // filtrée par établissement : une classe d'un autre établissement est introuvable
+        if (!$classe) {
+            Logger::security('BULLETIN_PUBLICATION_REFUSED', "raison=classe_introuvable {$ctx}");
+            Session::flash('error', 'Classe introuvable.');
+            $this->redirect(BASE_URL . '/bulletins');
+            return;
+        }
+
+        try {
+            $bilan = (new BulletinClassePublisher(BulletinEngineFactory::make((int)($user['etablissement_id'] ?? 0)), $this->repo))
+                ->publier($classeId, $periodeId, (int)$user['id']);
+        } catch (BulletinTokenException $e) {
+            // BULLETIN_TOKEN_SECRET absent ou invalide : rien ne peut être publié, inutile de poursuivre.
+            Logger::critical('Publication de classe impossible : ' . $e->getMessage());   // jamais la valeur du secret
+            Session::flash('error', 'Publication impossible : la configuration des jetons de vérification est incomplète (BULLETIN_TOKEN_SECRET). Aucun bulletin n\'a été publié.');
+            $this->redirect($retour);
+            return;
+        }
+
+        $echecs = $bilan['echecs'];
+        Logger::security('BULLETIN_CLASS_PUBLISHED', "publies={$bilan['publies']} deja={$bilan['deja']} echecs=" . count($echecs) . " {$ctx}");
+        $message = "{$bilan['publies']} bulletin(s) publié(s) avec leur QR de vérification" . ($bilan['deja'] ? ", {$bilan['deja']} déjà publié(s)" : '') . '.';
+        if ($echecs) {
+            $detail = array_map(fn(array $e) => $e['nom'] . ' : ' . $e['raison'], array_slice($echecs, 0, 5));
+            $message .= ' ' . count($echecs) . ' non publié(s) : ' . implode(' ; ', $detail) . (count($echecs) > 5 ? ' …' : '');
+        }
+        Session::flash($echecs && !$bilan['publies'] ? 'error' : 'success', $message);
+        $this->redirect($retour);
+    }
     private function changerStatut(string $action, int $eleveId, int $periodeId): void
     {
         $this->requireAuth();
