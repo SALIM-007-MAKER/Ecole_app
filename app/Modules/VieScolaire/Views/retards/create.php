@@ -50,7 +50,7 @@ unset($_SESSION['errors'], $_SESSION['old_input']);
             <option value="">Sélectionner</option>
             <?php foreach ($classes as $c): ?>
             <option value="<?= $c->id ?>" <?= ($oldInput['classe_id'] ?? '') == $c->id ? 'selected' : '' ?>>
-              <?= htmlspecialchars($c->nom) ?>
+              <?= htmlspecialchars(trim((string)($c->niveau ?? "")) !== "" ? $c->niveau . " — " . $c->nom : $c->nom) ?>
             </option>
             <?php endforeach; ?>
           </select>

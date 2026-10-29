@@ -118,7 +118,7 @@ $fmtMontant = fn(float $v): string => number_format($v, 0, ',', ' ') . ' XOF';
             <select name="classe_id" class="form-select">
                 <option value="">Toutes les classes</option>
                 <?php foreach ($classes as $cl): ?>
-                <option value="<?= $cl->id ?>" <?= ($filters->classeId ?? '') == $cl->id ? 'selected' : '' ?>><?= htmlspecialchars($cl->nom) ?></option>
+                <option value="<?= $cl->id ?>" <?= ($filters->classeId ?? '') == $cl->id ? 'selected' : '' ?>><?= htmlspecialchars($cl->label) ?></option>
                 <?php endforeach; ?>
             </select>
 

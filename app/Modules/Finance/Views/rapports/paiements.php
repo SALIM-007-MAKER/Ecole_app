@@ -66,7 +66,7 @@ $statutBadge = [
             <select name="classe_id" class="form-select text-sm">
                 <option value="">Toutes</option>
                 <?php foreach ($classes as $c): ?>
-                <option value="<?= $c->id ?>" <?= $filters->classeId === $c->id ? 'selected' : '' ?>><?= htmlspecialchars($c->nom) ?></option>
+                <option value="<?= $c->id ?>" <?= $filters->classeId === $c->id ? 'selected' : '' ?>><?= htmlspecialchars(trim((string)($c->niveau ?? "")) !== "" ? $c->niveau . " — " . $c->nom : $c->nom) ?></option>
                 <?php endforeach; ?>
             </select>
         </div>

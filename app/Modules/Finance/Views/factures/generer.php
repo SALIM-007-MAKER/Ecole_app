@@ -77,7 +77,7 @@ $errors     = $errors     ?? [];
                             class="form-select">
                         <option value="">-- Sélectionner --</option>
                         <?php foreach ($classes as $cl): ?>
-                        <option value="<?= $cl->id ?>"><?= htmlspecialchars($cl->nom) ?></option>
+                        <option value="<?= $cl->id ?>"><?= htmlspecialchars($cl->label) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>

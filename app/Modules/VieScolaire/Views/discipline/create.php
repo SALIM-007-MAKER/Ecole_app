@@ -49,7 +49,7 @@ $preselectedClasse = $_GET['classe_id'] ?? '';
                         <option value="">Sélectionner</option>
                         <?php foreach ($classes as $c): ?>
                         <option value="<?= $c->id ?>" <?= (string)$preselectedClasse === (string)$c->id ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($c->nom) ?>
+                            <?= htmlspecialchars(trim((string)($c->niveau ?? "")) !== "" ? $c->niveau . " — " . $c->nom : $c->nom) ?>
                         </option>
                         <?php endforeach; ?>
                     </select>

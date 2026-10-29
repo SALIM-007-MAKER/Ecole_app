@@ -74,7 +74,7 @@ $typeLabels = [
                 <option value="">Toutes les classes</option>
                 <?php foreach ($classes as $c): ?>
                 <option value="<?= $c->id ?>" <?= ($filters?->classeId == $c->id) ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($c->nom, ENT_QUOTES) ?>
+                    <?= htmlspecialchars($c->label, ENT_QUOTES) ?>
                 </option>
                 <?php endforeach; ?>
             </select>

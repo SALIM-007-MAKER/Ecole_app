@@ -62,7 +62,7 @@ class ClasseModel extends Model
     public function findForSelect(): array
     {
         return $this->query(
-            "SELECT id, CONCAT(niveau, ' — ', nom) AS label
+            "SELECT id, nom, niveau, CONCAT(niveau, ' — ', nom) AS label
              FROM `classes`
              WHERE etablissement_id = ?
              ORDER BY " . self::ordreNiveauSql() . ", nom",

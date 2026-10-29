@@ -46,7 +46,7 @@ $title = 'Attribuer une récompense';
                             class="form-select">
                         <option value="">Sélectionner</option>
                         <?php foreach ($classes as $c): ?>
-                        <option value="<?= $c->id ?>"><?= htmlspecialchars($c->nom) ?></option>
+                        <option value="<?= $c->id ?>"><?= htmlspecialchars(trim((string)($c->niveau ?? "")) !== "" ? $c->niveau . " — " . $c->nom : $c->nom) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
