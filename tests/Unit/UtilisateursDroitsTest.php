@@ -126,7 +126,7 @@ try {
     check($ligne(1) === $avant, 'directeur : ne peut PAS modifier l\'administrateur');
     $http('directeur', 2, 'POST', '/utilisateurs/1/delete');
     check((int)$db->query('SELECT COUNT(*) FROM users WHERE id = 1')->fetchColumn() === 1 && $ligne(1) === $avant, 'directeur : ne peut PAS supprimer l\'administrateur');
-    $http('directeur', 2, 'POST', '/utilisateurs/2', ['nom' => 'Benali', 'prenom' => 'x', 'email' => 'dir@ecole.dz', 'role' => 'admin', 'actif' => '1']);
+    $http('directeur', 2, 'POST', '/utilisateurs/2', ['nom' => 'Nom08', 'prenom' => 'x', 'email' => 'dir@ecole.dz', 'role' => 'admin', 'actif' => '1']);
     check((string)$db->query('SELECT role FROM users WHERE id = 2')->fetchColumn() === 'directeur', 'directeur : ne peut PAS s\'auto-promouvoir administrateur');
     $http('admin', 1, 'POST', '/utilisateurs/5/toggle-actif');
     check((int)$db->query('SELECT actif FROM users WHERE id = 5')->fetchColumn() === 0, 'témoin : l\'administrateur, lui, peut désactiver un compte');

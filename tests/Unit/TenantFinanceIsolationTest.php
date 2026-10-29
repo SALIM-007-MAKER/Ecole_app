@@ -154,7 +154,7 @@ try {
         [$r, $b] = $http('admin', $U['admin'], 'GET', $u);
         check(str_contains($b, $att), "E2 $u : ses propres données sont visibles", 'HTTP ' . ($r['status'] ?? '?'));
     }
-    $e1 = ['Benali', 'Meziane', 'Frais d\'inscription', 'Mensualité scolaire'];
+    $e1 = ['Nom08', 'Nom25', 'Frais d\'inscription', 'Mensualité scolaire'];
     foreach (['/v2/finance/factures', '/v2/finance/paiements', '/v2/finance/frais', '/v2/finance/rapports/dashboard', '/rapports/presences', '/eleves'] as $u) {
         [$r, $b] = $http('admin', $U['admin'], 'GET', $u);
         $vus = array_values(array_filter($e1, fn($x) => str_contains(html_entity_decode($b, ENT_QUOTES | ENT_HTML5, 'UTF-8'), $x)));

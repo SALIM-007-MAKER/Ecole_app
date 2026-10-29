@@ -7,8 +7,11 @@ namespace Tests\Support;
 use PDO;
 
 /**
- * Copie RÉELLE de la base de développement dans une base temporaire, pour répéter une migration ou une
- * restauration sans toucher à la base source (qui n'est jamais écrite).
+ * Copie de travail dans une base temporaire, pour répéter une migration ou une restauration sans toucher à la base vivante (jamais écrite).
+ *
+ * SOURCE DES DONNÉES : par défaut le jeu de données de référence figé `tests/Support/fixtures/ecole_app_reference.sql` (démonstration, sans
+ * secret) : les tests ne dépendent donc plus du contenu de la base de développement, qu'on peut vider ou modifier librement.
+ * `DBCOPY_SOURCE=live` rétablit l'ancien comportement (copie de la base vivante), utile pour contrôler une migration sur des données réelles.
  *
  *   $copy = DbCopy::create();           // null si mysqldump/mysql ou le droit CREATE DATABASE sont indisponibles
  *   $pdo  = $copy->pdo();               // connexion à la copie
@@ -69,13 +72,18 @@ final class DbCopy
             return null;
         }
 
-        $file = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $name . '.sql';
+        $fixture = $root . '/tests/Support/fixtures/ecole_app_reference.sql';
+        $depuisFixture = getenv('DBCOPY_SOURCE') !== 'live' && is_file($fixture);
+        $file = $depuisFixture ? $fixture : sys_get_temp_dir() . DIRECTORY_SEPARATOR . $name . '.sql';
         putenv('MYSQL_PWD=' . $c['pass']);
         try {
             $base = ' -h ' . escapeshellarg($c['host']) . ' -P ' . escapeshellarg($c['port']) . ' -u ' . escapeshellarg($c['user']);
-            $cmd1 = escapeshellarg($dump) . $base . ' --single-transaction --skip-comments --default-character-set=utf8mb4 '
-                  . escapeshellarg($c['db']) . ' > ' . escapeshellarg($file) . ' 2>NUL';
-            exec($cmd1, $o1, $r1);
+            $r1 = 0;
+            if (!$depuisFixture) {
+                $cmd1 = escapeshellarg($dump) . $base . ' --single-transaction --skip-comments --default-character-set=utf8mb4 '
+                      . escapeshellarg($c['db']) . ' > ' . escapeshellarg($file) . ' 2>NUL';
+                exec($cmd1, $o1, $r1);
+            }
             $cmd2 = escapeshellarg($mysql) . $base . ' --default-character-set=utf8mb4 ' . escapeshellarg($name)
                   . ' < ' . escapeshellarg($file) . ' 2>NUL';
             exec($cmd2, $o2, $r2);
@@ -92,7 +100,7 @@ final class DbCopy
             return null;
         } finally {
             putenv('MYSQL_PWD');
-            @unlink($file);
+            if (!$depuisFixture) { @unlink($file); }   // le jeu de données de référence n'est jamais supprimé
         }
         return new self($name, $admin, $pdo, $c);
     }

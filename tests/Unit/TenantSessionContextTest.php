@@ -140,15 +140,15 @@ try {
     // ═════════════════════════════════════════════════════════════════════
     section('B1. HTTP — référence : l\'établissement 1 voit toujours ses données');
     [$r, $b] = $http('admin', $ADMIN1, 'GET', '/eleves/1');
-    check(($r['status'] ?? 0) === 200 && str_contains($b, 'Benali'), 'admin 1 : fiche de l\'élève 1');
+    check(($r['status'] ?? 0) === 200 && str_contains($b, 'Nom08'), 'admin 1 : fiche de l\'élève 1');
     [$r, $b] = $http('admin', $ADMIN1, 'GET', '/classes/131');
     check(($r['status'] ?? 0) === 200 && str_contains($b, '2nde C1'), 'admin 1 : fiche de la classe 131');
     [$r, $b] = $http('admin', $ADMIN1, 'GET', '/matieres/190');
     check(($r['status'] ?? 0) === 200 && str_contains($b, 'Conduite'), 'admin 1 : fiche de la matière 190');
     [$r, $b] = $http('admin', $ADMIN1, 'GET', '/eleves');
-    check(($r['status'] ?? 0) === 200 && str_contains($b, 'Benali') && !str_contains($b, 'ELEVEDEUXZETA'), 'admin 1 : liste des élèves (ses élèves, pas ceux de l\'établissement 2)');
+    check(($r['status'] ?? 0) === 200 && str_contains($b, 'Nom08') && !str_contains($b, 'ELEVEDEUXZETA'), 'admin 1 : liste des élèves (ses élèves, pas ceux de l\'établissement 2)');
     [$r, $b] = $http('admin', $ADMIN2, 'GET', '/eleves');
-    check(($r['status'] ?? 0) === 200 && str_contains($b, 'ELEVEDEUXZETA') && !str_contains($b, 'Benali'), 'admin 2 : liste des élèves = les siens uniquement');
+    check(($r['status'] ?? 0) === 200 && str_contains($b, 'ELEVEDEUXZETA') && !str_contains($b, 'Nom08'), 'admin 2 : liste des élèves = les siens uniquement');
     [$r, $b] = $http('admin', $ADMIN2, 'GET', '/classes');
     check(str_contains($b, 'CLASSE-E2-ZETA') && !str_contains($b, '2nde C1'), 'admin 2 : liste des classes = les siennes uniquement');
     [$r, $b] = $http('admin', $ADMIN2, 'GET', '/matieres');
@@ -156,13 +156,13 @@ try {
 
     section('B2. HTTP — l\'établissement 2 ne lit pas l\'établissement 1 (V1 scopé)');
     [$r, $b] = $http('admin', $ADMIN2, 'GET', '/eleves/1');
-    check(!str_contains($b, 'Benali'), 'admin 2 : fiche de l\'élève 1 (étab. 1) — aucune donnée', 'statut ' . ($r['status'] ?? '?'));
+    check(!str_contains($b, 'Nom08'), 'admin 2 : fiche de l\'élève 1 (étab. 1) — aucune donnée', 'statut ' . ($r['status'] ?? '?'));
     [$r, $b] = $http('admin', $ADMIN2, 'GET', '/classes/131');
     check(!str_contains($b, '2nde C1'), 'admin 2 : fiche de la classe 131 (étab. 1) — aucune donnée', 'statut ' . ($r['status'] ?? '?'));
     [$r, $b] = $http('admin', $ADMIN2, 'GET', '/matieres/190');
     check(!str_contains($b, 'Conduite'), 'admin 2 : fiche de la matière 190 (étab. 1) — aucune donnée', 'statut ' . ($r['status'] ?? '?'));
     [$r, $b] = $http('admin', $ADMIN2, 'GET', '/eleves/1/edit');
-    check(!str_contains($b, 'Benali'), 'admin 2 : formulaire de modification de l\'élève 1 — aucune donnée');
+    check(!str_contains($b, 'Nom08'), 'admin 2 : formulaire de modification de l\'élève 1 — aucune donnée');
 
     section('B3. HTTP — l\'établissement 2 ne modifie pas l\'établissement 1 (V1 scopé)');
     $http('admin', $ADMIN2, 'POST', '/matieres/4', ['nom' => 'PIRATE-MATIERE', 'coefficient' => '2', 'volume_horaire' => '3', 'categorie' => 'autre']);
@@ -192,7 +192,7 @@ try {
               ['admin', $ADMIN1, '999999', 'admin 1 avec un établissement inexistant']] as [$role, $uid, $etab, $lib]) {
         [$r, $b] = $http($role, $uid, 'GET', '/eleves/1', [], ['REQUEST_AS_ETAB' => $etab]);
         $loc = implode(' ', array_map('strval', (array)($r['headers'] ?? [])));
-        check(($r['status'] ?? 0) === 302 && str_contains($loc, '/login') && !str_contains($b, 'Benali'), "$lib : redirigé vers la connexion, aucune donnée", 'statut ' . ($r['status'] ?? '?'));
+        check(($r['status'] ?? 0) === 302 && str_contains($loc, '/login') && !str_contains($b, 'Nom08'), "$lib : redirigé vers la connexion, aucune donnée", 'statut ' . ($r['status'] ?? '?'));
     }
     $db->exec("UPDATE etablissements SET statut = 'suspended' WHERE id = $E2");
     [$r, $b] = $http('admin', $ADMIN2, 'GET', '/eleves');
@@ -218,9 +218,9 @@ try {
     [$r, $b] = $http('admin', $ADMIN2, 'GET', '/v2/academique/evaluations/4');
     info('admin 2 : fiche de l\'évaluation 4 (étab. 1) masquée', !str_contains($b, 'Conduite'));
     [$r, $b] = $http('admin', $ADMIN2, 'GET', '/v2/academique/evaluations/4/notes');
-    info('admin 2 : notes de l\'évaluation 4 (étab. 1) masquées', !str_contains($b, 'Benali'));
+    info('admin 2 : notes de l\'évaluation 4 (étab. 1) masquées', !str_contains($b, 'Nom08'));
     [$r, $b] = $http('admin', $ADMIN2, 'GET', '/v2/academique/bulletins/1/90/imprimer');
-    info('admin 2 : bulletin de l\'élève 1 (étab. 1) masqué', !str_contains($b, 'Benali'));
+    info('admin 2 : bulletin de l\'élève 1 (étab. 1) masqué', !str_contains($b, 'Nom08'));
     $db->exec("UPDATE evaluations SET statut = 'brouillon' WHERE id = 12");
     $http('admin', $ADMIN2, 'POST', '/v2/academique/evaluations/12/publier');
     info('admin 2 : publication d\'une évaluation de l\'étab. 1 sans effet', $one('SELECT statut FROM evaluations WHERE id = 12') === 'brouillon');

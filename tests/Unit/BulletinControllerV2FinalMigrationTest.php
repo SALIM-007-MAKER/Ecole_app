@@ -199,7 +199,7 @@ $htmlClasse = renderCapture($view, 'bulletins/classe', [
     'periodes' => $evalRepo->listPeriodesForSelect(), 'filters' => ['classeId' => $CLASSE_ID, 'periodeId' => $PERIODE_ID],
 ]);
 assert_true(!hasPhpError($htmlClasse), 'bulletins/classe.php rendu sans erreur PHP');
-assert_true(str_contains($htmlClasse, 'Boukerrou') || str_contains($htmlClasse, 'Benali'), 'bulletins/classe.php affiche des élèves réels de la classe');
+assert_true(str_contains($htmlClasse, 'Nom13') || str_contains($htmlClasse, 'Nom08'), 'bulletins/classe.php affiche des élèves réels de la classe');
 
 $htmlClassement = renderCapture($view, 'bulletins/classement', [
     'classe' => $classe, 'periode' => $periode, 'classement' => $classementLegacy,

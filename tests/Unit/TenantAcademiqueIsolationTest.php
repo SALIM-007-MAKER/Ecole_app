@@ -130,13 +130,13 @@ try {
     section('2. Lectures : l\'établissement 2 ne voit rien de l\'établissement 1');
     $lectures = [
         ["/v2/academique/evaluations/$EVC1", 'Conduite'], ["/v2/academique/evaluations/$EV1", 'Fran'], ["/v2/academique/evaluations/$EV1/edit", 'Fran'],
-        ["/v2/academique/evaluations/$EV1/notes", 'Benali'], ["/v2/academique/evaluations/$EV1/notes/saisie", 'Benali'], ["/v2/academique/evaluations/$EV1/notes/importer", 'Fran'],
-        ["/v2/academique/notes/$N1", 'Benali'], ['/v2/academique/evaluations', 'Fran', 'Conduite'],
-        ['/v2/academique/bulletins/1/90/imprimer', 'Benali'], ['/v2/academique/bulletins/1/90/appreciation-directeur', 'Benali'],
-        ['/v2/academique/classes/131/matieres/4/appreciations?periode_id=90', 'Benali'],
+        ["/v2/academique/evaluations/$EV1/notes", 'Nom08'], ["/v2/academique/evaluations/$EV1/notes/saisie", 'Nom08'], ["/v2/academique/evaluations/$EV1/notes/importer", 'Fran'],
+        ["/v2/academique/notes/$N1", 'Nom08'], ['/v2/academique/evaluations', 'Fran', 'Conduite'],
+        ['/v2/academique/bulletins/1/90/imprimer', 'Nom08'], ['/v2/academique/bulletins/1/90/appreciation-directeur', 'Nom08'],
+        ['/v2/academique/classes/131/matieres/4/appreciations?periode_id=90', 'Nom08'],
         ["/v2/academique/periodes/$P1", 'Semestre'], ["/v2/academique/periodes/$P1/edit", 'Semestre'],
-        ['/v2/academique/resultats/classe?classe_id=131&periode_id=90', 'Benali', 'Aissaoui'], ['/v2/academique/resultats/classement?classe_id=131&periode_id=90', 'Benali', 'Aissaoui'],
-        ['/v2/academique/resultats/moyennes?classe_id=131&periode_id=90', 'Benali', 'Aissaoui'], ['/v2/academique/notes?eleve_id=1', 'Benali'],
+        ['/v2/academique/resultats/classe?classe_id=131&periode_id=90', 'Nom08', 'Nom03'], ['/v2/academique/resultats/classement?classe_id=131&periode_id=90', 'Nom08', 'Nom03'],
+        ['/v2/academique/resultats/moyennes?classe_id=131&periode_id=90', 'Nom08', 'Nom03'], ['/v2/academique/notes?eleve_id=1', 'Nom08'],
     ];
     foreach ($lectures as $l) {
         $uri = array_shift($l);
@@ -178,13 +178,16 @@ try {
     $n0 = (int)$one('SELECT COUNT(*) FROM notes_v2');
     $http('admin', $ADMIN2, 'POST', "/v2/academique/evaluations/$EV1/notes", ['notes' => [1 => ['valeur' => '3']]]);
     check((int)$one('SELECT COUNT(*) FROM notes_v2') === $n0 && $one('SELECT valeur FROM notes_v2 WHERE id = ?', [$N1]) === $v0, 'saisir des notes sur une évaluation de l\'établissement 1');
+    $publiees0 = (int)$one("SELECT COUNT(*) FROM notes_v2 WHERE evaluation_id = $EV1 AND statut = 'publiee'");   // état de la copie avant la requête (pas la base vivante, qui peut être vide)
     $http('admin', $ADMIN2, 'POST', "/v2/academique/evaluations/$EV1/notes/publier");
-    check($one('SELECT statut FROM notes_v2 WHERE id = ?', [$N1]) === $one('SELECT statut FROM notes_v2 WHERE id = ?', [$N1]) && (int)$one("SELECT COUNT(*) FROM notes_v2 WHERE evaluation_id = $EV1 AND statut = 'publiee'") === (int)$source->query("SELECT COUNT(*) FROM notes_v2 WHERE evaluation_id = $EV1 AND statut = 'publiee'")->fetchColumn(), 'publier les notes d\'une évaluation de l\'établissement 1');
+    check((int)$one("SELECT COUNT(*) FROM notes_v2 WHERE evaluation_id = $EV1 AND statut = 'publiee'") === $publiees0, 'publier les notes d\'une évaluation de l\'établissement 1');
+    $verrouillees0 = (int)$one("SELECT COUNT(*) FROM notes_v2 WHERE evaluation_id = $EV1 AND statut = 'verrouillee'");   // état de la copie avant la requête
     $http('admin', $ADMIN2, 'POST', "/v2/academique/evaluations/$EV1/notes/verrouiller");
-    check((int)$one("SELECT COUNT(*) FROM notes_v2 WHERE evaluation_id = $EV1 AND statut = 'verrouillee'") === (int)$source->query("SELECT COUNT(*) FROM notes_v2 WHERE evaluation_id = $EV1 AND statut = 'verrouillee'")->fetchColumn(), 'verrouiller les notes d\'une évaluation de l\'établissement 1');
+    check((int)$one("SELECT COUNT(*) FROM notes_v2 WHERE evaluation_id = $EV1 AND statut = 'verrouillee'") === $verrouillees0, 'verrouiller les notes d\'une évaluation de l\'établissement 1');
+    $statutP0 = $one('SELECT statut FROM periodes_scolaires WHERE id = ?', [$P1]);
     $http('admin', $ADMIN2, 'POST', "/v2/academique/periodes/$P1/cloturer");
     $statutP = $one('SELECT statut FROM periodes_scolaires WHERE id = ?', [$P1]);
-    check($statutP === $source->query("SELECT statut FROM periodes_scolaires WHERE id = $P1")->fetchColumn(), 'clôturer une période de l\'établissement 1');
+    check($statutP === $statutP0, 'clôturer une période de l\'établissement 1');
     $http('admin', $ADMIN2, 'POST', "/v2/academique/periodes/$P1/archiver");
     check($one('SELECT statut FROM periodes_scolaires WHERE id = ?', [$P1]) === $statutP, 'archiver une période de l\'établissement 1');
     $http('admin', $ADMIN2, 'POST', "/v2/academique/periodes/$P1", ['nom' => 'PIRATE-PERIODE', 'annee_scolaire' => '2025-2026', 'type_periode' => 'semestre', 'numero' => 2]);
