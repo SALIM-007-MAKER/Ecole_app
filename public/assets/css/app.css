@@ -80,6 +80,14 @@ body {
 :focus-visible { outline: 2px solid var(--violet-light); outline-offset: 2px; border-radius: 4px; }
 button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 
+/* Boutons stylés par des utilitaires Tailwind : la mise en page principale n'a pas de « preflight », le navigateur leur imposerait sa bordure et son
+   fond gris. :where() = spécificité nulle, donc tout utilitaire (bg-*, p-*, rounded…) ou classe de composant (.btn…) l'emporte toujours.
+   Les boutons qui déclarent une bordure (border, border-*) sont laissés tels quels. */
+:where(button[class]:not([class*="border"])) { background-color: transparent; border: 0; cursor: pointer; }
+:where(button[class]:disabled) { cursor: not-allowed; }
+/* Icônes Lucide : ne jamais se comprimer avec leur conteneur (max-width:100% sur svg les réduisait à quelques pixels dans une colonne étroite). */
+svg.lucide { max-width: none; flex-shrink: 0; }
+
 @keyframes fadeUp {
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }

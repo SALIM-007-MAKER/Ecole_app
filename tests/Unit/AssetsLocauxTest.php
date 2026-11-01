@@ -110,5 +110,11 @@ check($manquantes === [], 'toutes les classes de couleur écrites dans les vues 
 $iFlex = strpos($css, '.flex{'); $iHidden = strpos($css, '.hidden{');
 check($iFlex !== false && $iHidden !== false && $iHidden > $iFlex, '« hidden » est défini après « flex » : les fenêtres cachées par défaut (flex hidden) restent cachées, comme avec le CDN');
 
+section('7. Boutons d\'action nets : réinitialisation sans preflight et icônes qui ne s\'écrasent pas');
+$appCss = (string)file_get_contents(ROOT_PATH . '/public/assets/css/app.css');
+check(str_contains($appCss, ':where(button[class]:not([class*="border"]))') && preg_match('/:where\(button\[class\]:not\(\[class\*="border"\]\)\)\s*\{[^}]*background-color:\s*transparent[^}]*border:\s*0/', $appCss) === 1, 'app.css : les boutons sans bordure déclarée perdent la bordure et le fond gris du navigateur (spécificité nulle : :where)');
+check(preg_match('/svg\.lucide\s*\{[^}]*max-width:\s*none[^}]*flex-shrink:\s*0/', $appCss) === 1, 'app.css : les icônes Lucide ne sont plus comprimées par « svg { max-width:100% } »');
+check(!str_contains((string)file_get_contents(ROOT_PATH . '/app/Views/layouts/main.php'), 'tailwind-preflight'), 'la mise en page principale reste sans preflight (c\'est app.css qui réinitialise les boutons)');
+
 echo "\n$passed OK, $failed KO\n";
 exit($failed ? 1 : 0);
