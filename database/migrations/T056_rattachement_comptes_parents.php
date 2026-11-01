@@ -22,6 +22,9 @@ return [
     'reversible' => true,
 
     'run' => function (PDO $pdo): void {
+        // Installation neuve : aucun compte parent à réparer (et le référentiel d'anciens rôles RBAC n'y est pas semé) ; rien à faire, rien à journaliser.
+        if ((int)$pdo->query("SELECT COUNT(*) FROM users WHERE role = 'parent'")->fetchColumn() === 0) { return; }
+
         $rbacRole = $pdo->query("SELECT id FROM rbac_roles WHERE slug = 'parent'")->fetchColumn();
         if ($rbacRole === false) {
             throw new RuntimeException("T056 refusée : le rôle RBAC « parent » est introuvable (rbac_roles.slug = 'parent').");

@@ -84,17 +84,35 @@ géré.
    minimum celles de `docs/deploiement/VARIABLES_ENVIRONNEMENT.md` :
    `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL=https://<domaine
    Railway>`, `APP_KEY` (généré), `DB_HOST`/`DB_PORT`/`DB_DATABASE`/
-   `DB_USERNAME`/`DB_PASSWORD` (repris de l'étape 2).
+   `DB_USERNAME`/`DB_PASSWORD` (repris de l'étape 2), `BULLETIN_TOKEN_SECRET`
+   (voir `BULLETIN_TOKEN_SECRET.md`) et **`PORT=80`** (Apache écoute sur le
+   port 80 : sans cette variable, Railway n'achemine pas le trafic).
+   Générer une clé : `php -r "echo bin2hex(random_bytes(32));"`.
 4. **Volume persistant** : *Settings → Volumes*, monter un volume sur
    `/var/www/html/storage` et un second sur `/var/www/html/public/uploads` —
    sans ça, tout fichier uploadé disparaît au prochain déploiement.
-5. **Base de données** : se connecter au MySQL Railway (identifiants fournis
-   dans l'onglet *Connect*) et importer un snapshot (voir
-   `docs/deploiement/INSTALLATION.md` §4) :
-   ```bash
-   mysql -h <MYSQLHOST> -P <MYSQLPORT> -u <MYSQLUSER> -p<MYSQLPASSWORD> \
-       <MYSQLDATABASE> < snapshot.sql
-   ```
+5. **Base de données neuve avec un seul administrateur** (aucune donnée de
+   développement n'est envoyée) :
+   1. Depuis votre poste (client `mysql`, hôte et port **publics** du proxy
+      MySQL Railway, onglet *Connect*), importer le schéma de référence
+      (il contient des déclencheurs : l'import doit passer par le client
+      `mysql`, pas par PDO) :
+      ```bash
+      mysql -h <HOTE_PUBLIC> -P <PORT_PUBLIC> -u <MYSQLUSER> -p <MYSQLDATABASE> \
+          < database/schema/ecole_app_schema_v2.0.0_T062.sql
+      ```
+   2. Dans le conteneur de l'application (`railway ssh`, où il n'y a pas de
+      `.env` qui prendrait le dessus sur les variables de la plateforme) :
+      ```bash
+      php database/migrate.php
+      INSTALL_ADMIN_PASSWORD='<12 caractères minimum>' php database/installer.php \
+          --slug=mon-ecole --nom="Mon École" --admin-email=admin@mon-ecole.tld --admin-nom="Nom Prénom"
+      ```
+      `migrate.php` doit finir par `0 erreurs`. Sans `INSTALL_ADMIN_PASSWORD`,
+      un mot de passe aléatoire est affiché une seule fois ; changez-le à la
+      première connexion.
+   3. Pour reprendre au contraire un snapshot complet de données (voir
+      `docs/deploiement/INSTALLATION.md` §4), importez-le à la place du schéma.
 6. **Domaine** : Railway fournit un sous-domaine `*.up.railway.app`
    gratuitement (*Settings → Networking → Generate Domain*) ; un domaine
    personnalisé peut être attaché ensuite.

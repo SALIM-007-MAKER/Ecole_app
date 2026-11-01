@@ -25,6 +25,11 @@ if (is_file(ROOT_PATH . '/.env')) {
         $env[trim($k)] = trim($v, " \t\n\r\0\x0B\"'");
     }
 }
+// Hébergeur / Docker : pas de fichier .env dans l'image, les paramètres de base arrivent par variables d'environnement (elles priment sur .env).
+foreach (['DB_HOST', 'DB_PORT', 'DB_DATABASE', 'DB_USERNAME', 'DB_PASSWORD'] as $cle) {
+    $v = getenv($cle);
+    if ($v !== false && $v !== '') { $env[$cle] = $v; }
+}
 // Cible alternative réservée aux tests : une base jetable dont le nom l'indique, jamais une autre.
 $base = getenv('INSTALL_DB');
 if ($base !== false && $base !== '') {

@@ -9,3 +9,4 @@ database/backups/
 *.md
 .vscode/
 .idea/
+tests/
