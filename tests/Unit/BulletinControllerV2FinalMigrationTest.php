@@ -93,6 +93,11 @@ $indexViewSrc = file_get_contents(ROOT_PATH . '/app/Views/bulletins/index.php');
 assert_true(!str_contains($indexViewSrc, 'NoteModel::MENTIONS'), "bulletins/index.php n'utilise plus NoteModel::MENTIONS");
 assert_true(str_contains($indexViewSrc, 'MentionValue::thresholds'), "bulletins/index.php utilise MentionValue::thresholds() (V2)");
 
+// Jeu de référence figé dans une base jetable : ni lecture ni écriture de la base vivante.
+require_once ROOT_PATH . '/tests/Support/DbCopy.php';
+(\Tests\Support\DbCopy::redirigerVersCopie(ROOT_PATH) !== null) or exit("ECHEC : copie jetable impossible (mysql/mysqldump ou droit CREATE DATABASE)\n");
+\Core\Tenant\TenantContext::set(1);   // établissement du jeu de référence
+
 // ─── 2. Instanciation réelle + accès aux aides privées (réflexion) ───────────
 
 section('BulletinController — instanciation réelle');

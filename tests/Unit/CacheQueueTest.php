@@ -91,6 +91,9 @@ final class RecordTenantJob implements Job
     }
 }
 
+// Jeu de référence figé dans une base jetable : ni lecture ni écriture de la base vivante.
+require_once ROOT_PATH . '/tests/Support/DbCopy.php';
+(\Tests\Support\DbCopy::redirigerVersCopie(ROOT_PATH) !== null) or exit("ECHEC : copie jetable impossible (mysql/mysqldump ou droit CREATE DATABASE)\n");
 $pdo = Database::getInstance()->getConnection();
 $pdo->beginTransaction();
 

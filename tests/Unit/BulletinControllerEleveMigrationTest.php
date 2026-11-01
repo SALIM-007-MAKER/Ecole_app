@@ -117,6 +117,9 @@ assert_true(str_contains($viewSource, '$bulletin->lignesMatieres') || str_contai
 
 section('BulletinEngineFactory::previewBulletin() — données réelles');
 
+// Jeu de référence figé dans une base jetable : ni lecture ni écriture de la base vivante.
+require_once ROOT_PATH . '/tests/Support/DbCopy.php';
+(\Tests\Support\DbCopy::redirigerVersCopie(ROOT_PATH) !== null) or exit("ECHEC : copie jetable impossible (mysql/mysqldump ou droit CREATE DATABASE)\n");
 $pdo = Database::getInstance()->getConnection();
 $row = $pdo->query(
     "SELECT n.eleve_id, ev.classe_id, ev.periode_scolaire_id

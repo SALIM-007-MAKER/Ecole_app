@@ -36,6 +36,8 @@ $source = new PDO("mysql:host={$conn['host']};port={$conn['port']};dbname={$conn
 
 $tablesSurveillees = ['bulletins_v2', 'eleves', 'classes', 'periodes_scolaires'];
 $avantSource = ['schema' => DbCopy::schema($source, $tablesSurveillees), 'data' => DbCopy::allDataHashes($source)];
+// Copies jetables déjà présentes au départ (ex. celle d'un lanceur de régression) : elles ne sont pas une fuite de ce test.
+$copiesAvant = $source->query("SELECT schema_name FROM information_schema.schemata WHERE schema_name LIKE 'ecole_app_copy_%'")->fetchAll(PDO::FETCH_COLUMN);
 
 $copy = DbCopy::create(ROOT_PATH);
 if ($copy === null) {
@@ -132,7 +134,9 @@ section('8. La base source n\'a pas été touchée');
 $apresSource = ['schema' => DbCopy::schema($source, $tablesSurveillees), 'data' => DbCopy::allDataHashes($source)];
 check($apresSource['schema'] === $avantSource['schema'], 'structure de la base source identique avant / après le test');
 check($apresSource['data'] === $avantSource['data'], 'données de TOUTES les tables de la base source identiques avant / après le test');
-check((int)$source->query("SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name LIKE 'ecole_app_copy_%'")->fetchColumn() === 0, 'aucune base temporaire restante');
+$copiesApres = $source->query("SELECT schema_name FROM information_schema.schemata WHERE schema_name LIKE 'ecole_app_copy_%'")->fetchAll(PDO::FETCH_COLUMN);
+$fuites = array_values(array_diff($copiesApres, $copiesAvant));
+check($fuites === [], 'aucune base temporaire laissée par ce test', implode(', ', $fuites));
 
 echo "\n";
 $total = $passed + $failed;

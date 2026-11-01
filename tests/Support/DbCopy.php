@@ -119,6 +119,25 @@ final class DbCopy
 
     public function __destruct() { $this->drop(); }
 
+    /** @var self|null copie active de redirigerVersCopie() (conservée jusqu'à la fin du script) */
+    private static ?self $redirigee = null;
+
+    /**
+     * Pour les suites qui passent par Database::getInstance() ou par tests/Support/request_as.php : à appeler APRÈS la lecture de .env et AVANT la
+     * première connexion. Crée une copie jetable du jeu de référence, y redirige $_ENV['DB_DATABASE'] et REQUEST_AS_DB, et la supprime en fin de script.
+     * La base vivante n'est ni lue ni écrite. Retourne null (et ne redirige rien) si la copie est impossible.
+     */
+    public static function redirigerVersCopie(string $root): ?self
+    {
+        $copie = self::create($root);
+        if ($copie === null) { return null; }
+        self::$redirigee = $copie;
+        $_ENV['DB_DATABASE'] = $copie->name;
+        putenv('REQUEST_AS_DB=' . $copie->name);
+        register_shutdown_function(static function (): void { self::$redirigee?->drop(); });
+        return $copie;
+    }
+
     /** Chemin d'un binaire MySQL : MYSQL_BIN_DIR, WAMP, puis PATH. */
     public static function findBinary(string $name): ?string
     {

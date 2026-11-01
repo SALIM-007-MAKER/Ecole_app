@@ -133,6 +133,9 @@ function journalPendant(callable $f): string
     return is_file($file) && filesize($file) > $avant ? (string)substr((string)file_get_contents($file), $avant) : '';
 }
 
+// Jeu de référence figé dans une base jetable : ni lecture ni écriture de la base vivante.
+require_once ROOT_PATH . '/tests/Support/DbCopy.php';
+(\Tests\Support\DbCopy::redirigerVersCopie(ROOT_PATH) !== null) or exit("ECHEC : copie jetable impossible (mysql/mysqldump ou droit CREATE DATABASE)\n");
 $pdo = Database::getInstance()->getConnection();
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $repo = new BulletinRepository();

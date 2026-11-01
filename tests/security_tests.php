@@ -1,6 +1,8 @@
 <?php
 // Security & structural tests — run from project root
 chdir(dirname(__DIR__));
+define('ROOT_PATH', dirname(__DIR__));
+require_once ROOT_PATH . '/tests/Support/DbCopy.php';
 
 $pass = 0; $fail = 0;
 function t(string $id, bool $result, string $info = ''): void {
@@ -11,7 +13,10 @@ function t(string $id, bool $result, string $info = ''): void {
 }
 
 // ─── DB ───────────────────────────────────────────────────────────────────────
-$pdo = new PDO('mysql:host=localhost;dbname=ecole_app;charset=utf8mb4', 'root', '',
+// Jeu de référence figé dans une base jetable (INSERT/DELETE de T04/T07 inclus) : la base vivante n'est ni lue ni écrite.
+$copieJetable = \Tests\Support\DbCopy::redirigerVersCopie(ROOT_PATH) ?? exit("ECHEC : copie jetable impossible (mysql/mysqldump ou droit CREATE DATABASE)\n");
+$cx = $copieJetable->connection();
+$pdo = new PDO("mysql:host={$cx['host']};port={$cx['port']};dbname={$cx['db']};charset=utf8mb4", $cx['user'], $cx['pass'],
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ]);
 
 // T01: All user passwords are bcrypt
@@ -19,9 +24,9 @@ $users = $pdo->query('SELECT password FROM users')->fetchAll();
 $allBcrypt = array_reduce($users, fn($c, $u) => $c && str_starts_with($u->password, '$2y$'), true);
 t('T01_ALL_BCRYPT_HASHES', $allBcrypt);
 
-// T02: Password "password" verifies against stored hashes
+// T02: le mot de passe de test du jeu de référence (tests/Support/fixtures/LISEZMOI.md) se vérifie contre le hachage stocké
 $u = $pdo->query("SELECT password FROM users WHERE email='admin@ecole.dz'")->fetch();
-t('T02_PASSWORD_VERIFIES', password_verify('password', $u->password));
+t('T02_PASSWORD_VERIFIES', password_verify('Test-1234!', $u->password));
 
 // T03: SQL injection via prepared statement (email lookup)
 $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE email = ?");
@@ -38,7 +43,7 @@ t('T04_UNIQUE_EMAIL_CONSTRAINT', $blocked);
 
 // T05: FK notes → controles
 $fk = (int)$pdo->query("SELECT COUNT(*) FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
-    WHERE TABLE_SCHEMA='ecole_app' AND TABLE_NAME='notes' AND REFERENCED_TABLE_NAME='controles'")->fetchColumn();
+    WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='notes' AND REFERENCED_TABLE_NAME='controles'")->fetchColumn();
 t('T05_FK_NOTES_CONTROLES', $fk > 0);
 
 // T06: FK vs_justifications_absences → vs_absences (le domaine Absences V2 —
@@ -46,7 +51,7 @@ t('T05_FK_NOTES_CONTROLES', $fk > 0);
 // applicative uniquement ; la table `absences` V1 testée ici jusqu'au
 // 21/08/2026 a été supprimée, voir CHANGELOG.md)
 $fk2 = (int)$pdo->query("SELECT COUNT(*) FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
-    WHERE TABLE_SCHEMA='ecole_app' AND TABLE_NAME='vs_justifications_absences' AND REFERENCED_TABLE_NAME='vs_absences'")->fetchColumn();
+    WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='vs_justifications_absences' AND REFERENCED_TABLE_NAME='vs_absences'")->fetchColumn();
 t('T06_FK_JUSTIFICATIONS_ABSENCES', $fk2 > 0);
 
 // T07: Transaction rollback

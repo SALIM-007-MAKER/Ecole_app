@@ -105,6 +105,9 @@ function journalPendant(callable $f): string
     return is_file($file) && filesize($file) > $avant ? (string)substr((string)file_get_contents($file), $avant) : '';
 }
 
+// Jeu de référence figé dans une base jetable : ni lecture ni écriture de la base vivante.
+require_once ROOT_PATH . '/tests/Support/DbCopy.php';
+(\Tests\Support\DbCopy::redirigerVersCopie(ROOT_PATH) !== null) or exit("ECHEC : copie jetable impossible (mysql/mysqldump ou droit CREATE DATABASE)\n");
 $pdo = Database::getInstance()->getConnection();
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $_SERVER['REMOTE_ADDR'] = '203.0.113.200';
@@ -302,12 +305,38 @@ if (!$brouillons) {
     }
     check($attaque, 'attaque par jeton calculé avec l\'ancien littéral : aucun bulletin n\'est exposé');
 }
-$publies = array_values(array_filter($rows, fn($r) => $r['statut'] !== 'brouillon' && (int)$r['token_version'] === 2));
-if ($publies) {
-    putenv('BULLETIN_TOKEN_SECRET');   // le secret de production n'est connu que du serveur : ce test ne le possède pas
-    skip('bulletin réel publié à jeton officiel', 'la vérification positive nécessite le secret du serveur — couverte en partie A');
-} else {
-    skip('bulletin réel publié à jeton officiel', 'aucun bulletin publié en base (cas couvert en partie A)');
+// Bulletin PUBLIÉ à jeton officiel, bout en bout (HTTP, visiteur anonyme). Les lignes sont créées et validées dans la COPIE jetable (jamais dans la base
+// vivante, qui n'a pas besoin de contenir un bulletin publié) ; le secret de test est transmis au sous-processus. Aucune donnée métier n'est modifiée.
+@unlink($fichierLimite);
+putenv('BULLETIN_TOKEN_SECRET=' . $SECRET);
+$corpsFichier = tempnam(sys_get_temp_dir(), 'verif_corps_');
+putenv('REQUEST_AS_BODY_OUT=' . $corpsFichier);
+try {
+    $fxB = new BulletinFixtures($pdo);
+    $perB = $fxB->periode();
+    $svcB = BulletinTokenService::fromEnvironment();
+    if (!$perB || (int)$pdo->query('SELECT COUNT(*) FROM bulletins_v2')->fetchColumn() === 0) {
+        skip('bulletin publié à jeton officiel (HTTP)', 'jeu de référence sans période ni bulletin modèle');
+    } else {
+        $eP = $fxB->eleve('SECRETNOM'); $pubB = $fxB->bulletin($eP, $perB, $svcB->issue(1, $eP, $perB), 'publie', 2);
+        $eD = $fxB->eleve('SECRETNOM'); $draB = $fxB->bulletin($eD, $perB, $svcB->issue(1, $eD, $perB), 'brouillon', 2);
+        $rP = http_guest($pubB['token']);
+        $corps = (string)file_get_contents($corpsFichier);
+        check($rP['status'] === 200, 'HTTP réel : bulletin publié à jeton officiel → 200');
+        check($corps !== '' && !str_contains($corps, 'SECRETNOM') && !str_contains($corps, '12.34'), 'HTTP réel : la page publique ne contient ni le nom de l\'élève ni sa moyenne');
+        if (($rP['headers'] ?? null) !== null) {
+            $h = array_map('strtolower', $rP['headers']);
+            check(in_array('cache-control: no-store, max-age=0', $h, true) && in_array('referrer-policy: no-referrer', $h, true) && in_array('x-robots-tag: noindex, nofollow', $h, true), 'HTTP réel : en-têtes no-store / no-referrer / noindex aussi sur la réponse 200');
+        }
+        $rD = http_guest($draB['token']);
+        check($rD['status'] === 404 && ($rD['md5'] ?? null) === ($ref['md5'] ?? 'x'), 'HTTP réel : brouillon avec son jeton officiel → 404, corps identique à celui d\'un jeton inconnu');
+        $altere = substr($pubB['token'], 0, 63) . ($pubB['token'][63] === 'a' ? 'b' : 'a');
+        check(http_guest($altere)['status'] === 404, 'HTTP réel : jeton publié altéré d\'un caractère → 404');
+        putenv('BULLETIN_TOKEN_SECRET');
+        check(http_guest($pubB['token'])['status'] !== 200, 'HTTP réel : sans secret serveur, le même jeton n\'est plus accepté (échec fermé)');
+    }
+} finally {
+    putenv('BULLETIN_TOKEN_SECRET'); putenv('REQUEST_AS_BODY_OUT'); @unlink($corpsFichier); @unlink($fichierLimite);
 }
 
 @unlink($fichierLimite);

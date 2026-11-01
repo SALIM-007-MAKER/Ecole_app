@@ -142,8 +142,11 @@ $_SERVER['DOCUMENT_ROOT'] = ROOT_PATH . '/public';
 
 // Test actual model queries
 try {
-    // Manual DB setup
-    $pdo = new PDO('mysql:host=localhost;dbname=ecole_app;charset=utf8mb4', 'root', '',
+    // Manual DB setup : jeu de référence figé dans une base jetable, la base vivante n'est ni lue ni écrite.
+    require_once ROOT_PATH . '/tests/Support/DbCopy.php';
+    $copieJetable = \Tests\Support\DbCopy::redirigerVersCopie(ROOT_PATH) ?? throw new RuntimeException('copie jetable impossible (mysql/mysqldump ou droit CREATE DATABASE)');
+    $cx = $copieJetable->connection();
+    $pdo = new PDO("mysql:host={$cx['host']};port={$cx['port']};dbname={$cx['db']};charset=utf8mb4", $cx['user'], $cx['pass'],
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ]);
 
     // F90: eleves table has data with correct structure
