@@ -343,7 +343,7 @@ class MenuService
                 'permissions' => [
                     'branding.view', 'settings.general.view', 'settings.academique.view',
                     'settings.notation.view', 'settings.finances.view', 'settings.documents.view',
-                    'settings.notifications.view', 'settings.securite.view', 'settings.sauvegarde.view', 'settings.avance.view',
+                    'settings.notifications.view', 'settings.securite.view', 'settings.sauvegarde.view', 'settings.avance.view', 'audit.view',
                 ],
                 'children' => [
                     ['label' => 'Établissement', 'icon' => 'school', 'url' => '/parametres/etablissement', 'permissions' => ['branding.view']],
@@ -355,6 +355,7 @@ class MenuService
                     ['label' => 'Notifications', 'icon' => 'bell', 'url' => '/parametres/notifications', 'permissions' => ['settings.notifications.view']],
                     ['label' => 'Apparence', 'icon' => 'palette', 'url' => '/parametres/apparence', 'permissions' => ['branding.view']],
                     ['label' => 'Sécurité', 'icon' => 'shield', 'url' => '/parametres/securite', 'permissions' => ['settings.securite.view']],
+                    ['label' => 'Journal d\'audit', 'icon' => 'scroll-text', 'url' => '/parametres/audit', 'permissions' => ['audit.view']],
                     ['label' => 'Sauvegarde & restauration', 'icon' => 'database-backup', 'url' => '/parametres/sauvegarde', 'permissions' => ['settings.sauvegarde.view']],
                     ['label' => 'Paramètres avancés', 'icon' => 'sliders-horizontal', 'url' => '/parametres/avance', 'permissions' => ['settings.avance.view']],
                 ],
@@ -503,7 +504,7 @@ class MenuService
                 'permissions' => [
                     'branding.view', 'settings.general.view', 'settings.academique.view',
                     'settings.notation.view', 'settings.finances.view', 'settings.documents.view',
-                    'settings.notifications.view', 'settings.securite.view', 'settings.sauvegarde.view', 'settings.avance.view',
+                    'settings.notifications.view', 'settings.securite.view', 'settings.sauvegarde.view', 'settings.avance.view', 'audit.view',
                 ],
                 'children' => [
                     ['label' => 'Établissement', 'icon' => 'school', 'url' => '/parametres/etablissement', 'permissions' => ['branding.view']],
@@ -515,6 +516,7 @@ class MenuService
                     ['label' => 'Notifications', 'icon' => 'bell', 'url' => '/parametres/notifications', 'permissions' => ['settings.notifications.view']],
                     ['label' => 'Apparence', 'icon' => 'palette', 'url' => '/parametres/apparence', 'permissions' => ['branding.view']],
                     ['label' => 'Sécurité', 'icon' => 'shield', 'url' => '/parametres/securite', 'permissions' => ['settings.securite.view']],
+                    ['label' => 'Journal d\'audit', 'icon' => 'scroll-text', 'url' => '/parametres/audit', 'permissions' => ['audit.view']],
                     ['label' => 'Sauvegarde & restauration', 'icon' => 'database-backup', 'url' => '/parametres/sauvegarde', 'permissions' => ['settings.sauvegarde.view']],
                     ['label' => 'Paramètres avancés', 'icon' => 'sliders-horizontal', 'url' => '/parametres/avance', 'permissions' => ['settings.avance.view']],
                 ],

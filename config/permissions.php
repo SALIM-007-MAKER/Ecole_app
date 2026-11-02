@@ -31,6 +31,8 @@ return [
         'settings.documents.view', 'settings.documents.update',
         'settings.notifications.view', 'settings.notifications.update',
         'settings.securite.view', 'settings.securite.update',
+        // Journal d'audit de l'établissement (étape 2 SaaS, T065) : admin et directeur uniquement
+        'audit.view',
         'settings.sauvegarde.view', 'settings.sauvegarde.update',
         'settings.avance.view', 'settings.avance.update',
         // Domaines personnalisés, Stockage & Quotas, Monitoring & Cache : retirés du
@@ -134,6 +136,7 @@ return [
     ],
     'directeur' => [
         // Parité avec le RBAC en base (etab_*), qui les attribue déjà : évite un écart config ↔ base (RbacTenantTest)
+        'audit.view',
         'comptabilite.view', 'comptabilite.create', 'comptabilite.edit',
         'settings.securite.view', 'settings.securite.update', 'settings.sauvegarde.view', 'settings.sauvegarde.update', 'settings.avance.view', 'settings.avance.update',
         'eleves.view', 'eleves.create', 'eleves.edit', 'eleves.delete',

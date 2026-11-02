@@ -65,19 +65,8 @@ class BulletinHandler implements Listener
 
     private function onPublished(BulletinPublished $event): void
     {
-        $this->audit->log(
-            $event->publishedById,
-            'publier',
-            'academique',
-            'bulletin',
-            $event->eleveId,
-            null,
-            [
-                'periode_id'   => $event->periodeId,
-                'jeton_empreinte'     => BulletinTokenService::fingerprint($event->verificationToken),
-                'published_at' => $event->publishedAt,
-            ]
-        );
+        // La trace de publication est écrite par BulletinGenerator DANS la transaction de publication (opération critique, annulée si la trace
+        // échoue) : l'écrire ici ferait un doublon, sans garantie transactionnelle.
     }
 
     private function onArchived(BulletinArchived $event): void

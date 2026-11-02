@@ -1106,6 +1106,17 @@ HTML;
         if (!$this->repo->transitionStatut((int)$row['id'], 'brouillon', 'publie', $userId, $publishedAt)) {
             throw new \RuntimeException('Le statut du bulletin a changé entre-temps : publication annulée.');
         }
+
+        // 5) Opération critique : la trace de publication est écrite dans la MÊME transaction que la bascule du statut. Si elle échoue
+        //    (AuditIndisponibleException), la transaction est annulée : le bulletin reste en brouillon et n'est jamais publié sans trace.
+        (new \App\Services\AuditService())->logStrict(
+            $pdo, $userId, 'publier', 'academique', 'bulletin', (int)$row['eleve_id'], null,
+            [
+                'periode_id'      => (int)$row['periode_id'],
+                'jeton_empreinte' => BulletinTokenService::fingerprint((string)($row['verification_token'] ?? '')),
+                'published_at'    => $publishedAt,
+            ]
+        );
     }
 
     /**

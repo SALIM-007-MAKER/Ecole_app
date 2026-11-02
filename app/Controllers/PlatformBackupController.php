@@ -29,7 +29,7 @@ class PlatformBackupController extends PlatformController
 
     private function operatorUserId(): int
     {
-        return (int)(PlatformAuth::current()['user_id'] ?? 0);
+        return (int)(PlatformAuth::current()['id'] ?? 0);
     }
 
     public function index(): void
@@ -63,8 +63,10 @@ class PlatformBackupController extends PlatformController
 
         try {
             $result = $this->backups->createGlobal($this->operatorUserId(), 'manual');
+            $this->audit('backup.created', ['entity_type' => 'platform_backup', 'entity_id' => (int)$result['id'], 'apres' => ['type' => 'global', 'tables' => $result['table_count']]]);
             Session::flash('success', "Sauvegarde globale créée (id={$result['id']}, {$result['table_count']} tables).");
         } catch (\Throwable $e) {
+            $this->audit('backup.created', ['resultat' => 'failure', 'apres' => ['type' => 'global', 'erreur' => mb_substr($e->getMessage(), 0, 200)]]);
             Session::flash('errors', ['Échec de la sauvegarde : ' . $e->getMessage()]);
         }
         $this->redirect(BASE_URL . '/platform/backups');
@@ -78,8 +80,10 @@ class PlatformBackupController extends PlatformController
         $etabId = (int)$this->request->post('etablissement_id', 0);
         try {
             $result = $this->backups->createTenant($etabId, $this->operatorUserId());
+            $this->audit('backup.created', ['etablissement_id' => $etabId, 'entity_type' => 'platform_backup', 'entity_id' => (int)$result['id'], 'apres' => ['type' => 'tenant']]);
             Session::flash('success', "Sauvegarde tenant créée (id={$result['id']}).");
         } catch (\Throwable $e) {
+            $this->audit('backup.created', ['etablissement_id' => $etabId, 'resultat' => 'failure', 'apres' => ['type' => 'tenant', 'erreur' => mb_substr($e->getMessage(), 0, 200)]]);
             Session::flash('errors', ['Échec de la sauvegarde : ' . $e->getMessage()]);
         }
         $this->redirect(BASE_URL . '/platform/backups');
@@ -99,8 +103,10 @@ class PlatformBackupController extends PlatformController
                 new \DateTimeImmutable("-{$sinceDays} days"),
                 $this->operatorUserId()
             );
+            $this->audit('backup.created', ['etablissement_id' => $etabId !== null ? (int)$etabId : null, 'entity_type' => 'platform_backup', 'entity_id' => (int)$result['id'], 'apres' => ['type' => 'differential', 'depuis_jours' => $sinceDays]]);
             Session::flash('success', "Sauvegarde différentielle créée (id={$result['id']}).");
         } catch (\Throwable $e) {
+            $this->audit('backup.created', ['resultat' => 'failure', 'apres' => ['type' => 'differential', 'erreur' => mb_substr($e->getMessage(), 0, 200)]]);
             Session::flash('errors', ['Échec de la sauvegarde : ' . $e->getMessage()]);
         }
         $this->redirect(BASE_URL . '/platform/backups');
@@ -112,6 +118,7 @@ class PlatformBackupController extends PlatformController
         $this->verifyCsrf();
 
         $ok = $this->backups->verifyIntegrity($id);
+        $this->audit('backup.verified', ['entity_type' => 'platform_backup', 'entity_id' => $id, 'resultat' => $ok ? 'success' : 'failure']);
         Session::flash($ok ? 'success' : 'errors', $ok ? 'Intégrité vérifiée : le checksum correspond au contenu stocké.' : ['Échec de la vérification d\'intégrité — checksum invalide ou fichier introuvable.']);
         $this->redirect(BASE_URL . '/platform/backups');
     }
@@ -123,8 +130,10 @@ class PlatformBackupController extends PlatformController
 
         try {
             $result = $this->backups->restoreGlobalVerify($id, $this->operatorUserId());
+            $this->audit('restore.verify', ['entity_type' => 'platform_backup', 'entity_id' => $id, 'apres' => ['tables' => $result['tables_created'], 'lignes' => $result['rows_restored']]]);
             Session::flash('success', "Vérification réussie : {$result['tables_created']} tables, {$result['rows_restored']} lignes restaurées dans une base temporaire (supprimée immédiatement après vérification).");
         } catch (\Throwable $e) {
+            $this->audit('restore.verify', ['entity_type' => 'platform_backup', 'entity_id' => $id, 'resultat' => 'failure', 'apres' => ['erreur' => mb_substr($e->getMessage(), 0, 200)]]);
             Session::flash('errors', ['Échec de la vérification : ' . $e->getMessage()]);
         }
         $this->redirect(BASE_URL . '/platform/backups');
@@ -140,8 +149,10 @@ class PlatformBackupController extends PlatformController
 
         try {
             $result = $this->backups->restoreTenantLive($id, $etabId, $this->operatorUserId(), $confirmation);
+            $this->audit('restore.tenant', ['etablissement_id' => $etabId, 'entity_type' => 'platform_backup', 'entity_id' => $id, 'apres' => ['lignes' => $result['rows_restored']]]);
             Session::flash('success', "Restauration réussie : {$result['rows_restored']} lignes fusionnées (upsert) pour cet établissement.");
         } catch (\Throwable $e) {
+            $this->audit('restore.tenant', ['etablissement_id' => $etabId, 'entity_type' => 'platform_backup', 'entity_id' => $id, 'resultat' => 'failure', 'apres' => ['erreur' => mb_substr($e->getMessage(), 0, 200)]]);
             Session::flash('errors', ['Échec de la restauration : ' . $e->getMessage()]);
         }
         $this->redirect(BASE_URL . '/platform/backups');
@@ -159,7 +170,8 @@ class PlatformBackupController extends PlatformController
 
         $content = StorageManager::driver()->get($row['storage_path']);
 
-        \Core\Logger::security('PLATFORM_BACKUP_DOWNLOADED', "backup_id={$id} par operator_user_id=" . $this->operatorUserId());
+        \Core\Logger::security('PLATFORM_BACKUP_DOWNLOADED', "backup_id={$id} par operator_id=" . $this->operatorId());
+        $this->audit('backup.downloaded', ['etablissement_id' => isset($row['etablissement_id']) ? (int)$row['etablissement_id'] : null, 'entity_type' => 'platform_backup', 'entity_id' => $id]);
 
         header('Content-Type: application/octet-stream');
         header('Content-Disposition: attachment; filename="' . basename($row['storage_path']) . '"');

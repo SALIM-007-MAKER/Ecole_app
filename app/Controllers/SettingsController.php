@@ -63,6 +63,7 @@ class SettingsController extends Controller
             ['id' => 'notifications',    'label' => 'Notifications',            'icon' => 'bell',                'url' => '/parametres/notifications',   'perm' => 'settings.notifications.view',   'desc' => 'Canaux email/SMS'],
             ['id' => 'apparence',        'label' => 'Apparence',                'icon' => 'palette',             'url' => '/parametres/apparence',       'perm' => 'branding.view',                 'desc' => 'Logo, couleurs, thème'],
             ['id' => 'securite',         'label' => 'Sécurité',                 'icon' => 'shield',              'url' => '/parametres/securite',        'perm' => 'settings.securite.view',        'desc' => 'Politique de mot de passe'],
+            ['id' => 'audit',            'label' => 'Journal d\'audit',         'icon' => 'scroll-text',         'url' => '/parametres/audit',           'perm' => 'audit.view',                    'desc' => 'Historique des actions sensibles'],
             ['id' => 'sauvegarde',       'label' => 'Sauvegarde & restauration','icon' => 'database-backup',     'url' => '/parametres/sauvegarde',      'perm' => 'settings.sauvegarde.view',      'desc' => 'Préférences de conservation'],
             ['id' => 'avance',           'label' => 'Paramètres avancés',       'icon' => 'sliders-horizontal',  'url' => '/parametres/avance',          'perm' => 'settings.avance.view',          'desc' => 'Préférences d\'affichage'],
         ];
@@ -153,6 +154,9 @@ class SettingsController extends Controller
         }
 
         $this->branding->save($etabId, $fields);
+        (new \App\Services\AuditService())->log(
+            (int)($this->currentUser()['id'] ?? 0), 'update', 'parametres', 'branding', $etabId, null, ['champs' => array_keys($fields)]
+        );
 
         \Core\Logger::security('BRANDING_UPDATED', "Branding modifié pour etablissement_id={$etabId} par user_id=" . (Session::getUser()['id'] ?? '?'));
 

@@ -106,15 +106,9 @@ class AccountingHandler implements Listener
 
     private function onFiscalYearClosed(FiscalYearClosed $e): void
     {
-        $this->audit->log(
-            $e->closedById,
-            'cloturer_exercice',
-            'Finance',
-            'exercice_comptable',
-            $e->exerciceId,
-            null,
-            $e->toArray()
-        );
+        // Aucune écriture d'audit ici : la clôture d'exercice est une opération CRITIQUE dont la trace unique est écrite par
+        // AccountingService::cloturerExercice() DANS la transaction de clôture (annulée si l'audit échoue). L'écrire aussi ici (au mieux,
+        // après validation) produisait deux entrées pour une même clôture. L'événement reste diffusé pour d'éventuels autres écouteurs.
     }
 
     private function onFiscalYearOpened(FiscalYearOpened $e): void

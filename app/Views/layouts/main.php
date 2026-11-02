@@ -262,6 +262,21 @@ $pageTitle = htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8');
     <main role="main" style="flex:1">
         <div style="padding:1.5rem;max-width:1440px;margin:0 auto">
 
+            <?php /* Alerte de traçabilité : visible des SEULS titulaires de audit.view, et ne compte que les événements de LEUR établissement
+                     (écrits dans le fichier de secours faute d'avoir pu être enregistrés). Aucun détail technique n'est affiché. */
+            $__uAudit = \Core\Session::getUser();
+            $__etabAudit = \Core\Tenant\TenantContext::current();
+            if ($__uAudit && $__etabAudit && in_array('audit.view', $__uAudit['permissions'] ?? [], true)) {
+                $__secoursAudit = \App\Services\AuditService::resumeSecours((int)$__etabAudit);
+                if ($__secoursAudit['count'] > 0): ?>
+            <div role="alert" style="display:flex;align-items:flex-start;gap:.75rem;padding:.875rem 1rem;border-radius:.75rem;border:2px solid #fecaca;background:#fef2f2;color:#991b1b;font-size:.875rem;margin-bottom:1rem">
+                <i data-lucide="shield-alert" style="width:1rem;height:1rem;margin-top:.125rem;flex-shrink:0"></i>
+                <span style="flex:1"><strong>Journal d'audit : traçabilité incomplète.</strong>
+                    <?= (int)$__secoursAudit['count'] ?> événement(s) de votre établissement n'ont pas pu être enregistrés (dernier le <?= htmlspecialchars((string)$__secoursAudit['derniere'], ENT_QUOTES) ?>).
+                    Ils sont conservés sur le serveur : demandez à l'administrateur technique de les réinscrire (<code>php database/audit-rejouer.php</code>).</span>
+            </div>
+            <?php endif; } ?>
+
             <?php /* Messages flash — succès/info se ferment seuls après 5s,
                      erreur/avertissement restent affichés jusqu'à fermeture
                      manuelle (l'utilisateur doit pouvoir les lire/agir). */

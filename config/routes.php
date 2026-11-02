@@ -69,6 +69,10 @@ $router->get('/parametres/sauvegarde',  'SettingsController@showSauvegarde');
 $router->post('/parametres/sauvegarde', 'SettingsController@updateSauvegarde');
 
 $router->get('/parametres/avance',  'SettingsController@showAvance');
+// Journal d'audit de l'établissement : lecture seule, permission audit.view, établissement = contexte tenant validé (jamais un paramètre de requête)
+$router->get('/parametres/audit',      'AuditController@index');
+$router->get('/parametres/audit/{id}', 'AuditController@show');
+
 $router->post('/parametres/avance', 'SettingsController@updateAvance');
 
 // ─── Portail Super-Admin SaaS (Phase 14.10) — indépendant des établissements ──
@@ -123,6 +127,13 @@ $router->get('/platform/backups/{id}/telecharger',     'PlatformBackupController
 $router->post('/platform/backups/{id}/verifier',       'PlatformBackupController@verifyIntegrity');
 $router->post('/platform/backups/{id}/restaurer-verif','PlatformBackupController@restoreVerify');
 $router->post('/platform/backups/{id}/restaurer-tenant','PlatformBackupController@restoreTenant');
+
+// Compte de l'opérateur connecté (changement de mot de passe) et journal d'audit global (lecture seule ; export réservé au super_admin)
+$router->get('/platform/compte/mot-de-passe',  'PlatformAccountController@showPassword');
+$router->post('/platform/compte/mot-de-passe', 'PlatformAccountController@updatePassword');
+$router->get('/platform/audit',                'PlatformAuditController@index');
+$router->get('/platform/audit/export',         'PlatformAuditController@export');
+$router->get('/platform/audit/{id}',           'PlatformAuditController@show');
 
 // ─── Élèves (routes statiques AVANT les routes paramétrées) ──────────────────
 $router->get('/eleves',              'EleveController@index');

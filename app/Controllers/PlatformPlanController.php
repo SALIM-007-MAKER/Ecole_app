@@ -19,7 +19,7 @@ class PlatformPlanController extends PlatformController
 
     private function operatorUserId(): int
     {
-        return (int)(PlatformAuth::current()['user_id'] ?? 0);
+        return (int)(PlatformAuth::current()['id'] ?? 0);
     }
 
     public function index(): void

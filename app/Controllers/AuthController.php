@@ -488,6 +488,7 @@ class AuthController extends Controller
         }
 
         $this->userModel->updatePassword($sessionUser['id'], password_hash($newPass, PASSWORD_BCRYPT));
+        (new \App\Services\AuditService())->log((int)$sessionUser['id'], 'password_changed', 'auth', 'users', (int)$sessionUser['id'], null, ['source' => 'profil']);
 
         Session::flash('success', 'Mot de passe modifié avec succès.');
         $this->redirect(BASE_URL . '/profile');

@@ -43,6 +43,7 @@ try {
     preg_match_all('/[A-Za-z0-9._%+-]+@([A-Za-z0-9.-]+\.[a-z]{2,})/', $sql, $e);
     $etranges = array_diff(array_unique(array_map('strtolower', $e[1])), ['ecole.dz', 'demo.ecole.local', 'edu.dz', 'ecole.example', 'example.test']);
     if ($etranges) { fwrite(STDERR, "REFUS : adresses hors démonstration dans les données : " . implode(', ', $etranges) . " — neutralisez-les avant d'enregistrer le jeu.\n"); exit(1); }
+    $sql = preg_replace('/DEFINER=`[^`]+`@`[^`]+`/', 'DEFINER=`root`@`localhost`', $sql);   // même définisseur quel que soit le serveur ayant produit l'export (root@% en conteneur, root@localhost sous WAMP)
     $entete = "-- Jeu de données de référence des tests (démonstration). Schéma + données, 166+ tables.\n"
         . "-- Mots de passe : tous les comptes partagent le même hachage de test. Aucun secret, aucune adresse réelle.\n"
         . "-- Régénération : php tests/Support/fixtures/mettre_a_jour.php (voir tests/Support/fixtures/LISEZMOI.md).\n";

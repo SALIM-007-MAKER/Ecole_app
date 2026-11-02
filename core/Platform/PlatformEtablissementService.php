@@ -121,7 +121,11 @@ final class PlatformEtablissementService
             $this->applyPlanLimits($id, (int)$data['plan_id']);
         }
 
-        Logger::security('PLATFORM_TENANT_CREATED', "etablissement_id={$id} slug={$slug} par operator_user_id={$operatorUserId}");
+        Logger::security('PLATFORM_TENANT_CREATED', "etablissement_id={$id} slug={$slug} par operator_id={$operatorUserId}");
+        PlatformAuditService::make($this->pdo)->recordPar($operatorUserId, 'tenant.created', [
+            'etablissement_id' => $id, 'entity_type' => 'etablissement', 'entity_id' => $id,
+            'apres' => ['slug' => $slug, 'nom' => $nom, 'type' => $type, 'plan_id' => $data['plan_id'] ?? null, 'statut' => 'trial'],
+        ]);
         return $id;
     }
 
@@ -132,6 +136,7 @@ final class PlatformEtablissementService
 
     public function suspend(int $id, int $operatorUserId, ?string $reason = null): bool
     {
+        $avant = $this->statutActuel($id);
         $stmt = $this->pdo->prepare(
             "UPDATE etablissements SET statut = 'suspended', suspended_at = NOW(), suspension_reason = ?
              WHERE id = ? AND deleted_at IS NULL"
@@ -139,7 +144,11 @@ final class PlatformEtablissementService
         $stmt->execute([$reason, $id]);
         $ok = $stmt->rowCount() > 0;
         if ($ok) {
-            Logger::security('PLATFORM_TENANT_SUSPENDED', "etablissement_id={$id} raison=" . ($reason ?? '(non précisée)') . " par operator_user_id={$operatorUserId}");
+            Logger::security('PLATFORM_TENANT_SUSPENDED', "etablissement_id={$id} raison=" . ($reason ?? '(non précisée)') . " par operator_id={$operatorUserId}");
+            PlatformAuditService::make($this->pdo)->recordPar($operatorUserId, 'tenant.suspended', [
+                'etablissement_id' => $id, 'entity_type' => 'etablissement', 'entity_id' => $id,
+                'avant' => ['statut' => $avant], 'apres' => ['statut' => 'suspended', 'raison' => $reason],
+            ]);
         }
         return $ok;
     }
@@ -157,13 +166,18 @@ final class PlatformEtablissementService
     /** Suppression LOGIQUE uniquement (deleted_at) — jamais de DROP/DELETE physique. */
     public function softDelete(int $id, int $operatorUserId): bool
     {
+        $avant = $this->statutActuel($id);
         $stmt = $this->pdo->prepare(
             "UPDATE etablissements SET deleted_at = NOW(), statut = 'cancelled' WHERE id = ? AND deleted_at IS NULL"
         );
         $stmt->execute([$id]);
         $ok = $stmt->rowCount() > 0;
         if ($ok) {
-            Logger::security('PLATFORM_TENANT_SOFT_DELETED', "etablissement_id={$id} par operator_user_id={$operatorUserId}");
+            Logger::security('PLATFORM_TENANT_SOFT_DELETED', "etablissement_id={$id} par operator_id={$operatorUserId}");
+            PlatformAuditService::make($this->pdo)->recordPar($operatorUserId, 'tenant.deleted', [
+                'etablissement_id' => $id, 'entity_type' => 'etablissement', 'entity_id' => $id,
+                'avant' => ['statut' => $avant, 'supprime' => false], 'apres' => ['statut' => 'cancelled', 'supprime' => true, 'suppression' => 'logique'],
+            ]);
         }
         return $ok;
     }
@@ -178,6 +192,7 @@ final class PlatformEtablissementService
             return false;
         }
 
+        $avant = $this->limitesActuelles($etablissementId);
         $stmt = $this->pdo->prepare(
             "UPDATE etablissements SET plan_id = ? WHERE id = ? AND deleted_at IS NULL"
         );
@@ -188,7 +203,11 @@ final class PlatformEtablissementService
 
         $this->applyPlanLimits($etablissementId, $planId, $planRow);
 
-        Logger::security('PLATFORM_TENANT_PLAN_ASSIGNED', "etablissement_id={$etablissementId} plan={$planRow['code']} par operator_user_id={$operatorUserId}");
+        Logger::security('PLATFORM_TENANT_PLAN_ASSIGNED', "etablissement_id={$etablissementId} plan={$planRow['code']} par operator_id={$operatorUserId}");
+        PlatformAuditService::make($this->pdo)->recordPar($operatorUserId, 'tenant.plan_assigned', [
+            'etablissement_id' => $etablissementId, 'entity_type' => 'etablissement', 'entity_id' => $etablissementId,
+            'avant' => $avant, 'apres' => ['plan_id' => $planId, 'plan_code' => $planRow['code']] + ($this->limitesActuelles($etablissementId) ?? []),
+        ]);
         return true;
     }
 
@@ -214,8 +233,34 @@ final class PlatformEtablissementService
         ]);
     }
 
+    /** Statut courant d'un établissement (null s'il n'existe pas) — ancienne valeur du journal d'audit. */
+    private function statutActuel(int $id): ?string
+    {
+        $s = $this->pdo->prepare('SELECT statut FROM etablissements WHERE id = ?');
+        $s->execute([$id]);
+        $v = $s->fetchColumn();
+        return $v === false ? null : (string)$v;
+    }
+
+    /** @return array{plan_id:?int, max_users:int, max_eleves:int, storage_quota_mb:int}|null */
+    private function limitesActuelles(int $id): ?array
+    {
+        $s = $this->pdo->prepare('SELECT plan_id, max_users, max_eleves, storage_quota_mb FROM etablissements WHERE id = ?');
+        $s->execute([$id]);
+        $r = $s->fetch(PDO::FETCH_ASSOC);
+        return $r === false ? null : ['plan_id' => $r['plan_id'] !== null ? (int)$r['plan_id'] : null, 'max_users' => (int)$r['max_users'],
+                                      'max_eleves' => (int)$r['max_eleves'], 'storage_quota_mb' => (int)$r['storage_quota_mb']];
+    }
+
+    private const ACTIONS_AUDIT = [
+        'PLATFORM_TENANT_ACTIVATED' => 'tenant.activated',
+        'PLATFORM_TENANT_ARCHIVED'  => 'tenant.archived',
+        'PLATFORM_TENANT_RESTORED'  => 'tenant.restored',
+    ];
+
     private function setStatut(int $id, string $statut, string $logEvent, int $operatorUserId): bool
     {
+        $avant = $this->statutActuel($id);
         $activatedClause = $statut === 'active' ? ", activated_at = COALESCE(activated_at, NOW())" : '';
         $stmt = $this->pdo->prepare(
             "UPDATE etablissements SET statut = ?{$activatedClause} WHERE id = ? AND deleted_at IS NULL"
@@ -223,7 +268,11 @@ final class PlatformEtablissementService
         $stmt->execute([$statut, $id]);
         $ok = $stmt->rowCount() > 0;
         if ($ok) {
-            Logger::security($logEvent, "etablissement_id={$id} par operator_user_id={$operatorUserId}");
+            Logger::security($logEvent, "etablissement_id={$id} par operator_id={$operatorUserId}");
+            PlatformAuditService::make($this->pdo)->recordPar($operatorUserId, self::ACTIONS_AUDIT[$logEvent] ?? 'tenant.status_changed', [
+                'etablissement_id' => $id, 'entity_type' => 'etablissement', 'entity_id' => $id,
+                'avant' => ['statut' => $avant], 'apres' => ['statut' => $statut],
+            ]);
         }
         return $ok;
     }

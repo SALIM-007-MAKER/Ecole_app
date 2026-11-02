@@ -13,7 +13,9 @@
  *    instantané (snapshot)
  * 5. Sécurité — un utilisateur sans ligne platform_operators active ne peut
  *    jamais être authentifié comme opérateur ; niveaux (support/admin/
- *    super_admin) correctement distingués
+ *    super_admin) correctement distingués. Depuis T064 l'identité d'un opérateur
+ *    est indépendante de `users` : même une ligne liée à un compte d'établissement
+ *    ne permet aucune connexion (voir aussi PlatformOperatorAuthTest)
  *
  * Toutes les données de test sont créées/détruites dans une transaction PDO
  * annulée en fin de script — zéro pollution.
@@ -45,6 +47,7 @@ spl_autoload_register(function (string $class): void {
 use Core\Database;
 use Core\Platform\PlatformAuth;
 use Core\Platform\PlatformEtablissementService;
+use Core\Platform\PlatformOperatorService;
 use Core\Platform\PlatformPlanService;
 use Core\Platform\PlatformStatsService;
 use Core\Session;
@@ -222,8 +225,9 @@ try {
     section('5. Sécurité — accès opérateur strictement conditionné à platform_operators');
     // ══════════════════════════════════════════════════════════════════════
 
+    $regularEmail = 'no-platform-access-' . uniqid() . '@test.dz';
     $pdo->exec("INSERT INTO users (nom, email, password, role, actif, etablissement_id)
-                VALUES ('Utilisateur Sans Accès Plateforme', 'no-platform-access-" . uniqid() . "@test.dz', '" . password_hash('x', PASSWORD_DEFAULT) . "', 'secretaire', 1, 1)");
+                VALUES ('Utilisateur Sans Accès Plateforme', '" . $regularEmail . "', '" . password_hash('x', PASSWORD_DEFAULT) . "', 'secretaire', 1, 1)");
     $regularUserId = (int)$pdo->lastInsertId();
 
     $opCheck = $pdo->prepare("SELECT * FROM platform_operators WHERE user_id = ? AND actif = 1");
@@ -239,6 +243,9 @@ try {
     $pdo->exec("UPDATE platform_operators SET actif = 0 WHERE user_id = {$regularUserId}");
     $opCheck->execute([$regularUserId]);
     assert_false($opCheck->fetch() !== false, 'Un opérateur désactivé (actif=0) n\'est plus reconnu — accès révocable sans suppression');
+
+    $pdo->exec("UPDATE platform_operators SET actif = 1, email = '" . $regularEmail . "' WHERE user_id = {$regularUserId}");
+    assert_eq(null, (new PlatformOperatorService($pdo))->authentifier($regularEmail, 'x'), 'Même avec une ligne platform_operators active liée à ce compte et son e-mail, ses identifiants d\'établissement ne donnent AUCUN accès opérateur (identité indépendante, mot de passe propre exigé)');
 
 } finally {
     $pdo->rollBack();

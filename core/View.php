@@ -22,7 +22,12 @@ class View
      */
     public function render(string $view, array $data = [], string $layout = 'main'): void
     {
-        extract($data, EXTR_SKIP);
+        // Le paramètre s'appelle $data : sans ce détour, EXTR_SKIP ignorait la clé 'data' des variables de la vue
+        // (la variable existait déjà) et la vue recevait tout le tableau au lieu de la liste attendue.
+        $__vars = $data;
+        unset($data);
+        extract($__vars, EXTR_SKIP);
+        unset($__vars);
 
         // Capturer le contenu de la vue
         ob_start();
@@ -71,7 +76,10 @@ class View
      */
     public function partial(string $view, array $data = []): string
     {
-        extract($data, EXTR_SKIP);
+        $__vars = $data;
+        unset($data);
+        extract($__vars, EXTR_SKIP);
+        unset($__vars);
         $viewFile = $this->viewPath . $view . '.php';
 
         if (!file_exists($viewFile)) {

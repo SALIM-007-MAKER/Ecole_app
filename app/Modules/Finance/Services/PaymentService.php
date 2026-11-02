@@ -119,14 +119,14 @@ class PaymentService
             // Reçu
             $recuId = $this->creerRecu($paiementId, $dto->factureId, (int)$facture->eleve_id, $montantApplique, $userId);
 
+            // Opération critique : la trace est écrite dans la MÊME transaction ; si elle échoue, le paiement est annulé.
+            $this->audit->logCreateStrict($pdo, $userId, 'finance', 'paiement', $paiementId, $dto->toArray());
+
             $pdo->commit();
         } catch (\Throwable $e) {
             $pdo->rollBack();
             throw $e;
         }
-
-        // Audit
-        $this->audit->logCreate($userId, 'finance', 'paiement', $paiementId, $dto->toArray());
 
         // Events
         $estPartiel = $nouveauStatut === 'partiellement_payee';
@@ -174,22 +174,38 @@ class PaymentService
         $restant = max(0.0, (float)$facture->montant_total - (float)$facture->montant_paye);
         $montantApplique = min($dto->montant, $restant);
 
-        $paiementId = $this->repo->insert([
-            'numero'            => $numero,
-            'facture_id'        => $dto->factureId,
-            'mode_paiement_id'  => $modeId,
-            'montant'           => $dto->montant,
-            'montant_applique'  => $montantApplique,
-            'reference_externe' => $dto->referenceExterne,
-            'date_paiement'     => $dto->datePaiement,
-            'statut'            => 'initie',
-            'echeance_id'       => $dto->echeanceId,
-            'avoir_id'          => $dto->avoirId,
-            'note'              => $dto->note,
-            'encaisse_par'      => $userId,
-        ]);
+        $pdo = $this->repo->getPdo();
+        $transactionPropre = !$pdo->inTransaction();   // l'appelant peut déjà détenir la transaction : il l'annulera en cas d'exception
+        if ($transactionPropre) {
+            $pdo->beginTransaction();
+        }
+        try {
+            $paiementId = $this->repo->insert([
+                'numero'            => $numero,
+                'facture_id'        => $dto->factureId,
+                'mode_paiement_id'  => $modeId,
+                'montant'           => $dto->montant,
+                'montant_applique'  => $montantApplique,
+                'reference_externe' => $dto->referenceExterne,
+                'date_paiement'     => $dto->datePaiement,
+                'statut'            => 'initie',
+                'echeance_id'       => $dto->echeanceId,
+                'avoir_id'          => $dto->avoirId,
+                'note'              => $dto->note,
+                'encaisse_par'      => $userId,
+            ]);
 
-        $this->audit->logCreate($userId, 'finance', 'paiement', $paiementId, $dto->toArray());
+            // Opération critique : la trace est écrite dans la MÊME transaction ; si elle échoue, le paiement n'est pas enregistré.
+            $this->audit->logCreateStrict($pdo, $userId, 'finance', 'paiement', $paiementId, $dto->toArray());
+            if ($transactionPropre) {
+                $pdo->commit();
+            }
+        } catch (\Throwable $e) {
+            if ($transactionPropre && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
 
         EventDispatcher::dispatch(new PaymentInitiated(
             paiementId:    $paiementId,
@@ -265,15 +281,17 @@ class PaymentService
             }
 
             $this->creerRecu($paiementId, (int)$paiement->facture_id, (int)$facture->eleve_id, $montantApplique, $userId);
+
+            // Opération critique : trace dans la MÊME transaction (échec => paiement non complété).
+            $this->audit->logUpdateStrict($pdo, $userId, 'finance', 'paiement', $paiementId,
+                ['statut' => $paiement->statut], ['statut' => 'complete']
+            );
+
             $pdo->commit();
         } catch (\Throwable $e) {
             $pdo->rollBack();
             throw $e;
         }
-
-        $this->audit->logUpdate($userId, 'finance', 'paiement', $paiementId,
-            ['statut' => $paiement->statut], ['statut' => 'complete']
-        );
 
         EventDispatcher::dispatch(new PaymentCompleted(
             paiementId:           $paiementId,
@@ -304,17 +322,33 @@ class PaymentService
             throw new \InvalidArgumentException("Un motif d'annulation est requis.");
         }
 
-        $this->repo->update($paiementId, [
-            'statut'          => 'annule',
-            'annule_par'      => $userId,
-            'date_annulation' => date('Y-m-d'),
-            'motif_annulation' => $motif,
-        ]);
+        $pdo = $this->repo->getPdo();
+        $transactionPropre = !$pdo->inTransaction();   // l'appelant peut déjà détenir la transaction : il l'annulera en cas d'exception
+        if ($transactionPropre) {
+            $pdo->beginTransaction();
+        }
+        try {
+            $this->repo->update($paiementId, [
+                'statut'          => 'annule',
+                'annule_par'      => $userId,
+                'date_annulation' => date('Y-m-d'),
+                'motif_annulation' => $motif,
+            ]);
 
-        $this->audit->logUpdate($userId, 'finance', 'paiement', $paiementId,
-            ['statut' => $paiement->statut],
-            ['statut' => 'annule', 'motif' => $motif]
-        );
+            // Opération critique : trace dans la MÊME transaction (échec => le paiement n'est pas annulé).
+            $this->audit->logUpdateStrict($pdo, $userId, 'finance', 'paiement', $paiementId,
+                ['statut' => $paiement->statut],
+                ['statut' => 'annule', 'motif' => $motif]
+            );
+            if ($transactionPropre) {
+                $pdo->commit();
+            }
+        } catch (\Throwable $e) {
+            if ($transactionPropre && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
 
         EventDispatcher::dispatch(new PaymentCancelled(
             paiementId:    $paiementId,
@@ -385,16 +419,17 @@ class PaymentService
                 ]);
             }
 
+            // Opération critique : trace dans la MÊME transaction (échec => remboursement annulé).
+            $this->audit->logUpdateStrict($pdo, $userId, 'finance', 'paiement', $paiementId,
+                ['statut' => 'complete'],
+                ['statut' => 'rembourse', 'motif' => $dto->motif]
+            );
+
             $pdo->commit();
         } catch (\Throwable $e) {
             $pdo->rollBack();
             throw $e;
         }
-
-        $this->audit->logUpdate($userId, 'finance', 'paiement', $paiementId,
-            ['statut' => 'complete'],
-            ['statut' => 'rembourse', 'motif' => $dto->motif]
-        );
 
         EventDispatcher::dispatch(new PaymentRefunded(
             paiementId:       $paiementId,

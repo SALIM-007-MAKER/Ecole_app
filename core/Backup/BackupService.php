@@ -56,8 +56,8 @@ final class BackupService
         $startedAt = microtime(true);
 
         $insert = $this->pdo->prepare(
-            "INSERT INTO platform_backups (etablissement_id, type, statut, storage_path, triggered_by, started_at, expires_at)
-             VALUES (?, ?, 'running', '', ?, NOW(), DATE_ADD(CURDATE(), INTERVAL ? DAY))"
+            "INSERT INTO platform_backups (etablissement_id, type, statut, storage_path, triggered_by, triggered_by_kind, started_at, expires_at)
+             VALUES (?, ?, 'running', '', ?, 'operator', NOW(), DATE_ADD(CURDATE(), INTERVAL ? DAY))"
         );
         $insert->execute([$etablissementId, $type, $operatorUserId, self::RETENTION_DAYS[$type] ?? 30]);
         $backupId = (int)$this->pdo->lastInsertId();
@@ -82,7 +82,7 @@ final class BackupService
             );
             $update->execute([$path, strlen($payload), $checksum, $encrypt ? 1 : 0, $durationMs, $backupId]);
 
-            Logger::security('PLATFORM_BACKUP_CREATED', "backup_id={$backupId} type={$type} etablissement_id=" . ($etablissementId ?? 'NULL') . " taille=" . strlen($payload) . " par operator_user_id={$operatorUserId}");
+            Logger::security('PLATFORM_BACKUP_CREATED', "backup_id={$backupId} type={$type} etablissement_id=" . ($etablissementId ?? 'NULL') . " taille=" . strlen($payload) . " par operator_id={$operatorUserId}");
 
             return [
                 'id' => $backupId, 'type' => $type, 'etablissement_id' => $etablissementId,
@@ -157,7 +157,7 @@ final class BackupService
             $result = $this->restorer->restoreTenantLive($dump, $etablissementId, $this->pdo);
 
             $this->logRestoreEnd($restoreId, 'success', $result['rows_restored'], $startedAt);
-            Logger::security('PLATFORM_RESTORE_TENANT_SUCCESS', "backup_id={$backupId} etablissement_id={$etablissementId} rows={$result['rows_restored']} par operator_user_id={$operatorUserId}");
+            Logger::security('PLATFORM_RESTORE_TENANT_SUCCESS', "backup_id={$backupId} etablissement_id={$etablissementId} rows={$result['rows_restored']} par operator_id={$operatorUserId}");
 
             return $result;
         } catch (\Throwable $e) {
@@ -189,7 +189,7 @@ final class BackupService
             $result = $this->restorer->restoreGlobalToScratch($dump, $scratchPdo);
 
             $this->logRestoreEnd($restoreId, 'success', $result['rows_restored'], $startedAt, null, "db={$scratchDb} (supprimée après vérification)");
-            Logger::security('PLATFORM_RESTORE_VERIFY_SUCCESS', "backup_id={$backupId} tables={$result['tables_created']} rows={$result['rows_restored']} par operator_user_id={$operatorUserId}");
+            Logger::security('PLATFORM_RESTORE_VERIFY_SUCCESS', "backup_id={$backupId} tables={$result['tables_created']} rows={$result['rows_restored']} par operator_id={$operatorUserId}");
 
             return $result + ['scratch_db' => $scratchDb];
         } catch (\Throwable $e) {
@@ -279,8 +279,8 @@ final class BackupService
     private function logRestoreStart(string $type, int $backupId, ?int $etablissementId, int $operatorUserId, ?string $targetInfo): int
     {
         $stmt = $this->pdo->prepare(
-            "INSERT INTO platform_restores (backup_id, etablissement_id, type, statut, target_info, triggered_by, started_at)
-             VALUES (?, ?, ?, 'running', ?, ?, NOW())"
+            "INSERT INTO platform_restores (backup_id, etablissement_id, type, statut, target_info, triggered_by, triggered_by_kind, started_at)
+             VALUES (?, ?, ?, 'running', ?, ?, 'operator', NOW())"
         );
         $stmt->execute([$backupId, $etablissementId, $type, $targetInfo, $operatorUserId]);
         return (int)$this->pdo->lastInsertId();

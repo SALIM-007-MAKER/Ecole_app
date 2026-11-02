@@ -27,7 +27,13 @@ class AuditHandler implements Listener
                 'eleves',
                 'eleves',
                 $event->eleveId,
-                $event->toArray()
+                // Identifiants seulement : ni nom ni prénom d'élève dans le journal (donnée personnelle non nécessaire à la traçabilité).
+                [
+                    'eleve_id'        => $event->eleveId,
+                    'matricule'       => $event->matricule,
+                    'classe_id'       => $event->classeId,
+                    'from_csv_import' => $event->fromCsvImport,
+                ]
             ),
 
             $event instanceof EleveActifChanged => $this->audit->log(

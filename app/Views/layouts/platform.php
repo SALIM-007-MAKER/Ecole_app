@@ -46,12 +46,15 @@ $branding = BrandingService::make()->get((int)$__etabIdForBranding);
         <a href="<?= BASE_URL ?>/platform/dashboard"><i data-lucide="layout-dashboard" style="width:1rem;height:1rem"></i>Tableau de bord</a>
         <a href="<?= BASE_URL ?>/platform/etablissements"><i data-lucide="building-2" style="width:1rem;height:1rem"></i>Établissements</a>
         <a href="<?= BASE_URL ?>/platform/plans"><i data-lucide="badge-dollar-sign" style="width:1rem;height:1rem"></i>Plans</a>
+        <?php if (\Core\Platform\PlatformAuth::hasLevel('admin', 'super_admin')): ?>
+        <a href="<?= BASE_URL ?>/platform/audit"><i data-lucide="scroll-text" style="width:1rem;height:1rem"></i>Journal d'audit</a>
+        <?php endif; ?>
         <?php if (\Core\Platform\PlatformAuth::hasLevel('super_admin')): ?>
         <a href="<?= BASE_URL ?>/platform/backups"><i data-lucide="shield-check" style="width:1rem;height:1rem"></i>Sauvegardes</a>
         <?php endif; ?>
     </nav>
     <div style="display:flex;align-items:center;gap:1rem">
-        <span style="color:#94a3b8;font-size:.8125rem"><?= htmlspecialchars($operator['email'] ?? '', ENT_QUOTES) ?> · <?= htmlspecialchars($operator['niveau'] ?? '', ENT_QUOTES) ?></span>
+        <a href="<?= BASE_URL ?>/platform/compte/mot-de-passe" title="Changer mon mot de passe" style="font-size:.8125rem"><?= htmlspecialchars($operator['email'] ?? '', ENT_QUOTES) ?> · <?= htmlspecialchars($operator['niveau'] ?? '', ENT_QUOTES) ?></a>
         <form method="POST" action="<?= BASE_URL ?>/platform/logout">
             <input type="hidden" name="_csrf_token" value="<?= \Core\Session::getCsrfToken() ?>">
             <button type="submit" style="color:#94a3b8;background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:.375rem;font-size:.875rem">
@@ -63,6 +66,36 @@ $branding = BrandingService::make()->get((int)$__etabIdForBranding);
 
 <main class="platform-main">
     <div class="platform-content">
+        <?php
+        // Traçabilité : événements du fichier de secours pas encore rejoués dans le journal (panne d'écriture), et échec survenu pendant cette requête.
+        $__secours = \Core\Platform\PlatformAuditService::resumeSecours();
+        $__avertissement = \Core\Session::getFlash('audit_warning');
+        if (\Core\Platform\PlatformAuditService::echecsDeLaRequete() > 0 && !$__avertissement) {
+            $__avertissement = 'Une opération vient d\'être effectuée sans que sa traçabilité ait pu être enregistrée dans le journal d\'audit.';
+        }
+        ?>
+        <?php if ($__avertissement || $__secours['count'] > 0): ?>
+        <div class="alert alert-danger mb-4" role="alert" style="border-width:2px">
+            <i data-lucide="shield-alert" class="w-4 h-4 shrink-0"></i>
+            <div>
+                <div style="font-size:.875rem;font-weight:700">Journal d'audit : traçabilité incomplète</div>
+                <?php if ($__avertissement): ?>
+                <div style="font-size:.875rem"><?= htmlspecialchars((string)$__avertissement, ENT_QUOTES) ?></div>
+                <?php endif; ?>
+                <?php if ($__secours['count'] > 0): ?>
+                <div style="font-size:.875rem"><?= (int)$__secours['count'] ?> événement(s) n'ont pas pu être écrits dans la base et sont conservés dans le fichier de secours du serveur
+                    (dossier storage/logs, dernier le <?= htmlspecialchars((string)$__secours['derniere'], ENT_QUOTES) ?>).
+                    Une fois la base rétablie : <code>php database/audit-rejouer.php</code>.</div>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+        <?php if (\Core\Session::hasFlash('error')): ?>
+        <div class="alert alert-danger mb-4" role="alert">
+            <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
+            <span><?= htmlspecialchars((string)\Core\Session::getFlash('error'), ENT_QUOTES) ?></span>
+        </div>
+        <?php endif; ?>
         <?php if (\Core\Session::hasFlash('success')): ?>
         <div class="alert alert-success mb-4" role="alert">
             <i data-lucide="check-circle" class="w-4 h-4 shrink-0"></i>

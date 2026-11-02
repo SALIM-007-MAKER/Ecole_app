@@ -84,12 +84,26 @@ final class PlatformPlanService
         ]);
         $id = (int)$this->pdo->lastInsertId();
 
-        Logger::security('PLATFORM_PLAN_CREATED', "plan_id={$id} code={$code} par operator_user_id={$operatorUserId}");
+        Logger::security('PLATFORM_PLAN_CREATED', "plan_id={$id} code={$code} par operator_id={$operatorUserId}");
+        PlatformAuditService::make($this->pdo)->recordPar($operatorUserId, 'plan.created', [
+            'entity_type' => 'platform_plan', 'entity_id' => $id, 'apres' => $this->instantane($id),
+        ]);
         return $id;
+    }
+
+    /** Valeurs d'un plan relues en base (ancienne/nouvelle valeur du journal d'audit). */
+    private function instantane(int $id): ?array
+    {
+        $s = $this->pdo->prepare(
+            'SELECT code, nom, max_users, max_eleves, storage_quota_mb, api_calls_per_day, prix_mensuel, prix_annuel, devise, actif FROM platform_plans WHERE id = ?'
+        );
+        $s->execute([$id]);
+        return $s->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
     public function update(int $id, array $data, int $operatorUserId): bool
     {
+        $avant = $this->instantane($id);
         $stmt = $this->pdo->prepare(
             "UPDATE platform_plans SET nom = ?, max_users = ?, max_eleves = ?, storage_quota_mb = ?,
                 api_calls_per_day = ?, prix_mensuel = ?, prix_annuel = ? WHERE id = ?"
@@ -106,18 +120,26 @@ final class PlatformPlanService
         ]);
         $ok = $stmt->rowCount() > 0;
         if ($ok) {
-            Logger::security('PLATFORM_PLAN_UPDATED', "plan_id={$id} par operator_user_id={$operatorUserId}");
+            Logger::security('PLATFORM_PLAN_UPDATED', "plan_id={$id} par operator_id={$operatorUserId}");
+            PlatformAuditService::make($this->pdo)->recordPar($operatorUserId, 'plan.updated', [
+                'entity_type' => 'platform_plan', 'entity_id' => $id, 'avant' => $avant, 'apres' => $this->instantane($id),
+            ]);
         }
         return $ok;
     }
 
     public function toggleActive(int $id, bool $active, int $operatorUserId): bool
     {
+        $avant = $this->instantane($id);
         $stmt = $this->pdo->prepare("UPDATE platform_plans SET actif = ? WHERE id = ?");
         $stmt->execute([$active ? 1 : 0, $id]);
         $ok = $stmt->rowCount() > 0;
         if ($ok) {
-            Logger::security('PLATFORM_PLAN_TOGGLED', "plan_id={$id} actif=" . ($active ? '1' : '0') . " par operator_user_id={$operatorUserId}");
+            Logger::security('PLATFORM_PLAN_TOGGLED', "plan_id={$id} actif=" . ($active ? '1' : '0') . " par operator_id={$operatorUserId}");
+            PlatformAuditService::make($this->pdo)->recordPar($operatorUserId, 'plan.toggled', [
+                'entity_type' => 'platform_plan', 'entity_id' => $id,
+                'avant' => ['actif' => (int)($avant['actif'] ?? 0)], 'apres' => ['actif' => $active ? 1 : 0],
+            ]);
         }
         return $ok;
     }
