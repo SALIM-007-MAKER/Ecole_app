@@ -31,6 +31,7 @@ $statutBadge = [
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <div class="lg:col-span-2 space-y-6">
         <div class="rounded-xl border border-slate-200 bg-white shadow-sm p-5 grid grid-cols-2 gap-4 text-sm">
+            <div class="col-span-2"><p class="text-slate-400 text-xs">Plan actuel</p><p class="text-slate-800"><?php if (!empty($etab['plan_id'])): ?><?= htmlspecialchars((string)($etab['plan_nom'] ?? '#' . $etab['plan_id']), ENT_QUOTES) ?><?php if (isset($etab['plan_actif']) && (int)$etab['plan_actif'] === 0): ?> <span class="badge badge-secondary text-xs">archivé — conservé, non assignable à un autre établissement</span><?php endif; ?><?php else: ?>Aucun<?php endif; ?></p></div>
             <div><p class="text-slate-400 text-xs">Type</p><p class="text-slate-800"><?= htmlspecialchars($etab['type'], ENT_QUOTES) ?></p></div>
             <div><p class="text-slate-400 text-xs">Pays</p><p class="text-slate-800"><?= htmlspecialchars($etab['pays'], ENT_QUOTES) ?></p></div>
             <div><p class="text-slate-400 text-xs">Quota stockage</p><p class="text-slate-800"><?= (int)$etab['storage_quota_mb'] ?> Mo</p></div>
@@ -48,6 +49,7 @@ $statutBadge = [
             <form method="POST" action="<?= BASE_URL ?>/platform/etablissements/<?= (int)$etab['id'] ?>/plan" class="flex items-end gap-3">
                 <input type="hidden" name="_csrf_token" value="<?= \Core\Session::getCsrfToken() ?>">
                 <select name="plan_id" class="form-input">
+                    <?php if (!empty($etab['plan_id']) && isset($etab['plan_actif']) && (int)$etab['plan_actif'] === 0): ?><option value="" disabled selected><?= htmlspecialchars((string)($etab['plan_nom'] ?? '#' . $etab['plan_id']), ENT_QUOTES) ?> (archivé — plan actuel, non assignable)</option><?php endif; ?>
                     <?php foreach ($plans as $p): ?>
                     <option value="<?= (int)$p['id'] ?>" <?= (int)$etab['plan_id'] === (int)$p['id'] ? 'selected' : '' ?>><?= htmlspecialchars($p['nom'], ENT_QUOTES) ?></option>
                     <?php endforeach; ?>

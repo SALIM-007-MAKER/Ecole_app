@@ -47,7 +47,23 @@ foreach (file(ROOT_PATH . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES
 $conn = DbCopy::connectionFromEnv(ROOT_PATH);
 $source = new PDO("mysql:host={$conn['host']};port={$conn['port']};dbname={$conn['db']};charset=utf8mb4", $conn['user'], $conn['pass'],
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
-$avantSource = DbCopy::allDataHashes($source);
+/**
+ * Empreinte de toutes les tables de la base réelle (lecture seule). Seules les colonnes de `users` écrites par une CONNEXION ordinaire à
+ * l'application (UserModel : derniere_connexion = NOW(), updated_at) sont exclues : un login humain pendant la suite ne doit pas la faire
+ * échouer, alors que toute autre écriture sur la base réelle reste détectée.
+ *
+ * @return array<string,string> table => empreinte
+ */
+function empreinteBaseReelle(PDO $pdo): array
+{
+    $volatiles = ['users' => ['derniere_connexion', 'updated_at']];
+    $out = [];
+    foreach ($pdo->query("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'")->fetchAll(PDO::FETCH_NUM) as [$t]) {
+        $out[$t] = DbCopy::dataHash($pdo, $t, $volatiles[$t] ?? []);
+    }
+    return $out;
+}
+$avantSource = empreinteBaseReelle($source);
 $migrationsSourceAvant = $source->query("SELECT migration FROM migrations_log WHERE migration IN ('T054','T055')")->fetchAll(PDO::FETCH_COLUMN);
 $copy = DbCopy::create(ROOT_PATH);
 if ($copy === null) { echo "SKIP : copie réelle impossible\n"; exit(0); }
@@ -173,7 +189,10 @@ try {
 }
 
 section('5. Base réelle');
-check(DbCopy::allDataHashes($source) === $avantSource, 'base réelle inchangée (empreinte de toutes les tables)');
+$apresSource = empreinteBaseReelle($source);
+$tablesDifferentes = array_keys(array_diff_assoc($apresSource, $avantSource) + array_diff_assoc($avantSource, $apresSource));
+check($apresSource === $avantSource, 'base réelle inchangée (empreinte de toutes les tables ; connexions utilisateur ignorées)',
+    $tablesDifferentes === [] ? '' : 'tables dont l\'empreinte diffère : ' . implode(', ', $tablesDifferentes));
 $migrationsSourceApres = $source->query("SELECT migration FROM migrations_log WHERE migration IN ('T054','T055')")->fetchAll(PDO::FETCH_COLUMN);
 check($migrationsSourceApres === $migrationsSourceAvant, 'aucune migration T054-T055 enregistrée ni appliquée sur la base réelle');
 check(count(array_filter($source->query('SHOW DATABASES')->fetchAll(PDO::FETCH_COLUMN), fn($d) => str_starts_with($d, 'ecole_app_copy_'))) === 0, 'aucune base temporaire restante');

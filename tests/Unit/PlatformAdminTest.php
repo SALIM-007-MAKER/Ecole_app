@@ -114,7 +114,7 @@ try {
 
     $planId = $plans->create([
         'code' => 'test-plan-' . uniqid(), 'nom' => 'Plan Test', 'max_users' => 20, 'max_eleves' => 200,
-        'storage_quota_mb' => 500, 'api_calls_per_day' => 5000, 'prix_mensuel' => 9.99, 'prix_annuel' => 99.99,
+        'storage_quota_mb' => 500, 'api_calls_per_day' => 5000, 'devise' => 'EUR', 'prix_mensuel' => 9.99, 'prix_annuel' => 99.99,
     ], $fakeOperatorUserId);
     assert_true($planId > 0, 'PlatformPlanService::create() retourne un id de plan valide');
 

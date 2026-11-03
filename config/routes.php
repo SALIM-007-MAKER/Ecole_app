@@ -113,7 +113,9 @@ $router->get('/platform/etablissements/{id}/monitoring/api',          'PlatformM
 $router->post('/platform/etablissements/{id}/monitoring/vider-cache', 'PlatformMonitoringController@flushCache');
 
 $router->get('/platform/plans',            'PlatformPlanController@index');
+$router->get('/platform/plans/create',     'PlatformPlanController@create');
 $router->post('/platform/plans',           'PlatformPlanController@store');
+$router->get('/platform/plans/{id}/modifier', 'PlatformPlanController@edit');
 $router->post('/platform/plans/{id}',      'PlatformPlanController@update');
 $router->post('/platform/plans/{id}/toggle', 'PlatformPlanController@toggle');
 

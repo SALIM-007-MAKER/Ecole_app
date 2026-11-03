@@ -58,7 +58,7 @@ final class PlatformEtablissementService
             $params[] = (int)$filters['plan_id'];
         }
 
-        $sql = "SELECT e.*, p.nom AS plan_nom, p.code AS plan_code
+        $sql = "SELECT e.*, p.nom AS plan_nom, p.code AS plan_code, p.actif AS plan_actif
                 FROM etablissements e
                 LEFT JOIN platform_plans p ON p.id = e.plan_id
                 WHERE " . implode(' AND ', $where) . "
@@ -72,7 +72,7 @@ final class PlatformEtablissementService
     public function find(int $id): ?array
     {
         $stmt = $this->pdo->prepare(
-            "SELECT e.*, p.nom AS plan_nom, p.code AS plan_code
+            "SELECT e.*, p.nom AS plan_nom, p.code AS plan_code, p.actif AS plan_actif
              FROM etablissements e LEFT JOIN platform_plans p ON p.id = e.plan_id
              WHERE e.id = ?"
         );
@@ -105,6 +105,14 @@ final class PlatformEtablissementService
 
         $validTypes = ['ecole_primaire', 'college', 'lycee', 'universite', 'formation_pro', 'groupe_scolaire'];
         $type = in_array($data['type'] ?? '', $validTypes, true) ? $data['type'] : 'lycee';
+
+        if (!empty($data['plan_id'])) {
+            $planOk = $this->pdo->prepare('SELECT COUNT(*) FROM platform_plans WHERE id = ? AND actif = 1');
+            $planOk->execute([(int)$data['plan_id']]);
+            if ((int)$planOk->fetchColumn() === 0) {
+                throw new \InvalidArgumentException('Plan introuvable ou archivé : un plan archivé ne peut plus être assigné.');
+            }
+        }
 
         $stmt = $this->pdo->prepare(
             "INSERT INTO etablissements (slug, nom, nom_court, type, pays, statut, plan_id, trial_ends_at)

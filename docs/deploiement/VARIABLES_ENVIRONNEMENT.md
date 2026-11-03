@@ -56,6 +56,7 @@ variable était absente. `.env` doit toujours fixer explicitement sa valeur.*
 | `TENANT_MODE_ENABLED` | `false` | **Indicateur documentaire uniquement** — n'active pas `TenantMiddleware` (voir `docs/technique/MULTI_TENANT.md`) |
 | `TENANT_DEFAULT_ID` | `1` | Établissement de repli quand `TenantContext` n'est pas positionné |
 | `TENANT_BASE_DOMAIN` | *(vide)* | Domaine de base pour la résolution par sous-domaine (`{slug}.{base_domain}`) |
+| `PLATFORM_DEFAULT_CURRENCY` | `XOF` | Devise proposée pour un **nouveau** plan SaaS (ISO 4217, 3 lettres). N'affecte pas les plans existants ; aucune conversion (voir `PLANS_SAAS.md`) |
 
 ## API Platform
 

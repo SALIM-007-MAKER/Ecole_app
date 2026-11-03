@@ -8,8 +8,8 @@ Un **opérateur** est un compte de la plateforme EduNova (propriétaire du SaaS)
 d'établissement : table `platform_operators` (e-mail, nom, mot de passe haché, niveau), aucun lien avec `users`. Un administrateur d'école ne peut
 jamais ouvrir une session opérateur, et inversement. Les deux sessions utilisent des clés distinctes (`_auth_user` / `_platform_operator`).
 
-Niveaux : `support` (consultation), `admin` (gestion des établissements, plans, domaines ; journal d'audit en lecture), `super_admin` (tout,
-y compris sauvegardes et **export** du journal).
+Niveaux : `support` (consultation), `admin` (gestion des établissements et des domaines ; **consultation seule des plans** ; journal d'audit en lecture),
+`super_admin` (tout, y compris la **création, la modification, l'archivage et la restauration des plans**, les sauvegardes et l'**export** du journal).
 
 **Aucun compte par défaut n'existe.** Ni la migration, ni l'installateur ne créent d'opérateur : sans le script ci-dessous, `/platform` est inaccessible.
 
@@ -66,7 +66,7 @@ niveau figés au moment de l'action), établissement concerné, action, entité,
 
 Actions journalisées : connexions (réussies, échouées, bloquées), déconnexion, changement/réinitialisation de mot de passe, création/activation/
 désactivation d'opérateurs, établissements (création, activation, suspension, archivage, restauration, suppression logique, changement de plan),
-plans (création, modification, activation), domaines, quotas, cache, sauvegardes/restaurations/téléchargements, instantanés, refus d'accès par niveau,
+plans (création, modification, archivage, restauration), domaines, quotas, cache, sauvegardes/restaurations/téléchargements, instantanés, refus d'accès par niveau,
 export du journal. Les tentatives de connexion échouées ou bloquées sont plafonnées à 30 lignes par IP et par fenêtre.
 
 Consultation : menu **Journal d'audit** (niveaux `admin` et `super_admin`) — recherche, filtres (période, opérateur, action, établissement, résultat),

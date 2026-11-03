@@ -58,7 +58,7 @@ class PlatformEtablissementController extends PlatformController
         $this->render('platform/etablissements/show', [
             'title'     => $etab['nom'],
             'etab'      => $etab,
-            'plans'     => $this->plans->all(),
+            'plans'     => $this->plans->all(false),
             'canManage' => PlatformAuth::hasLevel('admin', 'super_admin'),
         ], 'platform');
     }
@@ -69,7 +69,7 @@ class PlatformEtablissementController extends PlatformController
 
         $this->render('platform/etablissements/create', [
             'title' => 'Nouvel établissement',
-            'plans' => $this->plans->all(),
+            'plans' => $this->plans->all(false),
             'errors' => Session::getFlash('errors', []),
         ], 'platform');
     }

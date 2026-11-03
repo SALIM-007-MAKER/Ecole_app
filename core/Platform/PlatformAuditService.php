@@ -16,6 +16,8 @@ use PDO;
  *   l'événement complet est écrit dans un fichier de secours (storage/logs/platform_audit_fallback-AAAA-MM-JJ.jsonl), l'erreur est
  *   consignée dans le journal technique, un avertissement est affiché à l'opérateur et le tableau de bord signale les événements non
  *   enregistrés tant qu'ils n'ont pas été rejoués (`replayFallback()`, ou `php database/audit-rejouer.php`).
+ * - Option `strict` => true (opérations dont la trace conditionne la validité, ex. création d'un plan, dans UNE transaction) : en cas d'échec
+ *   l'exception est relancée, sans fichier de secours ni avertissement (l'appelant annule l'opération : rien n'est à rejouer).
  * - `record()` renvoie true uniquement si la ligne est réellement dans la base : l'appelant ne doit jamais présenter l'opération comme
  *   auditée dans le cas contraire.
  * - Lecture : recherche/filtres/pagination (`search`), détail (`find`), export (`iterer`). Aucune méthode de modification ni de suppression.
@@ -73,7 +75,7 @@ final class PlatformAuditService
 
     /**
      * @param array{entity_type?:?string, entity_id?:?int, etablissement_id?:?int, avant?:?array, apres?:?array,
-     *              resultat?:string, actor?:array{type:string, id?:?int, email?:?string, niveau?:?string}, actor_email?:?string} $o
+     *              resultat?:string, strict?:bool, actor?:array{type:string, id?:?int, email?:?string, niveau?:?string}, actor_email?:?string} $o
      * @return bool true = ligne présente dans platform_audit_logs ; false = repli sur le fichier de secours
      */
     public function record(string $action, array $o = []): bool
@@ -101,6 +103,9 @@ final class PlatformAuditService
             $this->inserer($ligne);
             return true;
         } catch (\Throwable $e) {
+            if (!empty($o['strict'])) {
+                throw $e;
+            }
             self::$echecsRequete++;
             $this->enregistrerSecours($ligne, get_class($e));
             return false;
