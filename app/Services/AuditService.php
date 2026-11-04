@@ -180,6 +180,21 @@ class AuditService
         return ['rows' => $s->fetchAll(PDO::FETCH_ASSOC), 'total' => $total, 'page' => $page, 'pages' => $pages, 'par_page' => $parPage];
     }
 
+    /** Export : parcourt les événements DE CET ÉTABLISSEMENT (mêmes filtres que la recherche), du plus récent au plus ancien, plafonné à $max. */
+    public function iterer(int $etablissementId, array $filtres, int $max = 50000): \Generator
+    {
+        $this->exigerEtablissement($etablissementId);
+        [$where, $params] = $this->filtres($etablissementId, $filtres);
+        $s = Database::getInstance()->getConnection()->prepare(
+            "SELECT al.*, " . self::LIBELLE_ACTEUR . " AS acteur_libelle FROM audit_logs al LEFT JOIN users u ON u.id = al.user_id
+             {$where} ORDER BY al.id DESC LIMIT " . max(1, min(50000, $max))
+        );
+        $s->execute($params);
+        while (($row = $s->fetch(PDO::FETCH_ASSOC)) !== false) {
+            yield $row;
+        }
+    }
+
     /** Un événement DE CET ÉTABLISSEMENT, ou null (un identifiant appartenant à un autre établissement est indiscernable d'un identifiant inexistant). */
     public function trouver(int $etablissementId, int $id): ?array
     {

@@ -693,7 +693,7 @@ $audit->logStrict($pdoB, $admin1, 'test.connexion_recue', 'verif_test', 'x', 1);
 $pdoB->commit();
 check($nb("action = 'test.connexion_recue'") === 1, 'commit de la connexion reçue : la trace devient visible');
 $src = file_get_contents(ROOT_PATH . '/app/Services/AuditService.php');
-preg_match('/public function logStrict\(.*?\n    }\n/s', $src, $mLs);
+preg_match('/public function logStrict\(.*?\r?\n    }\r?\n/s', $src, $mLs);
 check(isset($mLs[0]) && !str_contains($mLs[0], 'Database::getInstance') && str_contains($mLs[0], '$pdo'), 'code de logStrict : aucune référence à Database::getInstance()');
 
 // (b) aucune écriture en double
@@ -780,10 +780,14 @@ check(count($routesAudit) === 2 && count(array_filter($routesAudit, fn($l) => st
 $vuesAudit = file_get_contents(ROOT_PATH . '/app/Views/audit/index.php') . file_get_contents(ROOT_PATH . '/app/Views/audit/show.php');
 check(!preg_match('/method\s*=\s*["\']post/i', $vuesAudit) && !preg_match('/name\s*=\s*["\'](etablissement_id|etab|tenant)/i', $vuesAudit), 'vues : aucun formulaire POST ; aucun champ etablissement/tenant modifiable');
 $platform = '';
-foreach (glob(ROOT_PATH . '/app/Controllers/Platform*.php') as $f) { $platform .= file_get_contents($f); }
+$consultationSuperAdmin = ROOT_PATH . '/app/Controllers/PlatformEtablissementAuditController.php';   // seule lecture autorisée (cf. ci-dessous)
+foreach (glob(ROOT_PATH . '/app/Controllers/Platform*.php') as $f) { if ($f !== $consultationSuperAdmin) { $platform .= file_get_contents($f); } }
 foreach (glob(ROOT_PATH . '/core/Platform/*.php') as $f) { $platform .= file_get_contents($f); }
 $platform = preg_replace('#/\*.*?\*/|//[^\n]*#s', '', $platform);   // le code seul : les commentaires peuvent parler de audit_logs pour affirmer l'indépendance
-check(!preg_match('/(?<![a-z_])audit_logs|App\\\\Services\\\\AuditService/', $platform), 'périmètre : aucune consultation des journaux d\'établissement depuis le Super-Admin (reportée à une étape ultérieure)');
+check(!preg_match('/(?<![a-z_])audit_logs|App\\\\Services\\\\AuditService/', $platform), 'périmètre : hors la consultation dédiée, aucun code du portail plateforme ne lit les journaux d\'établissement');
+$codeConsult = (string)file_get_contents($consultationSuperAdmin);
+$routesConsult = array_filter($routes, fn($x) => str_contains($x, 'PlatformEtablissementAuditController') && !str_starts_with(trim($x), '//'));
+check(substr_count($codeConsult, "requirePlatformLevel('super_admin')") === 3 && count($routesConsult) === 3 && count(array_filter($routesConsult, fn($x) => str_contains($x, '$router->get('))) === 3, 'consultation Super-Admin : 3 routes, toutes en GET, chaque action réservée au niveau super_admin');
 $modulesActifs = require ROOT_PATH . '/config/modules.php';
 check($modulesActifs['portals']['enabled'] === false && $modulesActifs['scolarite']['enabled'] === false && $modulesActifs['rh']['enabled'] === false, 'aucun module désactivé n\'a été réactivé (portals, scolarite, rh toujours à false)');
 

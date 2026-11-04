@@ -122,6 +122,11 @@ $router->get('/platform/etablissements/{id}/quotas',             'PlatformQuotaC
 $router->get('/platform/etablissements/{id}/quotas/api',         'PlatformQuotaController@api');
 $router->post('/platform/etablissements/{id}/quotas/recalculer', 'PlatformQuotaController@recalculate');
 
+// Journal d'audit D'UN établissement consulté par le Super-Admin (lecture seule, super_admin uniquement ; chaque consultation est tracée au journal global)
+$router->get('/platform/etablissements/{id}/audit',            'PlatformEtablissementAuditController@index');
+$router->get('/platform/etablissements/{id}/audit/export',     'PlatformEtablissementAuditController@export');
+$router->get('/platform/etablissements/{id}/audit/{evenement}', 'PlatformEtablissementAuditController@show');
+
 $router->get('/platform/etablissements/{id}/monitoring',              'PlatformMonitoringController@index');
 $router->get('/platform/etablissements/{id}/monitoring/api',          'PlatformMonitoringController@api');
 $router->post('/platform/etablissements/{id}/monitoring/vider-cache', 'PlatformMonitoringController@flushCache');

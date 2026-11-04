@@ -25,6 +25,11 @@ $statutBadge = [
         <a href="<?= BASE_URL ?>/platform/etablissements/<?= (int)$etab['id'] ?>/monitoring" class="btn btn-secondary btn-sm">
             <i data-lucide="activity" class="w-4 h-4"></i>Monitoring
         </a>
+        <?php if (\Core\Platform\PlatformAuth::hasLevel('super_admin')): ?>
+        <a href="<?= BASE_URL ?>/platform/etablissements/<?= (int)$etab['id'] ?>/audit" class="btn btn-secondary btn-sm">
+            <i data-lucide="scroll-text" class="w-4 h-4"></i>Journal d'audit
+        </a>
+        <?php endif; ?>
     </div>
 </div>
 
