@@ -40,6 +40,12 @@ class Database
         return self::$instance;
     }
 
+    /** Une connexion a-t-elle déjà été ouverte dans ce processus ? (permet à du code « pur » de lire la base seulement si elle est déjà là) */
+    public static function estConnectee(): bool
+    {
+        return self::$instance !== null;
+    }
+
     public function getConnection(): PDO
     {
         return $this->pdo;

@@ -28,7 +28,8 @@ final class SubscriptionRules
 
     public static function fuseau(): DateTimeZone
     {
-        $nom = trim((string)($_ENV[self::ENV_FUSEAU] ?? getenv(self::ENV_FUSEAU) ?: ''));
+        // Surcharge en base (si une connexion est déjà ouverte) > PLATFORM_TIMEZONE > Africa/Niamey (voir PlatformSettings).
+        $nom = PlatformSettings::valeurSiConnecte(PlatformSettings::FUSEAU);
         try {
             return new DateTimeZone($nom !== '' ? $nom : self::FUSEAU_DEFAUT);
         } catch (\Throwable) {

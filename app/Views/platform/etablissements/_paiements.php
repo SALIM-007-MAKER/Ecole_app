@@ -12,6 +12,9 @@ $token = \Core\Session::getCsrfToken();
 <div class="rounded-xl border border-slate-200 bg-white shadow-sm p-5 space-y-4">
     <p class="text-sm font-semibold text-slate-900">Paiements (saisie manuelle)</p>
 
+    <?php $coord = \Core\Platform\PlatformSettings::valeurSiConnecte(\Core\Platform\PlatformSettings::PAIEMENT); if ($coord !== ''): ?>
+    <p class="text-xs text-slate-500 whitespace-pre-line"><span class="font-semibold">Coordonnées de paiement :</span> <?= $h($coord) ?></p>
+    <?php endif; ?>
     <?php if ($payables !== []): ?>
     <table class="w-full text-xs">
         <thead><tr class="text-left text-slate-400"><th>Période</th><th>Prix figé</th><th>Encaissé</th><th>Reste</th><th>Règlement</th></tr></thead>

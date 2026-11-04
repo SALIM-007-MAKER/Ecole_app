@@ -104,6 +104,8 @@ $router->get('/platform/paiements/{id}',                                 'Platfo
 $router->post('/platform/paiements/{id}/annuler',                        'PlatformPaymentController@annuler');
 $router->get('/platform/revenus',                                        'PlatformRevenueController@index');
 $router->get('/platform/revenus/export',                                 'PlatformRevenueController@export');
+$router->get('/platform/parametres',                                       'PlatformSettingsController@index');
+$router->post('/platform/parametres',                                      'PlatformSettingsController@update');
 
 // ─── Administration de la plateforme — infrastructure par établissement (T026) ──
 // Domaines personnalisés, Stockage & Quotas, Monitoring & Cache : retirés du

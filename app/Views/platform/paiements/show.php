@@ -27,6 +27,9 @@ $annule = $paiement['statut'] === 'cancelled';
         <div><p class="text-slate-400 text-xs">Saisi par</p><p class="text-slate-800"><?= $h($paiement['saisi_par_email'] ?? '—') ?> le <?= $h($paiement['created_at']) ?></p></div>
         <?php if ($paiement['note']): ?><div><p class="text-slate-400 text-xs">Note</p><p class="text-slate-800"><?= $h($paiement['note']) ?></p></div><?php endif; ?>
     </div>
+    <?php $coord = \Core\Platform\PlatformSettings::valeurSiConnecte(\Core\Platform\PlatformSettings::PAIEMENT); if ($coord !== ''): ?>
+    <div class="text-xs text-slate-500 border-t border-slate-100 pt-3"><p class="font-semibold">Coordonnées de paiement</p><p class="whitespace-pre-line"><?= $h($coord) ?></p></div>
+    <?php endif; ?>
     <?php if ($annule): ?>
     <div class="text-sm text-slate-700">Annulé par <?= $h($paiement['annule_par_email'] ?? '—') ?> le <?= $h($paiement['cancelled_at']) ?> — motif : <?= $h($paiement['cancel_reason']) ?></div>
     <?php else: ?>

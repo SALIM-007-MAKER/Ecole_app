@@ -31,6 +31,7 @@ $__menu = [
     ['/platform/etablissements', 'Établissements', 'fa-school',             true],
     ['/platform/plans',          'Plans',           'fa-tags',               true],
     ['/platform/revenus',        'Revenus',         'fa-coins',              \Core\Platform\PlatformAuth::hasLevel('super_admin')],
+    ['/platform/parametres',     'Paramètres',      'fa-sliders',           \Core\Platform\PlatformAuth::hasLevel('super_admin')],
     ['/platform/audit',          "Journal d'audit", 'fa-clipboard-list',     \Core\Platform\PlatformAuth::hasLevel('admin', 'super_admin')],
     ['/platform/backups',        'Sauvegardes',     'fa-shield-halved',      \Core\Platform\PlatformAuth::hasLevel('super_admin')],
 ];

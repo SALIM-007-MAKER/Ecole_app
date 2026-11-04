@@ -55,8 +55,8 @@ $visible = (string)$val('visible_catalogue', 1) === '1';
     <div><label class="form-label" for="prix_annuel">Prix annuel</label><input type="text" inputmode="decimal" id="prix_annuel" name="prix_annuel" class="form-input" value="<?= $e($prix('prix_annuel')) ?>" required></div>
     <p class="sm:col-span-3 text-xs text-slate-500">Le XOF n'a pas de décimales. Changer la devise ne convertit aucun montant : saisissez les prix dans la nouvelle devise.</p>
 
-    <div><label class="form-label" for="duree_essai_jours">Durée d'essai (jours, 0 = aucun)</label><input type="number" id="duree_essai_jours" name="duree_essai_jours" class="form-input" value="<?= (int)$val('duree_essai_jours', 0) ?>" min="0" max="365"></div>
-    <div><label class="form-label" for="jours_grace">Jours de grâce après expiration</label><input type="number" id="jours_grace" name="jours_grace" class="form-input" value="<?= (int)$val('jours_grace', 0) ?>" min="0" max="90"></div>
+    <div><label class="form-label" for="duree_essai_jours">Durée d'essai (jours, 0 = aucun)</label><input type="number" id="duree_essai_jours" name="duree_essai_jours" class="form-input" value="<?= (int)$val('duree_essai_jours', \Core\Platform\PlatformSettings::valeurSiConnecte(\Core\Platform\PlatformSettings::ESSAI)) ?>" min="0" max="365"></div>
+    <div><label class="form-label" for="jours_grace">Jours de grâce après expiration</label><input type="number" id="jours_grace" name="jours_grace" class="form-input" value="<?= (int)$val('jours_grace', \Core\Platform\PlatformSettings::valeurSiConnecte(\Core\Platform\PlatformSettings::GRACE)) ?>" min="0" max="90"></div>
     <div><label class="form-label" for="ordre">Ordre d'affichage</label><input type="number" id="ordre" name="ordre" class="form-input" value="<?= (int)$val('ordre', 0) ?>" min="-32768" max="32767"></div>
 
     <div class="sm:col-span-3">

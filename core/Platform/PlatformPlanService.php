@@ -45,7 +45,8 @@ final class PlatformPlanService
     /** Devise proposée par défaut (configuration, jamais codée en dur dans le traitement). */
     public static function deviseReference(): string
     {
-        $v = strtoupper(trim((string)($_ENV[self::ENV_DEVISE_DEFAUT] ?? getenv(self::ENV_DEVISE_DEFAUT) ?: '')));
+        // Surcharge en base (si une connexion est déjà ouverte) > PLATFORM_DEFAULT_CURRENCY > XOF (voir PlatformSettings).
+        $v = PlatformSettings::valeurSiConnecte(PlatformSettings::DEVISE);
         return preg_match('/^[A-Z]{3}$/', $v) ? $v : self::DEVISE_DEFAUT_REPLI;
     }
 
@@ -101,7 +102,8 @@ final class PlatformPlanService
         $v = $existant ?? [
             'code' => '', 'nom' => '', 'description' => null, 'max_users' => 50, 'max_eleves' => 500, 'storage_quota_mb' => 1024,
             'api_calls_per_day' => 10000, 'modules_inclus' => '[]', 'prix_mensuel' => '0', 'prix_annuel' => '0',
-            'devise' => self::deviseReference(), 'duree_essai_jours' => 0, 'jours_grace' => 0, 'ordre' => 0, 'visible_catalogue' => 1, 'actif' => 1,
+            'devise' => self::deviseReference(), 'duree_essai_jours' => (int)PlatformSettings::valeurSiConnecte(PlatformSettings::ESSAI), 'jours_grace' => (int)PlatformSettings::valeurSiConnecte(PlatformSettings::GRACE),
+            'ordre' => 0, 'visible_catalogue' => 1, 'actif' => 1,
         ];
 
         // Code : saisi à la création seulement, immuable ensuite.
