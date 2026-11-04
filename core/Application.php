@@ -104,9 +104,13 @@ class Application
 
         $decision = (new Tenant\SessionTenantGuard(Database::getInstance()->getConnection()))->evaluer($user);
         if ($decision['ok']) {
-            Tenant\TenantContext::set((int)$decision['etablissement_id'], $decision['etablissement']);
-            $this->rafraichirDroitsSession($user, (int)$decision['etablissement_id']);
-            return;
+            // Les droits de session sont relus AVANT d'établir le contexte : un rôle retiré (ou jamais attribué) pour cet établissement
+            // invalide la session — jamais de repli sur le rôle global `users.role` (voir GlobalAuthService).
+            if ($this->rafraichirDroitsSession($user, (int)$decision['etablissement_id'])) {
+                Tenant\TenantContext::set((int)$decision['etablissement_id'], $decision['etablissement']);
+                return;
+            }
+            $decision['raison'] = 'role_revoque';
         }
 
         Logger::security(
@@ -152,25 +156,41 @@ class Application
     /**
      * Relit en base le rôle et les permissions de l'utilisateur connecté (au plus toutes les `session.auth_refresh` secondes) :
      * une rétrogradation, un changement de rôle ou de permissions s'applique aux sessions déjà ouvertes, au lieu de rester
-     * figé jusqu'à la prochaine connexion. Même résolution qu'à la connexion (AuthController::completeLogin).
+     * figé jusqu'à la prochaine connexion. MÊME résolution qu'à la connexion (GlobalAuthService) : rôle propre à l'établissement, priorité
+     * fixe en cas de rôles multiples, repli historique seulement sans aucune appartenance, permissions RBAC globales jamais héritées.
+     *
+     * @return bool false = le rôle a disparu pour cet établissement (la session doit être invalidée) ; true sinon, y compris en cas de
+     *              panne technique (une erreur de lecture ne déconnecte personne).
      */
-    private function rafraichirDroitsSession(array $user, int $etablissementId): void
+    private function rafraichirDroitsSession(array $user, int $etablissementId): bool
     {
         $intervalle = (int)($this->config['session']['auth_refresh'] ?? 60);
         $dernier    = (int)Session::get('_auth_refreshed_at', 0);
         if ($dernier > 0 && time() - $dernier < $intervalle) {
-            return;
+            return true;
         }
         try {
             $userId = (int)($user['id'] ?? 0);
-            $pdo    = Database::getInstance()->getConnection();
-            $role   = Tenant\TenantMembershipService::make()->roleForUser($userId, $etablissementId);
-            if ($role === null) {
-                $stmt = $pdo->prepare('SELECT role FROM users WHERE id = ?');
-                $stmt->execute([$userId]);
-                $role = (string)$stmt->fetchColumn();
+            $auth   = \App\Services\GlobalAuthService::make(Database::getInstance()->getConnection());
+            $compte = $auth->lookupById($userId);
+            if ($compte === null) {
+                return true;   // déjà contrôlé par le garde de session
             }
-            $permissions = (new \App\Models\UserModel())->getPermissions($role, $userId, $etablissementId);
+            $resolu = $auth->resoudreRole($compte, $etablissementId);
+            if ($resolu['role'] === null) {
+                Logger::security('SESSION_ROLE_REVOKED', sprintf('user_id=%d etablissement_id=%d : plus aucun rôle propre à cet établissement', $userId, $etablissementId));
+                $auth->journaliser('auth.role_missing', $compte, $etablissementId, 'denied', ['raison' => 'role_retire_en_session']);
+                return false;
+            }
+            // Mot de passe changé ou réinitialisé depuis l'ouverture de cette session : session invalidée (au plus `auth_refresh` secondes
+            // après le changement ; aucune vérification tant que la colonne users.password_changed_at n'existe pas ou reste NULL).
+            $dateMdp = $auth->dateMotDePasse($userId);
+            if ($dateMdp !== null && $dateMdp > (int)($user['pwd_at'] ?? 0)) {
+                Logger::security('SESSION_PASSWORD_CHANGED', sprintf('user_id=%d : mot de passe modifié depuis l\'ouverture de la session', $userId));
+                return false;
+            }
+            $role        = $resolu['role'];
+            $permissions = $auth->permissions($compte, $etablissementId, $role, $resolu['legacy']);
 
             if ($role !== ($user['role'] ?? null) || $permissions != ($user['permissions'] ?? [])) {
                 Logger::security('SESSION_RIGHTS_REFRESHED', sprintf(
@@ -182,6 +202,7 @@ class Application
         } catch (\Throwable $e) {
             Logger::error('Relecture des droits de session impossible : ' . $e->getMessage());
         }
+        return true;
     }
 
     public function handleError(int $errno, string $errstr, string $errfile, int $errline): bool

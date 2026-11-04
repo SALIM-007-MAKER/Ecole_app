@@ -34,6 +34,7 @@ $router->post('/reset-password',        'AuthController@resetPassword');
 $router->get('/profile',           'AuthController@showProfile');
 $router->post('/profile',          'AuthController@updateProfile');
 $router->post('/profile/password', 'AuthController@changePassword');
+$router->post('/profile/photo/supprimer', 'AuthController@deletePhoto');
 
 // ─── Paramètres — centre de configuration métier ERP (T026) ──────────────────
 $router->get('/parametres', 'SettingsController@index');
@@ -94,6 +95,10 @@ $router->post('/platform/etablissements/{id}/archiver',      'PlatformEtablissem
 $router->post('/platform/etablissements/{id}/restaurer',     'PlatformEtablissementController@restore');
 $router->post('/platform/etablissements/{id}/supprimer',     'PlatformEtablissementController@destroy');
 $router->post('/platform/etablissements/{id}/plan',          'PlatformEtablissementController@assignPlan');
+$router->post('/platform/etablissements/{id}/abonnement/souscrire',      'PlatformSubscriptionController@souscrire');
+$router->post('/platform/etablissements/{id}/abonnement/renouveler',     'PlatformSubscriptionController@renouveler');
+$router->post('/platform/etablissements/{id}/abonnement/annuler',        'PlatformSubscriptionController@annuler');
+$router->post('/platform/etablissements/{id}/abonnement/prolonger-essai','PlatformSubscriptionController@prolongerEssai');
 
 // ─── Administration de la plateforme — infrastructure par établissement (T026) ──
 // Domaines personnalisés, Stockage & Quotas, Monitoring & Cache : retirés du

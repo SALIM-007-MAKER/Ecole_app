@@ -36,8 +36,12 @@ class UserModel extends Model
      *   3. Sinon → config/permissions.php (V1 fallback, toujours disponible).
      * Dans tous les cas, les codes V1 et V2 sont retournés simultanément
      * (compat totale avec les contrôleurs existants).
+     *
+     * $strictTenant = true (authentification globale, hors compte historique sans appartenance) : le palier 2 est IGNORÉ. Les tables
+     * RBAC V2 sont globales (aucun établissement) : sans cela, un rôle sans permission dans l'établissement B ferait hériter à l'utilisateur
+     * des permissions globales obtenues ailleurs. Faux par défaut : tous les autres appelants gardent leur comportement.
      */
-    public function getPermissions(string $role, int $userId = 0, ?int $etablissementId = null): array
+    public function getPermissions(string $role, int $userId = 0, ?int $etablissementId = null, bool $strictTenant = false): array
     {
         // ── Tentative RBAC Multi-Tenant (etab_*, Phase 14.4) ─────────────────
         if ($userId > 0 && $etablissementId !== null) {
@@ -56,7 +60,7 @@ class UserModel extends Model
         }
 
         // ── Tentative RBAC V2 legacy (globale, non tenant) ───────────────────
-        if ($userId > 0) {
+        if ($userId > 0 && !$strictTenant) {
             try {
                 $pdo = Database::getInstance()->getConnection();
 
