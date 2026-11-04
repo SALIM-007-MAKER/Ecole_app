@@ -105,7 +105,7 @@ $medalRing = ['ring-2 ring-amber-300', 'ring-2 ring-slate-300', 'ring-2 ring-ora
         </div>
         <div class="text-4xl mb-3 leading-none"><?= $medals[$i] ?></div>
         <?php if (!empty($e->photo)): ?>
-        <img src="<?= BASE_URL ?>/<?= htmlspecialchars($e->photo, ENT_QUOTES) ?>"
+        <img src="<?= htmlspecialchars(\App\Shared\Http\MediaUrl::photo($e->photo), ENT_QUOTES) ?>"
              class="w-14 h-14 rounded-full object-cover mx-auto mb-2 <?= $medalRing[$i] ?? '' ?>" alt="">
         <?php else: ?>
         <div class="w-14 h-14 rounded-full bg-white flex items-center justify-center mx-auto mb-2 <?= $medalRing[$i] ?? '' ?>">
@@ -173,7 +173,7 @@ $medalRing = ['ring-2 ring-amber-300', 'ring-2 ring-slate-300', 'ring-2 ring-ora
                 <td>
                     <div class="flex items-center gap-3">
                         <?php if (!empty($e->photo)): ?>
-                        <img src="<?= BASE_URL ?>/<?= htmlspecialchars($e->photo, ENT_QUOTES) ?>"
+                        <img src="<?= htmlspecialchars(\App\Shared\Http\MediaUrl::photo($e->photo), ENT_QUOTES) ?>"
                              class="w-9 h-9 rounded-full object-cover border border-slate-100 shrink-0" alt="">
                         <?php else: ?>
                         <div class="w-9 h-9 rounded-full bg-violet-100 flex items-center justify-center shrink-0">

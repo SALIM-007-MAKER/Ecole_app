@@ -113,14 +113,7 @@ class AccountingHandler implements Listener
 
     private function onFiscalYearOpened(FiscalYearOpened $e): void
     {
-        $this->audit->log(
-            $e->openedById,
-            'create',
-            'Finance',
-            'exercice_comptable',
-            $e->exerciceId,
-            null,
-            $e->toArray()
-        );
+        // Aucune écriture d'audit ici : la trace unique de création est écrite par AccountingService::creerExercice() DANS la transaction.
+        // L'écrire aussi ici produisait deux entrées pour un même exercice. L'événement reste diffusé pour d'éventuels autres écouteurs.
     }
 }

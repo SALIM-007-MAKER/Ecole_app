@@ -74,6 +74,8 @@ try {
     $db->exec("INSERT INTO users (etablissement_id, nom, prenom, email, password, role) VALUES ($E2, 'Admin2', 'Acad', 'admin2-acad@example.test', 'x', 'admin')");
     $ADMIN2 = (int)$db->lastInsertId();
     $db->exec("INSERT INTO user_etablissements (user_id, etablissement_id, is_primary) VALUES ($ADMIN2, $E2, 1)");
+    // Appartenance AVEC rôle propre (Phase 1 : une appartenance sans rôle dans user_roles_etab est refusée, jamais de repli sur users.role).
+    $db->exec("INSERT INTO user_roles_etab (user_id, etablissement_id, role_id) SELECT $ADMIN2, $E2, id FROM etab_roles WHERE code = 'admin' AND etablissement_id IS NULL");
     $db->exec("INSERT INTO classes (etablissement_id, nom, niveau, annee_scolaire) VALUES ($E2, 'CLASSE-E2-ACAD', '6eme', '2025-2026')");
     $C2 = (int)$db->lastInsertId();
     $db->exec("INSERT INTO eleves (etablissement_id, matricule, nom, prenom, date_naissance, sexe, classe_id, actif) VALUES ($E2, 'E2A-1', 'ELEVEDEUXACAD', 'Zoe', '2012-01-01', 'F', $C2, 1)");

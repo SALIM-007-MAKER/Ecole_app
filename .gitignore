@@ -31,3 +31,15 @@ Thumbs.db
 # Binaire Tailwind autonome (non versionne, voir tools/tailwind/README.md)
 tools/tailwind/tailwindcss.exe
 tools/tailwind/tailwindcss
+
+# Variables d'environnement Docker locales
+.env.docker
+
+# Sauvegardes locales et configurations sensibles
+.claude/settings*.bak*
+.claude/settings.local.json
+*.bak
+
+# Configuration locale Claude
+.claude/
+index2.html

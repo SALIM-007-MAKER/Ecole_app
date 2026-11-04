@@ -123,6 +123,10 @@ php database/installer.php --slug=mon-ecole --nom="Mon École" --admin-email=adm
 
 Le script refuse de s'exécuter si un établissement existe déjà et n'écrit le mot de passe nulle part.
 
+**Opérateur de la plateforme (Super-Admin SaaS)** — identité indépendante des comptes d'établissement, aucun compte par défaut : créez le
+premier opérateur avec `php database/create-operator.php --email=… --nom="…"` (mot de passe par `OPERATOR_PASSWORD`, sinon généré et affiché
+une fois). Procédure de récupération d'accès, journal d'audit global : `docs/deploiement/OPERATEUR_PLATEFORME.md`.
+
 **Base issue de l'environnement de référence** (snapshot complet) : un compte `admin@ecole.dz` et des comptes de démonstration y existent —
 **supprimez-les ou changez leurs mots de passe avant toute mise en ligne**, après avoir créé votre propre administrateur.
 

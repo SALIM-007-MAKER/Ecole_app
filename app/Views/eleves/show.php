@@ -53,7 +53,7 @@ $age       = $eleve->date_naissance
             <div class="p-6">
                 <!-- Avatar -->
                 <?php if (!empty($eleve->photo)): ?>
-                <img src="<?= BASE_URL ?>/<?= htmlspecialchars($eleve->photo, ENT_QUOTES) ?>"
+                <img src="<?= htmlspecialchars(\App\Shared\Http\MediaUrl::photo($eleve->photo), ENT_QUOTES) ?>"
                      class="w-32 h-32 rounded-full object-cover border-4 border-slate-100 shadow-md mx-auto mb-4"
                      alt="Photo">
                 <?php else: ?>

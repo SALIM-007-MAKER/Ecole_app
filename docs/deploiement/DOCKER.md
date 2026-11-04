@@ -111,6 +111,14 @@ géré.
       `migrate.php` doit finir par `0 erreurs`. Sans `INSTALL_ADMIN_PASSWORD`,
       un mot de passe aléatoire est affiché une seule fois ; changez-le à la
       première connexion.
+
+      Opérateur de la plateforme (`/platform/login`, indépendant des comptes d'établissement ;
+      **aucun compte par défaut**) :
+      ```bash
+      OPERATOR_PASSWORD='<14 caractères minimum, mot de passe fort>' php database/create-operator.php \n          --email=vous@exemple.tld --nom="Prénom Nom"
+      ```
+      En Docker local : `docker compose exec -e OPERATOR_PASSWORD='…' app php database/create-operator.php --email=… --nom="…"`.
+      Voir `docs/deploiement/OPERATEUR_PLATEFORME.md` (récupération d'accès, journal d'audit).
    3. Pour reprendre au contraire un snapshot complet de données (voir
       `docs/deploiement/INSTALLATION.md` §4), importez-le à la place du schéma.
 6. **Domaine** : Railway fournit un sous-domaine `*.up.railway.app`

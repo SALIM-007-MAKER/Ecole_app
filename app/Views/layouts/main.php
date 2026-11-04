@@ -148,7 +148,7 @@ $pageTitle = htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8');
     <div class="sidebar-footer">
         <a href="<?= BASE_URL ?>/profile" class="sidebar-user">
             <?php if (!empty($currentUser['photo'])): ?>
-                <img src="<?= BASE_URL ?>/<?= htmlspecialchars($currentUser['photo'], ENT_QUOTES) ?>"
+                <img src="<?= htmlspecialchars(\App\Shared\Http\MediaUrl::photo($currentUser['photo']), ENT_QUOTES) ?>"
                      class="sidebar-user-avatar" style="object-fit:cover" alt="">
             <?php else: ?>
                 <div class="sidebar-user-avatar"><?= $userInitial ?></div>
@@ -200,7 +200,7 @@ $pageTitle = htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8');
                         class="user-chip"
                         aria-haspopup="true" aria-expanded="false">
                     <?php if (!empty($currentUser['photo'])): ?>
-                        <img src="<?= BASE_URL ?>/<?= htmlspecialchars($currentUser['photo'], ENT_QUOTES) ?>"
+                        <img src="<?= htmlspecialchars(\App\Shared\Http\MediaUrl::photo($currentUser['photo']), ENT_QUOTES) ?>"
                              style="width:1.875rem;height:1.875rem;border-radius:50%;object-fit:cover;flex-shrink:0" alt="">
                     <?php else: ?>
                         <div class="avatar-chip">
@@ -274,6 +274,22 @@ $pageTitle = htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8');
                 <span style="flex:1"><strong>Journal d'audit : traçabilité incomplète.</strong>
                     <?= (int)$__secoursAudit['count'] ?> événement(s) de votre établissement n'ont pas pu être enregistrés (dernier le <?= htmlspecialchars((string)$__secoursAudit['derniere'], ENT_QUOTES) ?>).
                     Ils sont conservés sur le serveur : demandez à l'administrateur technique de les réinscrire (<code>php database/audit-rejouer.php</code>).</span>
+            </div>
+            <?php endif; } ?>
+
+            <?php /* Période de grâce de l'abonnement : visible des seuls administrateurs / directeurs de l'établissement concerné (aucun détail de
+                     facturation). L'accès reste complet jusqu'à la date indiquée. */
+            $__uGrace = \Core\Session::getUser();
+            $__etabGrace = \Core\Tenant\TenantContext::current();
+            if ($__uGrace && $__etabGrace && in_array($__uGrace['role'] ?? '', ['admin', 'directeur', 'super_admin'], true)) {
+                $__grace = \Core\Platform\PlatformSubscriptionService::graceEnCours(\Core\Database::getInstance()->getConnection(), (int)$__etabGrace);
+                if ($__grace !== null): ?>
+            <div role="alert" data-bandeau="grace" style="display:flex;align-items:flex-start;gap:.75rem;padding:.875rem 1rem;border-radius:.75rem;border:2px solid #fde68a;background:#fffbeb;color:#92400e;font-size:.875rem;margin-bottom:1rem">
+                <i data-lucide="alert-triangle" style="width:1rem;height:1rem;margin-top:.125rem;flex-shrink:0"></i>
+                <span style="flex:1"><strong>Abonnement échu : période de grâce.</strong>
+                    Votre abonnement a pris fin le <?= htmlspecialchars((string)$__grace['date_fin'], ENT_QUOTES) ?>. L'accès est maintenu jusqu'au
+                    <?= htmlspecialchars((string)$__grace['acces_jusqua'], ENT_QUOTES) ?> inclus (<?= (int)$__grace['jours_restants'] ?> jour(s) restant(s)) ; au-delà, l'établissement sera suspendu.
+                    Contactez l'administrateur de la plateforme pour renouveler.</span>
             </div>
             <?php endif; } ?>
 

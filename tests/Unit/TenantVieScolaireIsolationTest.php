@@ -70,8 +70,11 @@ try {
     $E2 = (int)$db->lastInsertId();
     $ADMIN2 = $ins('users', ['etablissement_id' => $E2, 'nom' => 'Admin2', 'prenom' => 'VS', 'email' => 'admin2-vs@example.test', 'password' => 'x', 'role' => 'admin']);
     $db->exec("INSERT INTO user_etablissements (user_id, etablissement_id, is_primary) VALUES ($ADMIN2, $E2, 1)");
+    // Appartenance AVEC rôle propre (Phase 1 : sans ligne user_roles_etab, l'appartenance est refusée, sans repli sur users.role).
+    $db->exec("INSERT INTO user_roles_etab (user_id, etablissement_id, role_id) SELECT $ADMIN2, $E2, id FROM etab_roles WHERE code = 'admin' AND etablissement_id IS NULL");
     $PROF2 = $ins('users', ['etablissement_id' => $E2, 'nom' => 'PROFDEUXVS', 'prenom' => 'Paul', 'email' => 'prof2-vs@example.test', 'password' => 'x', 'role' => 'enseignant']);
     $db->exec("INSERT INTO user_etablissements (user_id, etablissement_id, is_primary) VALUES ($PROF2, $E2, 1)");
+    $db->exec("INSERT INTO user_roles_etab (user_id, etablissement_id, role_id) SELECT $PROF2, $E2, id FROM etab_roles WHERE code = 'enseignant' AND etablissement_id IS NULL");
 
     $C1 = 131; $EL1 = 1;
     $ELNOM1 = (string)$one('SELECT nom FROM eleves WHERE id = 1');   // marqueur de l'établissement 1

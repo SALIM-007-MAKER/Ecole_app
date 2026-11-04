@@ -71,7 +71,7 @@ function bNoteColor(?float $n): string {
     <div class="p-5 p-5">
         <div class="flex flex-wrap items-center gap-5">
             <?php if (!empty($eleve->photo)): ?>
-            <img src="<?= BASE_URL ?>/<?= htmlspecialchars($eleve->photo, ENT_QUOTES) ?>"
+            <img src="<?= htmlspecialchars(\App\Shared\Http\MediaUrl::photo($eleve->photo), ENT_QUOTES) ?>"
                  class="w-20 h-20 rounded-full object-cover border-4 border-slate-100 shadow shrink-0" alt="">
             <?php else: ?>
             <div class="w-20 h-20 rounded-full bg-violet-100 flex items-center justify-center border-4 border-slate-100 shadow shrink-0">

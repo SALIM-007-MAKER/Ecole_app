@@ -247,28 +247,33 @@ class AccountingService implements AccountingInterface
             throw new \InvalidArgumentException(implode(' | ', $errors));
         }
 
-        $exerciceId = $this->repo->insertExercice([
-            'libelle'      => $dto->libelle,
-            'date_debut'   => $dto->dateDebut,
-            'date_fin'     => $dto->dateFin,
-            'solde_report' => $dto->soldeReport,
-            'note'         => $dto->note,
-            'ouvert_par'   => $userId,
-        ]);
+        // Exercice, périodes ET trace d'audit dans UNE transaction (échec de l'audit => rien n'est créé). Cette trace est la SEULE pour la
+        // création : le listener AccountingHandler::onFiscalYearOpened n'en écrit plus (il produisait une seconde entrée « exercice_comptable »).
+        return $this->transaction(function (\PDO $pdo) use ($dto, $userId): int {
+            $id = $this->repo->insertExercice([
+                'libelle'      => $dto->libelle,
+                'date_debut'   => $dto->dateDebut,
+                'date_fin'     => $dto->dateFin,
+                'solde_report' => $dto->soldeReport,
+                'note'         => $dto->note,
+                'ouvert_par'   => $userId,
+            ]);
 
-        $this->genererPeriodes($exerciceId, $dto->dateDebut, $dto->dateFin);
+            $this->genererPeriodes($id, $dto->dateDebut, $dto->dateFin);
 
-        EventDispatcher::dispatch(new FiscalYearOpened(
-            exerciceId: $exerciceId,
-            libelle:    $dto->libelle,
-            dateDebut:  $dto->dateDebut,
-            dateFin:    $dto->dateFin,
-            openedById: $userId,
-        ));
+            $this->audit->logStrict($pdo, $userId, 'create', 'Finance', 'exercice', $id, null, $dto->toArray());
 
-        $this->audit->log($userId, 'create', 'Finance', 'exercice', $exerciceId, null, $dto->toArray());
+            // Diffusé seulement après la validation de la transaction.
+            $this->differes[] = new FiscalYearOpened(
+                exerciceId: $id,
+                libelle:    $dto->libelle,
+                dateDebut:  $dto->dateDebut,
+                dateFin:    $dto->dateFin,
+                openedById: $userId,
+            );
 
-        return $exerciceId;
+            return $id;
+        });
     }
 
     public function cloturerPeriode(int $periodeId, int $userId): void

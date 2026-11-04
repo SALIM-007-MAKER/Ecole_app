@@ -65,7 +65,7 @@ function editVal(array $old, string $key, $eleve, string $col = ''): string {
                     <div class="relative w-28 h-28">
                         <?php if (!empty($eleve->photo)): ?>
                         <img id="photoPreview"
-                             src="<?= BASE_URL ?>/<?= htmlspecialchars($eleve->photo, ENT_QUOTES) ?>"
+                             src="<?= htmlspecialchars(\App\Shared\Http\MediaUrl::photo($eleve->photo), ENT_QUOTES) ?>"
                              class="w-28 h-28 rounded-full object-cover border-4 border-slate-100 shadow-sm"
                              alt="Photo">
                         <?php else: ?>

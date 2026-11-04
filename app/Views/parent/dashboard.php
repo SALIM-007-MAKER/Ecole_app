@@ -42,7 +42,7 @@ $user          = \Core\Session::getUser();
     <div class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
         <div class="flex items-center gap-3 px-5 py-4 border-b border-slate-200 bg-slate-50">
             <?php if (!empty($enfant->photo)): ?>
-                <img src="<?= BASE_URL ?>/<?= htmlspecialchars($enfant->photo, ENT_QUOTES) ?>"
+                <img src="<?= htmlspecialchars(\App\Shared\Http\MediaUrl::photo($enfant->photo), ENT_QUOTES) ?>"
                      class="w-11 h-11 rounded-full object-cover border border-white shadow-sm flex-shrink-0">
             <?php else: ?>
                 <div class="w-11 h-11 rounded-full bg-violet-100 flex items-center justify-center flex-shrink-0">

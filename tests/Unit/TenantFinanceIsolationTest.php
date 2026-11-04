@@ -104,6 +104,8 @@ try {
     foreach (['admin', 'comptable', 'secretaire'] as $r) {
         $U[$r] = ins($db, 'users', ['nom' => "ZZB-U-$r", 'prenom' => 'Deux', 'email' => "zzb-$r@e2.test", 'password' => 'x', 'role' => $r, 'actif' => 1, 'etablissement_id' => $E2], $id());
         ins($db, 'user_etablissements', ['user_id' => $U[$r], 'etablissement_id' => $E2, 'is_primary' => 1]);
+        // Appartenance AVEC rôle propre (Phase 1 : sans ligne user_roles_etab, l'appartenance est refusée, sans repli sur users.role).
+        $db->exec("INSERT INTO user_roles_etab (user_id, etablissement_id, role_id) SELECT {$U[$r]}, $E2, id FROM etab_roles WHERE code = '$r' AND etablissement_id IS NULL");
     }
     $CL = ins($db, 'classes', ['nom' => 'ZZB-CLASSE', 'niveau' => 'Seconde', 'annee_scolaire' => '2026-2027'], $id(), $E2);
     $EL = ins($db, 'eleves', ['matricule' => 'ZZB-M1', 'nom' => 'ZZB-ELEVE', 'prenom' => 'Zoe', 'date_naissance' => '2010-01-01', 'sexe' => 'F', 'classe_id' => $CL, 'actif' => 1], $id(), $E2);

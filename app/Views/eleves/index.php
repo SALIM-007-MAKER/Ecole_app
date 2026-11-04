@@ -181,7 +181,7 @@ function buildQuery(array $base, array $override = []): string {
             <tr>
                 <td>
                     <?php if (!empty($e->photo)): ?>
-                    <img src="<?= BASE_URL ?>/<?= htmlspecialchars($e->photo, ENT_QUOTES) ?>"
+                    <img src="<?= htmlspecialchars(\App\Shared\Http\MediaUrl::photo($e->photo), ENT_QUOTES) ?>"
                          class="w-9 h-9 rounded-full object-cover border border-slate-200 shadow-sm" alt="">
                     <?php else: ?>
                     <div class="w-9 h-9 rounded-full flex items-center justify-center border
