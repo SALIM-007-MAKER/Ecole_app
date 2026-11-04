@@ -84,4 +84,4 @@ Tant que l'abonnement est en grâce, les utilisateurs de rôle `admin`, `directe
 
 ## Non couvert (étapes suivantes)
 
-Paiements et revenus (étape 5), notifications d'échéance, surcharge de quotas par établissement, activation réelle des `modules_inclus`, 2FA.
+Paiements et revenus : voir `PAIEMENTS_SAAS.md` (étape 5, fait). Non couvert ici : notifications d'échéance, surcharge de quotas par établissement, activation réelle des `modules_inclus`, 2FA.

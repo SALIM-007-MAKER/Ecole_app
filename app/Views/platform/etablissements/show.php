@@ -44,6 +44,7 @@ $statutBadge = [
         </div>
 
         <?php if (!empty($abonnementsActifs)) { include __DIR__ . '/_abonnement.php'; } ?>
+        <?php if (!empty($paiements['actif'])) { include __DIR__ . '/_paiements.php'; } ?>
 
         <?php if (!empty($canSubscribe)): ?>
         <div class="rounded-xl border border-slate-200 bg-white shadow-sm p-5">

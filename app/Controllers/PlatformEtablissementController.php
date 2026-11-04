@@ -67,8 +67,16 @@ class PlatformEtablissementController extends PlatformController
             $historique = $svc->historique($id);
         }
 
+        // Paiements manuels : données financières, visibles et saisissables par le super_admin uniquement.
+        $paiements = ['actif' => false];
+        if (PlatformAuth::hasLevel('super_admin') && \Core\Platform\PlatformPaymentService::disponible($pdo)) {
+            $payeur = new \Core\Platform\PlatformPaymentService($pdo);
+            $paiements = ['actif' => true, 'liste' => $payeur->liste($id), 'situation' => $payeur->situationParPeriode($id)];
+        }
+
         $this->render('platform/etablissements/show', [
             'title'     => $etab['nom'],
+            'paiements' => $paiements,
             'etab'      => $etab,
             'abonnement' => $abonnement,
             'historique' => $historique,

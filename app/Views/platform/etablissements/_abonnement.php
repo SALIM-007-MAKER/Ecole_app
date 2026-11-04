@@ -21,7 +21,7 @@ $base = BASE_URL . '/platform/etablissements/' . (int)$etab['id'] . '/abonnement
             <div><p class="text-slate-400 text-xs">Période</p><p class="text-slate-800"><?= $h($ligne['date_debut']) ?> → <?= $ligne['date_fin'] ? $h($ligne['date_fin']) : 'sans échéance' ?></p></div>
             <div><p class="text-slate-400 text-xs">Accès jusqu'au</p><p class="text-slate-800"><?= $etat['acces_jusqua'] ? $h($etat['acces_jusqua']) : '—' ?><?= $etat['jours_restants'] !== null ? ' (' . (int)$etat['jours_restants'] . ' j)' : '' ?></p></div>
             <div><p class="text-slate-400 text-xs">Conditions figées</p><p class="text-slate-800"><?= $ligne['prix_applique'] !== null ? $h($ligne['prix_applique']) . ' ' . $h($ligne['devise']) : 'inconnues (' . $h($ligne['devise']) . ')' ?>, grâce <?= (int)$ligne['jours_grace_appliques'] ?> j</p></div>
-            <div><p class="text-slate-400 text-xs">Renouvellement automatique</p><p class="text-slate-800">Inactif (paiements : étape suivante)</p></div>
+            <div><p class="text-slate-400 text-xs">Renouvellement automatique</p><p class="text-slate-800">Inactif (les paiements sont saisis manuellement, ils ne renouvellent pas l'abonnement)</p></div>
         </div>
         <?php if ($etat['en_grace']): ?><p class="text-sm text-amber-700">Période de grâce : l'accès est maintenu jusqu'au <?= $h($etat['acces_jusqua']) ?>.</p><?php endif; ?>
         <?php if ($suspAuto): ?><p class="text-sm text-red-700">Suspendu automatiquement pour expiration d'abonnement (levée automatique au renouvellement).</p><?php endif; ?>

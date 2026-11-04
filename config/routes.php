@@ -99,6 +99,11 @@ $router->post('/platform/etablissements/{id}/abonnement/souscrire',      'Platfo
 $router->post('/platform/etablissements/{id}/abonnement/renouveler',     'PlatformSubscriptionController@renouveler');
 $router->post('/platform/etablissements/{id}/abonnement/annuler',        'PlatformSubscriptionController@annuler');
 $router->post('/platform/etablissements/{id}/abonnement/prolonger-essai','PlatformSubscriptionController@prolongerEssai');
+$router->post('/platform/etablissements/{id}/paiements',                 'PlatformPaymentController@store');
+$router->get('/platform/paiements/{id}',                                 'PlatformPaymentController@show');
+$router->post('/platform/paiements/{id}/annuler',                        'PlatformPaymentController@annuler');
+$router->get('/platform/revenus',                                        'PlatformRevenueController@index');
+$router->get('/platform/revenus/export',                                 'PlatformRevenueController@export');
 
 // ─── Administration de la plateforme — infrastructure par établissement (T026) ──
 // Domaines personnalisés, Stockage & Quotas, Monitoring & Cache : retirés du
