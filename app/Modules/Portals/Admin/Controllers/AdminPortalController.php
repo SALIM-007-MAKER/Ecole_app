@@ -45,17 +45,10 @@ class AdminPortalController extends PortalBaseController
         $offset  = ($page - 1) * $perPage;
 
         try {
-            $pdo  = Database::getInstance()->getConnection();
-            $stmt = $pdo->prepare(
-                'SELECT al.*, u.nom, u.prenom FROM audit_logs al
-                 LEFT JOIN users u ON u.id = al.user_id
-                 ORDER BY al.created_at DESC LIMIT :lim OFFSET :off'
-            );
-            $stmt->bindValue(':lim', $perPage, \PDO::PARAM_INT);
-            $stmt->bindValue(':off', $offset,  \PDO::PARAM_INT);
-            $stmt->execute();
-            $logs  = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-            $total = (int)$pdo->query('SELECT COUNT(*) FROM audit_logs')->fetchColumn();
+            // Journal DE L'ÉTABLISSEMENT courant uniquement : l'établissement est explicite et obligatoire (jamais de lecture globale).
+            $res   = (new \App\Services\AuditService())->rechercher($etab, [], $page, $perPage);
+            $logs  = array_map(static fn(array $l) => $l + ['nom' => (string)($l['acteur_libelle'] ?? ''), 'prenom' => ''], $res['rows']);
+            $total = $res['total'];
         } catch (\Throwable) {
             $logs  = [];
             $total = 0;

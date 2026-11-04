@@ -2,20 +2,24 @@
 
 Public : personnel en charge des ressources humaines de l'établissement.
 
-> **Note sur les rôles** : il n'existe pas, à ce jour, de rôle RBAC dédié nommé
-> "RH" dans l'application (voir `docs/technique/RBAC.md` §1) — le module RH est
-> opéré via les rôles **Administrateur** ou **Direction**, ou via un rôle
-> personnalisé que votre établissement peut créer. Ce guide décrit les
-> fonctionnalités du module, indépendamment du rôle exact qui y accède chez vous.
+> **Périmètre des rôles** : le module RH est accessible selon les permissions du
+> compte. Selon la configuration de l'établissement, il peut être utilisé par la
+> Direction, un Administrateur, ou un rôle personnalisé disposant des
+> permissions RH nécessaires — détail des rôles et permissions dans
+> `docs/technique/RBAC.md`.
 
-> **Avertissement environnement** : comme pour Finance (voir
-> `docs/fonctionnel/GUIDE_COMPTABLE.md`), le module RH est activé en
-> configuration mais ses tables ne sont pas appliquées dans certains
-> environnements — voir `docs/technique/ARCHITECTURE_MODULES.md` §4.
+> **Disponibilité** : les fonctionnalités présentées sont disponibles lorsque le
+> module RH est activé et que les migrations nécessaires sont appliquées. Les
+> fonctionnalités visibles dépendent également des permissions de votre compte.
+> Détails techniques (activation, migrations, tables) : voir
+> `docs/technique/ARCHITECTURE_MODULES.md` §4.
 
 ## 1. Employés
 
-`RH → Employés` : dossier employé complet, données personnelles, poste.
+`RH → Employés` : dossier employé complet (données personnelles, poste).
+Consultation, création et modification selon vos permissions — certains
+comptes (ex. Secrétariat) peuvent n'avoir accès qu'en consultation, sans
+pouvoir créer ou modifier une fiche.
 
 ## 2. Organisation
 
@@ -34,14 +38,17 @@ un poste ou une matière (pour le personnel enseignant), historique conservé.
 
 ## 5. Présences RH
 
-`RH → Présences` : pointage du personnel (multi-mode), calcul automatique des
-durées, retards, heures supplémentaires ; régularisation tracée et soumise à
-validation.
+`RH → Présences` : pointage du personnel — le mode utilisé est précisé parmi
+manuel, badge, QR code ou biométrie, selon l'équipement de votre
+établissement. Calcul automatique des durées, retards, heures supplémentaires ;
+régularisation tracée et soumise à validation.
 
 ## 6. Congés
 
-`RH → Congés` : demande, solde par type de congé (9 types), validation
-hiérarchique (machine d'états à 7 statuts), détection des chevauchements.
+`RH → Congés` : demande de congé, suivi du solde par type, workflow de
+validation hiérarchique, détection automatique des chevauchements entre
+demandes. Le détail des types de congés et des statuts possibles dépend de la
+configuration de votre établissement.
 
 ## 7. Évaluations
 
@@ -57,3 +64,23 @@ compétences acquises.
 
 `RH → Documents` : documents administratifs par employé, versionnés, avec gestion
 d'expiration (ex. certificats médicaux, diplômes).
+
+## 10. Confidentialité et accès
+
+Le module RH manipule des données plus sensibles que les modules Élève ou
+Enseignant (données personnelles, contractuelles, disciplinaires) :
+
+- Les dossiers employés ne sont accessibles qu'aux comptes disposant des
+  permissions RH nécessaires.
+- Les informations personnelles et contractuelles sont protégées par ce même
+  contrôle d'accès — un compte sans la permission requise n'y a pas accès,
+  même en lecture.
+- Les actions importantes (création, modification, validation) sont tracées.
+- Vous ne voyez que les données correspondant à vos permissions : par exemple,
+  un compte en consultation seule ne pourra ni créer ni modifier une fiche, et
+  certains rôles ne voient que leur propre dossier plutôt que celui de tous
+  les employés.
+
+Si vous constatez un accès qui semble incorrect (donnée visible qui ne
+devrait pas l'être, ou inversement), signalez-le immédiatement à votre
+établissement.

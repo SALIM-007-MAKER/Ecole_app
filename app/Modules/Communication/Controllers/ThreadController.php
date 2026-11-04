@@ -49,7 +49,12 @@ class ThreadController extends Controller
             return;
         }
 
-        $threadId = $this->service->creer($dto, (int) $this->user['id'], (int) ($this->user['etablissement_id'] ?? 1));
+        try {
+            $threadId = $this->service->creer($dto, (int) $this->user['id'], (int) ($this->user['etablissement_id'] ?? 1));
+        } catch (\RuntimeException $e) {
+            $this->json(['success' => false, 'errors' => [$e->getMessage()]], 422);
+            return;
+        }
         $this->json(['success' => true, 'thread_id' => $threadId]);
     }
 

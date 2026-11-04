@@ -75,7 +75,8 @@ class HomeController extends Controller
 
             try {
                 $row = $eleveModel->queryOne(
-                    "SELECT COUNT(*) AS n FROM `absences` WHERE `date_absence` = CURDATE()"
+                    "SELECT COUNT(*) AS n FROM `vs_absences`
+                     WHERE `date_absence` = CURDATE() AND `type` = 'absence' AND `deleted_at` IS NULL"
                 );
                 $base['absences_today'] = $row ? (int)$row->n : 0;
             } catch (\Throwable) {
@@ -88,8 +89,9 @@ class HomeController extends Controller
             try {
                 $base['absences_mois'] = $eleveModel->query(
                     "SELECT MONTH(date_absence) AS m, YEAR(date_absence) AS y, COUNT(*) AS n
-                     FROM `absences`
+                     FROM `vs_absences`
                      WHERE date_absence >= DATE_SUB(CURDATE(), INTERVAL 5 MONTH)
+                       AND type = 'absence' AND deleted_at IS NULL
                      GROUP BY y, m ORDER BY y ASC, m ASC"
                 );
             } catch (\Throwable) {

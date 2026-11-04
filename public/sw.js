@@ -27,7 +27,7 @@ const CACHE_PAGES  = `ecole-pages-${CACHE_VER}`;  // Pages HTML PHP (Network Fir
 const CACHE_IMAGES = `ecole-images-${CACHE_VER}`; // Images uploadées
 const CACHE_SHELL  = `ecole-shell-${CACHE_VER}`;  // App Shell hors-ligne
 
-const BASE        = '/ecole_app';
+const BASE        = new URL('./', self.location.href).pathname.replace(/\/$/, '');   // dossier d'installation, déduit de l'URL du service worker
 const OFFLINE_URL = `${BASE}/offline.html`;
 const NF_TIMEOUT  = 5000; // ms — Network First : timeout avant fallback cache
 
@@ -37,14 +37,12 @@ const SHELL_ASSETS = [
     `${BASE}/assets/images/icon-72.png`,
     `${BASE}/assets/images/icon-192.png`,
     `${BASE}/assets/images/icon-512.png`,
+    `${BASE}/assets/vendor/tailwind/tailwind-preflight.css`,   // mise en forme de la page hors ligne
 ];
 
 // CDN Bootstrap — URLs contenant la version → immuables → Cache First sûr
-const CDN_ASSETS = [
-    'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css',
-    'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js',
-    'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css',
-];
+// Plus aucune ressource externe pré-chargée : Tailwind, Font Awesome, Lucide et Chart.js sont servis localement (assets/vendor).
+const CDN_ASSETS = [];
 
 // ─── Installation ──────────────────────────────────────────────────────────────
 // Pré-cache l'App Shell et les assets CDN.
@@ -337,7 +335,7 @@ self.addEventListener('notificationclick', event => {
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then(cs => {
             for (const c of cs) {
-                if (c.url.includes('/ecole_app/') && 'focus' in c) {
+                if (c.url.includes(BASE + '/') && 'focus' in c) {
                     c.navigate(url);
                     return c.focus();
                 }

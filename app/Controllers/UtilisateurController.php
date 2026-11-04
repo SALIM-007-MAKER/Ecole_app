@@ -111,7 +111,7 @@ class UtilisateurController extends Controller
             $this->redirect(BASE_URL . '/utilisateurs/create');
         }
 
-        $this->userModel->insert([
+        $nouveauId = $this->userModel->insert([
             'nom'        => $nom,
             'prenom'     => $prenom,
             'email'      => $email,
@@ -122,6 +122,9 @@ class UtilisateurController extends Controller
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s'),
         ]);
+
+        // Audit : identifiant, rôle et état seulement (ni e-mail, ni téléphone, ni mot de passe).
+        (new \App\Services\AuditService())->logCreate((int)($this->currentUser()['id'] ?? 0), 'utilisateurs', 'user', (int)$nouveauId, ['role' => $role, 'actif' => 1]);
 
         Session::flash('success', "Utilisateur « {$nom} {$prenom} » créé avec succès.");
         $this->redirect(BASE_URL . '/utilisateurs');
@@ -212,6 +215,19 @@ class UtilisateurController extends Controller
 
         $this->userModel->update($userId, $data);
 
+        // Audit : changements de rôle et d'état comparés ; pour les autres champs, seule leur NATURE est conservée (jamais les valeurs).
+        $champs = [];
+        if ($nom !== (string)$user->nom) { $champs[] = 'nom'; }
+        if ($prenom !== (string)($user->prenom ?? '')) { $champs[] = 'prenom'; }
+        if ($email !== (string)$user->email) { $champs[] = 'email'; }
+        if (($telephone !== '' ? $telephone : null) !== ($user->telephone ?? null)) { $champs[] = 'telephone'; }
+        if ($password !== '') { $champs[] = 'mot_de_passe'; }
+        (new \App\Services\AuditService())->logUpdate(
+            (int)($this->currentUser()['id'] ?? 0), 'utilisateurs', 'user', $userId,
+            ['role' => $user->role, 'actif' => (int)$user->actif, 'champs_modifies' => []],
+            ['role' => $role, 'actif' => (int)$actif, 'champs_modifies' => $champs]
+        );
+
         Session::flash('success', 'Utilisateur modifié avec succès.');
         $this->redirect(BASE_URL . '/utilisateurs');
     }
@@ -236,6 +252,7 @@ class UtilisateurController extends Controller
         }
 
         $this->userModel->delete($userId);
+        (new \App\Services\AuditService())->logDelete((int)$currentUser['id'], 'utilisateurs', 'user', $userId, ['role' => $user->role, 'actif' => (int)$user->actif]);
         Session::flash('success', 'Utilisateur supprimé.');
         $this->redirect(BASE_URL . '/utilisateurs');
     }
@@ -259,8 +276,15 @@ class UtilisateurController extends Controller
             $this->redirect(BASE_URL . '/utilisateurs');
         }
 
+        // Même règle que update() : seul un admin peut agir sur un compte admin (sinon un directeur pourrait verrouiller l'administrateur).
+        if (($currentUser['role'] ?? '') !== 'admin' && $user->role === 'admin') {
+            Session::flash('error', 'Seul un administrateur peut activer ou désactiver un compte administrateur.');
+            $this->redirect(BASE_URL . '/utilisateurs');
+        }
+
         $newActif = (int)$user->actif === 1 ? 0 : 1;
         $this->userModel->update($userId, ['actif' => $newActif, 'updated_at' => date('Y-m-d H:i:s')]);
+        (new \App\Services\AuditService())->logUpdate((int)$currentUser['id'], 'utilisateurs', 'user', $userId, ['actif' => (int)$user->actif], ['actif' => $newActif]);
 
         Session::flash('success', $newActif ? 'Compte activé.' : 'Compte désactivé.');
         $this->redirect(BASE_URL . '/utilisateurs');

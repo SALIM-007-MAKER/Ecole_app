@@ -25,30 +25,26 @@ $uri        = $_SERVER['REQUEST_URI'] ?? '';
     <title><?= htmlspecialchars($pageTitle ?? $portalTitle) ?> — EduNova</title>
     <meta name="theme-color" content="<?= htmlspecialchars($portalColor['primary']) ?>">
     <style><?= $cssVars ?></style>
+
+    <!-- Google Fonts — même police que le dashboard principal -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
     <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        portal: {
-                            DEFAULT: '<?= htmlspecialchars($portalColor['primary']) ?>',
-                            light:   '<?= htmlspecialchars($portalColor['light'] ?? '#ede9fe') ?>',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <!-- Icônes — mêmes bibliothèques et version que le dashboard principal -->
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/vendor/fontawesome/css/all.min.css">
+    <script src="<?= BASE_URL ?>/assets/vendor/lucide/lucide.min.js"></script>
     <style>
+        body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
         [x-cloak] { display: none !important; }
         .sidebar-item.active { background-color: var(--portal-light); color: var(--portal-primary); font-weight: 600; }
         .sidebar-item:not(.active):hover { background-color: #f8fafc; }
         .badge-portal { background-color: var(--portal-primary); }
     </style>
+    <!-- Tailwind compilé (tools/tailwind/README.md) : en FIN de <head>, comme le faisait le CDN, pour conserver la même cascade avec app.css -->
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/vendor/tailwind/tailwind-preflight.css?v=<?= @filemtime(ROOT_PATH . '/public/assets/vendor/tailwind/tailwind-preflight.css') ?: 1 ?>">
+    <style>:root{--portal:<?= htmlspecialchars($portalColor['primary']) ?>;--portal-light:<?= htmlspecialchars($portalColor['light'] ?? '#ede9fe') ?>}</style>
 </head>
 <body class="h-full bg-slate-50 text-slate-800 antialiased">
 

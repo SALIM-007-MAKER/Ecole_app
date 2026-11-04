@@ -190,7 +190,7 @@ $user       = $user       ?? [];
                             <?php endif; ?>
                             <?php if ($policy && !$isArchive && $isActif && $policy->canDeactivate($user, $t)): ?>
                             <button type="button"
-                                    onclick="openModal(<?= $t->id ?>, '<?= htmlspecialchars($t->nom, ENT_JS) ?>', 'desactiver')"
+                                    onclick="openModal(<?= $t->id ?>, <?= htmlspecialchars(json_encode((string)($t->nom), JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP), ENT_QUOTES) ?>, 'desactiver')"
                                     class="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded transition"
                                     title="Désactiver">
                                 <i data-lucide="toggle-left" class="w-4 h-4"></i>
@@ -198,7 +198,7 @@ $user       = $user       ?? [];
                             <?php endif; ?>
                             <?php if ($policy && !$isArchive && !$isActif && $policy->canActivate($user, $t)): ?>
                             <button type="button"
-                                    onclick="openModal(<?= $t->id ?>, '<?= htmlspecialchars($t->nom, ENT_JS) ?>', 'activer')"
+                                    onclick="openModal(<?= $t->id ?>, <?= htmlspecialchars(json_encode((string)($t->nom), JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP), ENT_QUOTES) ?>, 'activer')"
                                     class="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition"
                                     title="Activer">
                                 <i data-lucide="toggle-right" class="w-4 h-4"></i>
@@ -206,7 +206,7 @@ $user       = $user       ?? [];
                             <?php endif; ?>
                             <?php if ($policy && $policy->canArchiver($user, $t)): ?>
                             <button type="button"
-                                    onclick="openModal(<?= $t->id ?>, '<?= htmlspecialchars($t->nom, ENT_JS) ?>', 'archiver')"
+                                    onclick="openModal(<?= $t->id ?>, <?= htmlspecialchars(json_encode((string)($t->nom), JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP), ENT_QUOTES) ?>, 'archiver')"
                                     class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition"
                                     title="Archiver">
                                 <i data-lucide="archive" class="w-4 h-4"></i>

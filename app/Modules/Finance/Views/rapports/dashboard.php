@@ -33,12 +33,11 @@ $fmt = fn(float $v) => number_format($v, 0, ',', ' ') . ' XOF';
             <form method="GET" class="flex gap-2">
                 <input type="date" name="date_fin" value="<?= htmlspecialchars($date) ?>"
                        class="form-input">
-                <button class="inline-flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors">
+                <button class="btn btn-primary">
                     <i data-lucide="refresh-cw" class="w-4 h-4"></i> Actualiser
                 </button>
             </form>
-            <a href="<?= BASE_URL ?>/v2/finance/rapports/export?type=dashboard&format=pdf"
-               class="inline-flex items-center gap-2 border border-slate-300 bg-white text-slate-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
+            <a href="<?= BASE_URL ?>/v2/finance/rapports/export?type=dashboard&format=pdf" class="btn btn-outline">
                 <i data-lucide="printer" class="w-4 h-4"></i> Imprimer
             </a>
         </div>
@@ -170,7 +169,7 @@ $fmt = fn(float $v) => number_format($v, 0, ',', ' ') . ' XOF';
         </div>
         <?php endif; ?>
     </div>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="<?= BASE_URL ?>/assets/vendor/chartjs/chart.umd.js"></script>
 <script>
 // Chart évolution mensuelle
 const evoData = <?= json_encode(array_values($evolution)) ?>;

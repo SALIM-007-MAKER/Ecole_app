@@ -3,6 +3,7 @@
 namespace App\Modules\Academique\Repositories;
 
 use Core\Database;
+use Core\Tenant\TenantScope;
 
 class NoteRepository
 {
@@ -23,7 +24,7 @@ class NoteRepository
                        ev.statut AS eval_statut, ev.notes_saisie_ouverte,
                        ev.classe_id, ev.matiere_id, ev.periode_scolaire_id,
                        te.nom AS type_nom, te.couleur AS type_couleur, te.icone AS type_icone,
-                       m.nom AS matiere_nom,
+                       m.nom AS matiere_nom, m.est_conduite AS matiere_est_conduite,
                        c.nom AS classe_nom
                 FROM notes_v2 n
                 JOIN eleves e     ON e.id = n.eleve_id
@@ -31,12 +32,32 @@ class NoteRepository
                 LEFT JOIN types_evaluations te ON te.id = ev.type_evaluation_id
                 LEFT JOIN matieres m  ON m.id = ev.matiere_id
                 LEFT JOIN classes  c  ON c.id = ev.classe_id
-                WHERE n.id = ?
+                WHERE n.id = ?" . TenantScope::classe('ev.classe_id')[0] . "
                 LIMIT 1";
 
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([$noteId]);
+        $stmt->execute([$noteId, ...TenantScope::classe('ev.classe_id')[1]]);
         return $stmt->fetch(\PDO::FETCH_OBJ) ?: null;
+    }
+
+    /** L'élève appartient-il à la classe de cette évaluation (et à l'établissement courant) ? Un identifiant d'élève de formulaire ou de CSV n'est jamais cru. */
+    public function eleveDansClasseDeLEvaluation(int $evaluationId, int $eleveId): bool
+    {
+        [$ts, $tp] = TenantScope::classe('ev.classe_id');
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM evaluations ev JOIN eleves e ON e.classe_id = ev.classe_id WHERE ev.id = ? AND e.id = ?' . $ts);
+        $stmt->execute([$evaluationId, $eleveId, ...$tp]);
+        return (int)$stmt->fetchColumn() > 0;
+    }
+
+    /** L'évaluation porte-t-elle sur la matière de Conduite (marqueur matieres.est_conduite) ? */
+    public function evaluationEstConduite(int $evaluationId): bool
+    {
+        [$ts, $tp] = TenantScope::classe('ev.classe_id');
+        $stmt = $this->pdo->prepare(
+            "SELECT m.est_conduite FROM evaluations ev JOIN matieres m ON m.id = ev.matiere_id WHERE ev.id = ?" . $ts
+        );
+        $stmt->execute([$evaluationId, ...$tp]);
+        return (int)$stmt->fetchColumn() === 1;
     }
 
     public function listElevesAvecNotes(int $evaluationId): array
@@ -48,11 +69,11 @@ class NoteRepository
                 JOIN eleves e ON e.classe_id = ev.classe_id
                 LEFT JOIN notes_v2 n
                     ON n.eleve_id = e.id AND n.evaluation_id = ev.id
-                WHERE ev.id = :eval_id
+                WHERE ev.id = ?" . TenantScope::classe('ev.classe_id')[0] . "
                 ORDER BY e.nom, e.prenom";
 
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([':eval_id' => $evaluationId]);
+        $stmt->execute([$evaluationId, ...TenantScope::classe('ev.classe_id')[1]]);
         return $stmt->fetchAll(\PDO::FETCH_OBJ);
     }
 
@@ -61,21 +82,34 @@ class NoteRepository
         [$where, $params] = $this->buildWhere($filters);
 
         $countSql = "SELECT COUNT(*) FROM notes_v2 n {$where}";
-        $total    = (int)$this->pdo->prepare($countSql)->execute($params) ? null : 0;
-
-        $stmt = $this->pdo->prepare($countSql);
+        $stmt     = $this->pdo->prepare($countSql);
         $stmt->execute($params);
         $total = (int)$stmt->fetchColumn();
+
+        // Vue par élève (eleve_id filtré, evaluation_id absent) : notes les plus
+        // récentes en premier, plus utile qu'un tri par nom (constant sur cette
+        // vue puisqu'il n'y a qu'un seul élève). Vue par évaluation (défaut) :
+        // tri alphabétique des élèves inchangé.
+        $orderBy = !empty($filters['eleve_id']) && empty($filters['evaluation_id'])
+            ? 'ev.date_evaluation DESC, ev.id DESC'
+            : 'e.nom, e.prenom';
 
         $offset = ($page - 1) * $perPage;
         $sql    = "SELECT n.*,
                           e.nom AS eleve_nom, e.prenom AS eleve_prenom, e.matricule,
-                          ev.libelle AS eval_libelle, ev.note_max
+                          ev.libelle AS eval_libelle, ev.note_max, ev.coefficient,
+                          ev.date_evaluation, ev.matiere_id, ev.classe_id,
+                          m.nom  AS matiere_nom, m.est_conduite AS matiere_est_conduite,
+                          c.nom  AS classe_nom,
+                          te.nom AS type_nom, te.couleur AS type_couleur
                    FROM notes_v2 n
-                   JOIN eleves e       ON e.id = n.eleve_id
-                   JOIN evaluations ev ON ev.id = n.evaluation_id
+                   JOIN eleves e                  ON e.id = n.eleve_id
+                   JOIN evaluations ev             ON ev.id = n.evaluation_id
+                   LEFT JOIN matieres m            ON m.id = ev.matiere_id
+                   LEFT JOIN classes c             ON c.id = ev.classe_id
+                   LEFT JOIN types_evaluations te  ON te.id = ev.type_evaluation_id
                    {$where}
-                   ORDER BY e.nom, e.prenom
+                   ORDER BY {$orderBy}
                    LIMIT {$perPage} OFFSET {$offset}";
 
         $stmt = $this->pdo->prepare($sql);
@@ -88,6 +122,32 @@ class NoteRepository
             'last_page'    => max(1, (int)ceil($total / $perPage)),
             'per_page'     => $perPage,
         ];
+    }
+
+    /**
+     * Statistiques agrégées sur TOUTES les notes d'un élève (indépendantes de
+     * la pagination) — moyenne générale pondérée par coefficient et ramenée
+     * sur 20 pour rester comparable entre évaluations à barèmes différents.
+     */
+    public function statsForEleve(int $eleveId): object
+    {
+        $sql = "SELECT
+                    COUNT(*) AS total,
+                    SUM(n.statut = 'publiee' OR n.statut = 'verrouillee') AS publiees,
+                    SUM(n.est_absent = 1) AS absents,
+                    COUNT(DISTINCT ev.matiere_id) AS nb_matieres,
+                    MAX(CASE WHEN n.est_absent = 0 THEN n.valeur / ev.note_max * 20 END) AS meilleure_note,
+                    SUM(CASE WHEN n.est_absent = 0 AND n.valeur IS NOT NULL AND ev.note_max > 0
+                             THEN (n.valeur / ev.note_max * 20) * ev.coefficient ELSE 0 END)
+                    / NULLIF(SUM(CASE WHEN n.est_absent = 0 AND n.valeur IS NOT NULL AND ev.note_max > 0
+                             THEN ev.coefficient ELSE 0 END), 0) AS moyenne_generale
+                FROM notes_v2 n
+                JOIN evaluations ev ON ev.id = n.evaluation_id
+                WHERE n.eleve_id = ?" . TenantScope::classe('ev.classe_id')[0] . "";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([$eleveId, ...TenantScope::classe('ev.classe_id')[1]]);
+        return $stmt->fetch(\PDO::FETCH_OBJ) ?: new \stdClass();
     }
 
     public function countStats(int $evaluationId): array
@@ -103,10 +163,10 @@ class NoteRepository
                     MAX(valeur) AS note_max_val,
                     AVG(valeur) AS note_moyenne
                 FROM notes_v2
-                WHERE evaluation_id = ?";
+                WHERE evaluation_id = ?" . TenantScope::evaluation('evaluation_id')[0];
 
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([$evaluationId]);
+        $stmt->execute([$evaluationId, ...TenantScope::evaluation('evaluation_id')[1]]);
         return (array)($stmt->fetch(\PDO::FETCH_OBJ) ?: new \stdClass());
     }
 
@@ -115,9 +175,9 @@ class NoteRepository
         $sql = "SELECT COUNT(e.id)
                 FROM evaluations ev
                 JOIN eleves e ON e.classe_id = ev.classe_id
-                WHERE ev.id = ?";
+                WHERE ev.id = ?" . TenantScope::classe('ev.classe_id')[0];
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([$evaluationId]);
+        $stmt->execute([$evaluationId, ...TenantScope::classe('ev.classe_id')[1]]);
         return (int)$stmt->fetchColumn();
     }
 
@@ -149,11 +209,11 @@ class NoteRepository
         $sql = "SELECT h.*, CONCAT(COALESCE(u.prenom,''), ' ', COALESCE(u.nom,'')) AS modifie_par_nom
             FROM notes_historique h
             LEFT JOIN users u ON u.id = h.modifie_par
-            WHERE h.note_id = ?
+            WHERE h.note_id = ?" . TenantScope::restrictionNote('h.note_id') . "
             ORDER BY h.modifie_le DESC";
 
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([$noteId]);
+        $stmt->execute([$noteId, ...TenantScope::parametresNote()]);
         return $stmt->fetchAll(\PDO::FETCH_OBJ);
     }
 
@@ -164,6 +224,10 @@ class NoteRepository
         $conds  = [];
         $params = [];
 
+        if (($tid = TenantScope::id()) !== null) {   // Lot 3 : notes des évaluations des classes de l'établissement courant
+            $conds[]  = 'n.evaluation_id IN (SELECT ev_t.id FROM evaluations ev_t JOIN classes cl_t ON cl_t.id = ev_t.classe_id WHERE cl_t.etablissement_id = ?)';
+            $params[] = $tid;
+        }
         if (!empty($f['evaluation_id'])) {
             $conds[]  = 'n.evaluation_id = ?';
             $params[] = (int)$f['evaluation_id'];

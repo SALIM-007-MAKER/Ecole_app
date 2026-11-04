@@ -76,6 +76,7 @@ class PlatformMonitoringController extends PlatformController
         $this->cache->flushTenant($id);
 
         \Core\Logger::security('CACHE_FLUSHED', "etablissement_id={$id} par opérateur plateforme");
+        $this->audit('cache.flushed', ['etablissement_id' => $id, 'entity_type' => 'etablissement', 'entity_id' => $id]);
         Session::flash('success', 'Cache vidé.');
         $this->redirect(BASE_URL . '/platform/etablissements/' . $id . '/monitoring');
     }

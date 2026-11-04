@@ -3,6 +3,7 @@
 namespace App\Modules\Finance\Repositories;
 
 use Core\Database;
+use Core\Tenant\TenantScope;
 use App\Modules\Finance\DTO\InvoiceFiltersDTO;
 
 class InvoiceRepository
@@ -19,6 +20,7 @@ class InvoiceRepository
     // ----------------------------------------------------------------
     public function genererNumero(string $type, int $annee): string
     {
+        $type = TenantScope::cleSequence($type);   // compteur (et préfixe du numéro) propre à l'établissement
         $stmt = $this->pdo->prepare(
             "INSERT INTO `finance_sequences` (`type`, `annee`, `valeur`) VALUES (?, ?, 1)
              ON DUPLICATE KEY UPDATE `valeur` = `valeur` + 1"
@@ -37,7 +39,7 @@ class InvoiceRepository
     // ----------------------------------------------------------------
     public function paginate(InvoiceFiltersDTO $f): array
     {
-        $where  = ['1=1'];
+        $where  = ['1=1', TenantScope::sqlEleve('ff.eleve_id')];   // propriété par l'élève
         $params = [];
 
         if ($f->q) {
@@ -136,7 +138,7 @@ class InvoiceRepository
              LEFT JOIN `classes` c ON c.id = e.classe_id
              LEFT JOIN `users` ue ON ue.id = ff.emise_par
              LEFT JOIN `users` ua ON ua.id = ff.annulee_par
-             WHERE ff.id = ?"
+             WHERE ff.id = ? AND " . TenantScope::sqlEleve('ff.eleve_id')
         );
         $stmt->execute([$id]);
         return $stmt->fetch(\PDO::FETCH_OBJ) ?: null;
@@ -333,7 +335,7 @@ class InvoiceRepository
         $stmt = $this->pdo->prepare(
             "SELECT e.id AS eleve_id, CONCAT(e.prenom,' ',e.nom) AS nom
              FROM `eleves` e
-             WHERE e.classe_id = ? AND e.actif = 1"
+             WHERE e.classe_id = ? AND e.actif = 1 AND " . TenantScope::sqlEtab('eleves', 'e.etablissement_id')
         );
         $stmt->execute([$classeId]);
         return $stmt->fetchAll(\PDO::FETCH_OBJ);
@@ -344,7 +346,7 @@ class InvoiceRepository
         if (empty($niveau)) {
             $stmt = $this->pdo->query(
                 "SELECT e.id AS eleve_id, CONCAT(e.prenom,' ',e.nom) AS nom
-                 FROM `eleves` e WHERE e.actif = 1"
+                 FROM `eleves` e WHERE e.actif = 1 AND " . TenantScope::sqlEtab('eleves', 'e.etablissement_id')
             );
             return $stmt->fetchAll(\PDO::FETCH_OBJ);
         }
@@ -352,7 +354,7 @@ class InvoiceRepository
             "SELECT e.id AS eleve_id, CONCAT(e.prenom,' ',e.nom) AS nom
              FROM `eleves` e
              JOIN `classes` c ON c.id = e.classe_id
-             WHERE c.niveau = ? AND e.actif = 1"
+             WHERE c.niveau = ? AND e.actif = 1 AND " . TenantScope::sqlEtab('eleves', 'e.etablissement_id')
         );
         $stmt->execute([$niveau]);
         return $stmt->fetchAll(\PDO::FETCH_OBJ);
@@ -380,7 +382,7 @@ class InvoiceRepository
     {
         $phs  = implode(',', array_fill(0, count($ids), '?'));
         $stmt = $this->pdo->prepare(
-            "SELECT * FROM `finance_frais_types` WHERE `id` IN ({$phs}) AND `statut` = 'actif'"
+            "SELECT * FROM `finance_frais_types` WHERE `id` IN ({$phs}) AND `statut` = 'actif' AND " . TenantScope::sqlEtab('finance_frais_types', 'etablissement_id')
         );
         $stmt->execute($ids);
         return $stmt->fetchAll(\PDO::FETCH_OBJ);
@@ -391,8 +393,15 @@ class InvoiceRepository
     // ----------------------------------------------------------------
     public function statsGlobal(?string $annee = null): object
     {
-        $where  = $annee ? "WHERE ff.annee_scolaire = '{$annee}'" : '';
-        $stmt   = $this->pdo->query(
+        // Requête préparée (l'année provient de la requête HTTP) + périmètre de l'établissement courant.
+        $cond   = [TenantScope::sqlEleve('ff.eleve_id')];
+        $params = [];
+        if ($annee) {
+            $cond[]   = 'ff.annee_scolaire = ?';
+            $params[] = $annee;
+        }
+        $where  = 'WHERE ' . implode(' AND ', $cond);
+        $stmt   = $this->pdo->prepare(
             "SELECT
                 COUNT(*) AS total,
                 SUM(CASE WHEN statut='brouillon' THEN 1 ELSE 0 END) AS brouillons,
@@ -404,13 +413,14 @@ class InvoiceRepository
                 COALESCE(SUM(montant_paye),0)  AS montant_paye_global
              FROM `finance_factures` ff {$where}"
         );
+        $stmt->execute($params);
         return $stmt->fetch(\PDO::FETCH_OBJ);
     }
 
     public function getAnneesActives(): array
     {
         $stmt = $this->pdo->query(
-            "SELECT DISTINCT annee_scolaire FROM `finance_factures` ORDER BY annee_scolaire DESC"
+            "SELECT DISTINCT annee_scolaire FROM `finance_factures` ff WHERE " . TenantScope::sqlEleve('ff.eleve_id') . " ORDER BY annee_scolaire DESC"
         );
         return $stmt->fetchAll(\PDO::FETCH_COLUMN);
     }

@@ -9,9 +9,14 @@ ALTER TABLE `matieres`
         COMMENT 'Heures par semaine' AFTER `coefficient`,
     ADD COLUMN `description`   TEXT NULL AFTER `volume_horaire`;
 
+-- La matière « Physique » n'existe pas : il n'y a que « Physique-Chimie ». Renommage (sans effet si « Physique-Chimie » existe déjà).
+UPDATE `matieres` SET `nom` = 'Physique-Chimie'
+ WHERE `nom` = 'Physique'
+   AND NOT EXISTS (SELECT 1 FROM (SELECT `id` FROM `matieres` WHERE `nom` = 'Physique-Chimie') AS `deja`);
+
 -- volume horaire des matières existantes
 UPDATE `matieres` SET `volume_horaire` = 5 WHERE `nom` = 'Mathématiques';
-UPDATE `matieres` SET `volume_horaire` = 4 WHERE `nom` = 'Physique';
+UPDATE `matieres` SET `volume_horaire` = 2 WHERE `nom` = 'Physique-Chimie';
 UPDATE `matieres` SET `volume_horaire` = 5 WHERE `nom` = 'Arabe';
 UPDATE `matieres` SET `volume_horaire` = 4 WHERE `nom` = 'Français';
 UPDATE `matieres` SET `volume_horaire` = 3 WHERE `nom` = 'Anglais';
@@ -30,7 +35,7 @@ ALTER TABLE `classes`
 -- Lie le compte enseignant existant au premier professeur
 INSERT INTO `professeurs` (`nom`, `prenom`, `specialite`, `telephone`, `email`, `actif`) VALUES
 ('Khelifi',   'Mohamed',     'Mathématiques',      '0550001111', 'khelifi@ecole.dz',   1),
-('Bensalem',  'Farida',      'Physique',            '0550002222', 'bensalem@ecole.dz',  1),
+('Bensalem',  'Farida',      'Physique-Chimie',     '0550002222', 'bensalem@ecole.dz',  1),
 ('Cheikh',    'Abdelkader',  'Langue Arabe',        '0550003333', 'cheikh@ecole.dz',    1),
 ('Moussaoui', 'Leila',       'Langue Française',    '0550004444', 'moussaoui@ecole.dz', 1),
 ('Boukadoum', 'Samir',       'Langue Anglaise',     '0550005555', 'boukadoum@ecole.dz', 1),
@@ -51,7 +56,7 @@ ALTER TABLE `matieres`
 
 -- Affecter les responsables
 UPDATE `matieres` SET `responsable_id` = 1 WHERE `nom` = 'Mathématiques';
-UPDATE `matieres` SET `responsable_id` = 2 WHERE `nom` = 'Physique';
+UPDATE `matieres` SET `responsable_id` = 2 WHERE `nom` = 'Physique-Chimie';
 UPDATE `matieres` SET `responsable_id` = 3 WHERE `nom` = 'Arabe';
 UPDATE `matieres` SET `responsable_id` = 4 WHERE `nom` = 'Français';
 UPDATE `matieres` SET `responsable_id` = 5 WHERE `nom` = 'Anglais';
@@ -63,14 +68,14 @@ UPDATE `matieres` SET `responsable_id` = 8 WHERE `nom` = 'Philosophie';
 -- Classe 1 (1ère AS A)
 INSERT INTO `enseignements` (`professeur_id`, `matiere_id`, `classe_id`, `annee_scolaire`) VALUES
 (1, 1, 1, '2024-2025'),   -- Khelifi / Maths / Seconde-A
-(2, 2, 1, '2024-2025'),   -- Bensalem / Physique / Seconde-A
+(2, 2, 1, '2024-2025'),   -- Bensalem / Physique-Chimie / Seconde-A
 (3, 3, 1, '2024-2025'),   -- Cheikh / Arabe / Seconde-A
 (4, 4, 1, '2024-2025'),   -- Moussaoui / Français / Seconde-A
 (5, 5, 1, '2024-2025'),   -- Boukadoum / Anglais / Seconde-A
 (7, 6, 1, '2024-2025'),   -- Terki / Hist-Géo / Seconde-A
 -- Classe 2 (1ère AS B)
 (1, 1, 2, '2024-2025'),   -- Khelifi / Maths / Seconde-B
-(2, 2, 2, '2024-2025'),   -- Bensalem / Physique / Seconde-B
+(2, 2, 2, '2024-2025'),   -- Bensalem / Physique-Chimie / Seconde-B
 (3, 3, 2, '2024-2025'),   -- Cheikh / Arabe / Seconde-B
 -- Classe 3 (2ème AS A)
 (1, 1, 3, '2024-2025'),   -- Khelifi / Maths / 2AS-A

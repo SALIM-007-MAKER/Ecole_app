@@ -27,25 +27,20 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
     </div>
     <div class="flex gap-2 flex-shrink-0">
       <?php if ($canUpdate && $affectation['statut'] !== 'terminee'): ?>
-        <a href="<?= BASE_URL ?>/v2/rh/affectations/<?= (int)$affectation['id'] ?>/edit"
-           class="px-4 py-2 bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-sm hover:bg-slate-200">Modifier</a>
-        <button onclick="document.getElementById('modal-transferer').classList.remove('hidden')"
-                class="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">Transfert</button>
+        <a href="<?= BASE_URL ?>/v2/rh/affectations/<?= (int)$affectation['id'] ?>/edit" class="btn btn-secondary">Modifier</a>
+        <button onclick="document.getElementById('modal-transferer').classList.remove('hidden')" class="btn btn-primary">Transfert</button>
       <?php endif; ?>
       <?php if ($canUpdate && $affectation['statut'] === 'active'): ?>
         <form method="POST" action="<?= BASE_URL ?>/v2/rh/affectations/<?= (int)$affectation['id'] ?>/suspendre">
           <?= \Core\Csrf::field() ?>
-          <button onclick="return confirm('Suspendre cette affectation ?')"
-                  class="px-4 py-2 bg-amber-500 text-white rounded-lg text-sm hover:bg-amber-600">Suspendre</button>
+          <button onclick="return confirm('Suspendre cette affectation ?')" class="btn btn-warning">Suspendre</button>
         </form>
-        <button onclick="document.getElementById('modal-clore').classList.remove('hidden')"
-                class="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors">Clôturer</button>
+        <button onclick="document.getElementById('modal-clore').classList.remove('hidden')" class="btn btn-primary">Clôturer</button>
       <?php endif; ?>
       <?php if ($canUpdate && $affectation['statut'] === 'suspendue'): ?>
         <form method="POST" action="<?= BASE_URL ?>/v2/rh/affectations/<?= (int)$affectation['id'] ?>/reactiver">
           <?= \Core\Csrf::field() ?>
-          <button onclick="return confirm('Réactiver cette affectation ?')"
-                  class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700">Réactiver</button>
+          <button onclick="return confirm('Réactiver cette affectation ?')" class="btn btn-success">Réactiver</button>
         </form>
       <?php endif; ?>
     </div>
@@ -116,8 +111,7 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
         <div class="flex items-center justify-between mb-4">
           <h2 class="font-semibold text-slate-700">Matières & Classes (<?= count($matieres) ?>)</h2>
           <?php if ($canUpdate && $affectation['statut'] === 'active'): ?>
-            <button onclick="document.getElementById('modal-matiere').classList.remove('hidden')"
-                    class="px-3 py-1.5 bg-violet-50 text-violet-600 border border-violet-200 rounded-lg text-xs hover:bg-violet-100">
+            <button onclick="document.getElementById('modal-matiere').classList.remove('hidden')" class="btn btn-outline btn-sm">
               + Ajouter
             </button>
           <?php endif; ?>
@@ -225,8 +219,7 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
       </div>
 
       <?php if ($canArchive && $affectation['statut'] !== 'active'): ?>
-        <button onclick="document.getElementById('modal-archiver').classList.remove('hidden')"
-                class="w-full px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm hover:bg-slate-200">
+        <button onclick="document.getElementById('modal-archiver').classList.remove('hidden')" class="btn btn-secondary w-full">
           Archiver
         </button>
       <?php endif; ?>
@@ -252,8 +245,8 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
         ?>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs text-slate-600 mb-1">Nouveau poste</label>
-            <select name="poste_id" class="w-full px-2 py-1.5 text-sm border border-slate-200 rounded-lg">
+            <label class="form-label text-xs mb-1">Nouveau poste</label>
+            <select name="poste_id" class="form-select text-sm">
               <option value="">Inchangé</option>
               <?php
               try {
@@ -265,8 +258,8 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
             </select>
           </div>
           <div>
-            <label class="block text-xs text-slate-600 mb-1">Nouveau département</label>
-            <select name="departement_id" class="w-full px-2 py-1.5 text-sm border border-slate-200 rounded-lg">
+            <label class="form-label text-xs mb-1">Nouveau département</label>
+            <select name="departement_id" class="form-select text-sm">
               <option value="">Inchangé</option>
               <?php
               try {
@@ -278,8 +271,8 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
             </select>
           </div>
           <div>
-            <label class="block text-xs text-slate-600 mb-1">Nouveau service</label>
-            <select name="service_id" class="w-full px-2 py-1.5 text-sm border border-slate-200 rounded-lg">
+            <label class="form-label text-xs mb-1">Nouveau service</label>
+            <select name="service_id" class="form-select text-sm">
               <option value="">Inchangé</option>
               <?php
               try {
@@ -291,8 +284,8 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
             </select>
           </div>
           <div>
-            <label class="block text-xs text-slate-600 mb-1">Nouveau responsable</label>
-            <select name="responsable_id" class="w-full px-2 py-1.5 text-sm border border-slate-200 rounded-lg">
+            <label class="form-label text-xs mb-1">Nouveau responsable</label>
+            <select name="responsable_id" class="form-select text-sm">
               <option value="">Inchangé</option>
               <?php
               try {
@@ -307,8 +300,8 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
       </div>
       <div class="flex justify-end gap-3 mt-6">
         <button type="button" onclick="document.getElementById('modal-transferer').classList.add('hidden')"
-                class="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm">Annuler</button>
-        <button type="submit" class="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">Enregistrer le transfert</button>
+                class="btn btn-secondary">Annuler</button>
+        <button type="submit" class="btn btn-primary">Enregistrer le transfert</button>
       </div>
     </form>
   </div>
@@ -322,13 +315,13 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
       <div>
         <label class="form-label">Motif de clôture</label>
         <textarea name="motif" rows="2" placeholder="Ex : Fin de mission, départ..."
-                  class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-300"></textarea>
+                  class="form-textarea"></textarea>
       </div>
       <p class="text-xs text-slate-500 mt-2">La date de fin sera fixée à aujourd'hui. L'affectation sera marquée comme terminée.</p>
       <div class="flex justify-end gap-3 mt-6">
         <button type="button" onclick="document.getElementById('modal-clore').classList.add('hidden')"
-                class="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm">Annuler</button>
-        <button type="submit" class="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors">Clôturer</button>
+                class="btn btn-secondary">Annuler</button>
+        <button type="submit" class="btn btn-primary">Clôturer</button>
       </div>
     </form>
   </div>
@@ -342,7 +335,7 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="form-label">Matière</label>
-          <select name="matiere_id" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg">
+          <select name="matiere_id" class="form-select">
             <option value="">— Non spécifiée —</option>
             <?php
             try {
@@ -354,7 +347,7 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
         </div>
         <div>
           <label class="form-label">Classe</label>
-          <select name="classe_id" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg">
+          <select name="classe_id" class="form-select">
             <option value="">— Non spécifiée —</option>
             <?php
             try {
@@ -367,27 +360,27 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
         <div>
           <label class="form-label">Niveau</label>
           <input type="text" name="niveau" maxlength="50" placeholder="Ex : 3e, Terminale"
-                 class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg">
+                 class="form-input">
         </div>
         <div>
           <label class="form-label">Heures/semaine</label>
           <input type="number" name="heures_hebdo" step="0.5" min="0" max="40"
-                 class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg">
+                 class="form-input">
         </div>
         <div>
           <label class="form-label">Date début *</label>
           <input type="date" name="date_debut" required value="<?= e(date('Y-m-d')) ?>"
-                 class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg">
+                 class="form-input">
         </div>
         <div>
           <label class="form-label">Date fin</label>
-          <input type="date" name="date_fin" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg">
+          <input type="date" name="date_fin" class="form-input">
         </div>
       </div>
       <div class="flex justify-end gap-3 mt-6">
         <button type="button" onclick="document.getElementById('modal-matiere').classList.add('hidden')"
-                class="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm">Annuler</button>
-        <button type="submit" class="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">Ajouter</button>
+                class="btn btn-secondary">Annuler</button>
+        <button type="submit" class="btn btn-primary">Ajouter</button>
       </div>
     </form>
   </div>
@@ -400,12 +393,12 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
       <?= \Core\Csrf::field() ?>
       <div>
         <label class="form-label">Motif</label>
-        <input type="text" name="motif" value="Archivage manuel" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg">
+        <input type="text" name="motif" value="Archivage manuel" class="form-input">
       </div>
       <div class="flex justify-end gap-3 mt-6">
         <button type="button" onclick="document.getElementById('modal-archiver').classList.add('hidden')"
-                class="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm">Annuler</button>
-        <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700">Archiver</button>
+                class="btn btn-secondary">Annuler</button>
+        <button type="submit" class="btn btn-danger">Archiver</button>
       </div>
     </form>
   </div>

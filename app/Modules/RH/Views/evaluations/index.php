@@ -24,21 +24,18 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
       </div>
     </div>
     <div class="flex gap-2 flex-wrap flex-shrink-0">
-      <a href="<?= BASE_URL ?>/v2/rh/evaluations/campagnes"
-         class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
+      <a href="<?= BASE_URL ?>/v2/rh/evaluations/campagnes" class="btn btn-outline">
         <i data-lucide="flag" class="w-4 h-4"></i>
         Campagnes
       </a>
       <?php if ($policy->canExport($user)): ?>
-      <a href="<?= BASE_URL ?>/v2/rh/evaluations/export?<?= http_build_query($_GET) ?>"
-         class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
+      <a href="<?= BASE_URL ?>/v2/rh/evaluations/export?<?= http_build_query($_GET) ?>" class="btn btn-outline">
         <i data-lucide="download" class="w-4 h-4"></i>
         Export CSV
       </a>
       <?php endif; ?>
       <?php if ($policy->canCreate($user)): ?>
-      <a href="<?= BASE_URL ?>/v2/rh/evaluations/create"
-         class="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors">
+      <a href="<?= BASE_URL ?>/v2/rh/evaluations/create" class="btn btn-primary">
         <i data-lucide="plus" class="w-4 h-4"></i>
         Nouvelle évaluation
       </a>
@@ -76,7 +73,7 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
   <!-- Filtres -->
   <form method="GET" class="bg-white border border-slate-200 rounded-xl shadow-sm p-4 flex flex-wrap gap-3 mb-6 items-end">
     <input type="text" name="q" value="<?= e($filters->q) ?>" placeholder="Rechercher…"
-           class="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-300 outline-none w-52">
+           class="form-input w-52">
     <select name="campagne_id" class="form-select">
       <option value="">Toutes les campagnes</option>
       <?php foreach ($campagnes as $c): ?>
@@ -97,7 +94,7 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
         <option value="<?= e($m) ?>" <?= $filters->mention === $m ? 'selected' : '' ?>><?= e($m) ?></option>
       <?php endforeach; ?>
     </select>
-    <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors">
+    <button type="submit" class="btn btn-primary">
       <i data-lucide="filter" class="w-4 h-4"></i> Filtrer
     </button>
     <a href="<?= BASE_URL ?>/v2/rh/evaluations" class="text-sm text-slate-500 hover:text-slate-700 self-end py-2">Réinitialiser</a>

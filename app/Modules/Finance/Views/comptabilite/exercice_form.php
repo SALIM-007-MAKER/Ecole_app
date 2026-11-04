@@ -99,11 +99,10 @@ $user   = $user   ?? [];
 
     <!-- Actions -->
     <div class="flex gap-3">
-      <button type="submit" class="flex-1 bg-violet-600 text-white py-3 rounded-xl font-medium hover:bg-violet-700 transition-colors">
-        <i data-lucide="check" class="w-4 h-4 inline mr-1"></i>Créer l'exercice
+      <button type="submit" class="btn btn-primary flex-1">
+        <i data-lucide="check" class="w-4 h-4"></i>Créer l'exercice
       </button>
-      <a href="<?= BASE_URL ?>/v2/finance/comptabilite/exercices"
-         class="px-6 py-3 bg-slate-100 text-slate-600 rounded-xl font-medium hover:bg-slate-200 transition-colors text-center">
+      <a href="<?= BASE_URL ?>/v2/finance/comptabilite/exercices" class="btn btn-secondary">
         Annuler
       </a>
     </div>

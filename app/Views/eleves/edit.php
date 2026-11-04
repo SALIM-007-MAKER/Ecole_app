@@ -65,7 +65,7 @@ function editVal(array $old, string $key, $eleve, string $col = ''): string {
                     <div class="relative w-28 h-28">
                         <?php if (!empty($eleve->photo)): ?>
                         <img id="photoPreview"
-                             src="<?= BASE_URL ?>/<?= htmlspecialchars($eleve->photo, ENT_QUOTES) ?>"
+                             src="<?= htmlspecialchars(\App\Shared\Http\MediaUrl::photo($eleve->photo), ENT_QUOTES) ?>"
                              class="w-28 h-28 rounded-full object-cover border-4 border-slate-100 shadow-sm"
                              alt="Photo">
                         <?php else: ?>
@@ -95,7 +95,7 @@ function editVal(array $old, string $key, $eleve, string $col = ''): string {
                     <i data-lucide="link" class="w-4 h-4 text-sky-600"></i>
                     <span class="font-semibold text-slate-700">Affectation</span>
                 </div>
-                <div class="p-5 p-4 space-y-3">
+                <div class="p-5 space-y-3">
                     <div class="mb-4">
                         <label class="form-label" for="classe_id">Classe</label>
                         <select id="classe_id" name="classe_id" class="form-input">
@@ -121,12 +121,24 @@ function editVal(array $old, string $key, $eleve, string $col = ''): string {
                             <?php endforeach; ?>
                         </select>
                     </div>
+                    <div class="mb-4">
+                        <label class="form-label" for="user_id">Compte de connexion de l'élève</label>
+                        <select id="user_id" name="user_id" class="form-input">
+                            <option value="">— Aucun compte rattaché —</option>
+                            <?php foreach ($comptesEleves ?? [] as $u): ?>
+                            <option value="<?= $u->id ?>" <?= (($old['user_id'] ?? ($eleve->user_id ?? '')) == $u->id) ? 'selected' : '' ?>>
+                                <?= htmlspecialchars(trim(($u->prenom ?? '') . ' ' . $u->nom) . ' — ' . $u->email, ENT_QUOTES) ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <p class="text-xs text-slate-400 mt-1">Compte « Élève » qui consulte ses notes et son bulletin (un compte par fiche)</p>
+                    </div>
                 </div>
             </div>
 
             <!-- Statut -->
             <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
-                <div class="p-5 p-4">
+                <div class="p-5">
                     <label class="flex items-center gap-3 cursor-pointer">
                         <input type="hidden" name="actif" value="0">
                         <input type="checkbox" id="actif" name="actif" value="1"

@@ -11,6 +11,7 @@ use App\Modules\Communication\Events\ThreadMessageSent;
 use App\Modules\Communication\Repositories\ThreadRepository;
 use App\Modules\Communication\Repositories\ThreadMessageRepository;
 use App\Modules\Communication\Repositories\ThreadParticipantRepository;
+use Core\Database;
 use Core\EventDispatcher;
 
 class ThreadService
@@ -26,8 +27,38 @@ class ThreadService
         $this->partRepo   = new ThreadParticipantRepository();
     }
 
+    /**
+     * Ne garde que les destinataires réellement contactables : comptes actifs
+     * du même établissement que l'expéditeur. Corrige une absence totale de
+     * vérification (ThreadDTO ne valide que la présence des champs) qui
+     * permettait jusqu'ici d'ajouter n'importe quel ID utilisateur, y compris
+     * d'un autre établissement — trouvé le 22/08/2026.
+     *
+     * @param int[] $participantIds
+     * @return int[]
+     */
+    private function filtrerDestinatairesValides(array $participantIds, int $etablissementId): array
+    {
+        if (empty($participantIds)) {
+            return [];
+        }
+        $pdo         = Database::getInstance()->getConnection();
+        $placeholders = implode(',', array_fill(0, count($participantIds), '?'));
+        $st = $pdo->prepare(
+            "SELECT id FROM users WHERE id IN ({$placeholders}) AND etablissement_id = ? AND actif = 1"
+        );
+        $st->execute([...$participantIds, $etablissementId]);
+        return array_map('intval', $st->fetchAll(\PDO::FETCH_COLUMN));
+    }
+
     public function creer(ThreadDTO $dto, int $userId, int $etablissementId = 1): int
     {
+        $participantIds = array_unique(array_filter($dto->participantIds, fn(int $id) => $id !== $userId));
+        $participantIds = $this->filtrerDestinatairesValides($participantIds, $etablissementId);
+        if (empty($participantIds)) {
+            throw new \RuntimeException("Aucun destinataire valide (compte inexistant, inactif, ou d'un autre établissement).");
+        }
+
         $threadId = $this->threadRepo->insert([
             'sujet'           => $dto->sujet,
             'type'            => $dto->type,
@@ -41,12 +72,9 @@ class ThreadService
         // Ajouter le créateur comme modérateur
         $this->partRepo->insert($threadId, $userId, 'moderateur');
 
-        // Ajouter les autres participants
-        $participantIds = array_unique(array_filter($dto->participantIds));
+        // Ajouter les autres participants (déjà filtrés : même établissement, comptes actifs)
         foreach ($participantIds as $pid) {
-            if ($pid !== $userId) {
-                $this->partRepo->insert($threadId, $pid, 'membre');
-            }
+            $this->partRepo->insert($threadId, $pid, 'membre');
         }
 
         // Message initial

@@ -46,6 +46,17 @@ class EleveModel extends Model
             $params[] = (int)$filters['classe_id'];
         }
 
+        // Périmètre imposé par le serveur (enseignant) : liste de classes autorisées, vide = aucune.
+        if (array_key_exists('classe_ids', $filters)) {
+            $ids = array_values(array_map('intval', (array)$filters['classe_ids']));
+            if ($ids === []) {
+                $conditions[] = '1 = 0';
+            } else {
+                $conditions[] = 'e.classe_id IN (' . implode(',', array_fill(0, count($ids), '?')) . ')';
+                array_push($params, ...$ids);
+            }
+        }
+
         if (in_array($filters['sexe'] ?? '', ['M', 'F'], true)) {
             $conditions[] = "e.sexe = ?";
             $params[] = $filters['sexe'];
@@ -63,6 +74,26 @@ class EleveModel extends Model
     }
 
     // ─── Lecture avec détails ─────────────────────────────────────────────────
+
+    /** Élèves actifs de l'établissement, éventuellement limités à des classes et/ou à un sexe. */
+    public function countScoped(?array $classeIds = null, ?string $sexe = null): int
+    {
+        $sql    = 'SELECT COUNT(*) AS n FROM `eleves` e WHERE e.actif = 1 AND e.etablissement_id = ?';
+        $params = [$this->tenantId()];
+        if ($sexe !== null) {
+            $sql .= ' AND e.sexe = ?';
+            $params[] = $sexe;
+        }
+        if ($classeIds !== null) {
+            if ($classeIds === []) {
+                return 0;
+            }
+            $sql .= ' AND e.classe_id IN (' . implode(',', array_fill(0, count($classeIds), '?')) . ')';
+            array_push($params, ...array_map('intval', $classeIds));
+        }
+        $row = $this->queryOne($sql, $params);
+        return $row ? (int)$row->n : 0;
+    }
 
     public function findWithDetails(int $id): object|false
     {

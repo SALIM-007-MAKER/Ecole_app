@@ -108,12 +108,11 @@ $totalDecaissements = (float)($totaux->total_decaissements ?? 0);
 
         <div class="flex gap-3 pt-2">
             <button type="submit"
-                    class="flex-1 px-6 py-3 text-sm font-bold text-white bg-rose-600 rounded-lg hover:bg-rose-700"
+                    class="btn btn-danger flex-1"
                     onclick="return confirm('Confirmer la fermeture de la caisse ?')">
-                <i data-lucide="lock" class="inline w-4 h-4 mr-1"></i> Confirmer la fermeture
+                <i data-lucide="lock" class="w-4 h-4"></i> Confirmer la fermeture
             </button>
-            <a href="<?= BASE_URL ?>/v2/finance/caisse/<?= $session->id ?>"
-               class="px-4 py-3 text-sm text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200">
+            <a href="<?= BASE_URL ?>/v2/finance/caisse/<?= $session->id ?>" class="btn btn-secondary">
                 Annuler
             </a>
         </div>

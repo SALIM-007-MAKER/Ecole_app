@@ -52,7 +52,7 @@ avant insertion).
 4. Reconfigurer l'application (`.env` → `DB_*`) pour pointer vers la nouvelle
    instance.
 5. Basculer le DNS/reverse proxy vers la nouvelle instance applicative.
-6. Vérifier : `curl https://votre-domaine/api/v1/health`, puis un contrôle
+6. Vérifier : `curl https://votre-domaine/health`, puis un contrôle
    fonctionnel complet (connexion, quelques écrans clés par module actif).
 
 ## 4. Vérifier une sauvegarde sans rien restaurer en production

@@ -144,7 +144,7 @@ $anciennete = $prof->date_recrutement
                 <i data-lucide="user-cog" class="w-4 h-4 text-violet-600"></i>
                 <span class="font-semibold text-slate-700">Données personnelles</span>
             </div>
-            <div class="p-5 p-0">
+            <div class="p-0">
                 <dl class="divide-y divide-slate-50">
                     <?php
                     $infos = [
@@ -172,7 +172,7 @@ $anciennete = $prof->date_recrutement
                     <i data-lucide="phone" class="w-4 h-4 text-sky-500"></i>
                     <span class="font-semibold text-slate-700">Coordonnées</span>
                 </div>
-                <div class="p-5 p-4 space-y-3">
+                <div class="p-5 space-y-3">
                     <?php if (!empty($prof->telephone)): ?>
                     <div>
                         <p class="text-xs text-slate-400 mb-1">Téléphone</p>
@@ -213,7 +213,7 @@ $anciennete = $prof->date_recrutement
                     <i data-lucide="key-round" class="w-4 h-4 text-slate-400"></i>
                     <span class="font-semibold text-slate-700">Compte utilisateur</span>
                 </div>
-                <div class="p-5 p-4">
+                <div class="p-5">
                     <?php if (!empty($prof->user_email)): ?>
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center shrink-0">
@@ -311,7 +311,7 @@ $anciennete = $prof->date_recrutement
                 <i data-lucide="plus-circle" class="w-4 h-4 text-emerald-600"></i>
                 <span class="font-semibold text-slate-700">Affecter un enseignement</span>
             </div>
-            <div class="p-5 p-4 space-y-3">
+            <div class="p-5 space-y-3">
                 <form method="POST" action="<?= BASE_URL ?>/professeurs/<?= $prof->id ?>/affecter-enseignement">
                     <input type="hidden" name="_csrf_token" value="<?= \Core\Session::getCsrfToken() ?>">
                     <div>

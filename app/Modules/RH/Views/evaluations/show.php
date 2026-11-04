@@ -38,7 +38,7 @@ $statut = $eval['statut'];
       <?php if ($statut === 'brouillon' && $policy->canUpdate($user)): ?>
         <form method="POST" action="<?= BASE_URL ?>/v2/rh/evaluations/<?= (int)$eval['id'] ?>/demarrer-auto-eval">
           <?= \Core\Csrf::field() ?>
-          <button type="submit" class="w-full px-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700">
+          <button type="submit" class="btn btn-primary w-full">
             Démarrer auto-éval
           </button>
         </form>
@@ -46,14 +46,13 @@ $statut = $eval['statut'];
       <?php if ($statut === 'en_evaluation' && $policy->canUpdate($user)): ?>
         <form method="POST" action="<?= BASE_URL ?>/v2/rh/evaluations/<?= (int)$eval['id'] ?>/soumettre">
           <?= \Core\Csrf::field() ?>
-          <button type="submit" class="w-full px-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700">
+          <button type="submit" class="btn btn-primary w-full">
             Soumettre pour validation
           </button>
         </form>
       <?php endif; ?>
       <?php if ($statut === 'soumise' && $policy->canValidate($user)): ?>
-        <button onclick="document.getElementById('modal-valider').classList.remove('hidden')"
-                class="w-full px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700">
+        <button onclick="document.getElementById('modal-valider').classList.remove('hidden')" class="btn btn-success w-full">
           Valider
         </button>
       <?php endif; ?>
@@ -61,7 +60,7 @@ $statut = $eval['statut'];
         <form method="POST" action="<?= BASE_URL ?>/v2/rh/evaluations/<?= (int)$eval['id'] ?>/publier"
               onsubmit="return confirm('Publier cette évaluation à l\'employé ?')">
           <?= \Core\Csrf::field() ?>
-          <button type="submit" class="w-full px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700">
+          <button type="submit" class="btn btn-success w-full">
             Publier
           </button>
         </form>
@@ -133,7 +132,7 @@ $statut = $eval['statut'];
             <textarea name="commentaire_auto_eval" rows="2"
                       class="form-textarea"><?= e($eval['commentaire_auto_eval'] ?? '') ?></textarea>
           </div>
-          <button type="submit" class="mt-3 px-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700">
+          <button type="submit" class="btn btn-primary mt-3">
             Soumettre l'auto-évaluation
           </button>
         </form>
@@ -172,7 +171,7 @@ $statut = $eval['statut'];
             <textarea name="commentaire_evaluateur" rows="2"
                       class="form-textarea"><?= e($eval['commentaire_evaluateur'] ?? '') ?></textarea>
           </div>
-          <button type="submit" class="mt-3 px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700">
+          <button type="submit" class="btn btn-warning mt-3">
             Enregistrer les notes
           </button>
         </form>
@@ -198,8 +197,7 @@ $statut = $eval['statut'];
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-sm font-semibold text-slate-700 uppercase tracking-wide">Plans de développement</h2>
           <?php if (in_array($statut, ['validee','publiee'], true) && $policy->canUpdate($user)): ?>
-          <button onclick="document.getElementById('modal-plan').classList.remove('hidden')"
-                  class="px-3 py-1 bg-violet-600 text-white rounded text-xs font-medium hover:bg-violet-700">
+          <button onclick="document.getElementById('modal-plan').classList.remove('hidden')" class="btn btn-primary btn-sm">
             + Ajouter
           </button>
           <?php endif; ?>
@@ -290,11 +288,10 @@ $statut = $eval['statut'];
                 class="form-textarea mb-4"
                 placeholder="Commentaire optionnel…"></textarea>
       <div class="flex gap-3">
-        <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700">
+        <button type="submit" class="btn btn-success">
           Confirmer la validation
         </button>
-        <button type="button" onclick="document.getElementById('modal-valider').classList.add('hidden')"
-                class="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm hover:bg-slate-200">
+        <button type="button" onclick="document.getElementById('modal-valider').classList.add('hidden')" class="btn btn-secondary">
           Annuler
         </button>
       </div>
@@ -330,11 +327,10 @@ $statut = $eval['statut'];
         </div>
       </div>
       <div class="flex gap-3">
-        <button type="submit" class="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700">
+        <button type="submit" class="btn btn-primary">
           Créer le plan
         </button>
-        <button type="button" onclick="document.getElementById('modal-plan').classList.add('hidden')"
-                class="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm hover:bg-slate-200">
+        <button type="button" onclick="document.getElementById('modal-plan').classList.add('hidden')" class="btn btn-secondary">
           Annuler
         </button>
       </div>

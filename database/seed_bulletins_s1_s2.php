@@ -83,7 +83,7 @@ try {
         'Français' => [-0.2, 'litteraire'], 'Mathématiques' => [-0.7, 'scientifique'],
         'Anglais' => [0.1, 'litteraire'], 'Histoire-Géographie' => [-0.1, 'litteraire'],
         'S.V.T' => [0.3, 'scientifique'], 'Physique-Chimie' => [-0.5, 'scientifique'],
-        'Education Physique' => [1.0, 'autre'], 'Conduite' => [0.6, 'autre'],
+        'EPS' => [1.0, 'autre'], 'Conduite' => [0.6, 'autre'],
     ];
     $subjectIds = [];
     foreach ($matieres as $nom => $_) {
@@ -104,6 +104,8 @@ try {
     foreach ($periodeIds as $semestre => $periodeId) {
         foreach ($matieres as $nom => [$offset]) {
             foreach (['devoir' => [1.0, 12], 'examen' => [2.0, 20]] as $code => [$coef, $jour]) {
+                // Conduite : une SEULE évaluation par période (coefficient 1, barème 20) — jamais de doublon actif
+                if ($nom === 'Conduite' && $code !== 'devoir') { continue; }
                 $libelle = "[TEST BULLETIN {$annee} S{$semestre}] {$nom} - {$code}";
                 $find = $pdo->prepare('SELECT id FROM evaluations WHERE libelle = ? LIMIT 1');
                 $find->execute([$libelle]);

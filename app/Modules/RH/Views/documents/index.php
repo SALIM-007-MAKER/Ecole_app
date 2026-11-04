@@ -26,13 +26,13 @@ $e = fn($v) => htmlspecialchars((string)($v ?? ''), ENT_QUOTES, 'UTF-8');
   <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4">
     <form method="GET" class="flex flex-wrap gap-3 items-end">
       <div class="flex-1 min-w-[160px]">
-        <label class="block text-xs text-slate-500 mb-1">Recherche</label>
+        <label class="form-label text-xs mb-1">Recherche</label>
         <input type="text" name="q" value="<?= $e($filters->q) ?>"
                placeholder="Titre, référence, employé…"
                class="form-input">
       </div>
       <div class="min-w-[140px]">
-        <label class="block text-xs text-slate-500 mb-1">Type</label>
+        <label class="form-label text-xs mb-1">Type</label>
         <select name="type" class="form-select">
           <option value="">Tous</option>
           <?php foreach ($model::TYPES as $t): ?>
@@ -41,7 +41,7 @@ $e = fn($v) => htmlspecialchars((string)($v ?? ''), ENT_QUOTES, 'UTF-8');
         </select>
       </div>
       <div class="min-w-[130px]">
-        <label class="block text-xs text-slate-500 mb-1">Statut</label>
+        <label class="form-label text-xs mb-1">Statut</label>
         <select name="statut" class="form-select">
           <option value="">Actifs+En attente</option>
           <?php foreach ($model::STATUTS as $s): ?>
@@ -50,7 +50,7 @@ $e = fn($v) => htmlspecialchars((string)($v ?? ''), ENT_QUOTES, 'UTF-8');
         </select>
       </div>
       <div class="min-w-[130px]">
-        <label class="block text-xs text-slate-500 mb-1">Confidentialité</label>
+        <label class="form-label text-xs mb-1">Confidentialité</label>
         <select name="confidentialite" class="form-select">
           <option value="">Toutes</option>
           <?php foreach ($model::CONFIDENTIALITES as $c): ?>
@@ -64,10 +64,10 @@ $e = fn($v) => htmlspecialchars((string)($v ?? ''), ENT_QUOTES, 'UTF-8');
         <input type="checkbox" id="inc_arch" name="include_archive" value="1" <?= $filters->includeArchive ? 'checked' : '' ?> class="rounded border-slate-300 text-violet-600">
         <label for="inc_arch" class="text-sm text-slate-600">Inclure archivés</label>
       </div>
-      <button type="submit" class="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-violet-700 transition">
-        <i data-lucide="search" class="w-4 h-4 inline mr-1"></i>Filtrer
+      <button type="submit" class="btn btn-primary">
+        <i data-lucide="search" class="w-4 h-4"></i>Filtrer
       </button>
-      <a href="<?= BASE_URL ?>/v2/rh/documents" class="border border-slate-200 text-slate-600 px-4 py-2 rounded-lg text-sm hover:bg-slate-50 transition">Réinitialiser</a>
+      <a href="<?= BASE_URL ?>/v2/rh/documents" class="btn btn-secondary">Réinitialiser</a>
     </form>
   </div>
 
@@ -76,7 +76,7 @@ $e = fn($v) => htmlspecialchars((string)($v ?? ''), ENT_QUOTES, 'UTF-8');
     <h2 class="text-lg font-semibold text-slate-700"><?= $total ?> document(s)</h2>
     <div class="flex gap-2">
       <?php if ($policy->canView($user)): ?>
-      <a href="<?= BASE_URL ?>/v2/rh/documents/expirations" class="border border-amber-300 text-amber-700 px-4 py-2 rounded-lg text-sm hover:bg-amber-50 transition flex items-center gap-1">
+      <a href="<?= BASE_URL ?>/v2/rh/documents/expirations" class="btn bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100">
         <i data-lucide="alert-triangle" class="w-4 h-4"></i>Alertes expiration
         <?php if (($stats['expirent_bientot'] ?? 0) > 0): ?>
         <span class="bg-amber-500 text-white text-xs rounded-full px-1.5"><?= (int)$stats['expirent_bientot'] ?></span>
@@ -84,12 +84,12 @@ $e = fn($v) => htmlspecialchars((string)($v ?? ''), ENT_QUOTES, 'UTF-8');
       </a>
       <?php endif; ?>
       <?php if ($policy->canCreate($user)): ?>
-      <a href="<?= BASE_URL ?>/v2/rh/documents/create" class="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-violet-700 transition flex items-center gap-1">
+      <a href="<?= BASE_URL ?>/v2/rh/documents/create" class="btn btn-primary">
         <i data-lucide="plus" class="w-4 h-4"></i>Nouveau document
       </a>
       <?php endif; ?>
       <?php if ($policy->canExport($user)): ?>
-      <a href="<?= BASE_URL ?>/v2/rh/documents/export?<?= http_build_query($_GET) ?>" class="border border-slate-200 text-slate-600 px-4 py-2 rounded-lg text-sm hover:bg-slate-50 transition flex items-center gap-1">
+      <a href="<?= BASE_URL ?>/v2/rh/documents/export?<?= http_build_query($_GET) ?>" class="btn btn-outline">
         <i data-lucide="download" class="w-4 h-4"></i>CSV
       </a>
       <?php endif; ?>

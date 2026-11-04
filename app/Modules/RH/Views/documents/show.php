@@ -32,22 +32,20 @@ $expired = $model::isExpired($doc['date_expiration']);
       </div>
       <div class="flex gap-2 flex-shrink-0">
         <?php if ($policy->canUpdate($user) && $doc['statut'] !== 'archive'): ?>
-        <a href="<?= BASE_URL ?>/v2/rh/documents/<?= (int)$doc['id'] ?>/edit"
-           class="border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-sm hover:bg-slate-50 transition">
-          <i data-lucide="edit" class="w-4 h-4 inline mr-1"></i>Modifier
+        <a href="<?= BASE_URL ?>/v2/rh/documents/<?= (int)$doc['id'] ?>/edit" class="btn btn-outline btn-sm">
+          <i data-lucide="edit" class="w-4 h-4"></i>Modifier
         </a>
         <?php endif; ?>
         <?php if ($policy->canArchive($user)): ?>
           <?php if ($doc['statut'] !== 'archive'): ?>
-          <button onclick="document.getElementById('modal-archiver').classList.remove('hidden')"
-                  class="border border-red-200 text-red-600 px-3 py-1.5 rounded-lg text-sm hover:bg-red-50 transition">
-            <i data-lucide="archive" class="w-4 h-4 inline mr-1"></i>Archiver
+          <button onclick="document.getElementById('modal-archiver').classList.remove('hidden')" class="btn btn-outline-danger btn-sm">
+            <i data-lucide="archive" class="w-4 h-4"></i>Archiver
           </button>
           <?php else: ?>
           <form method="POST" action="<?= BASE_URL ?>/v2/rh/documents/<?= (int)$doc['id'] ?>/restaurer">
             <?= \Core\Csrf::field() ?>
-            <button class="border border-green-200 text-green-600 px-3 py-1.5 rounded-lg text-sm hover:bg-green-50 transition">
-              <i data-lucide="rotate-ccw" class="w-4 h-4 inline mr-1"></i>Restaurer
+            <button class="btn btn-outline-success btn-sm">
+              <i data-lucide="rotate-ccw" class="w-4 h-4"></i>Restaurer
             </button>
           </form>
           <?php endif; ?>
@@ -224,9 +222,8 @@ $expired = $model::isExpired($doc['date_expiration']);
                   placeholder="Raison de l'archivage…"></textarea>
       </div>
       <div class="flex gap-3">
-        <button type="submit" class="bg-red-600 text-white px-5 py-2 rounded-lg text-sm hover:bg-red-700 transition">Archiver</button>
-        <button type="button" onclick="document.getElementById('modal-archiver').classList.add('hidden')"
-                class="border border-slate-200 text-slate-600 px-5 py-2 rounded-lg text-sm hover:bg-slate-50 transition">Annuler</button>
+        <button type="submit" class="btn btn-danger">Archiver</button>
+        <button type="button" onclick="document.getElementById('modal-archiver').classList.add('hidden')" class="btn btn-secondary">Annuler</button>
       </div>
     </form>
   </div>

@@ -27,16 +27,27 @@ set_time_limit(120);
 
 define('ROOT_PATH', dirname(__DIR__));
 
+// Charger .env s'il existe (installation classique) ; sinon on suppose que
+// les variables sont déjà fournies par l'environnement réel (conteneur,
+// plateforme PaaS) — même comportement que public/index.php (Phase 16+,
+// portabilité conteneur). On n'échoue plus juste parce que le fichier est
+// absent : la connexion PDO plus bas donnera une erreur claire si la config
+// manque réellement.
 $envFile = ROOT_PATH . '/.env';
-if (!file_exists($envFile)) {
-    die("ERREUR : .env introuvable dans " . ROOT_PATH . "\n");
+if (file_exists($envFile)) {
+    foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+        if (str_starts_with(trim($line), '#') || !str_contains($line, '=')) continue;
+        [$key, $val] = explode('=', $line, 2);
+        $_ENV[trim($key)] = trim($val, " \t\n\r\0\x0B\"'");
+    }
 }
 
-// Charger .env
-foreach (file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
-    if (str_starts_with(trim($line), '#') || !str_contains($line, '=')) continue;
-    [$key, $val] = explode('=', $line, 2);
-    $_ENV[trim($key)] = trim($val, " \t\n\r\0\x0B\"'");
+// Cible alternative RÉSERVÉE aux tests : une copie jetable (ecole_app_copy_*), jamais une autre base.
+$cibleCopie = getenv('MIGRATE_DB');
+if ($cibleCopie !== false && $cibleCopie !== '') {
+    if (!preg_match('/^ecole_app_copy_[a-f0-9]+$/', $cibleCopie)) { fwrite(STDERR, "REFUS : MIGRATE_DB doit être une copie ecole_app_copy_*
+"); exit(2); }
+    $_ENV['DB_DATABASE'] = $cibleCopie;
 }
 
 // Aligne le fuseau horaire sur celui de l'application (Core\Application::run()
@@ -75,17 +86,47 @@ $pdo->exec("
         `status`     ENUM('success','failed') NOT NULL DEFAULT 'success',
         `error`      TEXT NULL,
         PRIMARY KEY (`id`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 ");
 
 // ─── Options CLI ────────────────────────────────────────────────────────────
 
 $dryRun  = in_array('--dry-run', $argv ?? [], true);
 $onlyId  = null;
+$rollbackId = null;
 foreach ($argv ?? [] as $arg) {
     if (str_starts_with($arg, '--id=')) {
         $onlyId = substr($arg, 5);
     }
+    if (str_starts_with($arg, '--rollback=')) {
+        $rollbackId = substr($arg, 11);
+    }
+}
+$confirm = in_array('--confirm', $argv ?? [], true);
+
+// ─── Retour arrière d'UNE migration : php database/migrate.php --rollback=T062 --confirm ──────────────────
+// Sans --confirm : simulation. Refuse si la migration n'est pas appliquée, est marquée non réversible ou n'a pas de 'rollback'.
+// Toujours faire une sauvegarde vérifiée avant (php database/backup.php --verify-restore).
+if ($rollbackId !== null) {
+    foreach (glob(ROOT_PATH . '/database/migrations/*.php') as $f) {
+        $m = require $f;
+        if (!is_array($m) || ($m['id'] ?? null) !== $rollbackId) { continue; }
+        $ok = $pdo->prepare("SELECT COUNT(*) FROM migrations_log WHERE migration = ? AND status = 'success'");
+        $ok->execute([$rollbackId]);
+        if (!(int)$ok->fetchColumn()) { fwrite(STDERR, "REFUS : {$rollbackId} n'est pas appliquée.\n"); exit(2); }
+        if (empty($m['reversible']) || !isset($m['rollback'])) { fwrite(STDERR, "REFUS : {$rollbackId} n'est pas réversible (aucun 'rollback') — restaurer la sauvegarde.\n"); exit(2); }
+        echo "Retour arrière de {$rollbackId} — " . ($m['name'] ?? '') . ($confirm ? '' : ' (simulation : ajoutez --confirm)') . "\n";
+        if (!$confirm) { exit(0); }
+        try {
+            ($m['rollback'])($pdo);
+            $pdo->prepare('DELETE FROM migrations_log WHERE migration = ?')->execute([$rollbackId]);
+            echo "→ OK : {$rollbackId} retirée du journal.\n";
+            exit(0);
+        } catch (\Throwable $e) {
+            fwrite(STDERR, "ÉCHEC du retour arrière : " . $e->getMessage() . "\n"); exit(1);
+        }
+    }
+    fwrite(STDERR, "REFUS : migration {$rollbackId} introuvable.\n"); exit(2);
 }
 
 // ─── Charger et trier les migrations ────────────────────────────────────────
@@ -172,6 +213,11 @@ foreach ($files as $file) {
         echo " → ÉCHEC : {$errMsg}\n";
         $errorCount++;
     }
+}
+
+$sqlHorsRunner = glob($migDir . '*.sql') ?: [];
+if ($sqlHorsRunner) {
+    echo "\n[ATTENTION] " . count($sqlHorsRunner) . " fichier(s) .sql de database/migrations/ ne sont PAS gérés par ce runner (ni journal, ni retour arrière) ; certains contiennent DROP TABLE : ne jamais les rejouer à la main.\n";
 }
 
 echo "\n=== Résultat : {$successCount} appliqués, {$skipCount} ignorés, {$errorCount} erreurs ===\n\n";

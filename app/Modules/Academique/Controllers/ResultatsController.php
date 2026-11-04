@@ -183,6 +183,10 @@ class ResultatsController extends Controller
         $periodeId = (int)$this->request->get('periode_id', 0);
         $classeId  = (int)$this->request->get('classe_id', 0);
 
+        // Lot 3 : classe et période demandées doivent appartenir à l'établissement courant (listes déjà filtrées) — sinon ignorées
+        if ($classeId !== 0 && $this->trouverClasse($classes, $classeId) === null) { $classeId = 0; }
+        if ($periodeId !== 0 && $this->trouverPeriode($toutesPeriodes, $periodeId) === null) { $periodeId = 0; }
+
         return [$anneesScolaires, $periodes, $classes, $anneeScolaire, $periodeId, $classeId];
     }
 

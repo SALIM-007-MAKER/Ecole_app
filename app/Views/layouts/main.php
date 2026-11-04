@@ -48,6 +48,10 @@ $roleClass = $roleColors[$role] ?? 'bg-slate-100 text-slate-700';
 $menus = MenuService::getMenuStructure($role, $perms);
 $currentUri = $uri;
 $bottomNavItems = MenuService::getBottomNavItems($role, $perms);
+// Même principe que la sidebar desktop (navigation.php) : un seul gagnant
+// résolu une fois, comparé par égalité — pas un matching indépendant par
+// item qui pourrait en allumer plusieurs à la fois.
+$activeBottomNavUrl = MenuService::resolveActiveItemUrl($bottomNavItems, $currentUri);
 
 /* ── Titre de page ────────────────────────────────────────────────────────
    Source unique : $title si la vue le définit explicitement, sinon on le
@@ -82,19 +86,23 @@ $pageTitle = htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8');
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=<?= urlencode($branding->fontFamily) ?>:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/vendor/fontawesome/css/all.min.css">
 
     <!-- Tailwind CDN (utilitaires pour les vues uniquement) -->
-    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Sidebar : état figé AVANT le premier rendu (pas de clignotement ni de décalage entre deux pages) -->
     <script>
-    tailwind.config = {
-        corePlugins: { preflight: false },
-        theme: { extend: { fontFamily: { sans: ['<?= addslashes($branding->fontFamily) ?>','ui-sans-serif','system-ui','sans-serif'] } } }
-    }
+    (function () {
+        try {
+            var h = document.documentElement;
+            h.classList.add('sb-preload');
+            if (window.innerWidth >= 1024 && localStorage.getItem('ecole_sidebar_collapsed') === '1') h.classList.add('sb-collapsed-init');
+        } catch (e) {}
+    })();
     </script>
 
     <!-- Design System — chargé APRÈS Tailwind pour avoir priorité -->
-    <?php $cssV = @filemtime($_SERVER['DOCUMENT_ROOT'] . '/ecole_app/public/assets/css/app.css') ?: '1'; ?>
+    <?php $cssV = @filemtime(ROOT_PATH . '/public/assets/css/app.css') ?: '1'; ?>
     <link href="<?= BASE_URL ?>/assets/css/app.css?v=<?= $cssV ?>" rel="stylesheet">
 
     <!-- Branding tenant — couleurs (Phase 14.5, blueprint §10.1/§10.2) -->
@@ -107,6 +115,9 @@ $pageTitle = htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8');
         }
         body { font-family: '<?= addslashes($branding->fontFamily) ?>', ui-sans-serif, system-ui, sans-serif; }
     </style>
+    <!-- Tailwind compilé (tools/tailwind/README.md) : en FIN de <head>, comme le faisait le CDN, pour conserver la même cascade avec app.css -->
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/vendor/tailwind/tailwind.css?v=<?= @filemtime(ROOT_PATH . '/public/assets/vendor/tailwind/tailwind.css') ?: 1 ?>">
+    <style>:root{--font-sans:'<?= addslashes($branding->fontFamily) ?>'}</style>
 </head>
 <body class="app-shell">
 
@@ -137,7 +148,7 @@ $pageTitle = htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8');
     <div class="sidebar-footer">
         <a href="<?= BASE_URL ?>/profile" class="sidebar-user">
             <?php if (!empty($currentUser['photo'])): ?>
-                <img src="<?= BASE_URL ?>/<?= htmlspecialchars($currentUser['photo'], ENT_QUOTES) ?>"
+                <img src="<?= htmlspecialchars(\App\Shared\Http\MediaUrl::photo($currentUser['photo']), ENT_QUOTES) ?>"
                      class="sidebar-user-avatar" style="object-fit:cover" alt="">
             <?php else: ?>
                 <div class="sidebar-user-avatar"><?= $userInitial ?></div>
@@ -189,7 +200,7 @@ $pageTitle = htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8');
                         class="user-chip"
                         aria-haspopup="true" aria-expanded="false">
                     <?php if (!empty($currentUser['photo'])): ?>
-                        <img src="<?= BASE_URL ?>/<?= htmlspecialchars($currentUser['photo'], ENT_QUOTES) ?>"
+                        <img src="<?= htmlspecialchars(\App\Shared\Http\MediaUrl::photo($currentUser['photo']), ENT_QUOTES) ?>"
                              style="width:1.875rem;height:1.875rem;border-radius:50%;object-fit:cover;flex-shrink:0" alt="">
                     <?php else: ?>
                         <div class="avatar-chip">
@@ -250,6 +261,37 @@ $pageTitle = htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8');
     <!-- ── CONTENU ────────────────────────────────────────────────────── -->
     <main role="main" style="flex:1">
         <div style="padding:1.5rem;max-width:1440px;margin:0 auto">
+
+            <?php /* Alerte de traçabilité : visible des SEULS titulaires de audit.view, et ne compte que les événements de LEUR établissement
+                     (écrits dans le fichier de secours faute d'avoir pu être enregistrés). Aucun détail technique n'est affiché. */
+            $__uAudit = \Core\Session::getUser();
+            $__etabAudit = \Core\Tenant\TenantContext::current();
+            if ($__uAudit && $__etabAudit && in_array('audit.view', $__uAudit['permissions'] ?? [], true)) {
+                $__secoursAudit = \App\Services\AuditService::resumeSecours((int)$__etabAudit);
+                if ($__secoursAudit['count'] > 0): ?>
+            <div role="alert" style="display:flex;align-items:flex-start;gap:.75rem;padding:.875rem 1rem;border-radius:.75rem;border:2px solid #fecaca;background:#fef2f2;color:#991b1b;font-size:.875rem;margin-bottom:1rem">
+                <i data-lucide="shield-alert" style="width:1rem;height:1rem;margin-top:.125rem;flex-shrink:0"></i>
+                <span style="flex:1"><strong>Journal d'audit : traçabilité incomplète.</strong>
+                    <?= (int)$__secoursAudit['count'] ?> événement(s) de votre établissement n'ont pas pu être enregistrés (dernier le <?= htmlspecialchars((string)$__secoursAudit['derniere'], ENT_QUOTES) ?>).
+                    Ils sont conservés sur le serveur : demandez à l'administrateur technique de les réinscrire (<code>php database/audit-rejouer.php</code>).</span>
+            </div>
+            <?php endif; } ?>
+
+            <?php /* Période de grâce de l'abonnement : visible des seuls administrateurs / directeurs de l'établissement concerné (aucun détail de
+                     facturation). L'accès reste complet jusqu'à la date indiquée. */
+            $__uGrace = \Core\Session::getUser();
+            $__etabGrace = \Core\Tenant\TenantContext::current();
+            if ($__uGrace && $__etabGrace && in_array($__uGrace['role'] ?? '', ['admin', 'directeur', 'super_admin'], true)) {
+                $__grace = \Core\Platform\PlatformSubscriptionService::graceEnCours(\Core\Database::getInstance()->getConnection(), (int)$__etabGrace);
+                if ($__grace !== null): ?>
+            <div role="alert" data-bandeau="grace" style="display:flex;align-items:flex-start;gap:.75rem;padding:.875rem 1rem;border-radius:.75rem;border:2px solid #fde68a;background:#fffbeb;color:#92400e;font-size:.875rem;margin-bottom:1rem">
+                <i data-lucide="alert-triangle" style="width:1rem;height:1rem;margin-top:.125rem;flex-shrink:0"></i>
+                <span style="flex:1"><strong>Abonnement échu : période de grâce.</strong>
+                    Votre abonnement a pris fin le <?= htmlspecialchars((string)$__grace['date_fin'], ENT_QUOTES) ?>. L'accès est maintenu jusqu'au
+                    <?= htmlspecialchars((string)$__grace['acces_jusqua'], ENT_QUOTES) ?> inclus (<?= (int)$__grace['jours_restants'] ?> jour(s) restant(s)) ; au-delà, l'établissement sera suspendu.
+                    Contactez l'administrateur de la plateforme pour renouveler.</span>
+            </div>
+            <?php endif; } ?>
 
             <?php /* Messages flash — succès/info se ferment seuls après 5s,
                      erreur/avertissement restent affichés jusqu'à fermeture
@@ -315,7 +357,7 @@ $pageTitle = htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8');
 <nav class="mobile-bottom-nav" aria-label="Navigation principale mobile">
     <?php foreach ($bottomNavItems as $item): ?>
         <?php $itemUrl = BASE_URL . ($item['url'] ?? '/'); ?>
-        <a href="<?= $itemUrl ?>" class="mobile-nav-item<?= MenuService::isMenuActive($item['url'] ?? '', $currentUri) ? ' active' : '' ?>">
+        <a href="<?= $itemUrl ?>" class="mobile-nav-item<?= ($item['url'] ?? '') !== '' && ($item['url'] ?? '') === $activeBottomNavUrl ? ' active' : '' ?>">
             <i class="fa-solid <?= htmlspecialchars(MenuService::getMenuIconClass($item['icon'] ?? 'home'), ENT_QUOTES) ?>"></i>
             <span><?= htmlspecialchars($item['label'] ?? '', ENT_QUOTES) ?></span>
         </a>
@@ -341,7 +383,7 @@ $pageTitle = htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8');
 
 <!-- ══ SCRIPTS ═══════════════════════════════════════════════════════════ -->
 <script>window.APP_BASE_URL = '<?= BASE_URL ?>';</script>
-<script src="https://cdn.jsdelivr.net/npm/lucide@0.400.0/dist/umd/lucide.min.js"></script>
+<script src="<?= BASE_URL ?>/assets/vendor/lucide/lucide.min.js"></script>
 <script>if (window.lucide) lucide.createIcons();</script>
 <script src="<?= BASE_URL ?>/assets/js/app.js"></script>
 

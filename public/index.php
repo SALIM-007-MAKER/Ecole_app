@@ -5,6 +5,7 @@ declare(strict_types=1);
 // ─── Constantes globales ─────────────────────────────────────────────────────
 define('ROOT_PATH', dirname(__DIR__));
 define('APP_START', microtime(true));
+header_remove('X-Powered-By');   // ne pas annoncer la version de PHP
 
 // ─── Chargement des variables d'environnement ────────────────────────────────
 $envFile = ROOT_PATH . '/.env';
@@ -48,5 +49,19 @@ spl_autoload_register(function (string $class): void {
 
 // ─── Lancer l'application ────────────────────────────────────────────────────
 use Core\Application;
+
+// ─── HTTPS en production : redirection permanente vers APP_URL (https) et HSTS ────────────────────────────
+// Actif seulement si APP_ENV=production ET APP_URL commence par https:// ; /health reste joignable en HTTP (sondes de supervision).
+if (PHP_SAPI !== 'cli' && ($_ENV['APP_ENV'] ?? '') === 'production' && str_starts_with((string)($_ENV['APP_URL'] ?? ''), 'https://')) {
+    $https = \App\Shared\Http\ClientIp::isHttps($_SERVER, \App\Shared\Http\ClientIp::trustedFromEnvironment());
+    $chemin = (string)parse_url((string)($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
+    if ($https) {
+        header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+    } elseif (!str_ends_with($chemin, '/health')) {
+        $cible = parse_url((string)$_ENV['APP_URL']);   // l'hôte vient de la configuration, jamais de la requête
+        header('Location: https://' . $cible['host'] . (isset($cible['port']) ? ':' . $cible['port'] : '') . ($_SERVER['REQUEST_URI'] ?? '/'), true, 301);
+        exit;
+    }
+}
 
 Application::getInstance()->run();

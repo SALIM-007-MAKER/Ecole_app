@@ -52,6 +52,8 @@ class FilterService
             if (is_array($value)) {
                 // filter[field][op]=val
                 foreach ($value as $op => $val) {
+                    // Entrée malformée (filter[champ][]=x, filter[champ][op][]=x…) : filtre ignoré, jamais converti
+                    if (!is_string($op) || !is_string($val)) continue;
                     $op = strtolower($op);
                     if (!isset(self::OPERATORS[$op])) continue;
                     [$cond, $bind] = $this->buildClause($col, $op, $val);

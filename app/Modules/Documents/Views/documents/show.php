@@ -144,12 +144,12 @@ $titre = htmlspecialchars($document['titre']);
 <script>
 function archiver(id) {
   if (!confirm('Archiver ce document ?')) return;
-  fetch(`/v2/documents/${id}/archive`, {method:'POST', headers:{'X-CSRF-Token':document.querySelector('meta[name=csrf-token]')?.content}})
+  fetch(`<?= BASE_URL ?>/v2/documents/${id}/archive`, {method:'POST', headers:{'X-CSRF-Token':document.querySelector('meta[name=csrf-token]')?.content}})
     .then(r=>r.json()).then(d=>{ if(d.success) location.reload(); });
 }
 function mettreCorbeille(id) {
   if (!confirm('Mettre ce document à la corbeille ?')) return;
-  fetch(`/v2/trash/${id}`, {method:'POST', headers:{'X-CSRF-Token':document.querySelector('meta[name=csrf-token]')?.content}})
+  fetch(`<?= BASE_URL ?>/v2/trash/${id}`, {method:'POST', headers:{'X-CSRF-Token':document.querySelector('meta[name=csrf-token]')?.content}})
     .then(r=>r.json()).then(d=>{ if(d.success) window.location='<?= BASE_URL ?>/v2/documents'; });
 }
 </script>

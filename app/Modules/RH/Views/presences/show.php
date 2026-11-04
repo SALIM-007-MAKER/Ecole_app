@@ -34,14 +34,12 @@ $estValide= $presence['statut_validation'] === 'valide';
     </div>
     <div class="flex gap-3 flex-shrink-0">
       <?php if ($canUpdate && !$estValide): ?>
-      <a href="<?= BASE_URL ?>/v2/rh/presences/<?= (int)$presence['id'] ?>/edit"
-         class="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">
+      <a href="<?= BASE_URL ?>/v2/rh/presences/<?= (int)$presence['id'] ?>/edit" class="btn btn-secondary">
         Modifier
       </a>
       <?php endif; ?>
       <?php if ($canValidate && $presence['statut_validation'] === 'en_attente'): ?>
-      <button onclick="document.getElementById('modal-valider').classList.remove('hidden')"
-              class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700">
+      <button onclick="document.getElementById('modal-valider').classList.remove('hidden')" class="btn btn-success">
         Valider / Rejeter
       </button>
       <?php endif; ?>
@@ -164,15 +162,13 @@ $estValide= $presence['statut_validation'] === 'valide';
       <div class="mt-4 pt-4 border-t border-slate-100 flex flex-col gap-2">
         <?php if ($canUpdate && !$estValide): ?>
         <button onclick="document.getElementById('modal-justifier').classList.remove('hidden')"
-                class="w-full px-3 py-2 bg-sky-50 border border-sky-200 text-sky-700 rounded-lg text-xs hover:bg-sky-100">
+                class="btn btn-sm bg-sky-50 border-sky-200 text-sky-700 hover:bg-sky-100 w-full">
           Ajouter une justification
         </button>
-        <button onclick="document.getElementById('modal-regulariser').classList.remove('hidden')"
-                class="w-full px-3 py-2 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg text-xs hover:bg-amber-100">
+        <button onclick="document.getElementById('modal-regulariser').classList.remove('hidden')" class="btn btn-sm bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100 w-full">
           Régulariser
         </button>
-        <button onclick="document.getElementById('modal-archiver').classList.remove('hidden')"
-                class="w-full px-3 py-2 bg-red-50 border border-red-200 text-red-700 rounded-lg text-xs hover:bg-red-100">
+        <button onclick="document.getElementById('modal-archiver').classList.remove('hidden')" class="btn btn-outline-danger btn-sm w-full">
           Archiver
         </button>
         <?php endif; ?>
@@ -234,9 +230,9 @@ $estValide= $presence['statut_validation'] === 'valide';
                   class="form-textarea"></textarea>
       </div>
       <div class="flex gap-3 mt-4">
-        <button type="submit" class="flex-1 px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">Confirmer</button>
+        <button type="submit" class="btn btn-primary flex-1">Confirmer</button>
         <button type="button" onclick="document.getElementById('modal-valider').classList.add('hidden')"
-                class="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm hover:bg-slate-200">Annuler</button>
+                class="btn btn-secondary flex-1">Annuler</button>
       </div>
     </form>
   </div>
@@ -254,9 +250,9 @@ $estValide= $presence['statut_validation'] === 'valide';
                   placeholder="Expliquer la situation (maladie, transport, etc.)"><?= e($presence['justification'] ?? '') ?></textarea>
       </div>
       <div class="flex gap-3 mt-4">
-        <button type="submit" class="flex-1 px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">Enregistrer</button>
+        <button type="submit" class="btn btn-primary flex-1">Enregistrer</button>
         <button type="button" onclick="document.getElementById('modal-justifier').classList.add('hidden')"
-                class="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm hover:bg-slate-200">Annuler</button>
+                class="btn btn-secondary flex-1">Annuler</button>
       </div>
     </form>
   </div>
@@ -282,17 +278,17 @@ $estValide= $presence['statut_validation'] === 'valide';
         <div>
           <label class="form-label">Nouvelle heure d'arrivée</label>
           <input type="time" name="heure_arrivee" value="<?= e(substr($presence['heure_arrivee'] ?? '', 0, 5)) ?>"
-                 class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                 class="form-input">
         </div>
         <div>
           <label class="form-label">Nouvelle heure de départ</label>
           <input type="time" name="heure_depart" value="<?= e(substr($presence['heure_depart'] ?? '', 0, 5)) ?>"
-                 class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+                 class="form-input">
         </div>
       </div>
       <div id="reg-statut" class="mb-4 hidden">
         <label class="form-label">Nouveau statut</label>
-        <select name="nouveau_statut" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+        <select name="nouveau_statut" class="form-select">
           <?php foreach ($model::STATUTS as $k => $v): ?>
             <option value="<?= e($k) ?>" <?= $presence['statut'] === $k ? 'selected' : '' ?>><?= e($v) ?></option>
           <?php endforeach; ?>
@@ -305,9 +301,9 @@ $estValide= $presence['statut_validation'] === 'valide';
                   placeholder="Raison de la régularisation"></textarea>
       </div>
       <div class="flex gap-3 mt-4">
-        <button type="submit" class="flex-1 px-4 py-2 bg-amber-600 text-white rounded-lg text-sm hover:bg-amber-700">Régulariser</button>
+        <button type="submit" class="btn btn-warning flex-1">Régulariser</button>
         <button type="button" onclick="document.getElementById('modal-regulariser').classList.add('hidden')"
-                class="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm hover:bg-slate-200">Annuler</button>
+                class="btn btn-secondary flex-1">Annuler</button>
       </div>
     </form>
   </div>
@@ -322,12 +318,12 @@ $estValide= $presence['statut_validation'] === 'valide';
       <div class="mb-4">
         <label class="form-label">Motif</label>
         <input type="text" name="motif" value="Archivage manuel"
-               class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+               class="form-input">
       </div>
       <div class="flex gap-3">
-        <button type="submit" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700">Archiver</button>
+        <button type="submit" class="btn btn-danger flex-1">Archiver</button>
         <button type="button" onclick="document.getElementById('modal-archiver').classList.add('hidden')"
-                class="flex-1 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm hover:bg-slate-200">Annuler</button>
+                class="btn btn-secondary flex-1">Annuler</button>
       </div>
     </form>
   </div>

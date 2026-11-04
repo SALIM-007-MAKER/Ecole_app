@@ -21,7 +21,7 @@ $enseignements = $enseignements ?? [];
         <a href="<?= BASE_URL ?>/matieres" class="btn btn-secondary">
             <i data-lucide="arrow-left" class="w-4 h-4"></i>Liste
         </a>
-        <?php if (showmp($perms, 'matieres.delete') && $matiere->nb_enseignements == 0): ?>
+        <?php if (showmp($perms, 'matieres.delete') && $matiere->nb_enseignements == 0 && (int)($matiere->est_conduite ?? 0) !== 1): ?>
         <button class="btn btn-outline text-red-500 border-red-200 hover:bg-red-50"
                 onclick="document.getElementById('deleteModal').classList.add('active');document.body.style.overflow='hidden'">
             <i data-lucide="trash-2" class="w-4 h-4"></i>Supprimer
@@ -30,12 +30,33 @@ $enseignements = $enseignements ?? [];
     </div>
 </div>
 
+<?php if ((int)($matiere->est_conduite ?? 0) === 1): ?>
+<div class="mb-4 rounded-xl border border-violet-200 bg-violet-50 p-4 text-sm text-violet-900 flex items-start gap-3">
+    <i data-lucide="shield-check" class="w-5 h-5 shrink-0 mt-0.5"></i>
+    <div>
+        <p class="font-semibold">Matière de Conduite</p>
+        <p>Note de comportement : coefficient 1, 0 heure de cours, absente des emplois du temps et des affectations d'enseignement. Elle ne peut pas être supprimée.</p>
+        <?php if (isset($protection)): ?>
+        <p class="mt-1 font-medium <?= $protection['ok'] ? 'text-emerald-700' : 'text-red-700' ?>">
+            Protection SQL : <?= $protection['ok'] ? 'opérationnelle' : 'NON opérationnelle' ?>
+        </p>
+        <?php if (!$protection['ok']): ?>
+        <p class="mt-1 rounded-lg bg-red-50 border border-red-200 text-red-800 p-2 text-xs">
+            Les déclencheurs de protection de la Conduite sont absents ou modifiés : <?= htmlspecialchars(implode(' ; ', array_map(fn($k, $v) => "$k : $v", array_keys($protection['details']), $protection['details'])), ENT_QUOTES) ?>.
+            Relancer <code>database/migrate.php</code> puis vérifier avec <code>database/tools/conduite_protection.php --check</code>.
+        </p>
+        <?php endif; ?>
+        <?php endif; ?>
+    </div>
+</div>
+<?php endif; ?>
+
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
     <!-- Carte matière (sidebar gauche) -->
     <div>
         <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
-            <div class="p-5 p-6 text-center">
+            <div class="p-6 text-center">
                 <div class="w-20 h-20 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-4">
                     <i data-lucide="book" class="w-10 h-10 text-emerald-500"></i>
                 </div>
@@ -64,7 +85,7 @@ $enseignements = $enseignements ?? [];
             </div>
 
             <?php if (!empty($matiere->responsable_nom) && trim($matiere->responsable_nom) !== ' '): ?>
-            <div class="flex items-center gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4 bg-slate-50 p-4 border-t border-slate-100">
+            <div class="flex items-center gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4 bg-slate-50 p-4 border-t">
                 <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Enseignant responsable</p>
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
@@ -163,7 +184,7 @@ $enseignements = $enseignements ?? [];
                 <i data-lucide="bar-chart-2" class="w-4 h-4 text-violet-500"></i>
                 <span class="font-semibold text-slate-700">Répartition par année scolaire</span>
             </div>
-            <div class="p-5 p-4">
+            <div class="p-5">
                 <div class="flex flex-wrap gap-3">
                     <?php foreach ($annees as $annee):
                         $cnt = count(array_filter($enseignements, fn($e) => $e->annee_scolaire === $annee));
@@ -181,7 +202,7 @@ $enseignements = $enseignements ?? [];
 </div>
 
 <!-- Modal suppression -->
-<?php if (showmp($perms, 'matieres.delete') && $matiere->nb_enseignements == 0): ?>
+<?php if (showmp($perms, 'matieres.delete') && $matiere->nb_enseignements == 0 && (int)($matiere->est_conduite ?? 0) !== 1): ?>
 <div id="deleteModal" class="modal-overlay fixed inset-0 z-[9000] hidden items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm [&.active]:flex">
     <div class="w-full max-w-lg rounded-xl border border-slate-200 bg-white shadow-2xl" style="max-width:420px">
         <div class="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">

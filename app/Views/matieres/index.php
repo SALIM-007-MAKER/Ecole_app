@@ -148,7 +148,7 @@ $matieres    = $matieres    ?? [];
                             <i data-lucide="pencil" class="w-4 h-4"></i>
                         </a>
                         <?php endif; ?>
-                        <?php if (mperm($perms, 'matieres.delete')): ?>
+                        <?php if (mperm($perms, 'matieres.delete') && (int)($m->est_conduite ?? 0) !== 1): ?>
                         <button class="btn btn-ghost btn-icon text-slate-400 hover:text-red-500"
                                 onclick="openDelMat(<?= $m->id ?>, '<?= htmlspecialchars($m->nom, ENT_QUOTES) ?>', <?= $m->nb_enseignements ?>)"
                                 title="Supprimer">

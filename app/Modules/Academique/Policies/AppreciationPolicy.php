@@ -19,9 +19,13 @@ class AppreciationPolicy
      *                      directeur...) — dans ce cas la permission large
      *                      suffit, comme pour NotePolicy::canSaisir().
      */
-    public function canSaisir(array $user, ?int $profId, int $matiereId, int $classeId, string $annee): bool
+    public function canSaisir(array $user, ?int $profId, int $matiereId, int $classeId, string $annee, bool $conduite = false): bool
     {
         if (!$this->has($user, 'academique.notes.manage')) {
+            return false;
+        }
+        // Matière de Conduite (marqueur est_conduite) : appréciation réservée à academique.conduite.manage
+        if ($conduite && !$this->has($user, EvaluationPolicy::PERMISSION_CONDUITE)) {
             return false;
         }
         if ($profId === null) {

@@ -90,7 +90,7 @@ document.getElementById('form-folder').addEventListener('submit', async function
 async function supprimerDossier(id) {
   if (!confirm('Supprimer ce dossier ?')) return;
   const csrf = document.querySelector('meta[name=csrf-token]')?.content ?? '';
-  const r = await fetch(`/v2/folders/${id}`, { method: 'DELETE', headers: {'X-CSRF-Token': csrf} });
+  const r = await fetch(`<?= BASE_URL ?>/v2/folders/${id}`, { method: 'DELETE', headers: {'X-CSRF-Token': csrf} });
   const d = await r.json();
   if (d.success) { location.reload(); }
   else { alert(d.message ?? 'Erreur'); }

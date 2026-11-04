@@ -14,7 +14,7 @@ $old    = $old    ?? [];
 </div>
 
 <?php if (\Core\Session::hasFlash('success')): ?>
-<div class="mb-4 flex items-start gap-3 rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800 mb-5" role="alert">
+<div class="flex items-start gap-3 rounded-xl border px-4 py-3 text-sm border-emerald-200 bg-emerald-50 text-emerald-800 mb-5" role="alert">
     <i data-lucide="check-circle" class="w-4 h-4 shrink-0"></i>
     <span class="flex-1 text-sm"><?= htmlspecialchars(\Core\Session::getFlash('success'), ENT_QUOTES) ?></span>
 </div>
@@ -23,7 +23,7 @@ $old    = $old    ?? [];
 <?php if (\Core\Session::hasFlash('info')): ?>
 <?php $devLink = \Core\Session::getFlash('info'); ?>
 <?php preg_match('/(https?:\/\/\S+)/', $devLink, $m); ?>
-<div class="mb-4 flex items-start gap-3 rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800 mb-5" role="alert">
+<div class="flex items-start gap-3 rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800 mb-5" role="alert">
     <i data-lucide="info" class="w-4 h-4 shrink-0"></i>
     <div class="flex-1 text-sm">
         <span class="font-medium">Mode développement :</span><br>

@@ -59,6 +59,9 @@ class Application
     {
         $request = new Request();
 
+        // Lot 3 : établissement courant déduit de la SESSION authentifiée (revérifié en base), avant toute route.
+        $this->appliquerContexteEtablissement();
+
         // Charger les routes V1
         $router = $this->router;
         require ROOT_PATH . '/config/routes.php';
@@ -82,6 +85,126 @@ class Application
         $this->router->dispatch($request);
     }
 
+    /**
+     * Positionne TenantContext depuis l'utilisateur connecté (voir Core\Tenant\SessionTenantGuard). Un contexte absent ou
+     * invalide n'est JAMAIS remplacé par un établissement par défaut : la session est invalidée et l'utilisateur renvoyé à la
+     * connexion. Visiteurs et routes /platform/* (PlatformAuth, règle distincte) ne sont pas concernés.
+     */
+    private function appliquerContexteEtablissement(): void
+    {
+        $uri = (string)($_SERVER['REQUEST_URI'] ?? '/');
+        if (Tenant\SessionTenantGuard::routeSansContexte($uri, $this->getBasePath())) {
+            return;
+        }
+        $user = Session::getUser();
+        if ($user === null) {
+            $this->appliquerContextePublic();
+            return;
+        }
+
+        $decision = (new Tenant\SessionTenantGuard(Database::getInstance()->getConnection()))->evaluer($user);
+        if ($decision['ok']) {
+            // Les droits de session sont relus AVANT d'établir le contexte : un rôle retiré (ou jamais attribué) pour cet établissement
+            // invalide la session — jamais de repli sur le rôle global `users.role` (voir GlobalAuthService).
+            if ($this->rafraichirDroitsSession($user, (int)$decision['etablissement_id'])) {
+                Tenant\TenantContext::set((int)$decision['etablissement_id'], $decision['etablissement']);
+                return;
+            }
+            $decision['raison'] = 'role_revoque';
+        }
+
+        Logger::security(
+            'TENANT_CONTEXT_REFUSED',
+            sprintf('raison=%s user_id=%d etablissement_id=%s uri=%s', $decision['raison'], (int)($user['id'] ?? 0),
+                (string)($user['etablissement_id'] ?? 'null'), (string)parse_url($uri, PHP_URL_PATH))
+        );
+        Session::delete('_auth_user');
+        Session::flash('error', 'Votre session n\'est plus valide pour cet établissement. Veuillez vous reconnecter.');
+        http_response_code(302);
+        header('Location: ' . rtrim((string)$this->config['url'], '/') . '/login');
+        exit;
+    }
+
+    /**
+     * Visiteur non connecté : avec le mode multi-établissements activé (config/tenant.php 'enabled'), l'établissement est déduit du NOM D'HÔTE
+     * (sous-domaine / domaine personnalisé vérifié) afin que connexion, inscription et mot de passe oublié s'adressent aux comptes DE CET
+     * établissement. Hôte non reconnu (localhost, IP, domaine principal) : comportement historique (établissement par défaut). Établissement
+     * suspendu, annulé ou au plan expiré : 503, aucune page publique.
+     */
+    private function appliquerContextePublic(): void
+    {
+        $cfg = require ROOT_PATH . '/config/tenant.php';
+        if (empty($cfg['enabled'])) {
+            return;
+        }
+        try {
+            $etab = (new Tenant\TenantResolver(new Tenant\TenantRepository(), $cfg))->resolveParHote();
+        } catch (\Throwable $e) {
+            Logger::error('Résolution publique de l\'établissement impossible : ' . $e->getMessage());
+            return;
+        }
+        if ($etab === null) {
+            return;
+        }
+        if ($etab->isSuspended() || $etab->isCancelled() || $etab->isPlanExpired()) {
+            http_response_code(503);
+            exit('Cet établissement est momentanément indisponible.');
+        }
+        Tenant\TenantContext::set($etab->id, $etab);
+    }
+
+    /**
+     * Relit en base le rôle et les permissions de l'utilisateur connecté (au plus toutes les `session.auth_refresh` secondes) :
+     * une rétrogradation, un changement de rôle ou de permissions s'applique aux sessions déjà ouvertes, au lieu de rester
+     * figé jusqu'à la prochaine connexion. MÊME résolution qu'à la connexion (GlobalAuthService) : rôle propre à l'établissement, priorité
+     * fixe en cas de rôles multiples, repli historique seulement sans aucune appartenance, permissions RBAC globales jamais héritées.
+     *
+     * @return bool false = le rôle a disparu pour cet établissement (la session doit être invalidée) ; true sinon, y compris en cas de
+     *              panne technique (une erreur de lecture ne déconnecte personne).
+     */
+    private function rafraichirDroitsSession(array $user, int $etablissementId): bool
+    {
+        $intervalle = (int)($this->config['session']['auth_refresh'] ?? 60);
+        $dernier    = (int)Session::get('_auth_refreshed_at', 0);
+        if ($dernier > 0 && time() - $dernier < $intervalle) {
+            return true;
+        }
+        try {
+            $userId = (int)($user['id'] ?? 0);
+            $auth   = \App\Services\GlobalAuthService::make(Database::getInstance()->getConnection());
+            $compte = $auth->lookupById($userId);
+            if ($compte === null) {
+                return true;   // déjà contrôlé par le garde de session
+            }
+            $resolu = $auth->resoudreRole($compte, $etablissementId);
+            if ($resolu['role'] === null) {
+                Logger::security('SESSION_ROLE_REVOKED', sprintf('user_id=%d etablissement_id=%d : plus aucun rôle propre à cet établissement', $userId, $etablissementId));
+                $auth->journaliser('auth.role_missing', $compte, $etablissementId, 'denied', ['raison' => 'role_retire_en_session']);
+                return false;
+            }
+            // Mot de passe changé ou réinitialisé depuis l'ouverture de cette session : session invalidée (au plus `auth_refresh` secondes
+            // après le changement ; aucune vérification tant que la colonne users.password_changed_at n'existe pas ou reste NULL).
+            $dateMdp = $auth->dateMotDePasse($userId);
+            if ($dateMdp !== null && $dateMdp > (int)($user['pwd_at'] ?? 0)) {
+                Logger::security('SESSION_PASSWORD_CHANGED', sprintf('user_id=%d : mot de passe modifié depuis l\'ouverture de la session', $userId));
+                return false;
+            }
+            $role        = $resolu['role'];
+            $permissions = $auth->permissions($compte, $etablissementId, $role, $resolu['legacy']);
+
+            if ($role !== ($user['role'] ?? null) || $permissions != ($user['permissions'] ?? [])) {
+                Logger::security('SESSION_RIGHTS_REFRESHED', sprintf(
+                    'user_id=%d role %s -> %s', $userId, (string)($user['role'] ?? ''), $role
+                ));
+                Session::setUser(array_merge($user, ['role' => $role, 'permissions' => $permissions]));
+            }
+            Session::set('_auth_refreshed_at', time());
+        } catch (\Throwable $e) {
+            Logger::error('Relecture des droits de session impossible : ' . $e->getMessage());
+        }
+        return true;
+    }
+
     public function handleError(int $errno, string $errstr, string $errfile, int $errline): bool
     {
         $ctx = sprintf('[%s %s]', $_SERVER['REQUEST_METHOD'] ?? 'CLI', $_SERVER['REQUEST_URI'] ?? 'n/a');
@@ -101,6 +224,15 @@ class Application
             $e->getLine(),
             str_replace("\n", ' | ', $e->getTraceAsString())
         ));
+        // Suppression impossible car des données y sont rattachées (clé étrangère, erreur MySQL 1451) : retour à la page précédente avec un message.
+        if ($e instanceof \PDOException && (int)($e->errorInfo[1] ?? 0) === 1451 && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
+            Session::flash('error', 'Suppression impossible : des données (notes, absences, factures, historique…) y sont rattachées. Archivez ou désactivez plutôt que de supprimer.');
+            $ref  = (string)($_SERVER['HTTP_REFERER'] ?? '');
+            $host = (string)($_SERVER['HTTP_HOST'] ?? '');
+            $ok   = $ref !== '' && $host !== '' && parse_url($ref, PHP_URL_HOST) === parse_url('http://' . $host, PHP_URL_HOST);   // même hôte seulement
+            header('Location: ' . ($ok ? $ref : (defined('BASE_URL') ? BASE_URL : '') . '/dashboard'), true, 302);
+            return;
+        }
         http_response_code(500);
         $view = new View();
         $view->render('errors/500', [

@@ -45,14 +45,12 @@ $statuts = \App\Modules\Finance\Models\SessionCaisseModel::STATUTS;
             </div>
         </div>
         <div class="flex items-center gap-2">
-            <a href="<?= BASE_URL ?>/v2/finance/caisse/<?= $session->id ?>/journal/print" target="_blank"
-               class="px-3 py-2 text-sm text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50">
-                <i data-lucide="printer" class="inline w-4 h-4 mr-1"></i> Imprimer
+            <a href="<?= BASE_URL ?>/v2/finance/caisse/<?= $session->id ?>/journal/print" target="_blank" class="btn btn-outline">
+                <i data-lucide="printer" class="w-4 h-4"></i> Imprimer
             </a>
             <?php if ($isActive && $canFermer): ?>
-            <a href="<?= BASE_URL ?>/v2/finance/caisse/<?= $session->id ?>/fermer"
-               class="px-3 py-2 text-sm font-medium text-rose-700 bg-rose-50 border border-rose-200 rounded-lg hover:bg-rose-100">
-                <i data-lucide="lock" class="inline w-4 h-4 mr-1"></i> Fermer la caisse
+            <a href="<?= BASE_URL ?>/v2/finance/caisse/<?= $session->id ?>/fermer" class="btn btn-outline-danger">
+                <i data-lucide="lock" class="w-4 h-4"></i> Fermer la caisse
             </a>
             <?php endif; ?>
         </div>
@@ -191,8 +189,7 @@ $statuts = \App\Modules\Finance\Models\SessionCaisseModel::STATUTS;
                        class="form-input">
             </div>
             <div>
-                <button type="submit"
-                        class="w-full py-2 text-sm font-semibold text-white bg-violet-600 rounded-lg hover:bg-violet-700">
+                <button type="submit" class="btn btn-primary w-full">
                     Enregistrer
                 </button>
             </div>
@@ -262,7 +259,7 @@ $statuts = \App\Modules\Finance\Models\SessionCaisseModel::STATUTS;
                     <td class="px-4 py-2">
                         <?php if ($m->statut === 'actif' && in_array($m->type, ['recette','decaissement','correction'], true)): ?>
                         <button onclick="document.getElementById('modal_annuler_<?= $m->id ?>').classList.remove('hidden')"
-                                class="p-1 text-slate-400 hover:text-rose-600 rounded">
+                                class="btn btn-ghost btn-icon text-slate-400 hover:text-rose-600">
                             <i data-lucide="x-circle" class="w-4 h-4"></i>
                         </button>
                         <?php endif; ?>
@@ -301,15 +298,15 @@ $statuts = \App\Modules\Finance\Models\SessionCaisseModel::STATUTS;
             <div class="mb-4">
                 <label class="form-label">Motif <span class="form-required">*</span></label>
                 <textarea name="motif" rows="2" required
-                          class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-rose-300"
+                          class="form-textarea"
                           placeholder="Raison de l'annulation…"></textarea>
             </div>
             <div class="flex gap-3">
-                <button type="submit" class="flex-1 py-2 text-sm font-semibold text-white bg-rose-600 rounded-lg hover:bg-rose-700">
+                <button type="submit" class="btn btn-danger flex-1">
                     Confirmer l'annulation
                 </button>
                 <button type="button" onclick="document.getElementById('modal_annuler_<?= $m->id ?>').classList.add('hidden')"
-                        class="flex-1 py-2 text-sm text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200">
+                        class="btn btn-secondary flex-1">
                     Fermer
                 </button>
             </div>

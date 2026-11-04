@@ -172,7 +172,7 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
 
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="<?= BASE_URL ?>/assets/vendor/chartjs/chart.umd.js"></script>
 <script>
 (function () {
     Chart.defaults.font.family = "'Inter', ui-sans-serif, system-ui, sans-serif";
@@ -269,7 +269,7 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
                 <i data-lucide="zap" class="w-4 h-4 text-violet-600"></i>
                 <span class="font-semibold text-slate-700">Actions rapides</span>
             </div>
-            <div class="p-5 p-3 space-y-1.5">
+            <div class="p-3 space-y-1.5">
                 <?php if (can($perms, 'eleves.create')): ?>
                 <a href="<?= BASE_URL ?>/eleves/create"
                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-violet-50 hover:text-violet-700 transition-colors group">
@@ -288,8 +288,8 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
                     Saisir des notes
                 </a>
                 <?php endif; ?>
-                <?php if (can($perms, 'absences.create')): ?>
-                <a href="<?= BASE_URL ?>/absences/create"
+                <?php if (can($perms, 'attendance.create')): ?>
+                <a href="<?= BASE_URL ?>/v2/vie-scolaire/absences/create"
                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-amber-50 hover:text-amber-700 transition-colors group">
                     <div class="w-7 h-7 rounded-md bg-amber-100 flex items-center justify-center group-hover:bg-amber-200 transition-colors">
                         <i data-lucide="calendar-plus" class="w-3.5 h-3.5 text-amber-600"></i>
@@ -324,7 +324,7 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
                 <i data-lucide="grid-2x2" class="w-4 h-4 text-violet-600"></i>
                 <span class="font-semibold text-slate-700">Modules</span>
             </div>
-            <div class="p-5 p-3">
+            <div class="p-3">
                 <div class="grid grid-cols-2 gap-1.5">
                     <?php
                     $modules = [
@@ -332,7 +332,7 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
                         ['Enseignants',  BASE_URL . '/professeurs',  'user-check',    '#dcfce7', '#16a34a'],
                         ['Classes',      BASE_URL . '/classes',      'building-2',    '#e0f2fe', '#0284c7'],
                         ['Notes',        BASE_URL . '/v2/academique/evaluations', 'book-open', '#f3e8ff', '#9333ea'],
-                        ['Absences',     BASE_URL . '/absences',     'calendar-x',    '#fef3c7', '#d97706'],
+                        ['Absences',     BASE_URL . '/v2/vie-scolaire/absences', 'calendar-x', '#fef3c7', '#d97706'],
                         ['Finance',      BASE_URL . '/v2/finance/rapports/dashboard', 'wallet',        '#dcfce7', '#059669'],
                     ];
                     foreach ($modules as [$label, $url, $icon, $bg, $color]):
@@ -370,8 +370,8 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
     </a>
     <?php endif; ?>
 
-    <?php if (can($perms, 'absences.create')): ?>
-    <a href="<?= BASE_URL ?>/absences/create" class="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white p-5 text-center text-slate-600 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 hover:shadow-md">
+    <?php if (can($perms, 'attendance.create')): ?>
+    <a href="<?= BASE_URL ?>/v2/vie-scolaire/absences/create" class="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white p-5 text-center text-slate-600 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 hover:shadow-md">
         <i data-lucide="calendar-plus" class="w-7 h-7 text-amber-600 mb-2"></i>
         <span class="text-sm font-semibold text-slate-700">Signaler une absence</span>
     </a>
@@ -427,7 +427,7 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
         <i data-lucide="zap" class="w-4 h-4 text-violet-600"></i>
         <span class="font-semibold text-slate-700">Accès rapides</span>
     </div>
-    <div class="p-5 p-4">
+    <div class="p-5">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
             <a href="<?= BASE_URL ?>/eleves" class="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white p-5 text-center text-slate-600 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 hover:shadow-md">
                 <i data-lucide="users" class="w-7 h-7 text-violet-600 mb-2"></i>
@@ -437,7 +437,7 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
                 <i data-lucide="user-plus" class="w-7 h-7 text-emerald-600 mb-2"></i>
                 <span class="text-sm font-semibold text-slate-700">Inscrire un élève</span>
             </a>
-            <a href="<?= BASE_URL ?>/absences/create" class="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white p-5 text-center text-slate-600 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 hover:shadow-md">
+            <a href="<?= BASE_URL ?>/v2/vie-scolaire/absences/create" class="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white p-5 text-center text-slate-600 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 hover:shadow-md">
                 <i data-lucide="calendar-plus" class="w-7 h-7 text-amber-600 mb-2"></i>
                 <span class="text-sm font-semibold text-slate-700">Signaler absence</span>
             </a>
@@ -493,7 +493,7 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
             <i data-lucide="bar-chart-2" class="w-4 h-4 text-violet-600"></i>
             <span class="font-semibold text-slate-700">Rapports et statistiques financières</span>
         </div>
-        <div class="p-5 p-10 flex flex-col items-center text-center">
+        <div class="p-5 flex flex-col items-center text-center">
             <div class="w-16 h-16 rounded-2xl bg-emerald-100 flex items-center justify-center mb-4">
                 <i data-lucide="bar-chart-2" class="w-8 h-8 text-emerald-600"></i>
             </div>
@@ -517,7 +517,7 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
             <i data-lucide="zap" class="w-4 h-4 text-violet-600"></i>
             <span class="font-semibold text-slate-700">Accès rapides</span>
         </div>
-        <div class="p-5 p-3 space-y-1.5">
+        <div class="p-3 space-y-1.5">
             <?php
             $comptableLinks = [
                 ['Tableau de bord finance',  BASE_URL . '/v2/finance/rapports/dashboard', 'wallet',        'emerald'],
@@ -641,7 +641,7 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
             <span class="ml-auto inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold leading-5 whitespace-nowrap bg-slate-100 text-slate-600"><?= count($enseignements) ?> cours</span>
         </div>
         <?php if (empty($enseignements)): ?>
-        <div class="p-5 p-12 flex flex-col items-center text-center">
+        <div class="p-12 flex flex-col items-center text-center">
             <div class="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
                 <i data-lucide="calendar-x" class="w-7 h-7 text-slate-400"></i>
             </div>
@@ -700,7 +700,7 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
             <i data-lucide="zap" class="w-4 h-4 text-violet-600"></i>
             <span class="font-semibold text-slate-700">Accès rapides</span>
         </div>
-        <div class="p-5 p-3 space-y-1.5">
+        <div class="p-3 space-y-1.5">
             <a href="<?= BASE_URL ?>/v2/academique/evaluations/create"
                class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition-colors group">
                 <div class="w-7 h-7 rounded-md bg-emerald-100 flex items-center justify-center">
@@ -715,14 +715,14 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
                 </div>
                 Consulter les notes
             </a>
-            <a href="<?= BASE_URL ?>/absences/create"
+            <a href="<?= BASE_URL ?>/v2/vie-scolaire/absences/create"
                class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-amber-50 hover:text-amber-700 transition-colors group">
                 <div class="w-7 h-7 rounded-md bg-amber-100 flex items-center justify-center">
                     <i data-lucide="calendar-plus" class="w-3.5 h-3.5 text-amber-600"></i>
                 </div>
                 Signaler une absence
             </a>
-            <a href="<?= BASE_URL ?>/absences"
+            <a href="<?= BASE_URL ?>/v2/vie-scolaire/absences"
                class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors group">
                 <div class="w-7 h-7 rounded-md bg-slate-100 flex items-center justify-center">
                     <i data-lucide="calendar-x" class="w-3.5 h-3.5 text-slate-500"></i>
@@ -761,7 +761,7 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
 <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
 
     <div class="rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md group">
-        <div class="p-5 p-8 flex flex-col items-center text-center">
+        <div class="p-8 flex flex-col items-center text-center">
             <div class="w-16 h-16 rounded-2xl bg-emerald-100 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
                 <i data-lucide="book-open" class="w-8 h-8 text-emerald-600"></i>
             </div>
@@ -774,7 +774,7 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
     </div>
 
     <div class="rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md group">
-        <div class="p-5 p-8 flex flex-col items-center text-center">
+        <div class="p-8 flex flex-col items-center text-center">
             <div class="w-16 h-16 rounded-2xl bg-amber-100 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
                 <i data-lucide="calendar-x" class="w-8 h-8 text-amber-600"></i>
             </div>
@@ -790,7 +790,7 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
 
 <!-- Info banner parent -->
 <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
-    <div class="p-5 p-4 flex items-start gap-4">
+    <div class="p-5 flex items-start gap-4">
         <div class="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center shrink-0">
             <i data-lucide="info" class="w-5 h-5 text-indigo-600"></i>
         </div>
@@ -813,7 +813,7 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
 <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
 
     <div class="rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md group">
-        <div class="p-5 p-8 flex flex-col items-center text-center">
+        <div class="p-8 flex flex-col items-center text-center">
             <div class="w-16 h-16 rounded-2xl bg-violet-100 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
                 <i data-lucide="book-open" class="w-8 h-8 text-violet-600"></i>
             </div>
@@ -826,13 +826,13 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
     </div>
 
     <div class="rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md group">
-        <div class="p-5 p-8 flex flex-col items-center text-center">
+        <div class="p-8 flex flex-col items-center text-center">
             <div class="w-16 h-16 rounded-2xl bg-amber-100 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
                 <i data-lucide="calendar-x" class="w-8 h-8 text-amber-600"></i>
             </div>
             <h3 class="font-bold text-slate-900 mb-1">Mes absences</h3>
             <p class="text-sm text-slate-500 mb-5">Suivez votre assiduité et les absences enregistrées.</p>
-            <a href="<?= BASE_URL ?>/absences" class="btn btn-warning">
+            <a href="<?= BASE_URL ?>/v2/vie-scolaire/absences" class="btn btn-warning">
                 <i data-lucide="eye" class="w-4 h-4"></i>Voir mes absences
             </a>
         </div>
@@ -842,7 +842,7 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
 
 <!-- Conseil élève -->
 <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
-    <div class="p-5 p-4 flex items-start gap-4">
+    <div class="p-5 flex items-start gap-4">
         <div class="w-10 h-10 rounded-xl bg-sky-100 flex items-center justify-center shrink-0">
             <i data-lucide="lightbulb" class="w-5 h-5 text-sky-600"></i>
         </div>

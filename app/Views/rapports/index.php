@@ -37,7 +37,7 @@ $f = fn($n) => number_format((float)$n, 0, ',', ' ');
         </select>
         <a href="<?= BASE_URL ?>/rapports/export/pdf?annee=<?= urlencode($annee) ?>&periode_id=<?= (int)$periodeId ?>"
            class="btn btn-outline text-red-600 border-red-200 hover:bg-red-50" target="_blank">
-            <i data-lucide="file-text" class="w-4 h-4"></i>PDF
+            <i data-lucide="file-text" class="w-4 h-4"></i>Imprimer / PDF
         </a>
     </form>
 </div>
@@ -143,7 +143,7 @@ $f = fn($n) => number_format((float)$n, 0, ',', ' ');
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="<?= BASE_URL ?>/assets/vendor/chartjs/chart.umd.js"></script>
 <script>
 (function() {
     Chart.defaults.font.family = "system-ui, sans-serif";

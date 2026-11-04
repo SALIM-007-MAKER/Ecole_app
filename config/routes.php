@@ -12,6 +12,7 @@ $router->get('/dashboard', 'HomeController@dashboard');
 $router->get('/uploads/serve/{type}/{filename}', 'UploadController@serve');
 
 // ─── Authentification ─────────────────────────────────────────────────────────
+$router->get('/health',    'HealthController@index');   // contrôle de santé (sans authentification, sans donnée sensible)
 $router->get('/login',     'AuthController@showLogin');
 $router->post('/login',    'AuthController@login');
 $router->post('/logout',   'AuthController@logout');
@@ -33,6 +34,7 @@ $router->post('/reset-password',        'AuthController@resetPassword');
 $router->get('/profile',           'AuthController@showProfile');
 $router->post('/profile',          'AuthController@updateProfile');
 $router->post('/profile/password', 'AuthController@changePassword');
+$router->post('/profile/photo/supprimer', 'AuthController@deletePhoto');
 
 // ─── Paramètres — centre de configuration métier ERP (T026) ──────────────────
 $router->get('/parametres', 'SettingsController@index');
@@ -68,11 +70,17 @@ $router->get('/parametres/sauvegarde',  'SettingsController@showSauvegarde');
 $router->post('/parametres/sauvegarde', 'SettingsController@updateSauvegarde');
 
 $router->get('/parametres/avance',  'SettingsController@showAvance');
+// Journal d'audit de l'établissement : lecture seule, permission audit.view, établissement = contexte tenant validé (jamais un paramètre de requête)
+$router->get('/parametres/audit',      'AuditController@index');
+$router->get('/parametres/audit/{id}', 'AuditController@show');
+
 $router->post('/parametres/avance', 'SettingsController@updateAvance');
 
 // ─── Portail Super-Admin SaaS (Phase 14.10) — indépendant des établissements ──
 $router->get('/platform/login',    'PlatformAuthController@showLogin');
 $router->post('/platform/login',   'PlatformAuthController@login');
+$router->get('/platform/login/2fa',  'PlatformAuthController@showTwoFactor');
+$router->post('/platform/login/2fa', 'PlatformAuthController@verifyTwoFactor');
 $router->post('/platform/logout',  'PlatformAuthController@logout');
 
 $router->get('/platform/dashboard',          'PlatformDashboardController@index');
@@ -89,6 +97,17 @@ $router->post('/platform/etablissements/{id}/archiver',      'PlatformEtablissem
 $router->post('/platform/etablissements/{id}/restaurer',     'PlatformEtablissementController@restore');
 $router->post('/platform/etablissements/{id}/supprimer',     'PlatformEtablissementController@destroy');
 $router->post('/platform/etablissements/{id}/plan',          'PlatformEtablissementController@assignPlan');
+$router->post('/platform/etablissements/{id}/abonnement/souscrire',      'PlatformSubscriptionController@souscrire');
+$router->post('/platform/etablissements/{id}/abonnement/renouveler',     'PlatformSubscriptionController@renouveler');
+$router->post('/platform/etablissements/{id}/abonnement/annuler',        'PlatformSubscriptionController@annuler');
+$router->post('/platform/etablissements/{id}/abonnement/prolonger-essai','PlatformSubscriptionController@prolongerEssai');
+$router->post('/platform/etablissements/{id}/paiements',                 'PlatformPaymentController@store');
+$router->get('/platform/paiements/{id}',                                 'PlatformPaymentController@show');
+$router->post('/platform/paiements/{id}/annuler',                        'PlatformPaymentController@annuler');
+$router->get('/platform/revenus',                                        'PlatformRevenueController@index');
+$router->get('/platform/revenus/export',                                 'PlatformRevenueController@export');
+$router->get('/platform/parametres',                                       'PlatformSettingsController@index');
+$router->post('/platform/parametres',                                      'PlatformSettingsController@update');
 
 // ─── Administration de la plateforme — infrastructure par établissement (T026) ──
 // Domaines personnalisés, Stockage & Quotas, Monitoring & Cache : retirés du
@@ -108,7 +127,9 @@ $router->get('/platform/etablissements/{id}/monitoring/api',          'PlatformM
 $router->post('/platform/etablissements/{id}/monitoring/vider-cache', 'PlatformMonitoringController@flushCache');
 
 $router->get('/platform/plans',            'PlatformPlanController@index');
+$router->get('/platform/plans/create',     'PlatformPlanController@create');
 $router->post('/platform/plans',           'PlatformPlanController@store');
+$router->get('/platform/plans/{id}/modifier', 'PlatformPlanController@edit');
 $router->post('/platform/plans/{id}',      'PlatformPlanController@update');
 $router->post('/platform/plans/{id}/toggle', 'PlatformPlanController@toggle');
 
@@ -122,6 +143,17 @@ $router->get('/platform/backups/{id}/telecharger',     'PlatformBackupController
 $router->post('/platform/backups/{id}/verifier',       'PlatformBackupController@verifyIntegrity');
 $router->post('/platform/backups/{id}/restaurer-verif','PlatformBackupController@restoreVerify');
 $router->post('/platform/backups/{id}/restaurer-tenant','PlatformBackupController@restoreTenant');
+
+// Compte de l'opérateur connecté (changement de mot de passe) et journal d'audit global (lecture seule ; export réservé au super_admin)
+$router->get('/platform/compte/mot-de-passe',  'PlatformAccountController@showPassword');
+$router->post('/platform/compte/mot-de-passe', 'PlatformAccountController@updatePassword');
+$router->get('/platform/compte/2fa',           'PlatformTwoFactorController@show');
+$router->post('/platform/compte/2fa/activer',   'PlatformTwoFactorController@activer');
+$router->post('/platform/compte/2fa/codes',     'PlatformTwoFactorController@regenerer');
+$router->post('/platform/compte/2fa/desactiver','PlatformTwoFactorController@desactiver');
+$router->get('/platform/audit',                'PlatformAuditController@index');
+$router->get('/platform/audit/export',         'PlatformAuditController@export');
+$router->get('/platform/audit/{id}',           'PlatformAuditController@show');
 
 // ─── Élèves (routes statiques AVANT les routes paramétrées) ──────────────────
 $router->get('/eleves',              'EleveController@index');
@@ -206,25 +238,36 @@ $router->get('/v2/academique/bulletins/verify/{token}',                 'Academi
 $router->get ('/v2/academique/bulletins/{eleveId}/{periodeId}/appreciation-directeur', 'Academique\Controllers\BulletinController@appreciationForm');
 $router->post('/v2/academique/bulletins/{eleveId}/{periodeId}/appreciation-directeur', 'Academique\Controllers\BulletinController@updateAppreciation');
 
+// Publication / archivage d'un bulletin (rend le bulletin officiel : QR de vérification valide).
+// POST uniquement ; CSRF + politique (academique.bulletin.publish|admin) + interrupteur BULLETIN_PUBLICATION_ENABLED
+// (fermé par défaut) + statut + jeton officiel — voir BulletinController::changerStatut().
+$router->post('/v2/academique/bulletins/{eleveId}/{periodeId}/publier',  'Academique\Controllers\BulletinController@publier');
+$router->post('/v2/academique/bulletins/classe/{classeId}/{periodeId}/publier-tout', 'Academique\Controllers\BulletinController@publierClasse');
+$router->post('/v2/academique/bulletins/{eleveId}/{periodeId}/archiver', 'Academique\Controllers\BulletinController@archiver');
+// Régénération EXPLICITE d'un brouillon en vue de sa publication (Conduite complète exigée) : ne publie jamais.
+$router->post('/v2/academique/bulletins/{eleveId}/{periodeId}/regenerer', 'Academique\Controllers\BulletinController@regenerer');
+
 // ─── Appréciations par matière (moteur Académique V2) ──────────────────────────
 $router->get('/v2/academique/appreciations',                                        'Academique\Controllers\AppreciationController@index');
 $router->get('/v2/academique/classes/{classeId}/matieres/{matiereId}/appreciations', 'Academique\Controllers\AppreciationController@saisie');
 $router->post('/v2/academique/classes/{classeId}/matieres/{matiereId}/appreciations','Academique\Controllers\AppreciationController@store');
 
-// ─── Absences (statiques AVANT paramétrées) ───────────────────────────────────
-$router->get('/absences',                 'AbsenceController@index');
-$router->get('/absences/pointage',        'AbsenceController@pointage');
-$router->post('/absences/pointage',       'AbsenceController@storePointage');
-$router->get('/absences/liste',           'AbsenceController@liste');
-$router->get('/absences/stats',           'AbsenceController@stats');
-$router->get('/absences/alertes',         'AbsenceController@alertes');
-$router->get('/absences/create',          'AbsenceController@create');
-$router->post('/absences/store',          'AbsenceController@store');
-// Routes paramétrées absences
-$router->get('/absences/{id}',            'AbsenceController@show');
-$router->post('/absences/{id}/delete',    'AbsenceController@delete');
-$router->post('/absences/{id}/justifier', 'AbsenceController@storeJustification');
-$router->post('/absences/{id}/valider',   'AbsenceController@validerJustification');
+// ─── Absences V1 — décommissionnées (20/08/2026) ──────────────────────────────
+// App\Controllers\AbsenceController (V1, table `absences`) coexistait avec le
+// module Vie Scolaire V2 (table `vs_absences`), sans lien entre les deux —
+// tout le personnel saisissait dans l'une pendant que l'API publique
+// /api/v1/absences lisait/écrivait exclusivement dans l'autre. Les données
+// V1 ont été migrées vers V2 (migration T037) ; menus, tableau de bord,
+// rapports et espaces parent/élève pointent désormais tous vers
+// /v2/vie-scolaire/absences/*, qui dispose depuis d'un écran de pointage
+// groupé équivalent (AbsenceController@pointage, ex-V1 uniquement).
+// Le contrôleur/vues V1 restent dans le dépôt (non routés) ; la table
+// `absences` reste en base comme trace d'audit, non lue par le code.
+//
+// Non repris à l'identique : l'écran V1 `/absences/alertes` (seuil
+// d'absentéisme tous classes confondues) n'a pas d'équivalent direct côté V2
+// — le plus proche est /v2/vie-scolaire/absences/statistiques (classe par
+// classe). À construire si besoin confirmé.
 
 // Comptabilité / Paiements / Dépenses V1 : décommissionnés — toute la Finance
 // (facturation, encaissements, caisse, comptabilité, rapports, décaissements,
@@ -268,31 +311,21 @@ $router->get('/annonces/{id}/edit',    'AnnonceController@edit');
 $router->post('/annonces/{id}',        'AnnonceController@update');
 $router->post('/annonces/{id}/delete', 'AnnonceController@delete');
 
-// ─── Emploi du temps (statiques AVANT paramétrées) ───────────────────────────
-$router->get('/emplois-du-temps',                 'EmploiDuTempsController@index');
-$router->get('/emplois-du-temps/mensuel',         'EmploiDuTempsController@mensuel');
-$router->get('/emplois-du-temps/create',          'EmploiDuTempsController@create');
-$router->post('/emplois-du-temps/store',          'EmploiDuTempsController@store');
-$router->get('/emplois-du-temps/print',           'EmploiDuTempsController@print');
-// Routes paramétrées emploi du temps
-$router->get('/emplois-du-temps/{id}/edit',       'EmploiDuTempsController@edit');
-$router->post('/emplois-du-temps/{id}',           'EmploiDuTempsController@update');
-$router->post('/emplois-du-temps/{id}/delete',    'EmploiDuTempsController@delete');
-
-// ─── Salles (statiques AVANT paramétrées) ─────────────────────────────────────
-$router->get('/salles',              'SalleController@index');
-$router->post('/salles/store',       'SalleController@store');
-// Routes paramétrées salles
-$router->get('/salles/{id}/edit',    'SalleController@edit');
-$router->post('/salles/{id}',        'SalleController@update');
-$router->post('/salles/{id}/delete', 'SalleController@delete');
-
-// ─── Créneaux (statiques AVANT paramétrées) ───────────────────────────────────
-$router->get('/creneaux',              'CreneauController@index');
-$router->post('/creneaux/store',       'CreneauController@store');
-// Routes paramétrées créneaux
-$router->post('/creneaux/{id}',        'CreneauController@update');
-$router->post('/creneaux/{id}/delete', 'CreneauController@delete');
+// ─── Emploi du temps V1 / Salles / Créneaux — décommissionnés (21/08/2026) ────
+// Même constat que les absences (T037, cf. plus haut) : le module V2
+// (App\Modules\VieScolaire\EmploisDuTemps, table `vs_emplois_du_temps` +
+// `vs_edt_*`) restait invisible pendant que le menu Planning pointait vers
+// ces routes V1 (tables `emplois_du_temps`/`salles`/`creneaux`). Aucune
+// grille horaire n'existait encore nulle part (V1 et V2 à 0 ligne) — seules
+// les données de référence (8 salles, 11 créneaux réels) ont été migrées
+// vers `vs_edt_salles`/`vs_edt_plages_horaires` (migration T038). Le module
+// V2 ne disposait pas d'écrans de gestion Salles/Plages horaires : construits
+// à cette occasion (VieScolaire\EmploisDuTemps\Controllers\SalleController /
+// PlageHoraireController). Trois requêtes SQL fatales dans
+// TimetableController (jointure vers une table `roles` inexistante) ont
+// aussi été corrigées à cette occasion — le module V2 n'était pas utilisable
+// avant ce correctif. Contrôleurs/vues V1 conservés dans le dépôt (non
+// routés) ; tables V1 conservées comme trace d'audit.
 
 // ─── Rapports (statiques AVANT paramétrées) ──────────────────────────────────
 $router->get('/rapports',                          'RapportController@index');
@@ -317,7 +350,10 @@ $router->post('/utilisateurs/{id}/toggle-actif', 'UtilisateurController@toggleAc
 // ─── API JSON (pour PWA) ──────────────────────────────────────────────────────
 $router->get('/api/eleves',                      'Api\EleveApiController@index');
 $router->get('/api/eleves/{id}',                 'Api\EleveApiController@show');
-$router->get('/api/emploi-du-temps/conflits',    'EmploiDuTempsController@checkConflicts');
+// /api/emploi-du-temps/conflits (V1) décommissionnée avec l'EDT V1 — le
+// module V2 vérifie les conflits côté serveur à l'enregistrement du créneau
+// (TimetableRepository::checkConflit{Enseignant,Salle,Classe}), sans appel
+// AJAX dédié.
 $router->get('/api/notifications/unread-count', 'Api\NotificationApiController@unreadCount');
 $router->get('/api/notifications/recent',       'Api\NotificationApiController@recent');
 $router->get('/api/notifications/latest',       'Api\NotificationApiController@latest');

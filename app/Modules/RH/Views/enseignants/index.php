@@ -37,18 +37,15 @@ $statutLabels = [
     </div>
     <div class="flex items-center gap-2 flex-wrap">
         <?php if ($canExport): ?>
-        <a href="<?= BASE_URL ?>/v2/rh/enseignants/export?<?= hEns(http_build_query($_GET)) ?>"
-           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+        <a href="<?= BASE_URL ?>/v2/rh/enseignants/export?<?= hEns(http_build_query($_GET)) ?>" class="btn btn-outline">
             <i data-lucide="download" class="w-4 h-4"></i>Export CSV
         </a>
         <?php endif; ?>
-        <a href="<?= BASE_URL ?>/v2/rh/enseignants/statistiques"
-           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+        <a href="<?= BASE_URL ?>/v2/rh/enseignants/statistiques" class="btn btn-outline">
             <i data-lucide="bar-chart-2" class="w-4 h-4"></i>Statistiques
         </a>
         <?php if ($canCreate): ?>
-        <a href="<?= BASE_URL ?>/v2/rh/enseignants/create"
-           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition-colors">
+        <a href="<?= BASE_URL ?>/v2/rh/enseignants/create" class="btn btn-primary">
             <i data-lucide="user-plus" class="w-4 h-4"></i>Nouveau profil
         </a>
         <?php endif; ?>
@@ -114,12 +111,15 @@ $statutLabels = [
 <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-4 mb-6">
     <form method="GET" class="flex flex-wrap gap-3 items-end">
         <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">Recherche</label>
-            <input type="text" name="q" value="<?= hEns($filters->q) ?>" placeholder="Nom, prénom, matricule, spécialité…"
-                   class="rounded-lg border border-slate-200 text-sm px-3 py-1.5 w-52 focus:ring-2 focus:ring-violet-300 focus:outline-none">
+            <label class="form-label text-xs mb-1">Recherche</label>
+            <div class="relative flex items-stretch">
+                <span class="inline-flex items-center rounded-l-lg border border-r-0 border-slate-300 bg-slate-50 px-3 text-sm text-slate-500"><i data-lucide="search" class="w-4 h-4"></i></span>
+                <input type="text" name="q" value="<?= hEns($filters->q) ?>" placeholder="Nom, prénom, matricule, spécialité…"
+                       class="form-input pl-9 text-sm w-52">
+            </div>
         </div>
         <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">Statut pédagogique</label>
+            <label class="form-label text-xs mb-1">Statut pédagogique</label>
             <select name="statut" class="form-select">
                 <option value="">Tous</option>
                 <?php foreach ($statutLabels as $val => $lbl): ?>
@@ -128,7 +128,7 @@ $statutLabels = [
             </select>
         </div>
         <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">Matière</label>
+            <label class="form-label text-xs mb-1">Matière</label>
             <select name="matiere_id" class="form-select">
                 <option value="">Toutes les matières</option>
                 <?php foreach ($matieres as $m): ?>
@@ -143,7 +143,7 @@ $statutLabels = [
                 Inclure archivés
             </label>
         </div>
-        <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition-colors">
+        <button type="submit" class="btn btn-primary">
             <i data-lucide="search" class="w-4 h-4"></i>Filtrer
         </button>
         <a href="<?= BASE_URL ?>/v2/rh/enseignants" class="text-sm text-slate-500 hover:text-slate-700 self-end py-1.5">Réinitialiser</a>
@@ -163,8 +163,7 @@ $statutLabels = [
         <i data-lucide="graduation-cap" class="w-10 h-10 mx-auto mb-3 opacity-40"></i>
         <p class="text-sm">Aucun profil enseignant trouvé.</p>
         <?php if ($canCreate): ?>
-        <a href="<?= BASE_URL ?>/v2/rh/enseignants/create"
-           class="inline-flex items-center gap-1.5 mt-4 px-4 py-2 rounded-lg bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 transition-colors">
+        <a href="<?= BASE_URL ?>/v2/rh/enseignants/create" class="btn btn-primary mt-4">
             <i data-lucide="user-plus" class="w-4 h-4"></i>Créer le premier profil
         </a>
         <?php endif; ?>

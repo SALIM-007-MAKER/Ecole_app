@@ -3,6 +3,7 @@
 namespace App\Modules\Academique\Repositories;
 
 use Core\Database;
+use Core\Tenant\TenantScope;
 
 /**
  * Charge les données brutes (notes × évaluations × élèves) sans aucun calcul.
@@ -37,6 +38,7 @@ class RankingRepository
                 m.id           AS matiere_id,
                 m.nom          AS matiere_nom,
                 m.coefficient  AS coeff_matiere,
+                m.est_conduite AS matiere_est_conduite,
                 ev.id          AS evaluation_id,
                 ev.note_max,
                 ev.coefficient AS coeff_eval,
@@ -47,7 +49,7 @@ class RankingRepository
             FROM eleves e
             JOIN evaluations ev
                 ON  ev.classe_id           = e.classe_id
-                AND ev.periode_scolaire_id = :periode_id
+                AND ev.periode_scolaire_id = ?
                 AND ev.statut IN ('publiee', 'verrouillee')
             JOIN matieres m
                 ON  m.id = ev.matiere_id
@@ -56,12 +58,12 @@ class RankingRepository
                 AND n.evaluation_id = ev.id
             LEFT JOIN types_evaluations te
                 ON  te.id = ev.type_evaluation_id
-            WHERE e.classe_id = :classe_id
+            WHERE e.classe_id = ?" . TenantScope::classe('e.classe_id')[0] . "
             ORDER BY e.nom, e.prenom, m.id, ev.id
         ";
         try {
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([':classe_id' => $classeId, ':periode_id' => $periodeId]);
+            $stmt->execute([$periodeId, $classeId, ...TenantScope::classe('e.classe_id')[1]]);
             return $stmt->fetchAll(\PDO::FETCH_OBJ);
         } catch (\PDOException $e) {
             return [];
@@ -85,6 +87,7 @@ class RankingRepository
                 m.id           AS matiere_id,
                 m.nom          AS matiere_nom,
                 m.coefficient  AS coeff_matiere,
+                m.est_conduite AS matiere_est_conduite,
                 ev.id          AS evaluation_id,
                 ev.note_max,
                 ev.coefficient AS coeff_eval,
@@ -95,7 +98,7 @@ class RankingRepository
             FROM eleves e
             JOIN classes c
                 ON  c.id     = e.classe_id
-                AND c.niveau = :niveau
+                AND c.niveau = :niveau" . (TenantScope::id() === null ? '' : ' AND c.etablissement_id = :tid') . "
             JOIN evaluations ev
                 ON  ev.classe_id           = e.classe_id
                 AND ev.periode_scolaire_id = :periode_id
@@ -111,7 +114,9 @@ class RankingRepository
         ";
         try {
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([':niveau' => $niveau, ':periode_id' => $periodeId]);
+            $params = [':niveau' => $niveau, ':periode_id' => $periodeId];
+            if (TenantScope::id() !== null) { $params[':tid'] = TenantScope::id(); }
+            $stmt->execute($params);
             return $stmt->fetchAll(\PDO::FETCH_OBJ);
         } catch (\PDOException $e) {
             return [];
@@ -124,7 +129,7 @@ class RankingRepository
      */
     public function notesParMatiereEtPeriode(int $matiereId, int $periodeId, ?int $classeId = null): array
     {
-        $classFilter = $classeId !== null ? 'AND e.classe_id = :classe_id' : '';
+        $classFilter = ($classeId !== null ? 'AND e.classe_id = :classe_id' : '') . (TenantScope::id() === null ? '' : ' AND c.etablissement_id = :tid');
         $sql = "
             SELECT
                 e.id           AS eleve_id,
@@ -136,6 +141,7 @@ class RankingRepository
                 m.id           AS matiere_id,
                 m.nom          AS matiere_nom,
                 m.coefficient  AS coeff_matiere,
+                m.est_conduite AS matiere_est_conduite,
                 ev.id          AS evaluation_id,
                 ev.note_max,
                 ev.coefficient AS coeff_eval,
@@ -162,6 +168,7 @@ class RankingRepository
         try {
             $params = [':matiere_id' => $matiereId, ':periode_id' => $periodeId];
             if ($classeId !== null) $params[':classe_id'] = $classeId;
+            if (TenantScope::id() !== null) { $params[':tid'] = TenantScope::id(); }
             $stmt = $this->db->prepare($sql);
             $stmt->execute($params);
             return $stmt->fetchAll(\PDO::FETCH_OBJ);
@@ -189,6 +196,7 @@ class RankingRepository
                 m.id           AS matiere_id,
                 m.nom          AS matiere_nom,
                 m.coefficient  AS coeff_matiere,
+                m.est_conduite AS matiere_est_conduite,
                 ev.id          AS evaluation_id,
                 ev.periode_scolaire_id AS periode_id,
                 ev.note_max,
@@ -208,12 +216,12 @@ class RankingRepository
                 AND n.evaluation_id = ev.id
             LEFT JOIN types_evaluations te
                 ON  te.id = ev.type_evaluation_id
-            WHERE e.classe_id = ?
+            WHERE e.classe_id = ?" . TenantScope::classe('e.classe_id')[0] . "
             ORDER BY e.nom, e.prenom, ev.periode_scolaire_id, m.id, ev.id
         ";
         try {
             $stmt = $this->db->prepare($sql);
-            $stmt->execute(array_merge(array_values($periodeIds), [$classeId]));
+            $stmt->execute(array_merge(array_values($periodeIds), [$classeId], TenantScope::classe('e.classe_id')[1]));
             return $stmt->fetchAll(\PDO::FETCH_OBJ);
         } catch (\PDOException $e) {
             return [];

@@ -8,7 +8,12 @@ use App\Services\MenuService;
 
 $currentUri = $currentUri ?? ($_SERVER['REQUEST_URI'] ?? '');
 $role = $currentUser['role'] ?? '';
-$activeGroupId = MenuService::resolveActiveGroupId($menus ?? [], $currentUri);
+$activeGroupId  = MenuService::resolveActiveGroupId($menus ?? [], $currentUri);
+// Calculé une seule fois pour toute la sidebar : LE lien unique à
+// surligner, tous les items le comparent par égalité stricte plutôt que
+// de se juger actifs chacun de leur côté (cf. commentaire de
+// MenuService::getMenuItemClass()).
+$activeItemUrl  = MenuService::resolveActiveItemUrl($menus ?? [], $currentUri);
 
 if (empty($menus)): ?>
     <nav class="sidebar-nav" role="navigation" aria-label="Navigation principale">
@@ -22,8 +27,7 @@ if (empty($menus)): ?>
 <nav class="sidebar-nav" role="navigation" aria-label="Navigation principale">
     <?php foreach ($menus as $item): ?>
         <?php
-        $itemActive = MenuService::isMenuActive($item['url'] ?? '', $currentUri);
-        $itemClass = MenuService::getMenuItemClass($item['url'] ?? '', $currentUri, false);
+        $itemClass = MenuService::getMenuItemClass($item['url'] ?? '', $activeItemUrl, false);
         $isGroup = !empty($item['children']) && is_array($item['children']);
         ?>
 
@@ -43,10 +47,10 @@ if (empty($menus)): ?>
 
             <div class="nav-group-content"
                  id="sg-<?= htmlspecialchars($item['id'] ?? '', ENT_QUOTES) ?>"
-                 <?= $groupActive ? 'style="max-height:500px"' : '' ?>>
+                 <?= $groupActive ? 'style="max-height:none"' : '' ?>>
                 <?php foreach ($item['children'] as $child): ?>
                     <?php
-                    $childClass = MenuService::getMenuItemClass($child['url'] ?? '', $currentUri, true);
+                    $childClass = MenuService::getMenuItemClass($child['url'] ?? '', $activeItemUrl, true);
                     $childUrl = BASE_URL . ($child['url'] ?? '/');
                     ?>
                     <a href="<?= $childUrl ?>"
@@ -82,3 +86,25 @@ if (empty($menus)): ?>
 </nav>
 
 <?php endif; ?>
+
+<script>
+/* Défilement de la sidebar conservé d'une page à l'autre (restauré avant le premier rendu) */
+(function () {
+    var nav = document.querySelector('#sidebar .sidebar-nav');
+    if (!nav) return;
+    var KEY = 'ecole_sidebar_scroll';
+    var saved = null;
+    try { saved = sessionStorage.getItem(KEY); } catch (e) {}
+    if (saved !== null && !isNaN(parseInt(saved, 10))) {
+        nav.scrollTop = parseInt(saved, 10);
+    }
+    var actif = nav.querySelector('.nav-active');
+    if (actif && actif.offsetParent !== null) {
+        var r = actif.getBoundingClientRect(), n = nav.getBoundingClientRect();
+        if (r.top < n.top || r.bottom > n.bottom) { nav.scrollTop += (r.top - n.top) - (n.height / 2); }
+    }
+    var save = function () { try { sessionStorage.setItem(KEY, String(nav.scrollTop)); } catch (e) {} };
+    nav.addEventListener('click', save, true);
+    window.addEventListener('pagehide', save);
+})();
+</script>

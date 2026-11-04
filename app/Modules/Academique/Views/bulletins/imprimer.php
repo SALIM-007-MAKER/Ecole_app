@@ -42,23 +42,38 @@
  * @var ?float  $moyenneAutre
  * @var array   $absences            {justifiees, nonJustifiees}
  * @var ?string $appreciationDirecteur
- * @var string  $qrSvg               SVG autonome (Core\QrCode\QrEncoder)
- * @var string  $verificationToken
+ * @var string  $qrSvg               SVG autonome du QR OFFICIEL ; chaîne vide pour tout bulletin non publié
+ * @var bool    $estOfficiel         true seulement pour un bulletin publié/archivé à jeton valide
+ * @var bool    $peutPublier         bouton « Publier » affiché (droit + interrupteur de publication ouverts)
+ * @var string  $csrfToken           jeton CSRF du formulaire de publication
  */
 
-function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8'); }
+// Fonctions d'aide déclarées de façon conditionnelle : la vue peut être rendue plusieurs fois dans un même
+// processus (tests) sans « Cannot redeclare ».
+if (!function_exists('e')) {
+    function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8'); }
+}
 // Reproduit l'écriture manuscrite/tableur du bulletin papier : pas de décimales
 // forcées — 20 s'écrit "20", 12.50 s'écrit "12.5", 186.875 reste "186.875".
-function fmtMoy(?float $v): string {
-    if ($v === null) return '—';
-    $s = rtrim(rtrim(number_format($v, 3, '.', ''), '0'), '.');
-    return $s === '' ? '0' : $s;
+if (!function_exists('fmtMoy')) {
+    function fmtMoy(?float $v): string {
+        if ($v === null) return '—';
+        $s = rtrim(rtrim(number_format($v, 3, '.', ''), '0'), '.');
+        return $s === '' ? '0' : $s;
+    }
 }
-function ordinal(?int $n): string
-{
-    if ($n === null || $n <= 0) return '—';
-    return $n === 1 ? '1er' : $n . 'ème';
+if (!function_exists('ordinal')) {
+    function ordinal(?int $n): string
+    {
+        if ($n === null || $n <= 0) return '—';
+        return $n === 1 ? '1er' : $n . 'ème';
+    }
 }
+$estOfficiel = $estOfficiel ?? false;
+$peutPublier = $peutPublier ?? false;
+$peutRegenerer = $peutRegenerer ?? false;
+$conduiteComplete = $conduiteComplete ?? null;
+$csrfToken   = $csrfToken   ?? '';
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -80,7 +95,15 @@ function ordinal(?int $n): string
  * lors de « Enregistrer au format PDF ». */
 @page { size: A4 portrait; margin: 2mm; }
 html, body { height: 100%; }
-body { font-family: 'Times New Roman', Times, serif; font-size: 10.5pt; line-height: 1.25; color: #000; background: #fff; }
+/* Ligatures désactivées explicitement : bug connu de l'export « Enregistrer
+ * en PDF » de Chrome avec Times New Roman — certaines paires de caractères
+ * (chiffres/ponctuation compris) sont fusionnées en un glyphe de ligature à
+ * l'impression, ce qui corrompt le texte du PDF généré (visible en copiant/
+ * collant : "10.91" devient p. ex. illisible). Sans effet visuel à l'écran. */
+body { font-family: 'Times New Roman', Times, serif; font-size: 10.5pt; line-height: 1.25; color: #000; background: #fff;
+    font-variant-ligatures: none; font-kerning: none;
+    -webkit-font-feature-settings: "liga" 0, "clig" 0, "dlig" 0, "calt" 0, "kern" 0;
+    font-feature-settings: "liga" 0, "clig" 0, "dlig" 0, "calt" 0, "kern" 0; }
 
 @media screen {
     body { background: #ccc; }
@@ -98,6 +121,16 @@ body { font-family: 'Times New Roman', Times, serif; font-size: 10.5pt; line-hei
 .no-print button { font-family: Arial, sans-serif; font-size: 12px; padding: 6px 14px; border-radius: 6px;
     border: 1px solid #fff; cursor: pointer; }
 .no-print .btn-print { background: #fff; color: #1e293b; }
+.no-print .btn-publish { background: #059669; color: #fff; border-color: #059669; }
+.no-print .badge-brouillon { color: #fbbf24; font: bold 12px Arial, sans-serif; align-self: center; }
+
+/* Filigrane des bulletins NON officiels (brouillon) : imprimé sur chaque page, au-dessus du contenu, sans
+ * gêner la lecture ni capter la souris ; les couleurs d'arrière-plan sont forcées à l'impression. */
+.watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-32deg);
+    font: bold 120pt Arial, Helvetica, sans-serif; letter-spacing: 6pt; color: rgba(120, 120, 120, .22);
+    white-space: nowrap; pointer-events: none; user-select: none; z-index: 40;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.watermark small { display: block; text-align: center; font-size: 22pt; letter-spacing: 3pt; }
 .no-print .btn-close { background: transparent; color: #fff; }
 
 /* .page = pleine page imprimable (277mm = 297 - 2x10mm de marge @page).
@@ -136,10 +169,12 @@ table { border-collapse: collapse; width: 100%; }
 
 /* Table des notes */
 .notes-table { margin-bottom: 1.5mm; table-layout: fixed; }
-.notes-table th, .notes-table td { border: 0.75pt solid #000; padding: 0.9mm 1.5mm; font-size: 10.5pt; line-height: 1.15; text-align: center; overflow-wrap: anywhere; }
+.notes-table th, .notes-table td { border: 0.75pt solid #000; padding: 0.6mm 1.5mm; font-size: 10.5pt; line-height: 1.15; text-align: center; overflow-wrap: anywhere; }
 .notes-table th { font-weight: bold; background: transparent; font-size: 9.5pt; }
 .notes-table td.discipline { text-align: left; font-weight: 500; }
 .notes-table td.appreciation { text-align: left; }
+/* Colonne laissée vide à l'impression (saisie manuscrite) : hauteur de ligne minimale pour pouvoir écrire. */
+.notes-table tbody tr:not(.total-row) td { height: 7mm; }
 .notes-table td.moy20 { font-weight: bold; }
 .notes-table tr.total-row td { font-weight: bold; }
 
@@ -160,7 +195,7 @@ table { border-collapse: collapse; width: 100%; }
 .rc-row { display: flex; justify-content: space-between; font-size: 10.5pt; margin: 1.2mm 0; gap: 2mm; }
 .rc-row span:last-child { font-weight: bold; }
 .mentions-list { font-size: 10.5pt; }
-.mentions-list .m-row { display: flex; justify-content: space-between; align-items: center; margin: 1.8mm 1mm; }
+.mentions-list .m-row { display: flex; justify-content: space-between; align-items: center; margin: 1.2mm 1mm; }
 .checkbox { display: inline-block; width: 3mm; height: 3mm; border: 0.75pt solid #000; }
 
 /* Filières — ligne unique, hauteur généreuse comme sur le modèle */
@@ -170,24 +205,50 @@ table { border-collapse: collapse; width: 100%; }
 .filiere-table td:nth-child(3) { width: 30%; }
 
 /* Bas de page : absences / visa — dernier bloc de la page. Hauteur minimale
- * fixe (60mm), généreuse comme sur le modèle papier, pour occuper la partie
- * basse de la page jusqu'au cadre extérieur sans dépendre d'un étirement
- * dynamique (voir note plus haut sur .page). */
+ * fixe, généreuse comme sur le modèle papier, pour occuper la partie basse
+ * de la page jusqu'au cadre extérieur sans dépendre d'un étirement dynamique
+ * (voir note plus haut sur .page). Valeurs réduites (52/39 → 44/28mm sur
+ * visa-zone/expulsions-zone) pour que la page tienne sur une seule feuille A4
+ * — c'était le bloc le plus généreux, donc le plus sûr à resserrer sans
+ * perdre de contenu réel (uniquement de l'espace vierge pour signature/cachet
+ * manuscrits et notes d'expulsions). */
 .bottom-table td { border: 0.75pt solid #000; vertical-align: top; padding: 0; height: 46mm; }
 .bottom-table td:first-child { border-right: 0.75pt solid #000; }
 .bottom-table .col-abs { width: 38%; }
 .bottom-table .col-visa { width: 62%; }
 .abs-row { font-size: 10.5pt; margin: 3mm 4mm; }
-.expulsions-zone { border-top: 0.75pt solid #000; margin: 6mm 4mm 0; min-height: 39mm; }
+.expulsions-zone { border-top: 0.75pt solid #000; margin: 6mm 4mm 0; min-height: 28mm; }
 .direction-appreciation { font-size: 10.5pt; font-style: italic; padding: 3mm 4mm 0; }
-.visa-zone { position: relative; padding: 3mm 4mm; min-height: 52mm; }
+.visa-zone { position: relative; padding: 3mm 4mm; min-height: 44mm; }
 .qr-block { position: absolute; right: 4mm; bottom: 4mm; text-align: center; }
 .qr-block svg { width: 20mm; height: 20mm; }
 </style>
 </head>
 <body>
 
+<?php if (!$estOfficiel): ?>
+<div class="watermark" aria-hidden="true">BROUILLON<small>DOCUMENT NON OFFICIEL — SANS VALEUR</small></div>
+<?php endif; ?>
+
 <div class="no-print">
+    <?php if (!$estOfficiel): ?><span class="badge-brouillon">BROUILLON — non officiel, sans QR de vérification</span><?php endif; ?>
+    <?php if ($conduiteComplete === false && !$estOfficiel): ?>
+    <span class="badge-brouillon" title="Des notes de Conduite manquent dans la classe : la Conduite est exclue de la moyenne tant qu'elle n'est pas saisie. La publication est bloquée.">Conduite incomplète — publication bloquée</span>
+    <?php endif; ?>
+    <?php if ($peutRegenerer): ?>
+    <form method="post" action="<?= e(BASE_URL) ?>/v2/academique/bulletins/<?= (int)$eleveId ?>/<?= (int)$periodeId ?>/regenerer" style="margin:0"
+          onsubmit="return confirm('Régénérer ce brouillon en vue de la publication ? Il restera en brouillon (non publié).');">
+        <input type="hidden" name="_csrf_token" value="<?= e($csrfToken) ?>">
+        <button type="submit" class="btn-print">↻ Régénérer en vue de la publication</button>
+    </form>
+    <?php endif; ?>
+    <?php if ($peutPublier): ?>
+    <form method="post" action="<?= e(BASE_URL) ?>/v2/academique/bulletins/<?= (int)$eleveId ?>/<?= (int)$periodeId ?>/publier" style="margin:0"
+          onsubmit="return confirm('Publier ce bulletin ? Il deviendra officiel et recevra un QR de vérification.');">
+        <input type="hidden" name="_csrf_token" value="<?= e($csrfToken) ?>">
+        <button type="submit" class="btn-publish">✔ Publier ce bulletin</button>
+    </form>
+    <?php endif; ?>
     <button class="btn-print" onclick="window.print()">🖨️ Imprimer / Enregistrer en PDF</button>
     <button class="btn-close" onclick="window.close()">✕ Fermer</button>
 </div>

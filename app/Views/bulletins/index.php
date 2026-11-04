@@ -134,7 +134,7 @@
                 <i data-lucide="zap" class="w-4 h-4 text-amber-500"></i>
                 <span class="font-semibold text-slate-700">Liens rapides</span>
             </div>
-            <div class="p-5 p-4 space-y-2">
+            <div class="p-5 space-y-2">
                 <a href="<?= BASE_URL ?>/v2/academique/evaluations" class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors">
                     <div class="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center shrink-0">
                         <i data-lucide="book-open-check" class="w-4 h-4 text-violet-600"></i>

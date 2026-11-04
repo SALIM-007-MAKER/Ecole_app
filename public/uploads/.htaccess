@@ -1,0 +1,11 @@
+# Fichiers téléversés : aucun script exécutable, SVG servi sans pouvoir exécuter de code.
+Options -Indexes -ExecCGI
+<FilesMatch "\.(php[0-9]?|phtml|phar|pl|py|cgi|sh)$">
+    Require all denied
+</FilesMatch>
+<IfModule mod_headers.c>
+    <FilesMatch "\.svg$">
+        Header set Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+    </FilesMatch>
+    Header set X-Content-Type-Options "nosniff"
+</IfModule>

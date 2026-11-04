@@ -48,6 +48,7 @@ class PlatformDashboardController extends PlatformController
         $this->verifyCsrf();
 
         $this->stats->recordSnapshot('manual');
+        $this->audit('analytics.snapshot_recorded', ['entity_type' => 'platform_analytics_snapshot']);
         \Core\Session::flash('success', 'Instantané enregistré.');
         $this->redirect(BASE_URL . '/platform/dashboard');
     }

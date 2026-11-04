@@ -11,10 +11,14 @@
 
 ## 2. Récupération du code
 
-Ce projet n'est actuellement **pas versionné dans un dépôt Git**
-(`RELEASE_CANDIDATE_RC1_REPORT.md` §6, DT5). Avant toute mise en production,
-initialisez un dépôt (`git init`) et ajoutez un `.gitignore` couvrant au minimum
-`.env`, `storage/cache/`, `storage/tenants/` — voir §6 ci-dessous.
+Le projet est versionné sur GitHub (`https://github.com/SALIM-007-MAKER/Ecole_app`) :
+
+```bash
+git clone https://github.com/SALIM-007-MAKER/Ecole_app.git ecole_app
+```
+
+Le `.gitignore` exclut déjà `.env`, `storage/cache/`, `storage/tenants/`,
+`database/backups/`.
 
 ## 3. Configuration de l'environnement
 
@@ -39,13 +43,45 @@ DB_PASSWORD=...
 
 ## 4. Base de données
 
-```bash
-# Créer la base (vide, utf8mb4)
-mysql -u root -p -e "CREATE DATABASE ecole_app CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+> **Vérifié le 21/08/2026 en déployant réellement l'appli dans un conteneur
+> vide** : `php database/migrate.php` seul **ne suffit pas** sur une base
+> neuve. Les fichiers sous `database/migrations/` ne sont que les évolutions
+> *incrémentales* — ils supposent l'existence préalable des tables de base
+> (`users`, `eleves`, `classes`…) et de plusieurs dizaines de tables créées
+> par d'anciens scripts SQL (`database/ecole_app.sql`,
+> `database/*_migration.sql`, `migration_*.sql` à la racine) dont l'ordre
+> d'application exact n'est plus documenté. Lancer seulement `migrate.php`
+> sur une base vide échoue sur ~36 migrations (tables référencées
+> introuvables).
 
-# Appliquer toutes les migrations
+**Chemin le plus simple — schéma de référence versionné** : `database/schema/ecole_app_schema_v2.0.0_T062.sql`
+(structure complète + rôles/permissions RBAC + journal des migrations, sans donnée personnelle ni compte), à importer dans une base
+**vide** ; `php database/migrate.php` applique ensuite uniquement les migrations postérieures (T051 à T058 à la date de rédaction).
+Le premier établissement et le premier compte administrateur doivent encore être créés (voir §7) : le fichier n'en contient pas.
+
+**Autre chemin, vérifié de bout en bout (conteneur Docker vide → appli
+fonctionnelle)** : partir d'un export complet d'un environnement déjà à jour
+plutôt que de rejouer l'historique SQL.
+
+```bash
+# Sur un environnement de référence déjà à jour (ex. votre poste de dev) :
+mysqldump -u root -p --no-tablespaces --routines --triggers \
+    --single-transaction ecole_app > snapshot.sql
+
+# Sur la base cible (vide) :
+mysql -u root -p -e "CREATE DATABASE ecole_app CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql -u root -p ecole_app < snapshot.sql
+
+# Puis, seulement pour les migrations plus récentes que le snapshot :
 php database/migrate.php
 ```
+
+`migrate.php` est idempotent (table `migrations_log`) : le relancer après
+l'import d'un snapshot ne réapplique que ce qui manque réellement.
+
+Un snapshot de référence est conservé hors dépôt Git dans
+`database/backups/` (voir `.gitignore`) — demandez-le si vous partez d'une
+base vraiment vide plutôt que de reconstituer l'historique SQL.
 
 Le runner est **idempotent** : relancer la commande ne réapplique pas les
 migrations déjà exécutées (table `migrations_log`). Voir
@@ -77,15 +113,28 @@ Document root → `public/`. `mod_rewrite` activé, `.htaccess` déjà présent 
 
 ## 7. Compte administrateur initial
 
-Un compte `admin@ecole.dz` est créé par les migrations de base (environnement de
-référence) — **changez immédiatement son mot de passe** en production, ou créez
-votre propre compte administrateur puis désactivez celui-ci.
+**Installation neuve** (base importée depuis `database/schema/ecole_app_schema_*.sql`) : créez le premier établissement et son
+administrateur avec le script fourni — aucun compte par défaut n'existe :
+
+```bash
+php database/installer.php --slug=mon-ecole --nom="Mon École" --admin-email=admin@mon-ecole.tld --admin-nom="Nom Prénom"
+# Mot de passe : variable INSTALL_ADMIN_PASSWORD (12 caractères min.), sinon généré et affiché une seule fois.
+```
+
+Le script refuse de s'exécuter si un établissement existe déjà et n'écrit le mot de passe nulle part.
+
+**Opérateur de la plateforme (Super-Admin SaaS)** — identité indépendante des comptes d'établissement, aucun compte par défaut : créez le
+premier opérateur avec `php database/create-operator.php --email=… --nom="…"` (mot de passe par `OPERATOR_PASSWORD`, sinon généré et affiché
+une fois). Procédure de récupération d'accès, journal d'audit global : `docs/deploiement/OPERATEUR_PLATEFORME.md`.
+
+**Base issue de l'environnement de référence** (snapshot complet) : un compte `admin@ecole.dz` et des comptes de démonstration y existent —
+**supprimez-les ou changez leurs mots de passe avant toute mise en ligne**, après avoir créé votre propre administrateur.
 
 ## 8. Vérification de l'installation
 
 ```bash
-curl https://votre-domaine.tld/api/v1/health
-# Attendu : {"success":true,"data":{"status":"healthy",...}}
+curl https://votre-domaine.tld/health
+# Attendu : {"status":"healthy","database":"ok"} (HTTP 200 ; 503 si la base est injoignable)
 ```
 
 Puis connectez-vous via `/login` et vérifiez le tableau de bord.

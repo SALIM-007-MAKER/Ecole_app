@@ -52,14 +52,21 @@ class Router
 
     private function pathToRegex(string $path): string
     {
-        // Convertir {param} en groupe de capture nommé
-        $pattern = preg_replace('/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/', '(?P<$1>[^/]+)', $path);
+        // Convertir {param} en groupe de capture nommé. Les identifiants numériques ({id}, {eleveId}, {classeId}…) n'acceptent que des
+        // chiffres : un segment textuel (« generer », « create ») n'est jamais pris pour un identifiant (404 au lieu d'une redirection ou d'une erreur).
+        $pattern = preg_replace_callback('/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/', static function (array $m): string {
+            $numerique = $m[1] === 'id' || preg_match('/[a-z]Id$/', $m[1]) === 1;
+            return '(?P<' . $m[1] . '>' . ($numerique ? '[0-9]+' : '[^/]+') . ')';
+        }, $path);
         return '#^' . $pattern . '$#u';
     }
 
     public function dispatch(Request $request): void
     {
         $method = $request->getMethod();
+        if ($method === 'HEAD') {
+            $method = 'GET';   // HEAD = GET sans corps (supervision, sondes) : même route ; le serveur web supprime le corps
+        }
         $uri    = $this->stripBasePath($request->getUri());
 
         // Tolérer un slash final (ex: /retards/create/) — évite un 404 sur une simple faute de frappe.
@@ -124,6 +131,12 @@ class Router
 
         if (!method_exists($controller, $method)) {
             Logger::error("Méthode introuvable : {$class}::{$method}");
+            $this->handleNotFound();
+            return;
+        }
+
+        // Lot 3 : toute ressource désignée par identifiant (route ou formulaire) doit appartenir à l'établissement courant
+        if (!\Core\Tenant\ResourceGuard::autoriser($class, $method, $params, array_merge($_GET, $_POST))) {
             $this->handleNotFound();
             return;
         }

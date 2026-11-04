@@ -199,7 +199,7 @@ $flash = \Core\Session::getFlash();
             <form method="POST" action="<?= BASE_URL ?>/v2/academique/periodes/<?= $periode->id ?>/activer">
                 <input type="hidden" name="_csrf_token" value="<?= \Core\Session::getCsrfToken() ?>">
                 <button type="submit"
-                        onclick="return confirm('Activer « <?= htmlspecialchars($periode->nom, ENT_JS) ?> » ? Les autres périodes de <?= htmlspecialchars($periode->annee_scolaire, ENT_JS) ?> seront désactivées.')"
+                        onclick="return confirm('Activer « <?= htmlspecialchars(substr(json_encode((string)($periode->nom), JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP), 1, -1), ENT_QUOTES) ?> » ? Les autres périodes de <?= htmlspecialchars(substr(json_encode((string)($periode->annee_scolaire), JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP), 1, -1), ENT_QUOTES) ?> seront désactivées.')"
                         class="w-full btn btn-secondary text-sm justify-start gap-2">
                     <i data-lucide="star" class="w-4 h-4 text-violet-500"></i>
                     Rendre active

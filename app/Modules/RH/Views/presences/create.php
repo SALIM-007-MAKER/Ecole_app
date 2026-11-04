@@ -157,12 +157,10 @@ function val(string $k, string $def = ''): string {
 
     <!-- Actions -->
     <div class="flex gap-3">
-      <button type="submit"
-              class="px-6 py-2.5 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors">
+      <button type="submit" class="btn btn-primary">
         Enregistrer le pointage
       </button>
-      <a href="<?= BASE_URL ?>/v2/rh/presences"
-         class="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50 transition-colors">
+      <a href="<?= BASE_URL ?>/v2/rh/presences" class="btn btn-secondary">
         Annuler
       </a>
     </div>

@@ -3,6 +3,7 @@
 namespace App\Modules\Finance\Repositories;
 
 use Core\Database;
+use Core\Tenant\TenantScope;
 use App\Modules\Finance\DTO\CashSessionFiltersDTO;
 
 class CashRegisterRepository
@@ -19,7 +20,7 @@ class CashRegisterRepository
     // ----------------------------------------------------------------
     public function paginate(CashSessionFiltersDTO $f): array
     {
-        $where  = ['s.deleted_at IS NULL'];
+        $where  = ['s.deleted_at IS NULL', TenantScope::sqlUtilisateur('s.caissier_id')];   // sessions des caissiers de l'établissement
         $params = [];
 
         if ($f->q) {
@@ -97,7 +98,7 @@ class CashRegisterRepository
              JOIN `users` u   ON u.id  = s.caissier_id
              JOIN `users` uo  ON uo.id = s.ouvert_par
              LEFT JOIN `users` uf ON uf.id = s.ferme_par
-             WHERE s.id = ? AND s.deleted_at IS NULL"
+             WHERE s.id = ? AND s.deleted_at IS NULL AND " . TenantScope::sqlUtilisateur('s.caissier_id')
         );
         $stmt->execute([$id]);
         return $stmt->fetch(\PDO::FETCH_OBJ) ?: null;
@@ -120,7 +121,7 @@ class CashRegisterRepository
             "SELECT s.*, CONCAT(u.prenom,' ',u.nom) AS caissier_nom
              FROM `finance_sessions_caisse` s
              JOIN `users` u ON u.id = s.caissier_id
-             WHERE s.statut IN ('ouverte','en_activite') AND s.deleted_at IS NULL
+             WHERE s.statut IN ('ouverte','en_activite') AND s.deleted_at IS NULL AND " . TenantScope::sqlUtilisateur('s.caissier_id') . "
              ORDER BY s.date_ouverture DESC"
         );
         return $stmt->fetchAll(\PDO::FETCH_OBJ);
@@ -168,6 +169,7 @@ class CashRegisterRepository
     // ----------------------------------------------------------------
     public function genererNumero(string $type, int $annee): string
     {
+        $type = TenantScope::cleSequence($type);   // compteur (et préfixe du numéro) propre à l'établissement
         $stmt = $this->pdo->prepare(
             "INSERT INTO `finance_sequences` (`type`, `annee`, `valeur`) VALUES (?, ?, 1)
              ON DUPLICATE KEY UPDATE `valeur` = `valeur` + 1"
@@ -209,7 +211,7 @@ class CashRegisterRepository
     // ----------------------------------------------------------------
     public function statsGlobal(?string $dateDebut = null, ?string $dateFin = null): object
     {
-        $where  = ['s.deleted_at IS NULL'];
+        $where  = ['s.deleted_at IS NULL', TenantScope::sqlUtilisateur('s.caissier_id')];
         $params = [];
         if ($dateDebut) { $where[] = 's.date_ouverture >= ?'; $params[] = $dateDebut; }
         if ($dateFin)   { $where[] = 's.date_ouverture <= ?'; $params[] = $dateFin; }
@@ -235,6 +237,7 @@ class CashRegisterRepository
             "SELECT DISTINCT u.id, CONCAT(u.prenom,' ',u.nom) AS nom
              FROM `users` u
              JOIN `finance_sessions_caisse` s ON s.caissier_id = u.id AND s.deleted_at IS NULL
+             WHERE " . TenantScope::sqlUtilisateur('u.id') . "
              ORDER BY u.nom"
         );
         return $stmt->fetchAll(\PDO::FETCH_OBJ);

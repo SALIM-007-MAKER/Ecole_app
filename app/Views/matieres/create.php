@@ -2,6 +2,8 @@
 $errors      = $errors      ?? [];
 $old         = $old         ?? [];
 $professeurs = $professeurs ?? [];
+// La case « Matière de Conduite » n'est proposée qu'aux profils autorisés à gérer la Conduite
+$peutConduite = in_array('academique.conduite.manage', \Core\Session::getUser()['permissions'] ?? [], true);
 ?>
 
 <!-- Page header -->
@@ -59,6 +61,22 @@ $professeurs = $professeurs ?? [];
                         <p class="form-error"><?= htmlspecialchars($errors['nom'][0], ENT_QUOTES) ?></p>
                         <?php endif; ?>
                     </div>
+
+                    <?php if ($peutConduite): ?>
+                    <div class="sm:col-span-3">
+                        <label class="inline-flex items-start gap-2 text-sm text-slate-700">
+                            <input type="checkbox" id="est_conduite" name="est_conduite" value="1" class="mt-0.5 rounded"
+                                   <?= !empty($old['est_conduite']) ? 'checked' : '' ?> onchange="basculerConduite()">
+                            <span>
+                                <span class="font-semibold">Matière de Conduite</span> (note de comportement)
+                                <span class="block text-xs text-slate-500">Coefficient 1 et 0 heure de cours imposés ; une seule Conduite par établissement ; absente des emplois du temps.</span>
+                            </span>
+                        </label>
+                        <?php if (isset($errors['est_conduite'])): ?>
+                        <p class="form-error"><?= htmlspecialchars($errors['est_conduite'][0], ENT_QUOTES) ?></p>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
 
                     <div>
                         <label class="form-label" for="coefficient">
@@ -174,10 +192,20 @@ $professeurs = $professeurs ?? [];
 </form>
 
 <script>
+function basculerConduite() {
+    const c = document.getElementById('est_conduite');
+    const coef = document.getElementById('coefficient'), vh = document.getElementById('volume_horaire');
+    if (!c) return;
+    if (c.checked) { coef.value = '1'; vh.value = '0'; vh.min = '0'; }
+    else { vh.min = '1'; if (vh.value === '0') vh.value = '2'; }
+    coef.readOnly = vh.readOnly = c.checked;
+    updatePreview();
+}
 function updatePreview() {
     document.getElementById('prevNom').textContent  = document.getElementById('nom').value  || '—';
     document.getElementById('prevCoef').textContent = document.getElementById('coefficient').value || '—';
     document.getElementById('prevVh').textContent   = document.getElementById('volume_horaire').value || '—';
 }
+basculerConduite();
 updatePreview();
 </script>

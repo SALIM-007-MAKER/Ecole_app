@@ -55,6 +55,17 @@ abstract class Model
         return self::$tenantDefaultId;
     }
 
+    /**
+     * Lot 3 — propriété par jointure : pour une table SANS colonne d'établissement (évaluations, notes…), la sous-classe retourne
+     * [fragment SQL sans connecteur, paramètres] décrivant « la ligne appartient à l'établissement courant » (voir
+     * Core\Tenant\TenantScope), ou null (aucune restriction : table partagée ou pas de contexte). Appliqué par findById,
+     * findBy, findOneBy, update et delete.
+     */
+    protected function ownershipRestriction(): ?array
+    {
+        return null;
+    }
+
     // ─── Lecture ────────────────────────────────────────────────────────────
 
     public function findAll(string $orderBy = '', string $direction = 'ASC'): array
@@ -62,9 +73,18 @@ abstract class Model
         $tenantId = $this->tenantId();
         $sql = "SELECT * FROM `{$this->table}`";
         $params = [];
+        $conds = [];
         if ($tenantId !== null) {
-            $sql .= " WHERE `{$this->tenantColumn}` = ?";
+            $conds[] = "`{$this->tenantColumn}` = ?";
             $params[] = $tenantId;
+        }
+        // Propriété par jointure / référentiel : appliquée aussi aux listes complètes (comme findById / findBy).
+        if (($own = $this->ownershipRestriction()) !== null) {
+            $conds[] = "({$own[0]})";
+            array_push($params, ...$own[1]);
+        }
+        if ($conds) {
+            $sql .= ' WHERE ' . implode(' AND ', $conds);
         }
         if ($orderBy !== '' && preg_match('/^[a-zA-Z0-9_. ,]+$/', $orderBy)) {
             $direction = strtoupper($direction) === 'DESC' ? 'DESC' : 'ASC';
@@ -89,6 +109,10 @@ abstract class Model
             $sql .= " AND `{$this->tenantColumn}` = ?";
             $params[] = $tenantId;
         }
+        if (($own = $this->ownershipRestriction()) !== null) {
+            $sql .= " AND ({$own[0]})";
+            array_push($params, ...$own[1]);
+        }
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetch();
@@ -103,6 +127,10 @@ abstract class Model
             $sql .= " AND `{$this->tenantColumn}` = ?";
             $params[] = $tenantId;
         }
+        if (($own = $this->ownershipRestriction()) !== null) {
+            $sql .= " AND ({$own[0]})";
+            array_push($params, ...$own[1]);
+        }
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll();
@@ -116,6 +144,10 @@ abstract class Model
         if ($tenantId !== null) {
             $sql .= " AND `{$this->tenantColumn}` = ?";
             $params[] = $tenantId;
+        }
+        if (($own = $this->ownershipRestriction()) !== null) {
+            $sql .= " AND ({$own[0]})";
+            array_push($params, ...$own[1]);
         }
         $sql .= " LIMIT 1";
         $stmt = $this->db->prepare($sql);
@@ -201,6 +233,10 @@ abstract class Model
             $sql .= " AND `{$this->tenantColumn}` = ?";
             $params[] = $tenantId;
         }
+        if (($own = $this->ownershipRestriction()) !== null) {
+            $sql .= " AND ({$own[0]})";
+            array_push($params, ...$own[1]);
+        }
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($params);
     }
@@ -213,6 +249,10 @@ abstract class Model
         if ($tenantId !== null) {
             $sql .= " AND `{$this->tenantColumn}` = ?";
             $params[] = $tenantId;
+        }
+        if (($own = $this->ownershipRestriction()) !== null) {
+            $sql .= " AND ({$own[0]})";
+            array_push($params, ...$own[1]);
         }
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($params);

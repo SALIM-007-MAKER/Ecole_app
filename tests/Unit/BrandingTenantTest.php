@@ -61,6 +61,9 @@ function assert_true(bool $v, string $label): void  { assert_eq(true, $v, $label
 function assert_false(bool $v, string $label): void { assert_eq(false, $v, $label); }
 function section(string $t): void { echo "\n\033[33m── $t\033[0m\n"; }
 
+// Jeu de référence figé dans une base jetable : ni lecture ni écriture de la base vivante.
+require_once ROOT_PATH . '/tests/Support/DbCopy.php';
+(\Tests\Support\DbCopy::redirigerVersCopie(ROOT_PATH) !== null) or exit("ECHEC : copie jetable impossible (mysql/mysqldump ou droit CREATE DATABASE)\n");
 $pdo = Database::getInstance()->getConnection();
 $pdo->beginTransaction();
 
@@ -83,7 +86,12 @@ try {
     $pdo->exec("INSERT INTO etablissements (slug, nom, nom_court, type, pays, statut)
                 VALUES ('branding-test-b', 'Établissement Branding B', 'Branding B', 'lycee', 'DZ', 'active')");
     $etabB = (int)$pdo->lastInsertId();
-    $etabA = 1; // edunova-demo, déjà seedé en T008
+    // Établissement A dédié au test (sans branding personnalisé = valeurs par défaut) :
+    // ne dépend plus des données réelles de l'établissement n°1, modifiables par l'utilisateur.
+    // Tout est annulé par le rollback final.
+    $pdo->exec("INSERT INTO etablissements (slug, nom, nom_court, type, pays, statut)
+                VALUES ('branding-test-a', 'Établissement Branding A', 'Branding A', 'lycee', 'DZ', 'active')");
+    $etabA = (int)$pdo->lastInsertId();
 
     $service = BrandingService::make();
 

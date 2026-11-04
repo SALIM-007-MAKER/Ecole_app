@@ -24,7 +24,7 @@ $title = 'Statistiques retards';
           <option value="">Sélectionner une classe</option>
           <?php foreach ($classes as $c): ?>
           <option value="<?= $c->id ?>" <?= $classeId == $c->id ? 'selected' : '' ?>>
-            <?= htmlspecialchars($c->nom) ?>
+            <?= htmlspecialchars(trim((string)($c->niveau ?? "")) !== "" ? $c->niveau . " — " . $c->nom : $c->nom) ?>
           </option>
           <?php endforeach; ?>
         </select>

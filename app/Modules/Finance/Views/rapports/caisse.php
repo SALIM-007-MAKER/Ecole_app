@@ -20,8 +20,7 @@ $statutBadge = [
             </nav>
             <h1 class="text-2xl font-bold text-slate-800">Rapport de caisse</h1>
         </div>
-        <a href="<?= BASE_URL ?>/v2/finance/rapports/export?type=caisse&format=csv&<?= http_build_query($_GET) ?>"
-           class="border border-slate-200 bg-white text-slate-700 px-4 py-2 rounded-lg text-sm hover:bg-slate-50 flex items-center gap-2">
+        <a href="<?= BASE_URL ?>/v2/finance/rapports/export?type=caisse&format=csv&<?= http_build_query($_GET) ?>" class="btn btn-outline">
             <i data-lucide="file-text" class="w-4 h-4"></i> CSV
         </a>
     </div>
@@ -29,8 +28,8 @@ $statutBadge = [
     <!-- Filtres -->
     <form method="GET" class="bg-white rounded-xl border border-slate-100 p-4 mb-6 flex flex-wrap gap-3 items-end shadow-sm">
         <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">Statut</label>
-            <select name="statut" class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
+            <label class="form-label text-xs mb-1">Statut</label>
+            <select name="statut" class="form-select text-sm">
                 <option value="">Tous</option>
                 <?php foreach (['ouverte'=>'Ouverte','en_activite'=>'En activité','fermee'=>'Fermée'] as $v=>$l): ?>
                 <option value="<?= $v ?>" <?= $filters->statut === $v ? 'selected' : '' ?>><?= $l ?></option>
@@ -38,14 +37,14 @@ $statutBadge = [
             </select>
         </div>
         <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">Du</label>
-            <input type="date" name="date_debut" value="<?= htmlspecialchars($filters->dateDebut) ?>" class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
+            <label class="form-label text-xs mb-1">Du</label>
+            <input type="date" name="date_debut" value="<?= htmlspecialchars($filters->dateDebut) ?>" class="form-input text-sm">
         </div>
         <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">Au</label>
-            <input type="date" name="date_fin" value="<?= htmlspecialchars($filters->dateFin) ?>" class="border border-slate-200 rounded-lg px-3 py-2 text-sm">
+            <label class="form-label text-xs mb-1">Au</label>
+            <input type="date" name="date_fin" value="<?= htmlspecialchars($filters->dateFin) ?>" class="form-input text-sm">
         </div>
-        <button type="submit" class="bg-violet-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-violet-700">Filtrer</button>
+        <button type="submit" class="btn btn-primary">Filtrer</button>
         <a href="<?= BASE_URL ?>/v2/finance/rapports/caisse" class="text-slate-500 text-sm px-3 py-2">Reset</a>
     </form>
 
@@ -129,5 +128,3 @@ $statutBadge = [
         </div>
         <?php endif; ?>
     </div>
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-<script>lucide.createIcons();</script>

@@ -71,13 +71,51 @@ class AbsenceRepository
         return (int)$stmt->fetchColumn();
     }
 
+    /** Classe actuelle de l'élève dans l'établissement courant (null si l'élève est introuvable ou sans classe). */
+    public function classeDeLEleve(int $eleveId): ?int
+    {
+        $stmt = $this->pdo->prepare('SELECT classe_id FROM eleves WHERE id = ? AND ' . \Core\Tenant\TenantScope::sqlEtab('eleves', 'etablissement_id'));
+        $stmt->execute([$eleveId]);
+        $v = $stmt->fetchColumn();
+        return ($v === false || $v === null) ? null : (int)$v;
+    }
+
     public function findByEleveAndDate(int $eleveId, string $date): array
     {
         $stmt = $this->pdo->prepare(
             "SELECT * FROM vs_absences
-             WHERE eleve_id = :eleve_id AND date_absence = :date AND deleted_at IS NULL"
+             WHERE eleve_id = :eleve_id AND date_absence = :date AND deleted_at IS NULL AND " . \Core\Tenant\TenantScope::sqlEleve('eleve_id')
         );
         $stmt->execute([':eleve_id' => $eleveId, ':date' => $date]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * Effectif d'une classe pour une date donnée, avec l'éventuelle absence
+     * (vs_absences) et l'éventuel retard (vs_retards, domaine Retards) déjà
+     * enregistrés ce jour-là. Alimente l'écran de pointage groupé.
+     */
+    public function findRosterForPointage(int $classeId, string $date): array
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT e.id AS eleve_id, e.nom, e.prenom, e.matricule,
+                    a.id AS absence_id, a.type AS absence_type, a.observation AS absence_observation,
+                    r.id AS retard_id, r.duree_minutes AS retard_duree, r.observation AS retard_observation
+             FROM eleves e
+             LEFT JOIN vs_absences a
+                    ON a.eleve_id = e.id AND a.date_absence = :date_a AND a.classe_id = :classe_a
+                   AND a.deleted_at IS NULL AND a.type IN ('absence','dispense')
+             LEFT JOIN vs_retards r
+                    ON r.eleve_id = e.id AND r.date_retard = :date_r AND r.classe_id = :classe_r
+                   AND r.deleted_at IS NULL
+             WHERE e.classe_id = :classe_w AND e.actif = 1
+             ORDER BY e.nom, e.prenom"
+        );
+        $stmt->execute([
+            ':date_a' => $date, ':classe_a' => $classeId,
+            ':date_r' => $date, ':classe_r' => $classeId,
+            ':classe_w' => $classeId,
+        ]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
@@ -263,9 +301,10 @@ class AbsenceRepository
 
     public function findAllMotifs(): array
     {
-        return $this->pdo->query(
-            "SELECT * FROM vs_motifs_absence WHERE actif = 1 ORDER BY libelle ASC"
-        )->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        [$ts, $tp] = \Core\Tenant\TenantScope::referentiel('vs_motifs_absence', 'etablissement_id');
+        $stmt = $this->pdo->prepare("SELECT * FROM vs_motifs_absence WHERE actif = 1" . $ts . " ORDER BY libelle ASC");
+        $stmt->execute($tp);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
@@ -274,6 +313,7 @@ class AbsenceRepository
     {
         $conditions = ['a.deleted_at IS NULL'];
         $params     = [];
+        if (($t = \Core\Tenant\TenantScope::conditionClasse('a.classe_id')) !== null) { $conditions[] = $t[0]; $params += $t[1]; }
 
         if ($filters->eleveId !== null) {
             $conditions[] = 'a.eleve_id = :eleve_id';

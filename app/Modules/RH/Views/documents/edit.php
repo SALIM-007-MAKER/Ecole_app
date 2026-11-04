@@ -92,10 +92,10 @@ $val = fn($k) => $e($old[$k] ?? $doc[$k] ?? '');
     </div>
 
     <div class="flex gap-3 pt-2">
-      <button type="submit" class="bg-violet-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-violet-700 transition">
+      <button type="submit" class="btn btn-primary">
         Enregistrer — v<?= (int)$doc['version_courante'] + 1 ?>
       </button>
-      <a href="<?= BASE_URL ?>/v2/rh/documents/<?= (int)$doc['id'] ?>" class="border border-slate-200 text-slate-600 px-6 py-2 rounded-lg text-sm hover:bg-slate-50 transition">
+      <a href="<?= BASE_URL ?>/v2/rh/documents/<?= (int)$doc['id'] ?>" class="btn btn-secondary">
         Annuler
       </a>
     </div>

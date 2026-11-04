@@ -56,6 +56,13 @@ class BulletinGenerator implements BulletinGeneratorInterface
         ],
     ];
 
+    /**
+     * Version du format de l'instantané (data_json). 2 = règle Conduite (note manquante exclue et signalée, Compo masquée,
+     * Conduite hors catégorie « autre »). Un instantané de version inférieure doit être régénéré EXPLICITEMENT avant
+     * publication, même si les notes n'ont pas changé ; jamais de régénération automatique.
+     */
+    public const SNAPSHOT_VERSION = 2;
+
     private PeriodeScolaireRepository      $periodeRepo;
     private AbsenceRepository              $absenceRepo;
     private AppreciationMatiereRepository  $apprRepo;
@@ -69,10 +76,12 @@ class BulletinGenerator implements BulletinGeneratorInterface
         private BulletinRepository         $repo,
         private float                      $seuilRattrapage = 8.0,
         private float                      $notePassage     = 10.0,
-        private string                     $appKey          = 'ecole_app_v2',
         ?PeriodeScolaireRepository         $periodeRepo     = null,
         ?AbsenceRepository                 $absenceRepo     = null,
         ?AppreciationMatiereRepository     $apprRepo        = null,
+        // Aucune clé par défaut : sans service de jetons (BULLETIN_TOKEN_SECRET absent), les aperçus restent
+        // possibles mais toute génération persistée est refusée (BulletinTokenException).
+        private ?BulletinTokenService      $tokens          = null,
     ) {
         $this->periodeRepo = $periodeRepo ?? new PeriodeScolaireRepository();
         $this->absenceRepo = $absenceRepo ?? new AbsenceRepository();
@@ -95,10 +104,22 @@ class BulletinGenerator implements BulletinGeneratorInterface
         return $this->rankingEngine;
     }
 
-    public function genererBulletin(int $eleveId, int $periodeId, int $userId): BulletinData
+    /**
+     * @param bool $pourPublication false (défaut) : brouillon / aperçu, toujours possible, la Conduite manquante est
+     *                              exclue du calcul et signalée « Non saisie ». true : génération en vue de la
+     *                              publication, refusée tant que la Conduite de la classe est incomplète.
+     * @throws ConduiteIncompleteException
+     */
+    public function genererBulletin(int $eleveId, int $periodeId, int $userId, bool $pourPublication = false): BulletinData
     {
         [$eleve, $periode, $etab] = $this->fetchContext($eleveId, $periodeId);
         $classeId = (int)$eleve->classe_id;
+
+        $etatConduite = $this->repo->etatConduite($classeId, $periodeId);
+        if ($pourPublication) {
+            $this->exigerConduiteComplete($etatConduite);
+            $this->exigerProtection($etatConduite);
+        }
 
         $rows         = $this->repo->notesEleveParPeriode($eleveId, $classeId, $periodeId);
         $matieresData = $this->groupNotesByMatiere($rows);
@@ -107,15 +128,20 @@ class BulletinGenerator implements BulletinGeneratorInterface
         $classement       = $this->rankingEngine->classementClasse($classeId, $periodeId);
         $resultatsAnnuels = $this->resultatsClasseEtAnnuels($classeId, $periode->annee_scolaire, $eleveId);
 
+        // Jeton : celui déjà stocké pour ce bulletin s'il existe (jamais de changement silencieux à la
+        // régénération), sinon un nouveau jeton officiel. Requiert BULLETIN_TOKEN_SECRET.
+        $jeton = $this->resoudreJeton($eleve, $eleveId, $periodeId);
+
         $bulletin = $this->buildBulletinData(
             $eleveId, $periodeId, $userId,
             $matieresData, $eleve, $periode, $etab,
-            $classement, $resultatsAnnuels, preview: false
+            $classement, $resultatsAnnuels, preview: false, token: $jeton['token'],
+            conduiteComplete: $this->drapeauConduite($etatConduite)
         );
         $bulletin = $this->preserveAppreciationDirecteur($bulletin);
 
         // Persistance
-        $this->repo->saveBulletin($bulletin);
+        $this->repo->saveBulletin($bulletin, $jeton['version']);
 
         // Événement + audit
         EventDispatcher::dispatch(new BulletinGenerated(
@@ -137,6 +163,8 @@ class BulletinGenerator implements BulletinGeneratorInterface
 
     public function genererBulletinsClasse(int $classeId, int $periodeId, int $userId): array
     {
+        $this->tokenService();   // refus explicite et immédiat si BULLETIN_TOKEN_SECRET est absent ou invalide
+
         // Classement calculé une seule fois pour toute la classe
         $classement = $this->rankingEngine->classementClasse($classeId, $periodeId);
         $etab       = $this->repo->infoEtablissement();
@@ -147,6 +175,7 @@ class BulletinGenerator implements BulletinGeneratorInterface
 
         $eleveIds = $this->repo->elevesParClasse($classeId);
         $bulletins = [];
+        $etatConduite = $this->repo->etatConduite($classeId, $periodeId);
 
         foreach ($eleveIds as $eleveId) {
             try {
@@ -160,14 +189,17 @@ class BulletinGenerator implements BulletinGeneratorInterface
                 $rows         = $this->repo->notesEleveParPeriode((int)$eleveId, $classeId, $periodeId);
                 $matieresData = $this->groupNotesByMatiere($rows);
 
+                $jeton = $this->resoudreJeton($eleve, (int)$eleveId, $periodeId);
+
                 $bulletin = $this->buildBulletinData(
                     (int)$eleveId, $periodeId, $userId,
                     $matieresData, $eleve, $periode, $etab,
-                    $classement, $resultatsAnnuels, preview: false
+                    $classement, $resultatsAnnuels, preview: false, token: $jeton['token'],
+                    conduiteComplete: $this->drapeauConduite($etatConduite)
                 );
                 $bulletin = $this->preserveAppreciationDirecteur($bulletin);
 
-                $this->repo->saveBulletin($bulletin);
+                $this->repo->saveBulletin($bulletin, $jeton['version']);
 
                 EventDispatcher::dispatch(new BulletinGenerated(
                     eleveId          : (int)$eleveId,
@@ -225,7 +257,8 @@ class BulletinGenerator implements BulletinGeneratorInterface
         return $this->buildBulletinData(
             $eleveId, $periodeId, 0,
             $matieresData, $eleve, $periode, $etab,
-            $classement, $resultatsAnnuels, preview: true
+            $classement, $resultatsAnnuels, preview: true,
+            conduiteComplete: $this->drapeauConduite($this->repo->etatConduite($classeId, $periodeId))
         );
     }
 
@@ -233,14 +266,18 @@ class BulletinGenerator implements BulletinGeneratorInterface
     {
         $row = $this->repo->findByToken($verificationToken);
         if (!$row) {
-            throw new \RuntimeException("Bulletin introuvable : $verificationToken");
+            throw new \RuntimeException('Bulletin introuvable.');
         }
-        if ($row['statut'] === 'archive') {
-            throw new \RuntimeException("Impossible de publier un bulletin archivé.");
+        if (($row['statut'] ?? '') !== 'brouillon') {
+            throw new \RuntimeException('Seul un bulletin en brouillon peut être publié.');
         }
+        $this->exigerJetonOfficiel($row);   // jamais de QR officiel sur un jeton hérité ou invalide
 
         $publishedAt = date('Y-m-d H:i:s');
-        $this->repo->updateStatut($verificationToken, 'publie', $userId, publishedAt: $publishedAt);
+        // Contrôles de la Conduite (complétude, fraîcheur, format) puis bascule du statut, dans UNE transaction
+        // REPEATABLE READ qui verrouille les données contrôlées. Si le statut a changé entre-temps (publication
+        // simultanée), rien n'est écrit.
+        $this->publierSousControle($row, $userId, $publishedAt);
 
         $bulletin = BulletinData::fromArray(json_decode($row['data_json'], true) ?? [])
             ->withStatut('publie', publishedAt: $publishedAt);
@@ -261,14 +298,16 @@ class BulletinGenerator implements BulletinGeneratorInterface
     {
         $row = $this->repo->findByToken($verificationToken);
         if (!$row) {
-            throw new \RuntimeException("Bulletin introuvable : $verificationToken");
+            throw new \RuntimeException('Bulletin introuvable.');
         }
-        if ($row['statut'] !== 'publie') {
-            throw new \RuntimeException("Seul un bulletin publié peut être archivé.");
+        if (($row['statut'] ?? '') !== 'publie') {
+            throw new \RuntimeException('Seul un bulletin publié peut être archivé.');
         }
 
         $archivedAt = date('Y-m-d H:i:s');
-        $this->repo->updateStatut($verificationToken, 'archive', $userId, archivedAt: $archivedAt);
+        if (!$this->repo->transitionStatut((int)$row['id'], 'publie', 'archive', $userId, $archivedAt)) {
+            throw new \RuntimeException('Le statut du bulletin a changé entre-temps : archivage annulé.');
+        }
 
         $bulletin = BulletinData::fromArray(json_decode($row['data_json'], true) ?? [])
             ->withStatut('archive', archivedAt: $archivedAt);
@@ -293,6 +332,12 @@ class BulletinGenerator implements BulletinGeneratorInterface
     {
         $esc = fn(mixed $v): string => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
 
+        // Le jeton n'est jamais imprimé ; le lien de vérification n'existe que pour un bulletin officiel
+        // (qrCodeUrl vide pour un brouillon ou un aperçu).
+        $verifLigne = $b->qrCodeUrl !== ''
+            ? "Vérifier l'authenticité de ce bulletin : " . $esc($b->qrCodeUrl) . '<br>'
+            : '';
+
         // Lignes de matières
         $lignesHtml = '';
         foreach ($b->lignesMatieres as $ligne) {
@@ -312,7 +357,7 @@ class BulletinGenerator implements BulletinGeneratorInterface
                 $esc($ligne['matiere_nom']),
                 $esc($ligne['coefficient']),
                 $esc($notesConcatinees),
-                number_format($ligne['moyenne'] ?? 0, 2),
+                !empty($ligne['non_saisie']) ? 'Non saisie' : number_format($ligne['moyenne'] ?? 0, 2),
                 $esc($ligne['mention_css'] ?? 'slate'),
                 $esc($ligne['mention_code'] ?? ''),
                 $esc($ligne['appreciation'] ?? ''),
@@ -495,8 +540,7 @@ HTML
 
   <!-- Vérification -->
   <div class="verification">
-    Vérifier l'authenticité de ce bulletin : {$esc($b->qrCodeUrl)}<br>
-    Token : {$esc($b->verificationToken)} — Généré le {$esc($b->generatedAt)}
+    {$verifLigne}Généré le {$esc($b->generatedAt)}
   </div>
 </div>
 </body>
@@ -508,9 +552,10 @@ HTML;
     {
         $payload          = $bulletin->toArray();
         $payload['_links'] = [
-            'self'   => '/v2/academique/bulletins/' . $bulletin->verificationToken,
-            'verify' => $bulletin->qrCodeUrl,
-            'html'   => '/v2/academique/bulletins/' . $bulletin->verificationToken . '/html',
+            // Aucun jeton dans les liens : un brouillon n'a pas de lien de vérification, et les ressources sont
+            // adressées par (élève, période).
+            'self'   => '/v2/academique/bulletins/' . $bulletin->eleveId . '/' . $bulletin->periodeId . '/imprimer',
+            'verify' => $bulletin->qrCodeUrl !== '' ? $bulletin->qrCodeUrl : null,
         ];
         return $payload;
     }
@@ -534,6 +579,8 @@ HTML;
         RankingResultDTO $classement,
         array            $resultatsAnnuels,
         bool             $preview,
+        string           $token = '',
+        ?bool            $conduiteComplete = null,
     ): BulletinData {
         // 1 — AcademicCalculationService : SEULE source des moyennes
         $calcResult    = $this->calculator->calculerBulletin($matieresData, true, $this->seuilRattrapage);
@@ -565,10 +612,9 @@ HTML;
             ? $this->absenceRepo->countByEleveAndDateRange($eleveId, $periode->date_debut, $periode->date_fin)
             : ['justifiees' => 0, 'nonJustifiees' => 0];
 
-        // 5 — Token de vérification (stable pour le même élève+période)
-        $token = $this->generateVerificationToken($eleveId, $periodeId);
-        $baseUrl = defined('APP_URL') ? rtrim(APP_URL, '/') : '';
-        $qrUrl   = $baseUrl . '/v2/academique/bulletins/verify/' . $token;
+        // 5 — Jeton de vérification : fourni par l'appelant (aperçu : aucun). L'URL du QR n'est JAMAIS figée
+        // dans le bulletin : elle est construite à l'impression, et seulement pour un bulletin publié.
+        $qrUrl = '';
 
         return new BulletinData(
             eleveId              : $eleveId,
@@ -616,6 +662,8 @@ HTML;
             moyenneAutre         : $moyennesFiliere['autre']        ?? null,
             absences             : $absences,
             effectifClasse       : $this->repo->effectifClasse((int)$eleve->classe_id),
+            conduiteComplete     : $conduiteComplete,
+            snapshotVersion      : self::SNAPSHOT_VERSION,
         );
     }
 
@@ -636,6 +684,7 @@ HTML;
                     'matiere_nom' => $row['matiere_nom'] ?? '',
                     'coefficient' => (float)($row['coeff_matiere'] ?? 1.0),
                     'categorie'   => $row['matiere_categorie'] ?? 'autre',
+                    'est_conduite'=> (int)($row['matiere_est_conduite'] ?? 0) === 1,
                     'notes'       => [],
                 ];
             }
@@ -649,6 +698,8 @@ HTML;
                 'seuil_eliminatoire' => isset($row['seuil_eliminatoire'])
                     ? (float)$row['seuil_eliminatoire'] : null,
                 'type_code'          => $row['type_evaluation_code'] ?? null,
+                'conduite'           => (int)($row['matiere_est_conduite'] ?? 0) === 1,
+                'evaluation_id'      => (int)($row['evaluation_id'] ?? 0),
             ];
         }
         return $grouped;
@@ -679,10 +730,15 @@ HTML;
             // cellule vide signale au professeur qu'il reste à la remplir.
             $apprMat    = $this->apprRepo->find($eleveId, $mid, $periodeId) ?? '';
 
+            $estConduite = (bool)($data['est_conduite'] ?? false);
+
             $lignes[] = [
                 'matiere_id'      => $mid,
                 'matiere_nom'     => $data['matiere_nom'] ?? '',
                 'coefficient'     => $data['coefficient'] ?? 1.0,
+                'est_conduite'    => $estConduite,
+                // Conduite sans aucune note valide : affichée « Non saisie », exclue de la moyenne générale
+                'non_saisie'      => $estConduite && $moyMatiere->isEmpty(),
                 'notes'           => array_map(fn($n) => [
                     'valeur'      => $n['valeur'],
                     'note_max'    => $n['note_max'],
@@ -690,7 +746,8 @@ HTML;
                     'est_absent'  => $n['est_absent'],
                 ], $data['notes']),
                 'moyenne'         => $moyMatiere->isEmpty() ? null : $moyMatiere->getValue(),
-                'compo'           => $this->extraireNoteComposition($data['notes']),
+                // La colonne « Compo » n'a pas de sens pour une note de comportement : masquée pour la Conduite
+                'compo'           => $estConduite ? null : $this->extraireNoteComposition($data['notes']),
                 'moyenne_classe'  => $rangsParMatiere[$mid]['moyenneClasse'] ?? null,
                 'rang'            => $rangsParMatiere[$mid]['rang']          ?? null,
                 'mention_code'    => $mention->getCode(),
@@ -779,6 +836,7 @@ HTML;
         foreach ($matieresData as $matiereId => $data) {
             $calcM = $calcMatieres[$matiereId] ?? null;
             if (!$calcM) continue;
+            if (!empty($data['est_conduite'])) continue;   // la Conduite n'entre dans aucune filière (ni dans « autre »)
 
             $categorie = $data['categorie'] ?? 'autre';
             if (!isset($groupes[$categorie])) $categorie = 'autre';
@@ -913,11 +971,252 @@ HTML;
     }
 
     /**
-     * Token SHA-256 stable pour un couple (eleve_id, periode_id).
+     * Jeton officiel (HMAC) d'un bulletin — voir BulletinTokenService pour la définition exacte.
+     *
+     * @throws BulletinTokenException si BULLETIN_TOKEN_SECRET est absent ou invalide
      */
-    public function generateVerificationToken(int $eleveId, int $periodeId): string
+    // ─────────────────────────────────────────────────────────────────
+    //  Conduite : complétude, protection SQL, publication contrôlée
+    // ─────────────────────────────────────────────────────────────────
+
+    /** true / false / null (non concerné) : indication figée dans l'instantané, jamais une preuve. */
+    private function drapeauConduite(array $etat): ?bool
     {
-        return hash('sha256', "bulletin:{$eleveId}:{$periodeId}:{$this->appKey}");
+        return $etat['concerne'] ? (bool)$etat['complete'] : null;
+    }
+
+    /** @throws ConduiteIncompleteException */
+    private function exigerConduiteComplete(array $etat): void
+    {
+        if ($etat['concerne'] && !$etat['complete']) {
+            throw new ConduiteIncompleteException(
+                'Génération pour publication refusée — ' . $etat['message'], $etat
+            );
+        }
+    }
+
+    /** Mode strict (CONDUITE_PROTECTION_REQUIRED) : sans protection SQL opérationnelle, ni régénération pour publication ni publication. */
+    protected function protectionRequise(): bool
+    {
+        return ConduiteProtectionStatus::strictRequis();
+    }
+
+    private function exigerProtection(array $etat): void
+    {
+        if (!$etat['concerne'] || !$this->protectionRequise()) {
+            return;
+        }
+        $statut = ConduiteProtectionStatus::check($this->repo->connection());
+        if (!$statut['ok']) {
+            \Core\Logger::critical('Mode strict : ' . $statut['message']);
+            throw new \RuntimeException('Publication bloquée : la protection SQL de la Conduite n\'est pas opérationnelle (mode strict). Contactez l\'administrateur.');
+        }
+    }
+
+    /** Niveau d'isolation exigé pour la transaction de publication (surchargeable uniquement par les tests de garde). */
+    protected function niveauIsolationPublication(): string
+    {
+        return 'REPEATABLE READ';
+    }
+
+    /**
+     * Transaction de publication : isolation REPEATABLE READ fixée ET vérifiée, attente de verrou 5 s, verrous dans
+     * l'ordre évaluations → élèves → notes → bulletin, contrôles, bascule conditionnelle. Une seule nouvelle tentative
+     * (transaction neuve, tous les contrôles refaits) en cas d'interblocage (1213) ou d'attente dépassée (1205).
+     *
+     * @throws \RuntimeException refus motivé (jamais de détail SQL)
+     */
+    private function publierSousControle(array $row, int $userId, string $publishedAt): void
+    {
+        $pdo = $this->repo->connection();
+        $precedenteIso     = str_replace('-', ' ', (string)$pdo->query('SELECT @@transaction_isolation')->fetchColumn());
+        $precedenteTimeout = (int)$pdo->query('SELECT @@innodb_lock_wait_timeout')->fetchColumn();
+        $transactionExterne = $pdo->inTransaction();   // appelant propriétaire de la transaction (tests) : ni début, ni validation ici
+
+        try {
+            for ($essai = 1; $essai <= 2; $essai++) {
+                if (!$transactionExterne) {
+                    $pdo->exec('SET SESSION TRANSACTION ISOLATION LEVEL ' . $this->niveauIsolationPublication());
+                    $pdo->exec('SET SESSION innodb_lock_wait_timeout = 5');
+                    $pdo->beginTransaction();
+                }
+                try {
+                    $iso = (string)$pdo->query('SELECT @@transaction_isolation')->fetchColumn();
+                    if ($iso !== 'REPEATABLE-READ') {
+                        throw new \RuntimeException('Publication refusée : niveau d\'isolation inattendu (' . $iso . ').');
+                    }
+                    $this->controlerEtBasculer($row, $userId, $publishedAt);
+                    if (!$transactionExterne) { $pdo->commit(); }
+                    return;
+                } catch (\PDOException $e) {
+                    if (!$transactionExterne && $pdo->inTransaction()) { $pdo->rollBack(); }
+                    $code = (int)($e->errorInfo[1] ?? 0);
+                    if (!$transactionExterne && $essai === 1 && in_array($code, [1213, 1205], true)) {
+                        usleep(300000);
+                        continue;
+                    }
+                    if (in_array($code, [1213, 1205], true)) {
+                        throw new \RuntimeException('Publication impossible pour le moment (saisie de notes en cours) : réessayez dans un instant.');
+                    }
+                    throw new \RuntimeException('Publication impossible (code SQL ' . $code . ').');
+                } catch (\Throwable $e) {
+                    if (!$transactionExterne && $pdo->inTransaction()) { $pdo->rollBack(); }
+                    throw $e;
+                }
+            }
+        } finally {
+            if (!$transactionExterne) {
+                $pdo->exec('SET SESSION TRANSACTION ISOLATION LEVEL ' . $precedenteIso);
+                $pdo->exec('SET SESSION innodb_lock_wait_timeout = ' . $precedenteTimeout);
+            }
+        }
+    }
+
+    /** Corps de la transaction : verrous, contrôles de la Conduite, bascule conditionnelle du statut. */
+    private function controlerEtBasculer(array $row, int $userId, string $publishedAt): void
+    {
+        $pdo      = $this->repo->connection();
+        $classeId = (int)$row['classe_id'];
+
+        // 1) évaluations → élèves → notes (verrous partagés de plage), 2) bulletin (verrou exclusif)
+        $etat = $this->repo->etatConduite($classeId, (int)$row['periode_id'], verrouiller: true);
+        $stmt = $pdo->prepare('SELECT id, statut, data_json FROM bulletins_v2 WHERE id = ? FOR UPDATE');
+        $stmt->execute([(int)$row['id']]);
+        $courant = $stmt->fetch(\PDO::FETCH_ASSOC);
+        if (!$courant || $courant['statut'] !== 'brouillon') {
+            throw new \RuntimeException('Le statut du bulletin a changé entre-temps : publication annulée.');
+        }
+
+        if ($etat['concerne']) {
+            // 3) complétude (A1/A2/R2), protection (mode strict), format (R6), fraîcheur réelle
+            if (!$etat['complete']) {
+                throw new ConduiteIncompleteException('Publication refusée — ' . $etat['message'], $etat);
+            }
+            $this->exigerProtection($etat);
+            $snapshot = json_decode((string)$courant['data_json'], true) ?: [];
+            if ((int)($snapshot['snapshot_version'] ?? 0) < self::SNAPSHOT_VERSION) {
+                throw new \RuntimeException('Publication refusée : ce bulletin a été généré avec un ancien format. Régénérez-le d\'abord (« Régénérer en vue de la publication »).');
+            }
+            if (!$this->conduiteAJour($snapshot, (int)$row['eleve_id'], $classeId, (int)$row['periode_id'])) {
+                throw new \RuntimeException('Publication refusée : la Conduite a changé depuis la génération de ce bulletin. Régénérez-le d\'abord (« Régénérer en vue de la publication »).');
+            }
+        }
+
+        // 4) bascule conditionnelle (statut = brouillon) : exactement une ligne ou rien
+        if (!$this->repo->transitionStatut((int)$row['id'], 'brouillon', 'publie', $userId, $publishedAt)) {
+            throw new \RuntimeException('Le statut du bulletin a changé entre-temps : publication annulée.');
+        }
+
+        // 5) Opération critique : la trace de publication est écrite dans la MÊME transaction que la bascule du statut. Si elle échoue
+        //    (AuditIndisponibleException), la transaction est annulée : le bulletin reste en brouillon et n'est jamais publié sans trace.
+        (new \App\Services\AuditService())->logStrict(
+            $pdo, $userId, 'publier', 'academique', 'bulletin', (int)$row['eleve_id'], null,
+            [
+                'periode_id'      => (int)$row['periode_id'],
+                'jeton_empreinte' => BulletinTokenService::fingerprint((string)($row['verification_token'] ?? '')),
+                'published_at'    => $publishedAt,
+            ]
+        );
+    }
+
+    /**
+     * Fraîcheur RÉELLE : la ligne Conduite de l'instantané est comparée champ par champ à celle recalculée depuis les
+     * notes actuelles (valeurs, barèmes, coefficients d'évaluation, absences, moyenne, coefficient de matière).
+     * `conduite_complete` n'est jamais consulté ici.
+     */
+    private function conduiteAJour(array $snapshot, int $eleveId, int $classeId, int $periodeId): bool
+    {
+        $actuelle = $this->ligneConduiteActuelle($eleveId, $classeId, $periodeId);
+        $figee = null;
+        foreach ($snapshot['lignes_matieres'] ?? [] as $ligne) {
+            if (!empty($ligne['est_conduite'])) { $figee = $this->normaliserLigneConduite($ligne); break; }
+        }
+        return $actuelle === $figee;
+    }
+
+    private function ligneConduiteActuelle(int $eleveId, int $classeId, int $periodeId): ?array
+    {
+        $rows = array_values(array_filter(
+            $this->repo->notesEleveParPeriode($eleveId, $classeId, $periodeId),
+            fn($r) => (int)($r->matiere_est_conduite ?? 0) === 1
+        ));
+        if ($rows === []) { return null; }
+        $groupes = $this->groupNotesByMatiere($rows);
+        $data    = reset($groupes);
+        $calc    = $this->calculator->moyenneMatiere($data['notes']);
+        return $this->normaliserLigneConduite([
+            'coefficient' => $data['coefficient'],
+            'notes'       => array_map(fn($n) => [
+                'valeur' => $n['valeur'], 'note_max' => $n['note_max'], 'coeff_eval' => $n['coefficient'], 'est_absent' => $n['est_absent'],
+            ], $data['notes']),
+            'moyenne'     => $calc['moyenne']->isEmpty() ? null : $calc['moyenne']->getValue(),
+        ]);
+    }
+
+    private function normaliserLigneConduite(array $ligne): array
+    {
+        return [
+            'coefficient' => round((float)($ligne['coefficient'] ?? 0), 4),
+            'moyenne'     => isset($ligne['moyenne']) ? round((float)$ligne['moyenne'], 2) : null,
+            'notes'       => array_map(fn($n) => [
+                'valeur'     => isset($n['valeur']) ? round((float)$n['valeur'], 4) : null,
+                'note_max'   => round((float)($n['note_max'] ?? 20), 4),
+                'coeff_eval' => round((float)($n['coeff_eval'] ?? 1), 4),
+                'est_absent' => (bool)($n['est_absent'] ?? false),
+            ], $ligne['notes'] ?? []),
+        ];
+    }
+
+    public function issueToken(int $etablissementId, int $eleveId, int $periodeId): string
+    {
+        return $this->tokenService()->issue($etablissementId, $eleveId, $periodeId);
+    }
+
+    private function tokenService(): BulletinTokenService
+    {
+        return $this->tokens ?? throw BulletinTokenException::missing();
+    }
+
+    /**
+     * Jeton à porter par le bulletin qu'on enregistre : celui DÉJÀ stocké s'il existe (une régénération ne
+     * change jamais silencieusement un jeton, quelle que soit sa version), sinon un nouveau jeton officiel.
+     *
+     * @return array{token:string, version:int}
+     */
+    private function resoudreJeton(object $eleve, int $eleveId, int $periodeId): array
+    {
+        $existant = $this->repo->findByEleveEtPeriode($eleveId, $periodeId);
+        if ($existant !== null && (string)($existant['verification_token'] ?? '') !== '') {
+            return ['token' => (string)$existant['verification_token'], 'version' => (int)($existant['token_version'] ?? 1)];
+        }
+        return [
+            'token'   => $this->issueToken($this->etablissementDe($eleve), $eleveId, $periodeId),
+            'version' => BulletinTokenService::VERSION,
+        ];
+    }
+
+    /** Un bulletin ne peut être publié (donc recevoir un QR officiel) qu'avec un jeton de version courante et valide. */
+    private function exigerJetonOfficiel(array $row): void
+    {
+        if ((int)($row['token_version'] ?? 1) !== BulletinTokenService::VERSION) {
+            throw new \RuntimeException('Jeton hérité : la rotation des jetons doit précéder la publication de ce bulletin.');
+        }
+        $etab = (int)($row['etablissement_id'] ?? 0) ?: $this->etablissementDe((object)[]);
+        if (!$this->tokenService()->matches((string)$row['verification_token'], $etab, (int)$row['eleve_id'], (int)$row['periode_id'])) {
+            throw new \RuntimeException('Jeton de vérification invalide pour ce bulletin : publication refusée.');
+        }
+    }
+
+    private function etablissementDe(object $eleve): int
+    {
+        $id = (int)($eleve->etablissement_id ?? 0);
+        if ($id > 0) {
+            return $id;
+        }
+        if (\Core\Tenant\TenantContext::isSet()) {
+            return \Core\Tenant\TenantContext::id();
+        }
+        return (int)((require ROOT_PATH . '/config/tenant.php')['default_id'] ?? 1);
     }
 
     private function buildSignatures(): array

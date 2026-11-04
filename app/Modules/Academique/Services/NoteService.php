@@ -5,6 +5,7 @@ namespace App\Modules\Academique\Services;
 use App\Modules\Academique\DTO\NoteBatchDTO;
 use App\Modules\Academique\DTO\NoteDTO;
 use App\Modules\Academique\Events\NoteCreated;
+use App\Modules\Academique\Events\NoteDeleted;
 use App\Modules\Academique\Events\NoteImported;
 use App\Modules\Academique\Events\NoteLocked;
 use App\Modules\Academique\Events\NotePublished;
@@ -50,8 +51,31 @@ class NoteService
 
         $bareme  = new BaremeValue((float)$evaluation->note_max);
         $results = ['created' => 0, 'updated' => 0, 'errors' => []];
+        $conduite = $this->repo->evaluationEstConduite($batch->evaluationId);
 
         foreach ($batch->notes as $dto) {
+            // Une valeur non numérique est REFUSÉE (jamais convertie en 0, jamais écrasée sur une note existante)
+            if ($dto->valeurInvalide) {
+                $results['errors'][$dto->eleveId] = "Valeur non numérique : la note n'a pas été modifiée.";
+                continue;
+            }
+            // Lot 3 : l'élève doit appartenir à la classe de l'évaluation (donc à l'établissement courant)
+            if (!$this->repo->eleveDansClasseDeLEvaluation($batch->evaluationId, $dto->eleveId)) {
+                $results['errors'][$dto->eleveId] = "Élève introuvable dans la classe de cette évaluation.";
+                continue;
+            }
+            // Conduite : pas de case « absent » (une note de comportement est toujours attribuée). Une ligne laissée
+            // vide n'est pas enregistrée : la note reste « non saisie ».
+            if ($conduite) {
+                if ($dto->estAbsent) {
+                    $results['errors'][$dto->eleveId] = $this->refusConduite($dto);
+                    continue;
+                }
+                if ($dto->valeur === null) {
+                    continue;
+                }
+            }
+
             // AN-C-001 : une note ne peut être rattachée qu'à un élève
             // activement inscrit pour l'année scolaire de la période.
             if ($anneeScolaire !== null
@@ -94,6 +118,13 @@ class NoteService
         }
         $this->assertSaisieOuverte($evaluation);
 
+        if ($dto->valeurInvalide) {
+            throw new \RuntimeException("Valeur non numérique : la note n'a pas été modifiée.");
+        }
+        if ($this->repo->evaluationEstConduite((int)$note->evaluation_id) && ($motif = $this->refusConduite($dto)) !== null) {
+            throw new \RuntimeException($motif);
+        }
+
         $bareme    = new BaremeValue((float)$evaluation->note_max);
         $noteValue = new NoteValue($dto->estAbsent ? null : $dto->valeur, $bareme);
 
@@ -123,6 +154,31 @@ class NoteService
             oldValeur:    $oldValeur,
             newValeur:    $newValeur,
             updatedById:  $userId,
+        ));
+    }
+
+    // ─── Supprimer une note individuelle ─────────────────────────────────────
+
+    public function supprimer(int $noteId, int $userId): void
+    {
+        $note = $this->model->findById($noteId);
+        if (!$note) {
+            throw new \RuntimeException("Note introuvable.");
+        }
+        if ($note->statut === 'verrouillee') {
+            throw new \RuntimeException("Cette note est verrouillée et ne peut pas être supprimée.");
+        }
+
+        $valeur = $note->valeur !== null ? (float)$note->valeur : null;
+
+        $this->model->delete($noteId);
+
+        EventDispatcher::dispatch(new NoteDeleted(
+            noteId:       $noteId,
+            evaluationId: (int)$note->evaluation_id,
+            eleveId:      (int)$note->eleve_id,
+            valeur:       $valeur,
+            deletedById:  $userId,
         ));
     }
 
@@ -220,6 +276,18 @@ class NoteService
     }
 
     // ─── Privé ───────────────────────────────────────────────────────────────
+
+    /** Motif de refus d'une ligne de note de Conduite, ou null si elle est acceptable. */
+    private function refusConduite(NoteDTO $dto): ?string
+    {
+        if ($dto->estAbsent) {
+            return "La mention « absent » n'existe pas pour la Conduite : saisir une note de 0 au barème.";
+        }
+        if ($dto->valeur === null) {
+            return "La note de Conduite est obligatoire : saisir une valeur de 0 au barème.";
+        }
+        return null;
+    }
 
     private function assertSaisieOuverte(object $evaluation): void
     {

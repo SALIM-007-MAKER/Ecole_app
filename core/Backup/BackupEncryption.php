@@ -20,7 +20,11 @@ final class BackupEncryption
 
     public static function make(): self
     {
-        $appKey = $_ENV['APP_KEY'] ?? 'edunova-default-backup-key-change-in-production';
+        $appKey = $_ENV['APP_KEY'] ?? (getenv('APP_KEY') ?: '');
+        // Aucune clé par défaut : une sauvegarde « chiffrée » avec une clé publique ne protège rien.
+        if (!is_string($appKey) || strlen($appKey) < 16 || str_contains($appKey, 'change-in-production')) {
+            throw new \RuntimeException('APP_KEY absente ou trop courte (16 caractères minimum) : le chiffrement des sauvegardes est refusé.');
+        }
         return new self($appKey);
     }
 

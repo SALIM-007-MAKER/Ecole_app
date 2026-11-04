@@ -258,7 +258,7 @@ $statutIcons = [
                             <?php endif; ?>
                             <?php if ($policy && $policy->canArchiver($user, $p) && $p->statut !== 'archivee'): ?>
                             <button type="button"
-                                    onclick="openActionModal(<?= $p->id ?>, '<?= htmlspecialchars($p->nom, ENT_JS) ?>', 'archiver')"
+                                    onclick="openActionModal(<?= $p->id ?>, <?= htmlspecialchars(json_encode((string)($p->nom), JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP), ENT_QUOTES) ?>, 'archiver')"
                                     class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition"
                                     title="Archiver">
                                 <i data-lucide="archive" class="w-4 h-4"></i>

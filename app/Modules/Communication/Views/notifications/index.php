@@ -63,7 +63,7 @@
 const csrf = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
 
 async function markRead(id) {
-  await fetch(`/v2/notifications/${id}/read`, {method:'POST', headers:{'X-CSRF-Token':csrf}});
+  await fetch(`<?= BASE_URL ?>/v2/notifications/${id}/read`, {method:'POST', headers:{'X-CSRF-Token':csrf}});
   const el = document.getElementById('notif-' + id);
   if (el) el.classList.remove('border-violet-200','bg-violet-50/40');
   location.reload();
@@ -76,7 +76,7 @@ async function markAllRead() {
 
 async function deleteNotif(id) {
   if (!confirm('Supprimer cette notification ?')) return;
-  await fetch(`/v2/notifications/${id}`, {method:'DELETE', headers:{'X-CSRF-Token':csrf}});
+  await fetch(`<?= BASE_URL ?>/v2/notifications/${id}`, {method:'DELETE', headers:{'X-CSRF-Token':csrf}});
   document.getElementById('notif-' + id)?.remove();
 }
 </script>

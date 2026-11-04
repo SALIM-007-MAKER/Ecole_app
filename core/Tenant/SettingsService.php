@@ -95,6 +95,10 @@ final class SettingsService
             default   => (string)$valeur,
         };
 
+        $ancienne = $this->pdo->prepare('SELECT valeur FROM etab_settings WHERE etablissement_id = ? AND section = ? AND cle = ?');
+        $ancienne->execute([$etablissementId, $section, $cle]);
+        $avant = $ancienne->fetchColumn();
+
         $stmt = $this->pdo->prepare(
             "INSERT INTO etab_settings (etablissement_id, section, cle, valeur, type, updated_by)
              VALUES (?, ?, ?, ?, ?, ?)
@@ -103,6 +107,16 @@ final class SettingsService
         $stmt->execute([$etablissementId, $section, $cle, $stored, $type, $updatedBy]);
 
         $this->cache->forget($etablissementId, 'settings', $section);
+
+        // Audit : toute modification EFFECTIVE d'un paramètre (ancienne et nouvelle valeur). Valeur masquée pour un secret.
+        if ($avant === false || (string)$avant !== $stored) {
+            $secret = (bool)preg_match('/(secret|token|api_key|smtp_pass|mot_de_passe)/i', $cle);
+            (new \App\Services\AuditService())->log(
+                $updatedBy, 'update', 'parametres', 'parametre', null,
+                ['section' => $section, 'cle' => $cle, 'valeur' => $avant === false ? null : ($secret ? '***' : (string)$avant)],
+                ['section' => $section, 'cle' => $cle, 'valeur' => $secret ? '***' : $stored]
+            );
+        }
     }
 
     /** Enregistre plusieurs clés d'une même section en une fois. */

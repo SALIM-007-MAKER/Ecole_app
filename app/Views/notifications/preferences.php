@@ -144,7 +144,7 @@ $labels = [
             </div>
         </div>
 
-        <div class="rounded-xl border border-slate-200 bg-white shadow-sm bg-violet-50 border-violet-100">
+        <div class="rounded-xl border bg-white shadow-sm border-violet-100">
             <div class="p-4">
                 <p class="text-xs font-semibold text-violet-700 flex items-center gap-1.5 mb-1.5">
                     <i data-lucide="lightbulb" class="w-3.5 h-3.5"></i>Conseil

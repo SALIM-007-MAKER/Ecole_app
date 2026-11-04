@@ -101,13 +101,13 @@ const id = <?= $campagne['id'] ?>;
 
 async function lancer() {
   if (!confirm('Lancer cette campagne ?')) return;
-  const r = await fetch(`/v2/communication/campagnes/${id}/launch`, { method: 'POST', headers: { 'X-CSRF-Token': csrf } });
+  const r = await fetch(`<?= BASE_URL ?>/v2/communication/campagnes/${id}/launch`, { method: 'POST', headers: { 'X-CSRF-Token': csrf } });
   if ((await r.json()).success) location.reload();
 }
 
 async function annuler() {
   if (!confirm('Annuler cette campagne ?')) return;
-  const r = await fetch(`/v2/communication/campagnes/${id}/cancel`, { method: 'POST', headers: { 'X-CSRF-Token': csrf } });
+  const r = await fetch(`<?= BASE_URL ?>/v2/communication/campagnes/${id}/cancel`, { method: 'POST', headers: { 'X-CSRF-Token': csrf } });
   if ((await r.json()).success) location.reload();
 }
 </script>

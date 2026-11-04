@@ -214,7 +214,7 @@ $flash   = \Core\Session::getFlash();
                   action="<?= BASE_URL ?>/v2/academique/types-evaluations/<?= $type->id ?>/desactiver">
                 <input type="hidden" name="_csrf_token" value="<?= \Core\Session::getCsrfToken() ?>">
                 <button type="submit"
-                        onclick="return confirm('Désactiver « <?= htmlspecialchars($type->nom, ENT_JS) ?> » ? Il n\'apparaîtra plus dans les sélecteurs.')"
+                        onclick="return confirm('Désactiver « <?= htmlspecialchars(substr(json_encode((string)($type->nom), JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP), 1, -1), ENT_QUOTES) ?> » ? Il n\'apparaîtra plus dans les sélecteurs.')"
                         class="w-full btn btn-secondary text-sm justify-start gap-2">
                     <i data-lucide="toggle-left" class="w-4 h-4 text-amber-500"></i>
                     Désactiver
@@ -227,7 +227,7 @@ $flash   = \Core\Session::getFlash();
                   action="<?= BASE_URL ?>/v2/academique/types-evaluations/<?= $type->id ?>/archiver">
                 <input type="hidden" name="_csrf_token" value="<?= \Core\Session::getCsrfToken() ?>">
                 <button type="submit"
-                        onclick="return confirm('Archiver définitivement « <?= htmlspecialchars($type->nom, ENT_JS) ?> » ? Cette action est irréversible.')"
+                        onclick="return confirm('Archiver définitivement « <?= htmlspecialchars(substr(json_encode((string)($type->nom), JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP), 1, -1), ENT_QUOTES) ?> » ? Cette action est irréversible.')"
                         class="w-full btn btn-secondary text-sm justify-start gap-2 text-slate-400">
                     <i data-lucide="archive" class="w-4 h-4"></i>
                     Archiver définitivement

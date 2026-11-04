@@ -130,9 +130,19 @@ final class DatabaseRestorer
     {
         $count = 0;
         $groups = [];
+        // Colonnes GÉNÉRÉES (ex. platform_subscriptions.est_courant, T067) : MySQL refuse d'y écrire, leur valeur est recalculée à l'insertion.
+        $generees = $pdo->prepare("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND GENERATION_EXPRESSION <> ''");
+        $generees->execute([$table]);
+        $generees = array_flip($generees->fetchAll(PDO::FETCH_COLUMN));
         foreach ($rows as $row) {
             if (empty($row)) {
                 continue;
+            }
+            if ($generees !== []) {
+                $row = array_diff_key($row, $generees);
+                if ($row === []) {
+                    continue;
+                }
             }
             $signature = implode(',', array_keys($row));
             $groups[$signature][] = $row;

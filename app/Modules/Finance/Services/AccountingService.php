@@ -21,6 +21,11 @@ class AccountingService implements AccountingInterface
     private AccountingRepository $repo;
     private AuditService         $audit;
 
+    /** Vrai pendant l'exécution d'une opération critique enveloppée par transaction() : les événements attendent la validation. */
+    private bool $enveloppe = false;
+    /** @var list<object> événements à diffuser seulement après la validation de la transaction englobante */
+    private array $differes = [];
+
     public function __construct()
     {
         $this->repo  = new AccountingRepository();
@@ -208,26 +213,29 @@ class AccountingService implements AccountingInterface
             'credit'  => (float)$l->debit,
         ], $lignesOriginales);
 
-        $newId = $this->creerEcriture(
-            source:      'extourne',
-            reference:   $ecriture->numero,
-            libelle:     "Extourne {$ecriture->numero} — {$motif}",
-            journalCode: $ecriture->journal_code,
-            lignes:      $lignesExtourne,
-            userId:      $userId,
-            dateStr:     date('Y-m-d'),
-        );
+        // Opération critique : écriture d'extourne, marquage de l'originale ET trace d'audit dans UNE transaction (échec => rien n'est écrit).
+        return $this->transaction(function (\PDO $pdo) use ($ecriture, $ecritureId, $lignesExtourne, $motif, $userId): int {
+            $newId = $this->creerEcriture(
+                source:      'extourne',
+                reference:   $ecriture->numero,
+                libelle:     "Extourne {$ecriture->numero} — {$motif}",
+                journalCode: $ecriture->journal_code,
+                lignes:      $lignesExtourne,
+                userId:      $userId,
+                dateStr:     date('Y-m-d'),
+            );
 
-        // Marquer l'originale comme extournée
-        $this->repo->updateEcriture($ecritureId, ['statut' => 'extourne']);
+            // Marquer l'originale comme extournée
+            $this->repo->updateEcriture($ecritureId, ['statut' => 'extourne']);
 
-        $this->audit->log(
-            $userId, 'extourne', 'Finance', 'ecriture', $ecritureId,
-            ['statut' => 'valide'],
-            ['statut' => 'extourne', 'extourne_vers' => $newId, 'motif' => $motif]
-        );
+            $this->audit->logStrict(
+                $pdo, $userId, 'extourne', 'Finance', 'ecriture', $ecritureId,
+                ['statut' => 'valide'],
+                ['statut' => 'extourne', 'extourne_vers' => $newId, 'motif' => $motif]
+            );
 
-        return $newId;
+            return $newId;
+        });
     }
 
     // ── Gestion des exercices et périodes ─────────────────────────────────────
@@ -239,28 +247,33 @@ class AccountingService implements AccountingInterface
             throw new \InvalidArgumentException(implode(' | ', $errors));
         }
 
-        $exerciceId = $this->repo->insertExercice([
-            'libelle'      => $dto->libelle,
-            'date_debut'   => $dto->dateDebut,
-            'date_fin'     => $dto->dateFin,
-            'solde_report' => $dto->soldeReport,
-            'note'         => $dto->note,
-            'ouvert_par'   => $userId,
-        ]);
+        // Exercice, périodes ET trace d'audit dans UNE transaction (échec de l'audit => rien n'est créé). Cette trace est la SEULE pour la
+        // création : le listener AccountingHandler::onFiscalYearOpened n'en écrit plus (il produisait une seconde entrée « exercice_comptable »).
+        return $this->transaction(function (\PDO $pdo) use ($dto, $userId): int {
+            $id = $this->repo->insertExercice([
+                'libelle'      => $dto->libelle,
+                'date_debut'   => $dto->dateDebut,
+                'date_fin'     => $dto->dateFin,
+                'solde_report' => $dto->soldeReport,
+                'note'         => $dto->note,
+                'ouvert_par'   => $userId,
+            ]);
 
-        $this->genererPeriodes($exerciceId, $dto->dateDebut, $dto->dateFin);
+            $this->genererPeriodes($id, $dto->dateDebut, $dto->dateFin);
 
-        EventDispatcher::dispatch(new FiscalYearOpened(
-            exerciceId: $exerciceId,
-            libelle:    $dto->libelle,
-            dateDebut:  $dto->dateDebut,
-            dateFin:    $dto->dateFin,
-            openedById: $userId,
-        ));
+            $this->audit->logStrict($pdo, $userId, 'create', 'Finance', 'exercice', $id, null, $dto->toArray());
 
-        $this->audit->log($userId, 'create', 'Finance', 'exercice', $exerciceId, null, $dto->toArray());
+            // Diffusé seulement après la validation de la transaction.
+            $this->differes[] = new FiscalYearOpened(
+                exerciceId: $id,
+                libelle:    $dto->libelle,
+                dateDebut:  $dto->dateDebut,
+                dateFin:    $dto->dateFin,
+                openedById: $userId,
+            );
 
-        return $exerciceId;
+            return $id;
+        });
     }
 
     public function cloturerPeriode(int $periodeId, int $userId): void
@@ -273,17 +286,20 @@ class AccountingService implements AccountingInterface
             throw new \DomainException("La période est déjà clôturée.");
         }
 
-        $this->repo->updatePeriode($periodeId, [
-            'statut'      => 'cloturee',
-            'cloture_par' => $userId,
-            'cloture_le'  => date('Y-m-d H:i:s'),
-        ]);
+        // Opération critique : clôture ET trace d'audit dans UNE transaction.
+        $this->transaction(function (\PDO $pdo) use ($periodeId, $userId): void {
+            $this->repo->updatePeriode($periodeId, [
+                'statut'      => 'cloturee',
+                'cloture_par' => $userId,
+                'cloture_le'  => date('Y-m-d H:i:s'),
+            ]);
 
-        $this->audit->log(
-            $userId, 'cloturer_periode', 'Finance', 'periode_comptable', $periodeId,
-            ['statut' => 'ouverte'],
-            ['statut' => 'cloturee']
-        );
+            $this->audit->logStrict(
+                $pdo, $userId, 'cloturer_periode', 'Finance', 'periode_comptable', $periodeId,
+                ['statut' => 'ouverte'],
+                ['statut' => 'cloturee']
+            );
+        });
     }
 
     public function cloturerExercice(int $exerciceId, int $userId): void
@@ -302,6 +318,12 @@ class AccountingService implements AccountingInterface
             );
         }
 
+        // Opération critique : écriture de clôture, changement de statut ET trace d'audit dans UNE transaction (échec => exercice non clôturé).
+        $this->transaction(fn(\PDO $pdo) => $this->cloturerExerciceDansTransaction($pdo, $exercice, $exerciceId, $userId));
+    }
+
+    private function cloturerExerciceDansTransaction(\PDO $pdo, object $exercice, int $exerciceId, int $userId): void
+    {
         // Calcul du résultat de l'exercice
         $comptesProduits = $this->repo->getComptesByClasse(7, $exerciceId);
         $comptesCharges  = $this->repo->getComptesByClasse(6, $exerciceId);
@@ -373,19 +395,53 @@ class AccountingService implements AccountingInterface
             'cloture_par'  => $userId,
         ]);
 
-        EventDispatcher::dispatch(new FiscalYearClosed(
+        $this->audit->logStrict(
+            $pdo, $userId, 'cloturer_exercice', 'Finance', 'exercice', $exerciceId,
+            ['statut' => $exercice->statut],
+            ['statut' => 'cloture', 'resultat_net' => $resultat, 'libelle' => $exercice->libelle, 'date_fin' => $exercice->date_fin]
+        );
+
+        // Diffusé seulement après la validation de la transaction (jamais pour une clôture annulée).
+        $this->differes[] = new FiscalYearClosed(
             exerciceId:  $exerciceId,
             libelle:     $exercice->libelle,
             dateFin:     $exercice->date_fin,
             resultatNet: $resultat,
             closedById:  $userId,
-        ));
-
-        $this->audit->log(
-            $userId, 'cloturer_exercice', 'Finance', 'exercice', $exerciceId,
-            ['statut' => $exercice->statut],
-            ['statut' => 'cloture', 'resultat_net' => $resultat]
         );
+    }
+
+    /**
+     * Exécute $operation dans UNE transaction PDO (celle de l'appelant si elle existe déjà). Les événements différés ne sont diffusés qu'après
+     * la validation ; en cas d'exception tout est annulé et aucun événement n'est diffusé.
+     */
+    private function transaction(callable $operation): mixed
+    {
+        $pdo = $this->repo->getPdo();
+        if ($pdo->inTransaction()) {
+            return $operation($pdo);          // l'appelant détient la transaction et la validera ou l'annulera
+        }
+        $this->enveloppe = true;
+        $this->differes  = [];
+        $pdo->beginTransaction();
+        try {
+            $resultat = $operation($pdo);
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            $this->differes  = [];
+            $this->enveloppe = false;
+            throw $e;
+        }
+        $this->enveloppe = false;
+        $evenements = $this->differes;
+        $this->differes = [];
+        foreach ($evenements as $evenement) {
+            EventDispatcher::dispatch($evenement);
+        }
+        return $resultat;
     }
 
     // ── Méthodes privées ──────────────────────────────────────────────────────
@@ -434,7 +490,10 @@ class AccountingService implements AccountingInterface
         $numero = $this->repo->genererNumero((int)date('Y'));
 
         $pdo = $this->repo->getPdo();
-        $pdo->beginTransaction();
+        $transactionPropre = !$pdo->inTransaction();   // dans une opération critique, la transaction englobante appartient à l'appelant
+        if ($transactionPropre) {
+            $pdo->beginTransaction();
+        }
         try {
             $ecritureId = $this->repo->insertEcriture([
                 'numero'        => $numero,
@@ -464,13 +523,17 @@ class AccountingService implements AccountingInterface
                 ]);
             }
 
-            $pdo->commit();
+            if ($transactionPropre) {
+                $pdo->commit();
+            }
         } catch (\Throwable $e) {
-            $pdo->rollBack();
+            if ($transactionPropre && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
             throw $e;
         }
 
-        EventDispatcher::dispatch(new JournalEntryCreated(
+        $evenement = new JournalEntryCreated(
             ecritureId:  $ecritureId,
             numero:      $numero,
             source:      $source,
@@ -478,7 +541,12 @@ class AccountingService implements AccountingInterface
             totalDebit:  $totalDebit,
             journalCode: $journalCode,
             createdById: $userId,
-        ));
+        );
+        if ($this->enveloppe) {
+            $this->differes[] = $evenement;       // diffusé après la validation de l'opération critique englobante
+        } else {
+            EventDispatcher::dispatch($evenement);
+        }
 
         return $ecritureId;
     }

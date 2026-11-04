@@ -15,7 +15,7 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
       </div>
       <h1 class="text-2xl font-bold text-slate-900">Soldes de congés</h1>
     </div>
-    <a href="<?= BASE_URL ?>/v2/rh/conges" class="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">← Retour</a>
+    <a href="<?= BASE_URL ?>/v2/rh/conges" class="btn btn-secondary">← Retour</a>
   </div>
 
   <?php if ($flash = \Core\Session::getFlash('success')): ?>
@@ -64,7 +64,7 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
           <input type="number" name="solde_initial" value="0" min="0" max="365" step="0.5"
                  class="form-input">
         </div>
-        <button type="submit" class="w-full py-2.5 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700">
+        <button type="submit" class="btn btn-primary w-full">
           Enregistrer le solde
         </button>
       </form>
@@ -84,8 +84,8 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
           <?php endforeach; ?>
         </select>
         <input type="number" name="annee" value="<?= $annee ?>" min="2020" max="2099"
-               class="border border-slate-200 rounded-lg px-3 py-2 text-sm w-24 focus:ring-2 focus:ring-violet-300 outline-none">
-        <button type="submit" class="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">Filtrer</button>
+               class="form-input w-24">
+        <button type="submit" class="btn btn-primary">Filtrer</button>
       </form>
 
       <div class="bg-white border border-slate-100 rounded-xl shadow-sm overflow-hidden">

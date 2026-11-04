@@ -4,6 +4,7 @@ namespace App\Modules\Finance\Repositories;
 
 use App\Modules\Finance\DTO\DecaissementFiltersDTO;
 use Core\Database;
+use Core\Tenant\TenantScope;
 use PDO;
 
 class DecaissementRepository
@@ -24,6 +25,7 @@ class DecaissementRepository
 
     public function genererNumero(string $type, int $annee): string
     {
+        $type = TenantScope::cleSequence($type);   // compteur (et préfixe du numéro) propre à l'établissement
         $stmt = $this->pdo->prepare(
             "INSERT INTO `finance_sequences` (`type`, `annee`, `valeur`) VALUES (?, ?, 1)
              ON DUPLICATE KEY UPDATE `valeur` = `valeur` + 1"
@@ -39,7 +41,7 @@ class DecaissementRepository
 
     public function paginate(DecaissementFiltersDTO $f): array
     {
-        $where  = ['d.deleted_at IS NULL'];
+        $where  = ['d.deleted_at IS NULL', TenantScope::sqlUtilisateur('d.saisi_par')];   // saisi par un utilisateur de l'établissement courant
         $params = [];
 
         if ($f->q) {
@@ -139,7 +141,7 @@ class DecaissementRepository
              LEFT JOIN `users` u3 ON u3.id = d.approuve_par
              LEFT JOIN `users` u4 ON u4.id = d.paye_par
              LEFT JOIN `users` u5 ON u5.id = d.annule_par
-             WHERE d.id = ? AND d.deleted_at IS NULL
+             WHERE d.id = ? AND d.deleted_at IS NULL AND " . TenantScope::sqlUtilisateur('d.saisi_par') . "
              LIMIT 1"
         );
         $stmt->execute([$id]);
@@ -168,7 +170,7 @@ class DecaissementRepository
 
     public function statsGlobal(?string $dateDebut = null, ?string $dateFin = null): object
     {
-        $where  = ['deleted_at IS NULL'];
+        $where  = ['deleted_at IS NULL', TenantScope::sqlUtilisateur('saisi_par')];
         $params = [];
         if ($dateDebut) { $where[] = 'date_depense >= ?'; $params[] = $dateDebut; }
         if ($dateFin)   { $where[] = 'date_depense <= ?'; $params[] = $dateFin; }
@@ -191,7 +193,7 @@ class DecaissementRepository
 
     public function statsParCategorie(?string $annee = null): array
     {
-        $where  = ["d.deleted_at IS NULL", "d.statut = 'paye'"];
+        $where  = ["d.deleted_at IS NULL", "d.statut = 'paye'", TenantScope::sqlUtilisateur('d.saisi_par')];
         $params = [];
         if ($annee) { $where[] = 'YEAR(d.date_depense) = ?'; $params[] = (int)$annee; }
         $whereStr = implode(' AND ', $where);
@@ -259,14 +261,14 @@ class DecaissementRepository
 
     public function findAllCategories(bool $actifOnly = false): array
     {
-        $where = $actifOnly ? 'WHERE actif = 1' : '';
+        $where = 'WHERE ' . TenantScope::sqlEtab('finance_categories_depenses', 'etablissement_id') . ($actifOnly ? ' AND actif = 1' : '');
         $stmt = $this->pdo->query("SELECT * FROM `finance_categories_depenses` {$where} ORDER BY nom");
         return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 
     public function findCategorie(int $id): ?object
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM `finance_categories_depenses` WHERE `id` = ? LIMIT 1');
+        $stmt = $this->pdo->prepare('SELECT * FROM `finance_categories_depenses` WHERE `id` = ? AND ' . TenantScope::sqlEtab('finance_categories_depenses', 'etablissement_id') . ' LIMIT 1');
         $stmt->execute([$id]);
         $row = $stmt->fetch(PDO::FETCH_OBJ);
         return $row ?: null;
@@ -274,13 +276,14 @@ class DecaissementRepository
 
     public function categorieCodeExists(string $code, int $excludeId = 0): bool
     {
-        $stmt = $this->pdo->prepare('SELECT id FROM `finance_categories_depenses` WHERE `code` = ? AND `id` != ?');
+        $stmt = $this->pdo->prepare('SELECT id FROM `finance_categories_depenses` WHERE `code` = ? AND `id` != ? AND ' . TenantScope::sqlEtab('finance_categories_depenses', 'etablissement_id'));
         $stmt->execute([$code, $excludeId]);
         return (bool)$stmt->fetchColumn();
     }
 
     public function insertCategorie(array $data): int
     {
+        $data = TenantScope::avecEtab('finance_categories_depenses', $data);
         $cols = implode(',', array_map(fn($c) => "`{$c}`", array_keys($data)));
         $phs  = implode(',', array_fill(0, count($data), '?'));
         $stmt = $this->pdo->prepare("INSERT INTO `finance_categories_depenses` ({$cols}) VALUES ({$phs})");
@@ -306,7 +309,7 @@ class DecaissementRepository
 
     public function paginateFournisseurs(int $page = 1, int $perPage = 25, ?string $q = null, bool $actifOnly = false): array
     {
-        $where  = ['1=1'];
+        $where  = [TenantScope::sqlEtab('finance_fournisseurs', 'etablissement_id')];
         $params = [];
         if ($actifOnly) { $where[] = 'actif = 1'; }
         if ($q) { $where[] = '(nom LIKE ? OR code LIKE ?)'; $params[] = "%$q%"; $params[] = "%$q%"; }
@@ -336,14 +339,14 @@ class DecaissementRepository
 
     public function findAllFournisseurs(bool $actifOnly = true): array
     {
-        $where = $actifOnly ? 'WHERE actif = 1' : '';
+        $where = 'WHERE ' . TenantScope::sqlEtab('finance_fournisseurs', 'etablissement_id') . ($actifOnly ? ' AND actif = 1' : '');
         $stmt = $this->pdo->query("SELECT * FROM `finance_fournisseurs` {$where} ORDER BY nom");
         return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 
     public function findFournisseur(int $id): ?object
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM `finance_fournisseurs` WHERE `id` = ? LIMIT 1');
+        $stmt = $this->pdo->prepare('SELECT * FROM `finance_fournisseurs` WHERE `id` = ? AND ' . TenantScope::sqlEtab('finance_fournisseurs', 'etablissement_id') . ' LIMIT 1');
         $stmt->execute([$id]);
         $row = $stmt->fetch(PDO::FETCH_OBJ);
         return $row ?: null;
@@ -351,13 +354,14 @@ class DecaissementRepository
 
     public function fournisseurCodeExists(string $code, int $excludeId = 0): bool
     {
-        $stmt = $this->pdo->prepare('SELECT id FROM `finance_fournisseurs` WHERE `code` = ? AND `id` != ?');
+        $stmt = $this->pdo->prepare('SELECT id FROM `finance_fournisseurs` WHERE `code` = ? AND `id` != ? AND ' . TenantScope::sqlEtab('finance_fournisseurs', 'etablissement_id'));
         $stmt->execute([$code, $excludeId]);
         return (bool)$stmt->fetchColumn();
     }
 
     public function insertFournisseur(array $data): int
     {
+        $data = TenantScope::avecEtab('finance_fournisseurs', $data);
         $cols = implode(',', array_map(fn($c) => "`{$c}`", array_keys($data)));
         $phs  = implode(',', array_fill(0, count($data), '?'));
         $stmt = $this->pdo->prepare("INSERT INTO `finance_fournisseurs` ({$cols}) VALUES ({$phs})");
@@ -382,7 +386,7 @@ class DecaissementRepository
 
     public function findAllModes(): array
     {
-        $stmt = $this->pdo->query('SELECT * FROM `finance_modes_paiement` WHERE `actif` = 1 ORDER BY nom');
+        $stmt = $this->pdo->query('SELECT * FROM `finance_modes_paiement` WHERE `actif` = 1 AND ' . TenantScope::sqlEtab('finance_modes_paiement', 'etablissement_id') . ' ORDER BY nom');
         return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 }

@@ -128,25 +128,25 @@ $old     = $old     ?? [];
                     <!-- Ligne initiale -->
                     <div class="ligne-row p-4 grid grid-cols-12 gap-2 items-end">
                         <div class="col-span-5">
-                            <label class="block text-xs font-medium text-slate-600 mb-1">Libellé *</label>
+                            <label class="form-label text-xs mb-1">Libellé *</label>
                             <input type="text" name="lignes[0][libelle]" required
                                    class="form-input"
                                    placeholder="Ex: Frais d'inscription">
                         </div>
                         <div class="col-span-2">
-                            <label class="block text-xs font-medium text-slate-600 mb-1">Qté</label>
+                            <label class="form-label text-xs mb-1">Qté</label>
                             <input type="number" name="lignes[0][quantite]" value="1" min="0.01" step="0.01"
                                    class="form-input"
                                    oninput="calcTotal(this)">
                         </div>
                         <div class="col-span-3">
-                            <label class="block text-xs font-medium text-slate-600 mb-1">Prix unitaire *</label>
+                            <label class="form-label text-xs mb-1">Prix unitaire *</label>
                             <input type="number" name="lignes[0][montant_unitaire]" min="0" step="0.01" required
                                    class="form-input"
                                    oninput="calcTotal(this)">
                         </div>
                         <div class="col-span-1 text-right">
-                            <label class="block text-xs font-medium text-slate-600 mb-1">Total</label>
+                            <label class="form-label text-xs mb-1">Total</label>
                             <span class="text-sm font-semibold text-slate-700 total-affichage">0</span>
                         </div>
                         <div class="col-span-1 flex justify-end">
@@ -168,10 +168,8 @@ $old     = $old     ?? [];
 
             <!-- Actions -->
             <div class="flex items-center justify-end gap-3">
-                <a href="<?= BASE_URL ?>/v2/finance/factures<?= $isEdit ? '/' . $facture->id : '' ?>"
-                   class="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">Annuler</a>
-                <button type="submit"
-                        class="px-6 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700">
+                <a href="<?= BASE_URL ?>/v2/finance/factures<?= $isEdit ? '/' . $facture->id : '' ?>" class="btn btn-secondary">Annuler</a>
+                <button type="submit" class="btn btn-primary">
                     <?= $isEdit ? 'Enregistrer' : 'Créer la facture (brouillon)' ?>
                 </button>
             </div>
@@ -190,24 +188,24 @@ function ajouterLigne() {
     div.className = 'ligne-row p-4 grid grid-cols-12 gap-2 items-end';
     div.innerHTML = `
         <div class="col-span-5">
-            <label class="block text-xs font-medium text-slate-600 mb-1">Libellé *</label>
+            <label class="form-label text-xs mb-1">Libellé *</label>
             <input type="text" name="lignes[${i}][libelle]" required
                    class="form-input">
         </div>
         <div class="col-span-2">
-            <label class="block text-xs font-medium text-slate-600 mb-1">Qté</label>
+            <label class="form-label text-xs mb-1">Qté</label>
             <input type="number" name="lignes[${i}][quantite]" value="1" min="0.01" step="0.01"
                    class="form-input"
                    oninput="calcTotal(this)">
         </div>
         <div class="col-span-3">
-            <label class="block text-xs font-medium text-slate-600 mb-1">Prix unitaire *</label>
+            <label class="form-label text-xs mb-1">Prix unitaire *</label>
             <input type="number" name="lignes[${i}][montant_unitaire]" min="0" step="0.01" required
                    class="form-input"
                    oninput="calcTotal(this)">
         </div>
         <div class="col-span-1 text-right">
-            <label class="block text-xs font-medium text-slate-600 mb-1">Total</label>
+            <label class="form-label text-xs mb-1">Total</label>
             <span class="text-sm font-semibold text-slate-700 total-affichage">0</span>
         </div>
         <div class="col-span-1 flex justify-end">

@@ -65,7 +65,7 @@ $grades = $grades ?? [];
                     <i data-lucide="toggle-right" class="w-4 h-4 text-violet-600"></i>
                     <span class="font-semibold text-slate-700">Statut</span>
                 </div>
-                <div class="p-5 p-4">
+                <div class="p-5">
                     <label class="flex items-center gap-3 cursor-pointer">
                         <input type="hidden" name="actif" value="0">
                         <input type="checkbox" id="actif" name="actif" value="1"

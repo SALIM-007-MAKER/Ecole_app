@@ -25,7 +25,23 @@ class Logger
             mkdir(self::getPath(), 0755, true);
         }
 
+        $nouveau = !is_file($file);
         file_put_contents($file, $entry, FILE_APPEND | LOCK_EX);
+        if ($nouveau) {
+            self::purger();   // une fois par jour, à la création du fichier du jour
+        }
+    }
+
+    /** Supprime les journaux plus anciens que LOG_RETENTION_DAYS (90 par défaut ; minimum 7). */
+    private static function purger(): void
+    {
+        $jours  = max(7, (int)($_ENV['LOG_RETENTION_DAYS'] ?? 90));
+        $limite = time() - $jours * 86400;
+        foreach (glob(self::getPath() . '{app,security}-*.log', GLOB_BRACE) ?: [] as $f) {
+            if (@filemtime($f) !== false && filemtime($f) < $limite) {
+                @unlink($f);
+            }
+        }
     }
 
     private static function context(): string

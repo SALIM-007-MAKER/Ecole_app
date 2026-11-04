@@ -54,7 +54,7 @@ class PresenceController extends Controller
         $this->requirePermission('attendance.session.create');
 
         $classes = (new ClasseModel())->findForSelect();
-        $matieres = (new MatiereModel())->findAllActifs();
+        $matieres = (new MatiereModel())->findForSelect(true);   // sans la Conduite
 
         $this->render('VieScolaire::presences/create', [
             'title'    => 'Ouvrir un appel',

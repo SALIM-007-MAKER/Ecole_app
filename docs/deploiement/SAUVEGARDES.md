@@ -63,6 +63,21 @@ Planificateur de tâches Windows) qui pousse une tâche `PlatformBackupJob` (typ
 `MULTI_TENANT_CACHE_QUEUE_IMPLEMENTATION_REPORT.md` pour le détail du mécanisme de
 file d'attente.
 
+### Sauvegarde autonome (recommandée)
+
+`database/backup.php` fait un dump complet (`mysqldump --single-transaction`), contrôle la fin du fichier, applique une rétention et,
+avec `--verify-restore`, restaure le dump dans une base temporaire, compare tables et lignes puis la supprime. **Une sauvegarde n'est
+valide que si cette vérification a réussi.**
+
+```bat
+REM Planificateur de tâches Windows — tous les jours à 02h00
+schtasks /Create /SC DAILY /ST 02:00 /TN "Scolaris sauvegarde" /TR "C:\wamp64\www\ecole_app\database\backup_quotidien.cmd"
+```
+
+`backup_quotidien.cmd` lance `backup.php --keep=14 --verify-restore` et écrit dans `storage/logs/backup-auto.log` (code de sortie ≠ 0 = sauvegarde non validée ; à surveiller). Tâche installée sur le poste de développement le 2026-10-28 ; à recréer sur le serveur de production.
+
+Copier régulièrement `database/backups/auto_*.sql` hors du serveur. Les dumps manuels (sans préfixe `auto_`) ne sont jamais purgés.
+
 ## 5. Sauvegarde avant migration
 
 Le blueprint prévoit une sauvegarde automatique de type `pre_migration` avant toute
@@ -79,3 +94,17 @@ une reprise après sinistre complet (voir `docs/deploiement/RESTAURATION.md`).
 ## 7. Documents associés
 
 `docs/deploiement/RESTAURATION.md`, `docs/technique/MULTI_TENANT.md` §8.
+
+### Ce que fait réellement `backup.php --verify-restore` (vérifié par tests/Unit/BackupScriptTest.php)
+
+1. `mysqldump --single-transaction --routines --triggers` de la base : **lecture seule**, sans verrou sur les tables InnoDB ; l'application peut continuer à tourner.
+2. Contrôle que le fichier se termine par « Dump completed » (dump non tronqué).
+3. Crée une base **temporaire** `<base>_verif_<hex>` sur le même serveur, y rejoue le dump, compare le **nombre de tables et le nombre de lignes de chaque table**
+   avec la base source, puis supprime la base temporaire — **y compris en cas d'échec**.
+4. Si la vérification échoue, le fichier est renommé `.NON_VALIDE.sql` (jamais pris pour une sauvegarde valable, jamais compté ni supprimé par la purge).
+5. Purge : conserve les `--keep=N` dernières sauvegardes `auto_<base>_*.sql` valides ; ne touche ni aux sauvegardes manuelles ni à celles d'une autre base.
+
+Limites à connaître : comparaison par **comptage** (pas de somme de contrôle du contenu — le test automatisé, lui, compare `CHECKSUM TABLE` table par table) ;
+le dump est du **SQL en clair, non chiffré** (contient des données personnelles : droits restreints, chiffrement et copie hors site avant tout transfert) ;
+une écriture survenue pendant la sauvegarde peut provoquer un écart de comptage (relancer) ; la base temporaire exige les droits CREATE/DROP DATABASE.
+Sur une base réelle, la commande crée donc temporairement une seconde copie complète des données sur le même serveur MySQL (espace disque à prévoir).

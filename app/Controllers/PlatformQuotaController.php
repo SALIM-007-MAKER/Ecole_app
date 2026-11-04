@@ -66,6 +66,7 @@ class PlatformQuotaController extends PlatformController
         $this->quotas->recalculate($id);
 
         \Core\Logger::security('QUOTA_RECALCULATED', "etablissement_id={$id} par opérateur plateforme");
+        $this->audit('quota.recalculated', ['etablissement_id' => $id, 'entity_type' => 'etablissement', 'entity_id' => $id]);
         Session::flash('success', 'Usage recalculé.');
         $this->redirect(BASE_URL . '/platform/etablissements/' . $id . '/quotas');
     }

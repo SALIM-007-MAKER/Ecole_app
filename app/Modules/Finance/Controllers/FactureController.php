@@ -478,7 +478,7 @@ class FactureController extends Controller
         }
         $classes = (new ClasseModel())->findForSelect();
         $stmt    = $this->repo->getPdo()->query(
-            "SELECT * FROM `finance_frais_types` WHERE `statut` = 'actif' ORDER BY `nom`"
+            "SELECT * FROM `finance_frais_types` WHERE `statut` = 'actif' AND " . \Core\Tenant\TenantScope::sqlEtab('finance_frais_types', 'etablissement_id') . " ORDER BY `nom`"
         );
         $fraisTypes = $stmt->fetchAll(\PDO::FETCH_OBJ);
 

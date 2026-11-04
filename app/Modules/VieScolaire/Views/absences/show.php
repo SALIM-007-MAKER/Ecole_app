@@ -155,7 +155,7 @@ $csrfToken = \Core\Session::getCsrfToken();
                 <?php endif; ?>
                 <?php if (!empty($justification['motif_refus'])): ?>
                 <div class="col-span-2">
-                    <dt class="text-slate-500 text-red-600">Motif de refus</dt>
+                    <dt class="text-red-600">Motif de refus</dt>
                     <dd class="mt-0.5 text-red-700"><?= nl2br(htmlspecialchars($justification['motif_refus'], ENT_QUOTES)) ?></dd>
                 </div>
                 <?php endif; ?>

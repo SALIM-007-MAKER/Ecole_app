@@ -65,9 +65,8 @@ $old_v  = fn(string $k, $def = '') => htmlspecialchars((string)($old[$k] ?? $def
         </div>
 
         <div class="flex gap-3 pt-2">
-            <button type="submit"
-                    class="flex-1 px-6 py-3 text-sm font-bold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700">
-                <i data-lucide="unlock" class="inline w-4 h-4 mr-1"></i> Ouvrir la caisse
+            <button type="submit" class="btn btn-success flex-1">
+                <i data-lucide="unlock" class="w-4 h-4"></i> Ouvrir la caisse
             </button>
             <a href="<?= BASE_URL ?>/v2/finance/caisse"
                class="px-4 py-3 text-sm text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200">

@@ -39,7 +39,7 @@ function pAbsJustBadge(bool $j): string {
 
 <!-- Selectors -->
 <div class="rounded-xl border border-slate-200 bg-white shadow-sm mb-5">
-    <div class="p-5 p-4">
+    <div class="p-5">
         <form method="GET" class="flex flex-wrap items-center gap-3">
             <div class="flex items-center gap-2 text-sm text-slate-500 font-medium">
                 <i data-lucide="filter" class="w-4 h-4"></i>Filtres :
@@ -81,7 +81,7 @@ function pAbsJustBadge(bool $j): string {
     ];
     foreach ($kpis as $k): ?>
     <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div class="p-5 p-4 text-center">
+        <div class="p-5 text-center">
             <div class="w-10 h-10 rounded-xl <?= $k['bg'] ?> flex items-center justify-center mx-auto mb-3">
                 <i data-lucide="<?= $k['icon'] ?>" class="w-5 h-5 <?= $k['ic'] ?>"></i>
             </div>

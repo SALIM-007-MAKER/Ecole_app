@@ -5,18 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>403 — Accès refusé</title>
 <?php
-$__logoPng = $_SERVER['DOCUMENT_ROOT'] . '/ecole_app/public/assets/img/edunova-logo.png';
-$__logoSvg = $_SERVER['DOCUMENT_ROOT'] . '/ecole_app/public/assets/img/edunova-logo.svg';
+$__logoPng = ROOT_PATH . '/public/assets/img/edunova-logo.png';
+$__logoSvg = ROOT_PATH . '/public/assets/img/edunova-logo.svg';
 $__brandWeb = file_exists($__logoSvg) ? '/assets/img/edunova-logo.svg' : '/assets/img/edunova-logo.png';
 $__base = defined('BASE_URL') ? BASE_URL : '';
 ?>
 <link rel="icon" href="<?= $__base ?><?= $__brandWeb ?>">
 <link rel="apple-touch-icon" href="<?= $__base ?><?= $__brandWeb ?>">
-<script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<link rel="stylesheet" href="<?= BASE_URL ?>/assets/vendor/fontawesome/css/all.min.css">
 <style>body { font-family: Inter, system-ui, sans-serif; }</style>
+    <!-- Tailwind compilé (tools/tailwind/README.md) : en FIN de <head>, comme le faisait le CDN, pour conserver la même cascade avec app.css -->
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/vendor/tailwind/tailwind-preflight.css?v=<?= @filemtime(ROOT_PATH . '/public/assets/vendor/tailwind/tailwind-preflight.css') ?: 1 ?>">
 </head>
 <body class="bg-slate-50 min-h-screen flex items-center justify-center p-6">
     <div class="text-center max-w-sm w-full">
@@ -29,7 +30,7 @@ $__base = defined('BASE_URL') ? BASE_URL : '';
         <!-- Title -->
         <h1 class="text-2xl font-bold text-slate-900 mb-3">Accès refusé</h1>
         <p class="text-slate-500 text-sm leading-relaxed mb-8">
-            Vous n'avez pas les permissions nécessaires pour accéder à cette page.
+            <?= htmlspecialchars($detail ?? "Vous n'avez pas les permissions nécessaires pour accéder à cette page.", ENT_QUOTES) ?>
         </p>
         <!-- Actions -->
         <div class="flex items-center justify-center gap-3">

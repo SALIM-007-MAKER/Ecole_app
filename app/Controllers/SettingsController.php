@@ -56,13 +56,14 @@ class SettingsController extends Controller
             ['id' => 'etablissement',    'label' => 'Établissement',            'icon' => 'school',              'url' => '/parametres/etablissement',   'perm' => 'branding.view',                 'desc' => 'Identité, adresse, contacts'],
             ['id' => 'annee-scolaire',   'label' => 'Année scolaire',           'icon' => 'calendar-range',      'url' => '/parametres/annee-scolaire',  'perm' => 'settings.general.view',         'desc' => 'Année scolaire active'],
             ['id' => 'academique',       'label' => 'Organisation académique',  'icon' => 'layers',              'url' => '/parametres/academique',      'perm' => 'settings.academique.view',      'desc' => 'Cycles et niveaux proposés'],
-            ['id' => 'salles',           'label' => 'Salles',                   'icon' => 'door-open',           'url' => '/salles',                     'perm' => 'emploi_du_temps.view',          'desc' => 'Salles de classe, capacité, type'],
+            ['id' => 'salles',           'label' => 'Salles',                   'icon' => 'door-open',           'url' => '/v2/vie-scolaire/emplois-du-temps/salles', 'perm' => 'timetable.view',          'desc' => 'Salles de classe, capacité, type'],
             ['id' => 'notation',         'label' => 'Système de notation',      'icon' => 'pencil-ruler',        'url' => '/parametres/notation',        'perm' => 'settings.notation.view',        'desc' => 'Barème, seuils de passage'],
             ['id' => 'finances',         'label' => 'Finances',                 'icon' => 'coins',               'url' => '/parametres/finances',        'perm' => 'settings.finances.view',        'desc' => 'Devise par défaut'],
             ['id' => 'documents',        'label' => 'Documents',                'icon' => 'file-text',           'url' => '/parametres/documents',       'perm' => 'settings.documents.view',       'desc' => 'Numérotation reçus/factures'],
             ['id' => 'notifications',    'label' => 'Notifications',            'icon' => 'bell',                'url' => '/parametres/notifications',   'perm' => 'settings.notifications.view',   'desc' => 'Canaux email/SMS'],
             ['id' => 'apparence',        'label' => 'Apparence',                'icon' => 'palette',             'url' => '/parametres/apparence',       'perm' => 'branding.view',                 'desc' => 'Logo, couleurs, thème'],
             ['id' => 'securite',         'label' => 'Sécurité',                 'icon' => 'shield',              'url' => '/parametres/securite',        'perm' => 'settings.securite.view',        'desc' => 'Politique de mot de passe'],
+            ['id' => 'audit',            'label' => 'Journal d\'audit',         'icon' => 'scroll-text',         'url' => '/parametres/audit',           'perm' => 'audit.view',                    'desc' => 'Historique des actions sensibles'],
             ['id' => 'sauvegarde',       'label' => 'Sauvegarde & restauration','icon' => 'database-backup',     'url' => '/parametres/sauvegarde',      'perm' => 'settings.sauvegarde.view',      'desc' => 'Préférences de conservation'],
             ['id' => 'avance',           'label' => 'Paramètres avancés',       'icon' => 'sliders-horizontal',  'url' => '/parametres/avance',          'perm' => 'settings.avance.view',          'desc' => 'Préférences d\'affichage'],
         ];
@@ -153,6 +154,9 @@ class SettingsController extends Controller
         }
 
         $this->branding->save($etabId, $fields);
+        (new \App\Services\AuditService())->log(
+            (int)($this->currentUser()['id'] ?? 0), 'update', 'parametres', 'branding', $etabId, null, ['champs' => array_keys($fields)]
+        );
 
         \Core\Logger::security('BRANDING_UPDATED', "Branding modifié pour etablissement_id={$etabId} par user_id=" . (Session::getUser()['id'] ?? '?'));
 

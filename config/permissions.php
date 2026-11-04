@@ -6,6 +6,8 @@
  */
 return [
     'admin' => [
+        // Parité avec le RBAC en base (etab_*), qui les attribue déjà : évite un écart config ↔ base (RbacTenantTest)
+        'comptabilite.view', 'comptabilite.create', 'comptabilite.edit',
         'eleves.view', 'eleves.create', 'eleves.edit', 'eleves.delete',
         'enseignants.view', 'enseignants.create', 'enseignants.edit', 'enseignants.delete',
         'classes.view', 'classes.create', 'classes.edit', 'classes.delete',
@@ -29,6 +31,8 @@ return [
         'settings.documents.view', 'settings.documents.update',
         'settings.notifications.view', 'settings.notifications.update',
         'settings.securite.view', 'settings.securite.update',
+        // Journal d'audit de l'établissement (étape 2 SaaS, T065) : admin et directeur uniquement
+        'audit.view',
         'settings.sauvegarde.view', 'settings.sauvegarde.update',
         'settings.avance.view', 'settings.avance.update',
         // Domaines personnalisés, Stockage & Quotas, Monitoring & Cache : retirés du
@@ -51,12 +55,15 @@ return [
         'inscriptions.view', 'inscriptions.create', 'inscriptions.update',
         'familles.view', 'familles.manage',
         // ── Académique V2 ───────────────────────────────────────────────────────
-        'academique.periodes.view', 'academique.periodes.manage',
+        'academique.periodes.view', 'academique.periodes.manage', 'academique.periodes.admin',
+        'academique.types_evaluations.view', 'academique.types_evaluations.manage',
         'academique.evaluations.view', 'academique.evaluations.manage', 'academique.evaluations.admin',
         'academique.notes.view', 'academique.notes.manage', 'academique.notes.admin',
+        'academique.conduite.manage',   // Conduite : évaluations, notes, appréciations (T049)
         'academique.moyennes.view', 'academique.moyennes.recalcul',
         'academique.classement.view', 'academique.classement.generer',
         'academique.bulletin.view', 'academique.bulletin.generer', 'academique.bulletin.publier',
+        'academique.bulletin.admin',
         'academique.analytics.view',
         // ── Vie Scolaire V2 ─────────────────────────────────────────────────────
         'attendance.view', 'attendance.create', 'attendance.update', 'attendance.delete',
@@ -128,6 +135,10 @@ return [
         'portal.eleve.access', 'portal.parent.access', 'portal.comptabilite.access', 'portal.rh.access',
     ],
     'directeur' => [
+        // Parité avec le RBAC en base (etab_*), qui les attribue déjà : évite un écart config ↔ base (RbacTenantTest)
+        'audit.view',
+        'comptabilite.view', 'comptabilite.create', 'comptabilite.edit',
+        'settings.securite.view', 'settings.securite.update', 'settings.sauvegarde.view', 'settings.sauvegarde.update', 'settings.avance.view', 'settings.avance.update',
         'eleves.view', 'eleves.create', 'eleves.edit', 'eleves.delete',
         'enseignants.view', 'enseignants.create', 'enseignants.edit', 'enseignants.delete',
         'classes.view', 'classes.create', 'classes.edit', 'classes.delete',
@@ -150,9 +161,9 @@ return [
         'settings.finances.view', 'settings.finances.update',
         'settings.documents.view', 'settings.documents.update',
         'settings.notifications.view', 'settings.notifications.update',
-        'settings.securite.view', 'settings.securite.update',
-        'settings.sauvegarde.view', 'settings.sauvegarde.update',
-        'settings.avance.view', 'settings.avance.update',
+        // Sécurité, Sauvegarde et Avancé : retirées du rôle directeur le 21/08/2026 —
+        // paramétrage technique réservé à Administrateur/Super-Admin (voir
+        // docs/fonctionnel/GUIDE_DIRECTION.md § 10).
         // Domaines personnalisés, Stockage & Quotas, Monitoring & Cache : retirés du
         // périmètre établissement (T026) — réservés à l'Administration de la
         // plateforme (Core\Platform\PlatformAuth, Super Administrateur uniquement).
@@ -169,12 +180,15 @@ return [
         'finance.comptabilite.view', 'finance.comptabilite.exercice',
         'finance.rapports.view', 'finance.rapports.export',
         // ── Académique V2 ───────────────────────────────────────────────────────
-        'academique.periodes.view', 'academique.periodes.manage',
+        'academique.periodes.view', 'academique.periodes.manage', 'academique.periodes.admin',
+        'academique.types_evaluations.view', 'academique.types_evaluations.manage',
         'academique.evaluations.view', 'academique.evaluations.manage', 'academique.evaluations.admin',
         'academique.notes.view', 'academique.notes.manage', 'academique.notes.admin',
+        'academique.conduite.manage',   // Conduite : évaluations, notes, appréciations (T049)
         'academique.moyennes.view', 'academique.moyennes.recalcul',
         'academique.classement.view', 'academique.classement.generer',
         'academique.bulletin.view', 'academique.bulletin.generer', 'academique.bulletin.publier',
+        'academique.bulletin.admin',
         'academique.analytics.view',
         // ── Vie Scolaire V2 ─────────────────────────────────────────────────────
         'attendance.view', 'attendance.create', 'attendance.update', 'attendance.delete',
@@ -253,6 +267,8 @@ return [
         'portal.direction.access', 'portal.rh.access',
     ],
     'secretaire' => [
+        // Parité avec le RBAC en base (etab_*), qui les attribue déjà : évite un écart config ↔ base (RbacTenantTest)
+        'comptabilite.view', 'comptabilite.create',
         'eleves.view', 'eleves.create', 'eleves.edit',
         'classes.view', 'matieres.view',
         'notes.view', 'bulletins.view',
@@ -332,6 +348,8 @@ return [
         'portal.comptabilite.access',
     ],
     'comptable' => [
+        // Parité avec le RBAC en base (etab_*), qui les attribue déjà : évite un écart config ↔ base (RbacTenantTest)
+        'comptabilite.view', 'comptabilite.create', 'comptabilite.edit',
         'eleves.view', 'classes.view', 'matieres.view', 'enseignants.view', 'rapports.view',
         'annonces.view',
         // ── Finance V2 ──────────────────────────────────────────────────────────
@@ -438,7 +456,10 @@ return [
         'portal.enseignant.access',
     ],
     'parent' => [
-        'notes.view_own', 'absences.view_own', 'absences.justify', 'bulletins.view',
+        // 'bulletins.view' retiré (octobre 2026) : donnait accès à /bulletins/* (résultats et bulletins de
+        // TOUS les élèves). Un parent consulte les bulletins de ses enfants via /parent/bulletin et
+        // /v2/academique/bulletins/{élève}/{période}/imprimer (contrôle de rattachement famille).
+        'notes.view_own', 'absences.view_own', 'absences.justify',
         'comptabilite.view_own',
         'emploi_du_temps.view_own',
         'annonces.view',
@@ -469,7 +490,9 @@ return [
         'portal.parent.access',
     ],
     'eleve' => [
-        'notes.view_own', 'absences.view_own', 'bulletins.view',
+        // 'bulletins.view' retiré (octobre 2026) : voir le rôle parent. L'élève consulte son bulletin
+        // via /eleve/bulletin et /v2/academique/bulletins/{son id}/{période}/imprimer.
+        'notes.view_own', 'absences.view_own',
         'emploi_du_temps.view_own',
         'annonces.view',
         // ── Finance V2 ──────────────────────────────────────────────────────────

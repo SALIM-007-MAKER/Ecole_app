@@ -65,7 +65,7 @@ class ProfesseurModel extends Model
              WHERE p.id = ? AND p.etablissement_id = ?
              GROUP BY p.id",
             [$id, $this->tenantId()]
-        );
+        ) ?: null;
     }
 
     // ─── Pagination et filtres ───────────────────────────────────────────────────

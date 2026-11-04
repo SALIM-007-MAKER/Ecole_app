@@ -151,7 +151,7 @@ class TimetableRepository
         $stmt = $this->db->prepare("
             SELECT cr.*,
                    m.nom         AS matiere_nom,
-                   m.couleur     AS matiere_couleur,
+                   cr.couleur    AS matiere_couleur,
                    p.libelle     AS plage_libelle,
                    p.heure_debut AS plage_debut,
                    p.heure_fin   AS plage_fin,
@@ -328,19 +328,45 @@ class TimetableRepository
     public function findAllPlages(): array
     {
         $stmt = $this->db->prepare("
-            SELECT * FROM vs_edt_plages_horaires WHERE actif = 1 ORDER BY ordre ASC
+            SELECT * FROM vs_edt_plages_horaires WHERE actif = 1" . \Core\Tenant\TenantScope::referentiel('vs_edt_plages_horaires', 'etablissement_id')[0] . " ORDER BY ordre ASC
         ");
-        $stmt->execute();
+        $stmt->execute(\Core\Tenant\TenantScope::referentiel('vs_edt_plages_horaires', 'etablissement_id')[1]);
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
     public function findAllSalles(): array
     {
         $stmt = $this->db->prepare("
-            SELECT * FROM vs_edt_salles WHERE actif = 1 ORDER BY nom ASC
+            SELECT * FROM vs_edt_salles WHERE actif = 1" . \Core\Tenant\TenantScope::referentiel('vs_edt_salles', 'etablissement_id')[0] . " ORDER BY nom ASC
         ");
-        $stmt->execute();
+        $stmt->execute(\Core\Tenant\TenantScope::referentiel('vs_edt_salles', 'etablissement_id')[1]);
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Matières proposables dans le formulaire de créneau : celles de l'établissement, triées par nom.
+     * La table matieres n'a ni colonne « actif » ni « couleur » : seules les colonnes réelles sont lues.
+     * La matière de Conduite (marqueur est_conduite) n'a pas d'heures de cours : elle est exclue.
+     * Sans établissement identifié, la liste est vide (échec fermé).
+     */
+    public function matieresPlanifiables(int $etablissementId): array
+    {
+        if ($etablissementId <= 0) {
+            return [];
+        }
+        $stmt = $this->db->prepare("
+            SELECT id, nom FROM matieres WHERE etablissement_id = :etab AND est_conduite IS NULL ORDER BY nom ASC, id ASC
+        ");
+        $stmt->execute([':etab' => $etablissementId]);
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    /** La matière est-elle la matière de Conduite (marqueur est_conduite) ? Une matière inexistante n'en est pas une. */
+    public function matiereEstConduite(int $matiereId): bool
+    {
+        $stmt = $this->db->prepare("SELECT est_conduite FROM matieres WHERE id = :id");
+        $stmt->execute([':id' => $matiereId]);
+        return (int)$stmt->fetchColumn() === 1;
     }
 
     // ── EDT par enseignant ────────────────────────────────────────────────────
@@ -351,7 +377,7 @@ class TimetableRepository
             SELECT cr.*,
                    c.nom         AS classe_nom,
                    m.nom         AS matiere_nom,
-                   m.couleur     AS matiere_couleur,
+                   cr.couleur    AS matiere_couleur,
                    p.libelle     AS plage_libelle,
                    p.heure_debut AS plage_debut,
                    p.heure_fin   AS plage_fin,
@@ -536,6 +562,7 @@ class TimetableRepository
     {
         $conditions = ['e.deleted_at IS NULL'];
         $params     = [];
+        if (($t = \Core\Tenant\TenantScope::conditionClasse('e.classe_id')) !== null) { $conditions[] = $t[0]; $params += $t[1]; }
 
         if ($f->classeId !== null) {
             $conditions[] = 'e.classe_id = :classe_id';

@@ -55,7 +55,7 @@ foreach ($enfants as $en) {
         <form method="GET" class="flex flex-wrap gap-3 items-end">
             <?php if (!$isEleve && count($enfants) > 1): ?>
             <div>
-                <label class="block text-xs font-medium text-slate-600 mb-1">Enfant</label>
+                <label class="form-label text-xs mb-1">Enfant</label>
                 <select name="eleve_id" onchange="this.form.submit()"
                         class="form-select">
                     <?php foreach ($enfants as $en): ?>
@@ -67,7 +67,7 @@ foreach ($enfants as $en) {
             </div>
             <?php endif; ?>
             <div>
-                <label class="block text-xs font-medium text-slate-600 mb-1">Année scolaire</label>
+                <label class="form-label text-xs mb-1">Année scolaire</label>
                 <select name="annee_scolaire" onchange="this.form.submit()"
                         class="form-select">
                     <?php foreach ($annees as $a): ?>

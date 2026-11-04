@@ -3,6 +3,7 @@
 namespace App\Modules\Academique\Listeners;
 
 use App\Modules\Academique\Events\NoteCreated;
+use App\Modules\Academique\Events\NoteDeleted;
 use App\Modules\Academique\Events\NoteImported;
 use App\Modules\Academique\Events\NoteLocked;
 use App\Modules\Academique\Events\NotePublished;
@@ -25,6 +26,7 @@ class NoteHandler implements Listener
         match(true) {
             $event instanceof NoteCreated   => $this->onCreated($event),
             $event instanceof NoteUpdated   => $this->onUpdated($event),
+            $event instanceof NoteDeleted   => $this->onDeleted($event),
             $event instanceof NotePublished => $this->onPublished($event),
             $event instanceof NoteLocked    => $this->onLocked($event),
             $event instanceof NoteImported  => $this->onImported($event),
@@ -53,6 +55,17 @@ class NoteHandler implements Listener
             $e->noteId,
             ['valeur' => $e->oldValeur],
             ['valeur' => $e->newValeur]
+        );
+    }
+
+    private function onDeleted(NoteDeleted $e): void
+    {
+        $this->audit->logDelete(
+            $e->deletedById,
+            'academique',
+            'note',
+            $e->noteId,
+            ['evaluation_id' => $e->evaluationId, 'eleve_id' => $e->eleveId, 'valeur' => $e->valeur]
         );
     }
 

@@ -19,9 +19,8 @@ $q      = $q      ?? '';
                 <p class="text-sm text-slate-500 mt-1"><?= $result['total'] ?> fournisseur(s) au total</p>
             </div>
         </div>
-        <button onclick="ouvrirCreation()"
-                class="px-4 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700">
-            <i data-lucide="plus" class="inline w-4 h-4 mr-1"></i> Nouveau fournisseur
+        <button onclick="ouvrirCreation()" class="btn btn-primary">
+            <i data-lucide="plus" class="w-4 h-4"></i> Nouveau fournisseur
         </button>
     </div>
 
@@ -29,8 +28,8 @@ $q      = $q      ?? '';
     <form method="GET" class="bg-white rounded-xl border border-slate-200 p-4 flex gap-3">
         <input type="text" name="q" value="<?= htmlspecialchars($q) ?>" placeholder="Rechercher un fournisseur..."
                class="form-input flex-1">
-        <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700">
-            <i data-lucide="search" class="inline w-4 h-4 mr-1"></i> Rechercher
+        <button type="submit" class="btn btn-primary">
+            <i data-lucide="search" class="w-4 h-4"></i> Rechercher
         </button>
     </form>
 
@@ -186,8 +185,8 @@ $q      = $q      ?? '';
 
             <div class="flex justify-end gap-3 pt-2">
                 <button type="button" onclick="document.getElementById('modal-frs').classList.add('hidden')"
-                        class="px-4 py-2 text-sm text-slate-600">Annuler</button>
-                <button type="submit" id="modal-frs-submit" class="px-4 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700">
+                        class="btn btn-secondary">Annuler</button>
+                <button type="submit" id="modal-frs-submit" class="btn btn-primary">
                     Créer le fournisseur
                 </button>
             </div>

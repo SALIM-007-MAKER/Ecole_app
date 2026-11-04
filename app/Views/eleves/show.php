@@ -50,10 +50,10 @@ $age       = $eleve->date_naissance
     <!-- ── Carte identité ─────────────────────────────────────────────────── -->
     <div class="space-y-4">
         <div class="rounded-xl border border-slate-200 bg-white shadow-sm text-center">
-            <div class="p-5 p-6">
+            <div class="p-6">
                 <!-- Avatar -->
                 <?php if (!empty($eleve->photo)): ?>
-                <img src="<?= BASE_URL ?>/<?= htmlspecialchars($eleve->photo, ENT_QUOTES) ?>"
+                <img src="<?= htmlspecialchars(\App\Shared\Http\MediaUrl::photo($eleve->photo), ENT_QUOTES) ?>"
                      class="w-32 h-32 rounded-full object-cover border-4 border-slate-100 shadow-md mx-auto mb-4"
                      alt="Photo">
                 <?php else: ?>
@@ -113,7 +113,7 @@ $age       = $eleve->date_naissance
                 <i data-lucide="users" class="w-4 h-4 text-amber-500"></i>
                 <span class="font-semibold text-slate-700">Parent responsable</span>
             </div>
-            <div class="p-5 p-4">
+            <div class="p-5">
                 <?php if (!empty($eleve->parent_nom) && trim($eleve->parent_nom) !== ''): ?>
                 <div class="flex items-center gap-3">
                     <div class="w-11 h-11 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
@@ -280,7 +280,7 @@ $age       = $eleve->date_naissance
                 <div class="p-5">
                     <div class="flex items-center justify-between mb-4">
                         <p class="text-sm font-semibold text-slate-700">Suivi des absences</p>
-                        <a href="<?= BASE_URL ?>/absences?eleve_id=<?= $eleve->id ?>"
+                        <a href="<?= BASE_URL ?>/v2/vie-scolaire/absences?eleve_id=<?= $eleve->id ?>"
                            class="btn btn-warning">
                             <i data-lucide="external-link" class="w-4 h-4"></i>Voir toutes les absences
                         </a>
@@ -289,7 +289,7 @@ $age       = $eleve->date_naissance
                         <i data-lucide="calendar-x" class="w-10 h-10 text-slate-300 mx-auto mb-3"></i>
                         <p class="text-sm text-slate-500 font-medium mb-1">Absences disponibles dans le module dédié</p>
                         <p class="text-xs text-slate-400 mb-3">Consultez l'assiduité complète depuis la page absences.</p>
-                        <a href="<?= BASE_URL ?>/absences?eleve_id=<?= $eleve->id ?>" class="btn btn-warning">
+                        <a href="<?= BASE_URL ?>/v2/vie-scolaire/absences?eleve_id=<?= $eleve->id ?>" class="btn btn-warning">
                             <i data-lucide="calendar-x" class="w-4 h-4"></i>Consulter les absences
                         </a>
                     </div>
@@ -324,7 +324,7 @@ $age       = $eleve->date_naissance
                 <i data-lucide="zap" class="w-4 h-4 text-violet-600"></i>
                 <span class="font-semibold text-slate-700">Accès rapides</span>
             </div>
-            <div class="p-5 p-4">
+            <div class="p-5">
                 <div class="grid grid-cols-3 gap-3">
                           <a href="<?= BASE_URL ?>/v2/academique/notes?eleve_id=<?= $eleve->id ?>"
                               class="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white p-5 text-center text-slate-600 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 hover:shadow-md">
@@ -332,7 +332,7 @@ $age       = $eleve->date_naissance
                         <span class="text-sm font-semibold text-slate-700">Notes</span>
                         <span class="text-xs text-slate-400">Relevé complet</span>
                     </a>
-                    <a href="<?= BASE_URL ?>/absences?eleve_id=<?= $eleve->id ?>"
+                    <a href="<?= BASE_URL ?>/v2/vie-scolaire/absences?eleve_id=<?= $eleve->id ?>"
                        class="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white p-5 text-center text-slate-600 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700 hover:shadow-md">
                         <i data-lucide="calendar-x" class="w-7 h-7 text-amber-500 mb-1.5"></i>
                         <span class="text-sm font-semibold text-slate-700">Absences</span>
@@ -355,7 +355,7 @@ $age       = $eleve->date_naissance
 <div id="deleteModal" class="modal-overlay fixed inset-0 z-[9000] hidden items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm [&.active]:flex">
     <div class="w-full max-w-lg rounded-xl border border-slate-200 bg-white shadow-2xl" style="max-width:440px">
         <div class="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
-            <h3 class="text-base font-semibold text-slate-950 flex items-center gap-2 text-red-600">
+            <h3 class="text-base font-semibold flex items-center gap-2 text-red-600">
                 <i data-lucide="alert-triangle" class="w-5 h-5"></i>Confirmer la suppression
             </h3>
             <button class="btn btn-ghost btn-icon text-slate-400"

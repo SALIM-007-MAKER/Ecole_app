@@ -130,6 +130,138 @@ class AbsenceController extends Controller
         }
     }
 
+    // ── Pointage groupé (classe entière) ────────────────────────────────────────
+
+    public function pointage(): void
+    {
+        $this->requirePermission('attendance.create');
+
+        $classes  = (new ClasseModel())->findForSelect();
+        $classeId = (int)($_GET['classe_id'] ?? 0);
+        $date     = trim((string)($_GET['date'] ?? date('Y-m-d')));
+        if (!\DateTime::createFromFormat('Y-m-d', $date)) {
+            $date = date('Y-m-d');
+        }
+
+        $classe = null;
+        $roster = [];
+        if ($classeId > 0) {
+            $classe = (new ClasseModel())->findById($classeId);
+            if ($classe) {
+                $roster = $this->repo->findRosterForPointage($classeId, $date);
+            }
+        }
+
+        $this->render('VieScolaire::absences/pointage', [
+            'title'    => 'Pointage journalier',
+            'classes'  => $classes,
+            'classeId' => $classeId,
+            'classe'   => $classe,
+            'date'     => $date,
+            'roster'   => $roster,
+        ]);
+    }
+
+    public function storePointage(): void
+    {
+        $this->requirePermission('attendance.create');
+        $this->verifyCsrf();
+
+        $classeId = (int)($_POST['classe_id'] ?? 0);
+        $date     = trim((string)($_POST['date'] ?? ''));
+        $statuts  = $_POST['statuts'] ?? [];
+        $durees   = $_POST['durees']  ?? [];
+        $motifs   = $_POST['motifs']  ?? [];
+
+        if ($classeId <= 0 || !\DateTime::createFromFormat('Y-m-d', $date) || !is_array($statuts)) {
+            Session::flash('error', 'Données de pointage invalides.');
+            $this->redirect(BASE_URL . '/v2/vie-scolaire/absences/pointage');
+            return;
+        }
+
+        $classe = (new ClasseModel())->findById($classeId);
+        if (!$classe) {
+            Session::flash('error', 'Classe introuvable.');
+            $this->redirect(BASE_URL . '/v2/vie-scolaire/absences/pointage');
+            return;
+        }
+        $anneeScolaire = $classe->annee_scolaire ?? (date('Y') . '-' . (date('Y') + 1));
+
+        $user        = $this->currentUser();
+        $userId      = (int)$user['id'];
+        $lateService = new \App\Modules\VieScolaire\Retards\Services\LateService();
+
+        $roster      = $this->repo->findRosterForPointage($classeId, $date);
+        $rosterByEleve = [];
+        foreach ($roster as $row) {
+            $rosterByEleve[(int)$row['eleve_id']] = $row;
+        }
+
+        $heureArrivee = date('H:i:s');
+        $enregistres  = 0;
+
+        foreach ($statuts as $eleveIdStr => $statut) {
+            $eleveId = (int)$eleveIdStr;
+            $ligne   = $rosterByEleve[$eleveId] ?? null;
+            if ($ligne === null || !in_array($statut, ['present', 'absence', 'retard'], true)) {
+                continue;
+            }
+
+            // Une correction ou une re-saisie du jour archive d'abord
+            // l'enregistrement existant (dans le domaine concerné), puis
+            // recrée si besoin ci-dessous — évite tout doublon.
+            if ($ligne['absence_id']) {
+                try { $this->service->archiver((int)$ligne['absence_id'], $userId); } catch (\Throwable) {}
+            }
+            if ($ligne['retard_id']) {
+                try { $lateService->archiver((int)$ligne['retard_id'], $userId); } catch (\Throwable) {}
+            }
+
+            if ($statut === 'absence') {
+                $dto = AbsenceDTO::fromRequest([
+                    'eleve_id'     => $eleveId,
+                    'date_absence' => $date,
+                    'type'         => 'absence',
+                    'heure_debut'  => '',
+                    'heure_fin'    => '',
+                    'duree_heures' => '',
+                    'observation'  => $motifs[$eleveIdStr] ?? '',
+                ]);
+                try {
+                    $this->service->enregistrer($dto, $classeId, $anneeScolaire, $userId);
+                    $enregistres++;
+                } catch (\InvalidArgumentException) {
+                    // Ligne ignorée si invalide — le reste du pointage continue.
+                }
+            } elseif ($statut === 'retard') {
+                $dureeMin = max(1, (int)($durees[$eleveIdStr] ?? 15));
+                $dto = new \App\Modules\VieScolaire\Retards\DTO\LateDTO(
+                    eleveId:       $eleveId,
+                    classeId:      $classeId,
+                    anneeScolaire: $anneeScolaire,
+                    dateRetard:    $date,
+                    heurePrevue:   null,
+                    heureArrivee:  $heureArrivee,
+                    dureeMinutes:  $dureeMin,
+                    observation:   $motifs[$eleveIdStr] ?? null,
+                );
+                try {
+                    $lateService->enregistrerManuellement($dto, $userId);
+                    $enregistres++;
+                } catch (\InvalidArgumentException) {
+                    // Ligne ignorée si invalide — le reste du pointage continue.
+                }
+            }
+            // 'present' : l'archivage ci-dessus suffit, rien à recréer.
+        }
+
+        Session::flash('success', "Pointage enregistré — {$enregistres} ligne(s) mise(s) à jour.");
+        $this->redirect(
+            BASE_URL . '/v2/vie-scolaire/absences/pointage?classe_id=' . $classeId
+            . '&date=' . urlencode($date)
+        );
+    }
+
     // ── Édition ───────────────────────────────────────────────────────────────
 
     public function edit(string $id): void

@@ -45,7 +45,7 @@ $user = \Core\Session::getUser();
     ];
     foreach ($kpis as $k): ?>
     <div class="rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-sm transition-shadow">
-        <div class="p-5 p-4 text-center">
+        <div class="p-5 text-center">
             <div class="w-10 h-10 rounded-xl <?= $k['bg'] ?> flex items-center justify-center mx-auto mb-3">
                 <i data-lucide="<?= $k['icon'] ?>" class="w-5 h-5 <?= $k['ic'] ?>"></i>
             </div>
@@ -106,7 +106,7 @@ $user = \Core\Session::getUser();
             </div>
             <span class="font-semibold text-slate-700">Accès rapides</span>
         </div>
-        <div class="p-5 p-4 space-y-2">
+        <div class="p-5 space-y-2">
             <?php
             $links = [
                 ['href'=>'/eleve/notes',          'icon'=>'file-text',   'label'=>'Mes notes',         'color'=>'text-violet-500', 'bg'=>'bg-violet-50'],

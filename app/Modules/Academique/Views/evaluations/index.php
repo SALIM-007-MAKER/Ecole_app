@@ -215,7 +215,7 @@ $statutIcons = [
                             </a>
                             <?php endif; ?>
                             <?php if ($policy && $policy->canPublish($user, $ev)): ?>
-                            <button onclick="openActionModal(<?= $ev->id ?>, '<?= htmlspecialchars($ev->libelle, ENT_JS) ?>', 'publier')"
+                            <button onclick="openActionModal(<?= $ev->id ?>, <?= htmlspecialchars(json_encode((string)($ev->libelle), JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP), ENT_QUOTES) ?>, 'publier')"
                                     class="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition"
                                     title="Publier">
                                 <i data-lucide="send" class="w-4 h-4"></i>

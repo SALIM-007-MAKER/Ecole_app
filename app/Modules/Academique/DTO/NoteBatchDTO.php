@@ -34,9 +34,10 @@ final class NoteBatchDTO
             $notes[] = new NoteDTO(
                 evaluationId: $evaluationId,
                 eleveId:      (int)$row[0],
-                valeur:       isset($row[1]) && $row[1] !== '' ? (float)$row[1] : null,
+                valeur:       isset($row[1]) && trim((string)$row[1]) !== '' ? NoteDTO::nombre($row[1]) : null,
                 estAbsent:    !empty($row[2]) && $row[2] !== '0',
                 commentaire:  !empty($row[3]) ? trim($row[3]) : null,
+                valeurInvalide: isset($row[1]) && trim((string)$row[1]) !== '' && NoteDTO::nombre($row[1]) === null,
             );
         }
         return new self($evaluationId, $notes);

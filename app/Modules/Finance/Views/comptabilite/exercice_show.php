@@ -76,7 +76,7 @@ $statutCls = ['ouverte'=>'bg-emerald-100 text-emerald-700','cloturee'=>'bg-slate
     <form method="POST" action="<?= BASE_URL ?>/v2/finance/comptabilite/exercices/<?= $exercice->id ?>/cloturer"
           onsubmit="return confirm('Clôturer définitivement l\'exercice ? Une écriture de clôture sera créée automatiquement.')">
       <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
-      <button class="bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-700 whitespace-nowrap">
+      <button class="btn btn-warning whitespace-nowrap">
         Clôturer l'exercice
       </button>
     </form>

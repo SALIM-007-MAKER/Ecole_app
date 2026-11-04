@@ -39,7 +39,7 @@ $roleLabel = UserModel::roleLabel($role);
                 <i data-lucide="user-cog" class="w-4 h-4 text-violet-600"></i>
                 <span class="font-semibold text-slate-700">Informations personnelles</span>
             </div>
-            <div class="p-5 p-6">
+            <div class="p-6">
 
                 <?php
                 $profileKeys   = ['nom','prenom','email','telephone','photo'];
@@ -56,6 +56,14 @@ $roleLabel = UserModel::roleLabel($role);
                 </div>
                 <?php endif; ?>
 
+                <?php if (!empty($sessionUser['photo'])): ?>
+                <!-- Formulaire séparé (pas imbriqué) pour la suppression de la photo -->
+                <form id="formSupprPhoto" method="POST" action="<?= BASE_URL ?>/profile/photo/supprimer"
+                      onsubmit="return confirm('Supprimer votre photo de profil ?');">
+                    <input type="hidden" name="_csrf_token" value="<?= \Core\Session::getCsrfToken() ?>">
+                </form>
+                <?php endif; ?>
+
                 <form method="POST" action="<?= BASE_URL ?>/profile"
                       enctype="multipart/form-data" novalidate>
                     <input type="hidden" name="_csrf_token" value="<?= \Core\Session::getCsrfToken() ?>">
@@ -64,7 +72,7 @@ $roleLabel = UserModel::roleLabel($role);
                     <div class="flex flex-col items-center gap-3 mb-6 pb-6 border-b border-slate-100">
                         <?php if (!empty($sessionUser['photo'])): ?>
                         <img id="photoPreview"
-                             src="<?= BASE_URL ?>/<?= htmlspecialchars($sessionUser['photo'], ENT_QUOTES) ?>"
+                             src="<?= htmlspecialchars(\App\Shared\Http\MediaUrl::photo($sessionUser['photo']), ENT_QUOTES) ?>"
                              class="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md ring-2 ring-violet-100"
                              alt="Photo de profil">
                         <?php else: ?>
@@ -77,6 +85,13 @@ $roleLabel = UserModel::roleLabel($role);
                             <i data-lucide="camera" class="w-4 h-4"></i>
                             Changer la photo
                         </label>
+                        <?php if (!empty($sessionUser['photo'])): ?>
+                        <button type="submit" form="formSupprPhoto" formnovalidate
+                                class="btn btn-outline-danger cursor-pointer">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            Supprimer la photo
+                        </button>
+                        <?php endif; ?>
                         <input type="file" id="photo" name="photo" accept="image/*"
                                class="sr-only" onchange="previewPhoto(this)">
                         <?php if (isset($errors['photo'])): ?>
@@ -203,7 +218,7 @@ $roleLabel = UserModel::roleLabel($role);
                                    autocomplete="new-password">
                             <button type="button"
                                     class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                                    onclick="toggleVis('new_password')">
+                                    onclick="toggleVis('new_password')" aria-label="Afficher ou masquer le mot de passe">
                                 <i data-lucide="eye" class="w-3.5 h-3.5"></i>
                             </button>
                         </div>

@@ -73,8 +73,8 @@ $badge = match ($facture->statut) {
                 <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\Core\Session::getCsrfToken(), ENT_QUOTES) ?>">
                 <button type="submit"
                         onclick="return confirm('Émettre cette facture ? Elle ne pourra plus être modifiée.')"
-                        class="px-3 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700">
-                    <i data-lucide="send" class="inline w-4 h-4 mr-1"></i> Émettre
+                        class="btn btn-primary">
+                    <i data-lucide="send" class="w-4 h-4"></i> Émettre
                 </button>
             </form>
             <?php endif; ?>
@@ -371,13 +371,13 @@ $badge = match ($facture->statut) {
             <div class="mb-4">
                 <label class="form-label">Motif d'annulation <span class="form-required">*</span></label>
                 <textarea name="motif" rows="3" required
-                          class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                          class="form-textarea"
                           placeholder="Raison de l'annulation..."></textarea>
             </div>
             <div class="flex justify-end gap-3">
                 <button type="button" onclick="document.getElementById('modal-annuler').classList.add('hidden')"
-                        class="px-4 py-2 text-sm text-slate-600">Fermer</button>
-                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700">
+                        class="btn btn-secondary">Fermer</button>
+                <button type="submit" class="btn btn-danger">
                     Confirmer l'annulation
                 </button>
             </div>
@@ -410,8 +410,8 @@ $badge = match ($facture->statut) {
             </div>
             <div class="flex justify-end gap-3 pt-2">
                 <button type="button" onclick="document.getElementById('modal-add-ligne').classList.add('hidden')"
-                        class="px-4 py-2 text-sm text-slate-600">Annuler</button>
-                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700">
+                        class="btn btn-secondary">Annuler</button>
+                <button type="submit" class="btn btn-primary">
                     Ajouter
                 </button>
             </div>
@@ -453,8 +453,8 @@ $badge = match ($facture->statut) {
             </div>
             <div class="flex justify-end gap-3 pt-2">
                 <button type="button" onclick="document.getElementById('modal-remise').classList.add('hidden')"
-                        class="px-4 py-2 text-sm text-slate-600">Annuler</button>
-                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700">
+                        class="btn btn-secondary">Annuler</button>
+                <button type="submit" class="btn btn-primary">
                     Appliquer
                 </button>
             </div>
@@ -471,12 +471,12 @@ $badge = match ($facture->statut) {
             <div id="echeances-list" class="space-y-3 mb-4">
                 <div class="echeance-row grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">Date *</label>
+                        <label class="form-label text-xs mb-1">Date *</label>
                         <input type="date" name="echeances[0][date]" required
                                class="form-input">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">Montant *</label>
+                        <label class="form-label text-xs mb-1">Montant *</label>
                         <input type="number" name="echeances[0][montant]" min="0" step="0.01" required
                                class="form-input">
                     </div>
@@ -488,8 +488,8 @@ $badge = match ($facture->statut) {
             </button>
             <div class="flex justify-end gap-3">
                 <button type="button" onclick="document.getElementById('modal-echeancier').classList.add('hidden')"
-                        class="px-4 py-2 text-sm text-slate-600">Annuler</button>
-                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700">
+                        class="btn btn-secondary">Annuler</button>
+                <button type="submit" class="btn btn-primary">
                     Créer l'échéancier
                 </button>
             </div>
@@ -505,12 +505,12 @@ function ajouterEcheance() {
     div.className = 'echeance-row grid grid-cols-2 gap-3';
     div.innerHTML = `
         <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">Date *</label>
+            <label class="form-label text-xs mb-1">Date *</label>
             <input type="date" name="echeances[${i}][date]" required
                    class="form-input">
         </div>
         <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">Montant *</label>
+            <label class="form-label text-xs mb-1">Montant *</label>
             <input type="number" name="echeances[${i}][montant]" min="0" step="0.01" required
                    class="form-input">
         </div>

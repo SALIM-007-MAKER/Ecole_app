@@ -26,7 +26,7 @@ foreach ($lignes as $l) {
 <!-- KPI -->
 <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-5">
     <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div class="p-5 p-4 text-center">
+        <div class="p-5 text-center">
             <div class="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center mx-auto mb-3">
                 <i data-lucide="arrow-right" class="w-5 h-5 text-emerald-600"></i>
             </div>
@@ -35,7 +35,7 @@ foreach ($lignes as $l) {
         </div>
     </div>
     <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div class="p-5 p-4 text-center">
+        <div class="p-5 text-center">
             <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center mx-auto mb-3">
                 <i data-lucide="log-out" class="w-5 h-5 text-slate-500"></i>
             </div>
@@ -44,7 +44,7 @@ foreach ($lignes as $l) {
         </div>
     </div>
     <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
-        <div class="p-5 p-4 text-center">
+        <div class="p-5 text-center">
             <div class="w-10 h-10 rounded-xl <?= $totalDepassement > 0 ? 'bg-red-100' : 'bg-emerald-100' ?> flex items-center justify-center mx-auto mb-3">
                 <i data-lucide="alert-triangle" class="w-5 h-5 <?= $totalDepassement > 0 ? 'text-red-500' : 'text-emerald-600' ?>"></i>
             </div>

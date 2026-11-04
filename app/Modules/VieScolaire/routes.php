@@ -7,7 +7,10 @@
  * Préfixe  : /v2/vie-scolaire
  * Domaines : Absences, Présences, Retards
  *
- * Coexiste avec les routes V1 (/absences, /presences).
+ * /absences V1 (App\Controllers\AbsenceController) décommissionnée le
+ * 20/08/2026 — ce module est désormais l'unique système d'absences (voir
+ * CHANGELOG.md). /presences n'a jamais eu d'équivalent V1 : la V1 ne
+ * suivait que les absences, pas les sessions de présence.
  */
 
 use Core\Router;
@@ -21,6 +24,12 @@ $router->get('/v2/vie-scolaire/absences',
 
 $router->get('/v2/vie-scolaire/absences/statistiques',
     'VieScolaire\Absences\Controllers\AbsenceController@statistiques');
+
+$router->get('/v2/vie-scolaire/absences/pointage',
+    'VieScolaire\Absences\Controllers\AbsenceController@pointage');
+
+$router->post('/v2/vie-scolaire/absences/pointage',
+    'VieScolaire\Absences\Controllers\AbsenceController@storePointage');
 
 $router->get('/v2/vie-scolaire/absences/create',
     'VieScolaire\Absences\Controllers\AbsenceController@create');
@@ -224,6 +233,25 @@ $router->get('/v2/vie-scolaire/emplois-du-temps/remplacements',
 
 $router->post('/v2/vie-scolaire/emplois-du-temps/remplacements',
     'VieScolaire\EmploisDuTemps\Controllers\TimetableController@storeRemplacement');
+
+// Référentiel — salles et plages horaires (statiques, avant /create et {id})
+$router->get('/v2/vie-scolaire/emplois-du-temps/salles',
+    'VieScolaire\EmploisDuTemps\Controllers\SalleController@index');
+$router->post('/v2/vie-scolaire/emplois-du-temps/salles',
+    'VieScolaire\EmploisDuTemps\Controllers\SalleController@store');
+$router->post('/v2/vie-scolaire/emplois-du-temps/salles/{id}',
+    'VieScolaire\EmploisDuTemps\Controllers\SalleController@update');
+$router->post('/v2/vie-scolaire/emplois-du-temps/salles/{id}/toggle',
+    'VieScolaire\EmploisDuTemps\Controllers\SalleController@toggle');
+
+$router->get('/v2/vie-scolaire/emplois-du-temps/plages',
+    'VieScolaire\EmploisDuTemps\Controllers\PlageHoraireController@index');
+$router->post('/v2/vie-scolaire/emplois-du-temps/plages',
+    'VieScolaire\EmploisDuTemps\Controllers\PlageHoraireController@store');
+$router->post('/v2/vie-scolaire/emplois-du-temps/plages/{id}',
+    'VieScolaire\EmploisDuTemps\Controllers\PlageHoraireController@update');
+$router->post('/v2/vie-scolaire/emplois-du-temps/plages/{id}/toggle',
+    'VieScolaire\EmploisDuTemps\Controllers\PlageHoraireController@toggle');
 
 $router->get('/v2/vie-scolaire/emplois-du-temps/create',
     'VieScolaire\EmploisDuTemps\Controllers\TimetableController@create');

@@ -83,6 +83,24 @@ final class TenantResolver
     }
 
     /**
+     * Résolution des pages publiques (connexion, inscription, mot de passe oublié…) : UNIQUEMENT d'après le nom d'hôte (sous-domaine ou
+     * domaine personnalisé vérifié). Ni session, ni chemin, ni en-tête X-Tenant-Slug : ces canaux sont réservés aux appels authentifiés /
+     * serveur-à-serveur et ne doivent jamais permettre à un visiteur de choisir l'établissement visé. null = hôte non reconnu.
+     */
+    public function resolveParHote(): ?Etablissement
+    {
+        $host = $this->currentHost();
+        if ($host === null) {
+            return null;
+        }
+        $slug = self::extractSubdomainSlug($host, $this->config['base_domain'] ?? null);
+        if ($slug !== null && ($etab = $this->repo->findBySlug($slug)) !== null) {
+            return $etab;
+        }
+        return $this->repo->findByDomain(strtolower(explode(':', $host, 2)[0]));
+    }
+
+    /**
      * Extrait le slug depuis un sous-domaine, ex :
      * 'lycee-ibn-badis.scolaris.app' + baseDomain 'scolaris.app' → 'lycee-ibn-badis'.
      * Retourne null si le host ne correspond pas à baseDomain, si aucun

@@ -19,19 +19,14 @@ class ActiviteRecenteWidget extends BaseWidget
     public function getRefreshInterval(): int { return 60; }
     public function getTemplate(): string { return 'Portals::Shared/Widgets/admin/activite_recente'; }
 
-    public function getData(int $etab, int $userId, array $config): array
+    public function getData(int $etablissementId, int $userId, array $config = []): array
     {
         try {
-            $pdo  = Database::getInstance()->getConnection();
-            $stmt = $pdo->prepare(
-                'SELECT al.action, al.module, al.created_at,
-                        CONCAT(u.prenom," ",u.nom) AS user_nom
-                 FROM audit_logs al
-                 LEFT JOIN users u ON u.id = al.user_id
-                 ORDER BY al.created_at DESC LIMIT 10'
-            );
-            $stmt->execute();
-            return ['logs' => $stmt->fetchAll(\PDO::FETCH_ASSOC)];
+            // Dix derniers événements DE L'ÉTABLISSEMENT $etablissementId uniquement (établissement explicite obligatoire, jamais de lecture globale).
+            $res = (new \App\Services\AuditService())->rechercher($etablissementId, [], 1, 10);
+            return ['logs' => array_map(static fn(array $l) => [
+                'action' => $l['action'], 'module' => $l['module'], 'created_at' => $l['created_at'], 'user_nom' => (string)($l['acteur_libelle'] ?? ''),
+            ], $res['rows'])];
         } catch (\Throwable) {
             return ['logs' => []];
         }

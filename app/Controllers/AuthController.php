@@ -8,6 +8,7 @@ use Core\Tenant\BrandingService;
 use Core\Tenant\SettingsService;
 use Core\Tenant\TenantMembershipService;
 use App\Models\UserModel;
+use App\Services\GlobalAuthService;
 
 class AuthController extends Controller
 {
@@ -63,67 +64,155 @@ class AuthController extends Controller
             $this->redirect(BASE_URL . '/login');
         }
 
-        $user = $this->userModel->findByEmail($email);
+        // Anti-force-brute : contrôle AVANT toute vérification du mot de passe.
+        $throttle = new \App\Shared\Http\LoginThrottle(getenv('AUTH_THROTTLE_DIR') ?: ROOT_PATH . '/storage/cache/throttle');
+        $ip       = $this->request->ip();
+        $cles     = [
+            'ec:' . strtolower($email) . '|' . $ip => 5,   // ce compte depuis cette adresse
+            'ip:' . $ip                            => 30,  // cette adresse, tous comptes confondus
+            'e:' . strtolower($email)              => 20,  // ce compte, attaque répartie sur plusieurs adresses
+        ];
+        $attente = 0;
+        foreach ($cles as $cle => $limite) {
+            $attente = max($attente, $throttle->retryAfter($cle, $limite));
+        }
+        if ($attente > 0) {
+            \Core\Logger::security('LOGIN_THROTTLED', "Connexion bloquée (trop d'échecs) pour : {$email} depuis {$ip}");
+            $minutes = (int)ceil($attente / 60);
+            Session::flash('errors', ['auth' => ["Trop de tentatives de connexion. Réessayez dans {$minutes} minute(s)."]]);
+            Session::flash('old', ['email' => $email]);
+            $this->redirect(BASE_URL . '/login');
+        }
 
-        if (!$user || !password_verify($password, $user->password)) {
+        // Authentification GLOBALE : l'établissement de l'utilisateur n'est pas connu avant d'avoir vérifié son identité (UserModel::findByEmail
+        // est limité au tenant par défaut et ne convient pas ici). Même réponse que l'e-mail soit inconnu ou le mot de passe faux.
+        $auth = GlobalAuthService::make();
+        $user = $auth->authenticate($email, $password);
+
+        if ($user === null) {
+            foreach (array_keys($cles) as $cle) {
+                $throttle->recordFailure($cle);
+            }
             \Core\Logger::security('LOGIN_FAILED', "Tentative échouée pour : {$email}");
+            $this->journaliserEchecConnexion($auth, $throttle, $ip, $email);
             Session::flash('errors', ['auth' => ['Email ou mot de passe incorrect.']]);
             Session::flash('old', ['email' => $email]);
             $this->redirect(BASE_URL . '/login');
         }
 
+        $throttle->clear('ec:' . strtolower($email) . '|' . $ip);
+
         if ((int)$user->actif === 0) {
             \Core\Logger::security('LOGIN_DISABLED', "Compte désactivé : {$email}");
+            $auth->journaliser('auth.login_denied', $user, null, 'denied', ['raison' => 'compte_desactive']);
             Session::flash('errors', ['auth' => ['Votre compte est désactivé. Contactez l\'administrateur.']]);
             $this->redirect(BASE_URL . '/login');
         }
 
-        // ── Flux multi-établissements (blueprint §7.2) ───────────────────────
-        // Source de vérité : user_etablissements (Phase 14.6), et non plus
-        // directement users.etablissement_id (colonne de transition V1).
-        $schools = $this->membership->listForUser((int)$user->id);
-
-        if (count($schools) === 0) {
-            // Filet de sécurité : aucune appartenance enregistrée (ne devrait
-            // pas arriver, T007/14.4 peuple user_etablissements pour tout
-            // utilisateur existant) → repli sur la colonne V1 de transition.
-            $fallbackEtabId = isset($user->etablissement_id) ? (int)$user->etablissement_id : null;
-            $this->completeLogin($user, $fallbackEtabId);
-            $this->redirect(BASE_URL . '/dashboard');
+        // Établissements de l'utilisateur (appartenances actives, ou repli historique si AUCUNE ligne n'existe) : accessibles ou bloqués.
+        $classement  = $auth->classer($user);
+        $accessibles = $classement['accessibles'];
+        foreach ($classement['bloques'] as $b) {
+            if ($b['raison'] === GlobalAuthService::RAISON_ROLE_MANQUANT) {
+                \Core\Logger::security('LOGIN_ROLE_MISSING', "user_id={$user->id} etablissement_id={$b['id']} : appartenance sans rôle propre");
+                $auth->journaliser('auth.role_missing', $user, (int)$b['id'], 'denied', ['raison' => 'appartenance_sans_role']);
+            }
         }
 
-        if (count($schools) === 1) {
-            // Mono-établissement (100% des utilisateurs aujourd'hui) : activation
-            // automatique, comportement strictement identique à avant Phase 14.6.
-            $this->completeLogin($user, $schools[0]['id']);
-            $this->redirect(BASE_URL . '/dashboard');
+        if ($accessibles === []) {
+            $this->refuserConnexion($auth, $user, $classement['bloques']);
         }
 
-        // Multi-établissements : authentification vérifiée mais session PAS
-        // encore ouverte — l'utilisateur doit choisir explicitement son
-        // établissement avant d'obtenir le moindre accès (Session::isLogged()
-        // reste false tant que ce choix n'est pas fait).
+        if (count($accessibles) === 1) {
+            // Un seul établissement accessible : ouverture directe.
+            $ok = $this->completeLogin($user, (int)$accessibles[0]['id']);
+            $this->redirect(BASE_URL . ($ok ? '/dashboard' : '/login'));
+        }
+
+        // Plusieurs établissements accessibles : identité vérifiée mais AUCUNE session scolaire (Session::isLogged() reste faux, aucun
+        // contexte d'établissement) tant que le choix n'est pas fait et revérifié côté serveur. L'état d'attente expire.
+        Session::regenerate();
         Session::set('_pending_auth_user_id', (int)$user->id);
+        Session::set('_pending_auth_at', time());
         \Core\Logger::security('LOGIN_PENDING_SCHOOL_CHOICE', "En attente de choix d'établissement : {$email} ({$user->id})");
+        $auth->journaliser('auth.global_login_success', $user, null, 'success', ['etablissements_accessibles' => count($accessibles), 'choix_requis' => true]);
         $this->redirect(BASE_URL . '/choisir-etablissement');
     }
 
     /**
-     * Construit la session complète pour un utilisateur ET un établissement
-     * déjà validés (appartenance vérifiée par l'appelant). Centralise la
-     * résolution rôle+permissions pour ne jamais la dupliquer entre le login
-     * direct (mono-établissement), la finalisation du choix (multi-écoles)
-     * et le changement d'établissement en cours de session.
+     * Identités vérifiées mais aucun établissement utilisable : message PRÉCIS (suspension, abonnement expiré…), ou « aucun établissement ».
+     * Réservé à l'utilisateur déjà authentifié : un e-mail inconnu ou un mauvais mot de passe reçoit toujours la réponse neutre.
+     *
+     * @param list<array<string,mixed>> $bloques
      */
-    private function completeLogin(object $user, ?int $etablissementId): void
+    private function refuserConnexion(GlobalAuthService $auth, object $user, array $bloques): never
     {
-        $role = $etablissementId !== null
-            ? ($this->membership->roleForUser((int)$user->id, $etablissementId) ?? $user->role)
-            : $user->role;
+        if ($bloques === []) {
+            $messages = ['Aucun établissement n\'est associé à votre compte. Contactez l\'administrateur.'];
+            $raisons  = ['aucune_appartenance'];
+        } else {
+            $messages = array_map(static fn(array $b): string => GlobalAuthService::messageBlocage((string)$b['nom'], (string)$b['raison']), $bloques);
+            $raisons  = array_map(static fn(array $b): string => (string)$b['raison'], $bloques);
+        }
+        \Core\Logger::security('LOGIN_DENIED', "user_id={$user->id} : " . implode(',', $raisons));
+        $auth->journaliser('auth.login_denied', $user, null, 'denied', ['raisons' => $raisons]);
+        Session::flash('errors', ['auth' => $messages]);
+        $this->redirect(BASE_URL . '/login');
+    }
 
-        $permissions = $this->userModel->getPermissions($role, (int)$user->id, $etablissementId);
+    /** Échec de connexion dans le journal global (au plus 30 lignes par adresse IP et par fenêtre : un déluge d'échecs ne sature pas le journal). */
+    private function journaliserEchecConnexion(GlobalAuthService $auth, \App\Shared\Http\LoginThrottle $throttle, string $ip, string $email): void
+    {
+        if ($throttle->retryAfter('sal:' . $ip, 30) > 0) {
+            return;
+        }
+        $throttle->recordFailure('sal:' . $ip);
+        $auth->journaliser('auth.global_login_failure', null, null, 'failure', ['raison' => 'identifiants_invalides'], $email);
+    }
 
-        $schools = $etablissementId !== null ? $this->membership->listForUser((int)$user->id) : [];
+    /**
+     * Ouvre la session scolaire pour UN établissement. Le rôle vient de `user_roles_etab` pour CET établissement (jamais du rôle global
+     * `users.role` dès qu'une appartenance existe) ; sans rôle propre, la session n'est PAS ouverte. Renvoie false en cas de refus.
+     */
+    private function completeLogin(object $user, ?int $etablissementId, string $evenement = 'auth.global_login_success'): bool
+    {
+        $auth = GlobalAuthService::make();
+        if ($etablissementId !== null) {
+            $resolu = $auth->resoudreRole($user, $etablissementId);
+        } else {
+            $role   = (string)$user->role;
+            $resolu = ['role' => $role !== '' ? $role : null, 'roles' => $role !== '' ? [$role] : [], 'legacy' => true];
+        }
+
+        if ($resolu['role'] === null) {
+            \Core\Logger::security('LOGIN_ROLE_MISSING', "user_id={$user->id} etablissement_id=" . (string)$etablissementId . ' : appartenance sans rôle propre');
+            $auth->journaliser('auth.role_missing', $user, $etablissementId, 'denied', ['raison' => 'appartenance_sans_role']);
+            Session::flash('errors', ['auth' => [GlobalAuthService::messageBlocage('de cet établissement', GlobalAuthService::RAISON_ROLE_MANQUANT)]]);
+            return false;
+        }
+
+        $role        = $resolu['role'];
+        $permissions = $auth->permissions($user, (int)$etablissementId, $role, $resolu['legacy']);
+
+        // Établissement quitté (bascule) : mémorisé AVANT la réécriture de la session, pour l'audit.
+        $precedent = Session::getUser()['etablissement_id'] ?? null;
+        // Anti-fixation : nouvel identifiant de session dès que les privilèges changent (connexion).
+        Session::regenerate();
+
+        // Bascule : tout ce qui appartient à l'établissement QUITTÉ est purgé (aucun état résiduel d'un tenant à l'autre).
+        if ($evenement === 'auth.tenant_switch') {
+            $this->purgerContexteEtablissement();
+        }
+
+        // Liste de bascule : uniquement les établissements ACCESSIBLES (le serveur revérifie de toute façon à chaque bascule).
+        $classement = $etablissementId !== null ? $auth->classer($user) : ['accessibles' => []];
+        $schools    = array_map(static fn(array $e): array => [
+            'id' => (int)$e['id'], 'slug' => $e['slug'], 'nom' => $e['nom'], 'nom_court' => $e['nom_court'], 'is_primary' => (bool)$e['is_primary'],
+        ], $classement['accessibles']);
+        $nomEtablissement = '';
+        foreach ($classement['accessibles'] as $e) {
+            if ((int)$e['id'] === $etablissementId) { $nomEtablissement = (string)$e['nom']; }
+        }
 
         Session::setUser([
             'id'                     => (int)$user->id,
@@ -134,6 +223,7 @@ class AuthController extends Controller
             'photo'                  => $user->photo ?? null,
             'permissions'            => $permissions,
             'etablissement_id'       => $etablissementId,
+            'pwd_at'                 => $auth->dateMotDePasse((int)$user->id) ?? 0,   // invalidation des sessions après changement de mot de passe
             // Uniquement peuplé si l'utilisateur appartient à 2+ établissements
             // (garde la session légère pour le cas mono-tenant, immense majorité).
             'available_etablissements' => count($schools) > 1 ? $schools : [],
@@ -143,35 +233,78 @@ class AuthController extends Controller
             $this->membership->setLastUsed((int)$user->id, $etablissementId);
         }
 
-        $this->userModel->updateLastLogin((int)$user->id);
+        $auth->touchLastLogin((int)$user->id);
         \Core\Logger::security('LOGIN_SUCCESS', "Connexion réussie : {$user->email} (rôle={$role}, etab={$etablissementId})");
-        Session::flash('success', 'Bienvenue, ' . $user->nom . ' !');
+        if (count($resolu['roles']) > 1) {
+            $auth->journaliser('auth.multiple_roles', $user, $etablissementId, 'success', ['roles' => $resolu['roles'], 'role' => $role]);
+        }
+        $detailsEvenement = ['role' => $role];
+        if ($evenement === 'auth.tenant_switch') {
+            $detailsEvenement += ['de' => $precedent, 'vers' => $etablissementId];
+        }
+        $auth->journaliser($evenement, $user, $etablissementId, 'success', $detailsEvenement);
+        Session::flash('success', $evenement === 'auth.tenant_switch' && $nomEtablissement !== ''
+            ? 'Vous êtes maintenant connecté à « ' . $nomEtablissement . ' ».'
+            : 'Bienvenue, ' . $user->nom . ' !');
+        return true;
+    }
+    /**
+     * Utilisateur en attente de choix d'établissement : identifiant, ou null si l'état est absent ou EXPIRÉ (il est alors purgé).
+     * L'état est valable ATTENTE_CHOIX_SECONDES secondes ; un état sans horodatage est considéré comme expiré.
+     */
+    private function utilisateurEnAttente(): ?int
+    {
+        $userId = Session::get('_pending_auth_user_id');
+        if (!$userId) {
+            return null;
+        }
+        $depuis = (int)Session::get('_pending_auth_at', 0);
+        if ($depuis <= 0 || time() - $depuis > GlobalAuthService::ATTENTE_CHOIX_SECONDES) {
+            $this->purgerAttente();
+            Session::flash('errors', ['auth' => ['Le délai pour choisir votre établissement a expiré. Veuillez vous reconnecter.']]);
+            return null;
+        }
+        return (int)$userId;
+    }
+
+    private function purgerAttente(): void
+    {
+        Session::delete('_pending_auth_user_id');
+        Session::delete('_pending_auth_at');
     }
 
     public function showChooseEtablissement(): void
     {
-        $userId = Session::get('_pending_auth_user_id');
-        if (!$userId) {
+        $userId = $this->utilisateurEnAttente();
+        if ($userId === null) {
             $this->redirect(BASE_URL . '/login');
         }
 
-        $user = $this->userModel->findById((int)$userId);
-        if (!$user) {
-            Session::delete('_pending_auth_user_id');
+        $auth = GlobalAuthService::make();
+        $user = $auth->lookupById($userId);
+        if ($user === null || (int)$user->actif === 0) {
+            $this->purgerAttente();
             $this->redirect(BASE_URL . '/login');
         }
 
-        $schools = $this->membership->listForUser((int)$userId);
-        if (count($schools) <= 1) {
-            // Appartenance modifiée entre-temps (ex: retiré d'une école) —
-            // ne pas laisser l'utilisateur bloqué sur un écran de choix inutile.
-            Session::delete('_pending_auth_user_id');
-            $this->redirect(BASE_URL . '/login');
+        $classement  = $auth->classer($user);
+        $accessibles = $classement['accessibles'];
+        if ($accessibles === []) {
+            // Appartenances modifiées entre-temps (retrait, suspension…) : on ne laisse pas l'utilisateur sur un écran de choix vide.
+            $this->purgerAttente();
+            $this->refuserConnexion($auth, $user, $classement['bloques']);
+        }
+        if (count($accessibles) === 1) {
+            $this->purgerAttente();
+            $ok = $this->completeLogin($user, (int)$accessibles[0]['id'], 'auth.tenant_selected');
+            $this->redirect(BASE_URL . ($ok ? '/dashboard' : '/login'));
         }
 
         $this->render('auth/choose-school', [
             'title'      => 'Choisir un établissement',
-            'schools'    => $schools,
+            'schools'    => $accessibles,
+            // Établissements bloqués, avec leur raison : transmis à la vue (affichage désactivé prévu).
+            'bloques'    => $classement['bloques'],
             'lastUsedId' => $this->membership->getLastUsed((int)$userId),
             'userName'   => trim(($user->prenom ?? '') . ' ' . $user->nom),
         ], 'auth');
@@ -181,25 +314,50 @@ class AuthController extends Controller
     {
         $this->verifyCsrf();
 
-        $userId = Session::get('_pending_auth_user_id');
-        if (!$userId) {
+        $userId = $this->utilisateurEnAttente();
+        if ($userId === null) {
             $this->redirect(BASE_URL . '/login');
         }
 
-        $user = $this->userModel->findById((int)$userId);
+        $auth   = GlobalAuthService::make();
+        $user   = $auth->lookupById($userId);
         $etabId = (int)$this->request->post('etablissement_id', 0);
+        if ($user === null || (int)$user->actif === 0) {
+            $this->purgerAttente();
+            $this->redirect(BASE_URL . '/login');
+        }
 
-        if (!$user || !$this->membership->isMember((int)$userId, $etabId)) {
-            \Core\Logger::security('SCHOOL_CHOICE_REJECTED', "user_id={$userId} a tenté etablissement_id={$etabId} sans appartenance");
-            Session::flash('errors', ['auth' => ['Établissement invalide.']]);
+        // Le client ne peut jamais imposer un établissement : l'appartenance ACTIVE et l'état de l'établissement sont revérifiés ici.
+        $classement = $auth->classer($user);
+        $choisi     = null;
+        foreach ($classement['accessibles'] as $e) {
+            if ((int)$e['id'] === $etabId) {
+                $choisi = $e;
+            }
+        }
+        if ($choisi === null) {
+            $bloque = null;
+            foreach ($classement['bloques'] as $e) {
+                if ((int)$e['id'] === $etabId) {
+                    $bloque = $e;
+                }
+            }
+            if ($bloque !== null) {
+                \Core\Logger::security('SCHOOL_CHOICE_BLOCKED', "user_id={$userId} etablissement_id={$etabId} : {$bloque['raison']}");
+                $auth->journaliser('auth.login_denied', $user, $etabId, 'denied', ['raison' => $bloque['raison'], 'etape' => 'choix']);
+                Session::flash('errors', ['auth' => [GlobalAuthService::messageBlocage((string)$bloque['nom'], (string)$bloque['raison'])]]);
+            } else {
+                \Core\Logger::security('SCHOOL_CHOICE_REJECTED', "user_id={$userId} a tenté etablissement_id={$etabId} sans appartenance");
+                $auth->journaliser('auth.login_denied', $user, $etabId, 'denied', ['raison' => 'sans_appartenance', 'etape' => 'choix']);
+                Session::flash('errors', ['auth' => ['Établissement invalide.']]);
+            }
             $this->redirect(BASE_URL . '/choisir-etablissement');
         }
 
-        Session::delete('_pending_auth_user_id');
-        $this->completeLogin($user, $etabId);
-        $this->redirect(BASE_URL . '/dashboard');
+        $this->purgerAttente();
+        $ok = $this->completeLogin($user, $etabId, 'auth.tenant_selected');
+        $this->redirect(BASE_URL . ($ok ? '/dashboard' : '/login'));
     }
-
     /**
      * Changement d'établissement en cours de session (blueprint §7.2,
      * POST /auth/switch-school) — pour un utilisateur DÉJÀ pleinement
@@ -212,24 +370,65 @@ class AuthController extends Controller
         $this->requireAuth();
         $this->verifyCsrf();
 
-        $sessionUser = Session::getUser();
-        $userId = (int)$sessionUser['id'];
+        $sessionUser  = Session::getUser();
+        $userId       = (int)$sessionUser['id'];
+        $courant      = (int)($sessionUser['etablissement_id'] ?? 0);
         $targetEtabId = (int)$this->request->post('school_id', 0);
 
-        if (!$this->membership->isMember($userId, $targetEtabId)) {
-            \Core\Logger::security('SWITCH_SCHOOL_REJECTED', "user_id={$userId} a tenté school_id={$targetEtabId} sans appartenance");
-            Session::flash('error', 'Vous n\'appartenez pas à cet établissement.');
+        // Même établissement : rien à faire.
+        if ($targetEtabId === $courant) {
             $this->redirect(BASE_URL . '/dashboard');
         }
 
-        $user = $this->userModel->findById($userId);
-        if (!$user) {
+        // L'utilisateur est relu PAR SON IDENTIFIANT DE SESSION, tous établissements confondus (UserModel::findById est limité à
+        // l'établissement courant : il échouait pour un membre rattaché à un autre établissement).
+        $auth = GlobalAuthService::make();
+        $user = $auth->lookupById($userId);
+        if ($user === null || (int)$user->actif === 0) {
             $this->redirect(BASE_URL . '/login');
         }
 
-        $this->completeLogin($user, $targetEtabId);
+        // Le client ne choisit jamais librement : appartenance ACTIVE, état de l'établissement et rôle propre sont revérifiés ici.
+        $classement = $auth->classer($user);
+        $cible      = null;
+        foreach ($classement['accessibles'] as $e) {
+            if ((int)$e['id'] === $targetEtabId) {
+                $cible = $e;
+            }
+        }
+        if ($cible === null) {
+            $bloque = null;
+            foreach ($classement['bloques'] as $e) {
+                if ((int)$e['id'] === $targetEtabId) {
+                    $bloque = $e;
+                }
+            }
+            if ($bloque !== null) {
+                \Core\Logger::security('SWITCH_SCHOOL_BLOCKED', "user_id={$userId} → etablissement_id={$targetEtabId} : {$bloque['raison']}");
+                $auth->journaliser('auth.login_denied', $user, $targetEtabId, 'denied', ['raison' => $bloque['raison'], 'etape' => 'bascule', 'de' => $courant]);
+                Session::flash('error', GlobalAuthService::messageBlocage((string)$bloque['nom'], (string)$bloque['raison']));
+            } else {
+                \Core\Logger::security('SWITCH_SCHOOL_REJECTED', "user_id={$userId} a tenté school_id={$targetEtabId} sans appartenance");
+                $auth->journaliser('auth.login_denied', $user, $targetEtabId, 'denied', ['raison' => 'sans_appartenance', 'etape' => 'bascule', 'de' => $courant]);
+                Session::flash('error', 'Vous n\'appartenez pas à cet établissement.');
+            }
+            $this->redirect(BASE_URL . '/dashboard');
+        }
+
+        if (!$this->completeLogin($user, $targetEtabId, 'auth.tenant_switch')) {
+            \Core\Logger::security('SWITCH_SCHOOL_REFUSED', "user_id={$userId} → etablissement_id={$targetEtabId} : rôle absent");
+            $this->redirect(BASE_URL . '/dashboard');
+        }
         \Core\Logger::security('SWITCH_SCHOOL_SUCCESS', "user_id={$userId} → etablissement_id={$targetEtabId}");
         $this->redirect(BASE_URL . '/dashboard');
+    }
+
+    /** Données de session propres à l'établissement quitté (purgées à chaque bascule). */
+    private function purgerContexteEtablissement(): void
+    {
+        foreach (['_auth_refreshed_at', '__etab_slug', 'bi_config_direction', 'old_input', 'errors'] as $cle) {
+            Session::delete($cle);
+        }
     }
 
     public function logout(): void
@@ -277,25 +476,100 @@ class AuthController extends Controller
         // Message générique pour ne pas révéler si l'email existe
         $successMsg = 'Si cet email est enregistré, un lien de réinitialisation a été envoyé.';
 
-        $user = $this->userModel->findByEmail($email);
-        if ($user && (int)$user->actif === 1) {
-            $token = bin2hex(random_bytes(32));
-            $this->userModel->createResetToken($email, $token);
-
-            $resetUrl = BASE_URL . '/reset-password/' . $token;
-
-            // En développement : afficher le lien directement
-            $config = require ROOT_PATH . '/config/app.php';
-            if ($config['debug']) {
-                Session::flash('info', 'Lien de réinitialisation (mode développement) : ' . $resetUrl);
-                $this->redirect(BASE_URL . '/forgot-password');
-            }
-
-            // En production : envoyer un email (configurer un mailer)
-            // mail($email, 'Réinitialisation de votre mot de passe', "Lien : {$resetUrl}");
+        // Limitation des demandes (anti-spam de boîte mail et de quota d'envoi) : TOUTES les demandes sont comptées, que l'adresse existe ou non,
+        // et la réponse reste identique quand la limite est atteinte (rien n'est révélé).
+        $throttle = new \App\Shared\Http\LoginThrottle(getenv('AUTH_THROTTLE_DIR') ?: ROOT_PATH . '/storage/cache/throttle');
+        $ip       = $this->request->ip();
+        $cles     = [
+            'fp:' . strtolower($email) . '|' . $ip => 3,    // cette adresse depuis cette IP
+            'fpe:' . strtolower($email)            => 5,    // cette adresse, toutes IP confondues
+            'fpi:' . $ip                           => 10,   // cette IP, toutes adresses confondues
+        ];
+        $limite = false;
+        foreach ($cles as $cle => $max) {
+            $limite = $limite || $throttle->retryAfter($cle, $max) > 0;
+        }
+        foreach (array_keys($cles) as $cle) {
+            $throttle->recordFailure($cle);
+        }
+        if ($limite) {
+            \Core\Logger::security('PASSWORD_RESET_THROTTLED', "Demande de réinitialisation limitée depuis {$ip}");
+            $this->repondreNeutre($successMsg);
         }
 
-        Session::flash('success', $successMsg);
+        // Recherche GLOBALE (tous établissements) : UserModel::findByEmail est limité à l'établissement par défaut et ne trouvait pas les
+        // utilisateurs des autres établissements. La réponse reste identique que le compte existe, soit inconnu ou désactivé.
+        $auth    = GlobalAuthService::make();
+        $user    = $auth->lookupByEmail($email);
+        $auth->journaliser('auth.password_reset_requested', $user, null, 'success', [], $email);
+        $apresReponse = null;
+        if ($user && (int)$user->actif === 1) {
+            $token = bin2hex(random_bytes(32));
+            $this->userModel->createResetToken((string)$user->email, $token);
+
+            // Lien ABSOLU construit depuis APP_URL (configuration), jamais depuis l'en-tête Host de la requête (empoisonnement du lien).
+            $config   = require ROOT_PATH . '/config/app.php';
+            $resetUrl = rtrim((string)$config['url'], '/') . '/reset-password/' . $token;
+            // Destinataire = adresse ENREGISTRÉE du compte (jamais la saisie brute du formulaire).
+            $destinataire = (string)$user->email;
+
+            // L'envoi (SMTP : plusieurs secondes) est EXÉCUTÉ APRÈS la réponse au navigateur, pour que le temps de réponse ne révèle pas
+            // si l'adresse existe. Le jeton est déjà enregistré : le lien est valide quand le mail arrive.
+            $apresReponse = static function () use ($destinataire, $resetUrl, $user): void {
+                $mailer = new \App\Services\EmailService();
+                $envoye = $mailer->send(
+                    $destinataire,
+                    'Réinitialisation de votre mot de passe',
+                    $mailer->buildHtml(
+                        'Réinitialisation de votre mot de passe',
+                        "Une demande de réinitialisation du mot de passe de votre compte a été faite. Ce lien est valable 1 heure.\n"
+                        . "Si vous n'êtes pas à l'origine de cette demande, ignorez ce message : votre mot de passe ne sera pas modifié.",
+                        $resetUrl,
+                        'Choisir un nouveau mot de passe'
+                    )
+                );
+                // Le lien ne doit JAMAIS apparaître dans la réponse HTTP (prise de contrôle anonyme du compte) NI dans un journal : un échec
+                // d'envoi est seulement signalé (journal global, sans jeton ni adresse), l'utilisateur peut refaire une demande.
+                if (!$envoye) {
+                    \Core\Logger::error('[MAIL] Réinitialisation du mot de passe : e-mail non envoyé.');
+                    GlobalAuthService::make()->journaliser('auth.password_reset_mail_failed', $user, null, 'failure', ['raison' => 'envoi_impossible']);
+                }
+            };
+        }
+
+        $this->repondreNeutre($successMsg, $apresReponse);
+    }
+
+    /**
+     * Réponse IDENTIQUE (message, redirection, en-têtes, durée) que l'adresse existe, soit inconnue, ou que la limite soit atteinte.
+     *
+     * Quand un travail différé est fourni (envoi du mail), la réponse est terminée et libérée AVANT son exécution : en-têtes
+     * « Connection: close » + « Content-Length: 0 », verrou de session relâché (sinon la page suivante attendrait la fin de l'envoi),
+     * tampon vidé, puis le travail s'exécute dans la fonction d'arrêt PHP. Aucune file de tâches ni worker requis.
+     */
+    private function repondreNeutre(string $message, ?callable $apresReponse = null): never
+    {
+        Session::flash('success', $message);
+        header('Connection: close');
+        header('Content-Length: 0');
+        if ($apresReponse !== null) {
+            ignore_user_abort(true);
+            register_shutdown_function(static function () use ($apresReponse): void {
+                if (session_status() === PHP_SESSION_ACTIVE) {
+                    session_write_close();
+                }
+                while (ob_get_level() > 0) {
+                    @ob_end_flush();
+                }
+                flush();
+                @set_time_limit(60);
+                try {
+                    $apresReponse();
+                } catch (\Throwable $e) {
+                    \Core\Logger::error('[MAIL] Envoi différé de réinitialisation interrompu : ' . get_class($e));
+                }
+            });
+        }
         $this->redirect(BASE_URL . '/forgot-password');
     }
 
@@ -319,39 +593,55 @@ class AuthController extends Controller
     {
         $this->verifyCsrf();
 
-        $token    = $this->request->post('token', '');
-        $password = $this->request->post('password', '');
-        $confirm  = $this->request->post('password_confirmation', '');
+        $token    = (string)$this->request->post('token', '');
+        $password = (string)$this->request->post('password', '');
+        $confirm  = (string)$this->request->post('password_confirmation', '');
 
-        $errors = $this->validate(
-            ['password' => $password],
-            ['password' => 'required|min:' . $this->passwordMinLength()]
-        );
-
-        if ($password !== $confirm) {
-            $errors['password_confirmation'][] = 'Les mots de passe ne correspondent pas.';
+        $auth     = GlobalAuthService::make();
+        $throttle = new \App\Shared\Http\LoginThrottle(getenv('AUTH_THROTTLE_DIR') ?: ROOT_PATH . '/storage/cache/throttle');
+        $ip       = $this->request->ip();
+        if ($throttle->retryAfter('rp:' . $ip, 10) > 0) {
+            \Core\Logger::security('PASSWORD_RESET_THROTTLED', "Trop d'essais de lien de réinitialisation depuis {$ip}");
+            Session::flash('error', 'Trop de tentatives. Réessayez plus tard.');
+            $this->redirect(BASE_URL . '/forgot-password');
         }
 
-        if (!empty($errors)) {
-            Session::flash('errors', $errors);
-            $this->redirect(BASE_URL . '/reset-password/' . $token);
-        }
-
-        $reset = $this->userModel->findByResetToken($token);
-        if (!$reset) {
+        // Lien valide ? (lecture seule : le jeton n'est PAS encore consommé, pour qu'un mot de passe refusé puisse être corrigé.)
+        $reset = $auth->jetonReinitialisationValide($token);
+        $user  = $reset !== null ? $auth->lookupByEmail((string)$reset->email) : null;
+        if ($reset === null || $user === null || (int)$user->actif === 0) {
+            $throttle->recordFailure('rp:' . $ip);
+            \Core\Logger::security('PASSWORD_RESET_INVALID_TOKEN', "Lien de réinitialisation invalide, expiré ou déjà utilisé (depuis {$ip})");
+            $auth->journaliser('auth.password_reset_failed', $user, null, 'failure', ['raison' => 'lien_invalide_ou_expire']);
             Session::flash('error', 'Ce lien est invalide ou a expiré.');
             $this->redirect(BASE_URL . '/forgot-password');
         }
 
-        $user = $this->userModel->findByEmail($reset->email);
-        if (!$user) {
-            Session::flash('error', 'Compte introuvable.');
+        // Politique de la PERSONNE (administrateur d'un établissement : 14 caractères et 3 familles ; sinon le réglage le plus élevé).
+        $errors = [];
+        foreach ($auth->validerMotDePasse($user, $password) as $message) {
+            $errors['password'][] = $message;
+        }
+        if ($password !== $confirm) {
+            $errors['password_confirmation'][] = 'Les mots de passe ne correspondent pas.';
+        }
+        if (!empty($errors)) {
+            $auth->journaliser('auth.password_reset_failed', $user, null, 'failure', ['raison' => 'mot_de_passe_refuse']);
+            Session::flash('errors', $errors);
+            $this->redirect(BASE_URL . '/reset-password/' . $token);
+        }
+
+        // Consommation ATOMIQUE du jeton et changement du mot de passe (une seule requête peut réussir avec un même lien).
+        $modifie = $auth->reinitialiserMotDePasse($token, password_hash($password, PASSWORD_BCRYPT));
+        if ($modifie === null) {
+            $throttle->recordFailure('rp:' . $ip);
+            $auth->journaliser('auth.password_reset_failed', $user, null, 'failure', ['raison' => 'lien_deja_utilise']);
+            Session::flash('error', 'Ce lien est invalide ou a expiré.');
             $this->redirect(BASE_URL . '/forgot-password');
         }
 
-        $this->userModel->updatePassword((int)$user->id, password_hash($password, PASSWORD_BCRYPT));
-        $this->userModel->markResetTokenUsed($token);
-
+        \Core\Logger::security('PASSWORD_RESET_SUCCESS', "Mot de passe réinitialisé : user_id={$modifie->id}");
+        $auth->journaliser('auth.password_reset', $modifie, null, 'success');
         Session::flash('success', 'Mot de passe mis à jour avec succès. Vous pouvez vous connecter.');
         $this->redirect(BASE_URL . '/login');
     }
@@ -365,7 +655,7 @@ class AuthController extends Controller
         $this->requireAuth();
 
         $sessionUser = Session::getUser();
-        $user = $this->userModel->findById($sessionUser['id']);
+        $user = GlobalAuthService::make()->monCompte((int)$sessionUser['id']);
 
         $this->render('auth/profile', [
             'title'  => 'Mon profil',
@@ -412,7 +702,7 @@ class AuthController extends Controller
             $data['photo'] = $photoPath;
         }
 
-        $this->userModel->updateProfile($userId, $data);
+        GlobalAuthService::make()->mettreAJourMonProfil((int)$userId, $data);
 
         // Mettre à jour la session
         $updated = array_merge($sessionUser, [
@@ -426,6 +716,29 @@ class AuthController extends Controller
         Session::setUser($updated);
 
         Session::flash('success', 'Profil mis à jour avec succès.');
+        $this->redirect(BASE_URL . '/profile');
+    }
+
+    /** Supprime la photo de profil de l'utilisateur connecté (fichier + référence en base + session). */
+    public function deletePhoto(): void
+    {
+        $this->requireAuth();
+        $this->verifyCsrf();
+
+        $sessionUser = Session::getUser();
+        $user        = GlobalAuthService::make()->monCompte((int)$sessionUser['id']);
+        $chemin      = (string)($user->photo ?? '');
+
+        // Le fichier n'est supprimé que s'il se trouve bien dans le dossier des avatars (jamais un chemin arbitraire).
+        if ($chemin !== '' && str_starts_with($chemin, 'storage/uploads/avatars/') && !str_contains($chemin, '..')) {
+            (new \App\Services\UploadService())->delete($chemin);
+        }
+
+        GlobalAuthService::make()->mettreAJourMonProfil((int)$sessionUser['id'], ['photo' => null]);
+        $sessionUser['photo'] = null;
+        Session::setUser($sessionUser);
+
+        Session::flash('success', 'Photo de profil supprimée.');
         $this->redirect(BASE_URL . '/profile');
     }
 
@@ -448,17 +761,29 @@ class AuthController extends Controller
             $errors['password_confirmation'][] = 'Les mots de passe ne correspondent pas.';
         }
 
-        $user = $this->userModel->findById($sessionUser['id']);
+        $user = GlobalAuthService::make()->monCompte((int)$sessionUser['id']);
         if (!$user || !password_verify($current, $user->password)) {
             $errors['current_password'][] = 'Le mot de passe actuel est incorrect.';
         }
 
+        if ($user) {
+            // Politique de la PERSONNE (un administrateur ne peut pas affaiblir son mot de passe par le profil).
+            foreach (GlobalAuthService::make()->validerMotDePasse($user, (string)$newPass) as $message) {
+                $errors['password'][] = $message;
+            }
+        }
         if (!empty($errors)) {
             Session::flash('errors', $errors);
             $this->redirect(BASE_URL . '/profile');
         }
 
-        $this->userModel->updatePassword($sessionUser['id'], password_hash($newPass, PASSWORD_BCRYPT));
+        GlobalAuthService::make()->changerMonMotDePasse((int)$sessionUser['id'], password_hash($newPass, PASSWORD_BCRYPT));
+        // La session COURANTE reste valide (nouvelle date du mot de passe) ; les AUTRES sessions de ce compte sont invalidées au prochain
+        // rafraîchissement des droits (60 s au plus). Les liens de réinitialisation en attente sont révoqués.
+        $sessionUser['pwd_at'] = GlobalAuthService::make()->dateMotDePasse((int)$sessionUser['id']) ?? 0;
+        Session::setUser($sessionUser);
+        GlobalAuthService::make()->journaliser('auth.password_changed', $user, (int)($sessionUser['etablissement_id'] ?? 0) ?: null, 'success');
+        (new \App\Services\AuditService())->log((int)$sessionUser['id'], 'password_changed', 'auth', 'users', (int)$sessionUser['id'], null, ['source' => 'profil']);
 
         Session::flash('success', 'Mot de passe modifié avec succès.');
         $this->redirect(BASE_URL . '/profile');
@@ -484,6 +809,16 @@ class AuthController extends Controller
     {
         $this->verifyCsrf();
 
+        // Anti-spam : 3 inscriptions par heure et par adresse IP, 30 par heure au total.
+        $limiteur = new \App\Shared\Http\PublicThrottle(ROOT_PATH . '/storage/cache/throttle', 3, 3600);
+        $global   = new \App\Shared\Http\PublicThrottle(ROOT_PATH . '/storage/cache/throttle', 30, 3600);
+        $ip       = $this->request->ip();
+        if (!$limiteur->hit('register', $ip)['allowed'] || !$global->hit('register-global', 'all')['allowed']) {
+            \Core\Logger::security('REGISTER_THROTTLED', "Inscription bloquée (trop de demandes) depuis {$ip}");
+            Session::flash('error', 'Trop de demandes d\'inscription. Réessayez plus tard.');
+            $this->redirect(BASE_URL . '/register');
+        }
+
         $nom      = trim($this->request->sanitize('nom'));
         $email    = trim($this->request->sanitize('email'));
         $password = $this->request->post('password', '');
@@ -493,14 +828,17 @@ class AuthController extends Controller
             ['nom' => 'required|min:2|max:100', 'email' => 'required|email', 'password' => 'required|min:' . $this->passwordMinLength()]
         );
 
-        if ($this->userModel->findByEmail($email)) {
-            $errors['email'][] = 'Cet email est déjà utilisé.';
-        }
-
         if (!empty($errors)) {
             Session::flash('errors', $errors);
             Session::flash('old', ['nom' => $nom, 'email' => $email]);
             $this->redirect(BASE_URL . '/register');
+        }
+
+        // Même réponse que l'e-mail existe déjà ou non (pas d'énumération des comptes) ; aucun compte n'est créé en double.
+        if ($this->userModel->findByEmail($email)) {
+            \Core\Logger::security('REGISTER_DUPLICATE', "Inscription sur un e-mail existant : {$email}");
+            Session::flash('success', 'Compte créé. Il sera activé par un administrateur.');
+            $this->redirect(BASE_URL . '/login');
         }
 
         $this->userModel->insert([
@@ -517,40 +855,17 @@ class AuthController extends Controller
 
     // ─── Helpers privés ───────────────────────────────────────────────────────
 
+    /**
+     * Avatar du profil : validation par le type MIME réel, extension DÉDUITE du MIME (jamais du nom fourni par le client)
+     * et nom aléatoire, via UploadService (comme les photos d'élèves et de professeurs).
+     */
     private function handlePhotoUpload(array $file, array &$errors): ?string
     {
-        $allowed   = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-        $maxSize   = 2 * 1024 * 1024; // 2 Mo
-
-        if ($file['error'] !== UPLOAD_ERR_OK) {
-            $errors['photo'][] = 'Erreur lors du téléversement de la photo.';
+        try {
+            return (new \App\Services\UploadService())->upload($file, 'avatar', 'avatar_' . Session::getUser()['id'] . '_');
+        } catch (\RuntimeException $e) {
+            $errors['photo'][] = $e->getMessage();
             return null;
         }
-
-        if (!in_array(mime_content_type($file['tmp_name']), $allowed, true)) {
-            $errors['photo'][] = 'Format accepté : JPG, PNG, GIF, WebP.';
-            return null;
-        }
-
-        if ($file['size'] > $maxSize) {
-            $errors['photo'][] = 'La photo ne doit pas dépasser 2 Mo.';
-            return null;
-        }
-
-        $uploadDir = ROOT_PATH . '/storage/uploads/avatars/';
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0755, true);
-        }
-
-        $ext      = pathinfo($file['name'], PATHINFO_EXTENSION);
-        $filename = 'avatar_' . Session::getUser()['id'] . '_' . time() . '.' . strtolower($ext);
-        $dest     = $uploadDir . $filename;
-
-        if (!move_uploaded_file($file['tmp_name'], $dest)) {
-            $errors['photo'][] = 'Impossible d\'enregistrer la photo.';
-            return null;
-        }
-
-        return 'storage/uploads/avatars/' . $filename;
     }
 }

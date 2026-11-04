@@ -18,7 +18,7 @@ $classes = $classes ?? [];
 </div>
 
 <?php if ($results): ?>
-<div class="mb-4 flex items-start gap-3 rounded-xl border px-4 py-3 text-sm <?= $results['imported'] > 0 ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-900' ?> mb-5" role="alert">
+<div class="flex items-start gap-3 rounded-xl border px-4 py-3 text-sm <?= $results['imported'] > 0 ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-900' ?> mb-5" role="alert">
     <i data-lucide="<?= $results['imported'] > 0 ? 'check-circle' : 'alert-triangle' ?>" class="w-4 h-4 shrink-0"></i>
     <div class="flex-1">
         <div class="font-semibold text-sm mb-2">Résultats de l'import</div>
@@ -138,9 +138,9 @@ $classes = $classes ?? [];
                 <i data-lucide="info" class="w-4 h-4 text-sky-600"></i>
                 <span class="font-semibold text-slate-700">Format du fichier CSV</span>
             </div>
-            <div class="p-5 p-4 space-y-3">
+            <div class="p-5 space-y-3">
                 <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-                    <table class="min-w-full divide-y divide-slate-200 text-sm [&_thead]:bg-slate-50 [&_th]:px-4 [&_th]:py-3 [&_th]:text-left [&_th]:text-[11px] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-wide [&_th]:text-slate-500 [&_td]:px-4 [&_td]:py-3 [&_td]:align-middle [&_td]:text-slate-700 [&_tbody]:divide-y [&_tbody]:divide-slate-100 [&_tbody_tr:hover]:bg-slate-50 text-xs">
+                    <table class="min-w-full divide-y divide-slate-200 [&_thead]:bg-slate-50 [&_th]:px-4 [&_th]:py-3 [&_th]:text-left [&_th]:text-[11px] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-wide [&_th]:text-slate-500 [&_td]:px-4 [&_td]:py-3 [&_td]:align-middle [&_td]:text-slate-700 [&_tbody]:divide-y [&_tbody]:divide-slate-100 [&_tbody_tr:hover]:bg-slate-50 text-xs">
                         <thead>
                             <tr>
                                 <th>Colonne</th>
@@ -179,7 +179,7 @@ $classes = $classes ?? [];
                     </table>
                 </div>
 
-                <div class="mb-4 flex items-start gap-3 rounded-xl border px-4 py-3 text-sm border-sky-200 bg-sky-50 text-sky-800 text-xs">
+                <div class="mb-4 flex items-start gap-3 rounded-xl border px-4 py-3 border-sky-200 bg-sky-50 text-sky-800 text-xs">
                     <i data-lucide="lightbulb" class="w-3.5 h-3.5 shrink-0 mt-0.5"></i>
                     <ul class="flex-1 list-disc list-inside space-y-1">
                         <li>Séparateur : <span class="font-mono bg-white/60 px-1 rounded">;</span> (point-virgule)</li>
@@ -198,7 +198,7 @@ $classes = $classes ?? [];
                 <i data-lucide="building-2" class="w-4 h-4 text-violet-600"></i>
                 <span class="font-semibold text-slate-700">Classes disponibles</span>
             </div>
-            <div class="p-5 p-4">
+            <div class="p-5">
                 <p class="text-xs text-slate-400 mb-2">Utilisez ces noms exacts dans la colonne <span class="font-mono text-violet-600">classe</span> :</p>
                 <div class="flex flex-wrap gap-1.5">
                     <?php foreach ($classes as $c): ?>

@@ -28,17 +28,20 @@ $classement = $bulletin ? (object)['rang' => $bulletin->rang, 'effectif' => $bul
             <i data-lucide="arrow-left" class="w-4 h-4"></i>Retour
         </a>
         <?php if ($bulletin && $enfant && $periodeId): ?>
-        <a href="<?= BASE_URL ?>/v2/academique/bulletins/<?= $enfant->id ?>/<?= $periodeId ?>/imprimer"
-           class="btn btn-primary" target="_blank">
-            <i data-lucide="download" class="w-4 h-4"></i>Télécharger PDF
-        </a>
+<?php
+$csAnnee = null;
+foreach ($periodes as $__p) { if ((int)$__p->id === (int)$periodeId) { $csAnnee = $__p->annee_scolaire ?? null; break; } }
+$csSemestres = array_values(array_filter($periodes, static fn($p) => ($p->annee_scolaire ?? null) === $csAnnee));
+$csEleveId = $enfant->id;
+include __DIR__ . '/../bulletins/_choix_semestre.php';
+?>
         <?php endif; ?>
     </div>
 </div>
 
 <!-- Selectors -->
 <div class="rounded-xl border border-slate-200 bg-white shadow-sm mb-5">
-    <div class="p-5 p-4">
+    <div class="p-5">
         <form method="GET" class="flex flex-wrap items-center gap-3">
             <div class="flex items-center gap-2 text-sm text-slate-500 font-medium">
                 <i data-lucide="filter" class="w-4 h-4"></i>Filtres :
@@ -85,7 +88,7 @@ $classement = $bulletin ? (object)['rang' => $bulletin->rang, 'effectif' => $bul
 
 <!-- Bulletin summary card -->
 <div class="rounded-xl border border-slate-200 bg-white shadow-sm mb-5">
-    <div class="p-5 p-6">
+    <div class="p-6">
         <div class="flex flex-wrap items-center gap-6">
             <!-- Élève info -->
             <div class="flex items-center gap-4 flex-1">

@@ -14,7 +14,7 @@
     <?php endif; ?>
 
     <form method="POST"
-          action="<?= $fournisseur ? "/v2/inventaire/fournisseurs/{$fournisseur['id']}/modifier" : '/v2/inventaire/fournisseurs' ?>"
+          action="<?= BASE_URL . ($fournisseur ? "/v2/inventaire/fournisseurs/{$fournisseur['id']}/modifier" : '/v2/inventaire/fournisseurs') ?>"
           class="bg-white rounded-xl shadow-sm p-6 space-y-5">
         <input type="hidden" name="_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
 

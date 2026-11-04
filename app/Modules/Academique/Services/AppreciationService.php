@@ -31,6 +31,11 @@ class AppreciationService
                 continue;
             }
 
+            if (!$this->repo->eleveDansClasse($dto->eleveId, $batch->classeId)) {
+                $results['errors'][$dto->eleveId] = ['Élève introuvable dans cette classe.'];
+                continue;
+            }
+
             $result = $this->repo->upsert(
                 $dto->eleveId,
                 $batch->matiereId,

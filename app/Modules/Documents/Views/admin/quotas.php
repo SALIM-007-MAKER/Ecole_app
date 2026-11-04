@@ -67,7 +67,7 @@ async function modifierQuota(module, actuel) {
   const fd = new FormData();
   fd.append('csrf_token', csrf);
   fd.append('max_octets', octets);
-  const r = await fetch(`/v2/documents/admin/quota/${encodeURIComponent(module)}`, {method:'POST', body: fd});
+  const r = await fetch(`<?= BASE_URL ?>/v2/documents/admin/quota/${encodeURIComponent(module)}`, {method:'POST', body: fd});
   const d = await r.json();
   if (d.success) location.reload();
 }

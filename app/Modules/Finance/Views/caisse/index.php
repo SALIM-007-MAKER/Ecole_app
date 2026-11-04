@@ -41,12 +41,11 @@ $badgeStatut = fn(string $s): string => match ($s) {
         <div class="flex items-center gap-2 flex-shrink-0">
             <?php if ($maSession): ?>
             <a href="<?= BASE_URL ?>/v2/finance/caisse/<?= $maSession->id ?>"
-               class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors">
+               class="btn btn-outline-success">
                 <i data-lucide="circle-dot" class="w-4 h-4"></i> Ma caisse active
             </a>
             <?php elseif ($canOuvrir): ?>
-            <a href="<?= BASE_URL ?>/v2/finance/caisse/create"
-               class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700 transition-colors">
+            <a href="<?= BASE_URL ?>/v2/finance/caisse/create" class="btn btn-primary">
                 <i data-lucide="unlock" class="w-4 h-4"></i> Ouvrir la caisse
             </a>
             <?php endif; ?>
@@ -154,11 +153,11 @@ $badgeStatut = fn(string $s): string => match ($s) {
                        class="form-input">
             </div>
             <div class="flex gap-2">
-                <button type="submit" class="flex-1 px-3 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700">
-                    <i data-lucide="search" class="inline w-4 h-4"></i>
+                <button type="submit" class="btn btn-primary flex-1">
+                    <i data-lucide="search" class="w-4 h-4"></i>
                 </button>
-                <a href="<?= BASE_URL ?>/v2/finance/caisse" class="px-3 py-2 text-sm text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200">
-                    <i data-lucide="x" class="inline w-4 h-4"></i>
+                <a href="<?= BASE_URL ?>/v2/finance/caisse" class="btn btn-ghost">
+                    <i data-lucide="x" class="w-4 h-4"></i>
                 </a>
             </div>
         </form>

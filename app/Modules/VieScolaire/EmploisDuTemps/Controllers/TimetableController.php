@@ -27,14 +27,15 @@ class TimetableController extends Controller
 
     public function index(): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('timetable.view');
 
         $filters = TimetableFiltersDTO::fromRequest($_GET);
         $data    = $this->service->paginateEdts($filters);
         $db      = Database::getInstance()->getConnection();
 
-        $classes = $db->query("SELECT id, nom FROM classes ORDER BY nom")->fetchAll(\PDO::FETCH_ASSOC);
+        $classes = \Core\Tenant\TenantScope::lister($db, 'SELECT id, nom FROM classes', 'classes', 'ORDER BY nom');
         $annees  = $db->query("SELECT DISTINCT annee_scolaire FROM vs_emplois_du_temps ORDER BY annee_scolaire DESC")->fetchAll(\PDO::FETCH_ASSOC);
 
         $this->render('VieScolaire::emplois_du_temps/index', array_merge($data, [
@@ -49,11 +50,12 @@ class TimetableController extends Controller
 
     public function create(): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('timetable.create');
 
         $db      = Database::getInstance()->getConnection();
-        $classes = $db->query("SELECT id, nom FROM classes ORDER BY nom")->fetchAll(\PDO::FETCH_ASSOC);
+        $classes = \Core\Tenant\TenantScope::lister($db, 'SELECT id, nom FROM classes', 'classes', 'ORDER BY nom');
         $periodes = $db->query("SELECT id, nom FROM periodes_scolaires ORDER BY date_debut")->fetchAll(\PDO::FETCH_ASSOC);
 
         $this->render('VieScolaire::emplois_du_temps/create', [
@@ -65,7 +67,8 @@ class TimetableController extends Controller
 
     public function store(): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('timetable.create');
         $this->verifyCsrf();
 
@@ -93,7 +96,8 @@ class TimetableController extends Controller
 
     public function show(int $id): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('timetable.view');
 
         $edt = $this->service->findEdt($id);
@@ -119,51 +123,62 @@ class TimetableController extends Controller
 
     // ── Ajout de créneau ─────────────────────────────────────────────────────
 
-    public function ajouterCreneauForm(int $edtId): void
+    public function ajouterCreneauForm(int $id): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('timetable.update');
 
-        $edt = $this->service->findEdt($edtId);
+        $edt = $this->service->findEdt($id);
         if ($edt === null || !$this->policy->canModifyEdt($user, $edt)) {
             \Core\Session::flash('error', 'Action non autorisée.');
-            $this->redirect("/v2/vie-scolaire/emplois-du-temps/{$edtId}");
+            $this->redirect("/v2/vie-scolaire/emplois-du-temps/{$id}");
             exit;
         }
 
-        $db       = Database::getInstance()->getConnection();
-        $matieres = $db->query("SELECT id, nom, couleur FROM matieres WHERE actif = 1 ORDER BY nom")->fetchAll(\PDO::FETCH_ASSOC);
-        $enseignants = $db->query("SELECT u.id, u.nom, u.prenom FROM users u JOIN user_roles ur ON ur.user_id = u.id JOIN roles r ON r.id = ur.role_id WHERE r.nom = 'enseignant' ORDER BY u.nom")->fetchAll(\PDO::FETCH_ASSOC);
+        try {
+            $matieres    = $this->service->matieresPlanifiables((int)($user['etablissement_id'] ?? 0));
+            $enseignants = Database::getInstance()->getConnection()
+                ->query(\Core\Tenant\TenantScope::sqlEnseignants())->fetchAll(\PDO::FETCH_ASSOC);
+            $plages = $this->service->plages();
+            $salles = $this->service->salles();
+        } catch (\PDOException $e) {
+            \Core\Logger::error('EDT formulaire créneau : chargement des listes impossible — ' . $e->getMessage());
+            \Core\Session::flash('error', 'Impossible de charger le formulaire du créneau. Veuillez réessayer ou contacter l\'administrateur.');
+            $this->redirect("/v2/vie-scolaire/emplois-du-temps/{$id}");
+            exit;
+        }
 
         $this->render('VieScolaire::emplois_du_temps/creneaux/ajouter', [
             'user'        => $user,
             'edt'         => $edt,
             'matieres'    => $matieres,
             'enseignants' => $enseignants,
-            'plages'      => $this->service->plages(),
-            'salles'      => $this->service->salles(),
+            'plages'      => $plages,
+            'salles'      => $salles,
         ]);
     }
 
-    public function storeCreneau(int $edtId): void
+    public function storeCreneau(int $id): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('timetable.update');
         $this->verifyCsrf();
 
-        $edt = $this->service->findEdt($edtId);
+        $edt = $this->service->findEdt($id);
         if ($edt === null || !$this->policy->canModifyEdt($user, $edt)) {
             \Core\Session::flash('error', 'Action non autorisée.');
-            $this->redirect("/v2/vie-scolaire/emplois-du-temps/{$edtId}");
+            $this->redirect("/v2/vie-scolaire/emplois-du-temps/{$id}");
             exit;
         }
 
-        $dto    = CreneauDTO::fromRequest($_POST + ['emploi_du_temps_id' => $edtId, 'classe_id' => $edt['classe_id'], 'annee_scolaire' => $edt['annee_scolaire']]);
+        $dto    = CreneauDTO::fromRequest($_POST + ['emploi_du_temps_id' => $id, 'classe_id' => $edt['classe_id'], 'annee_scolaire' => $edt['annee_scolaire']]);
         $errors = $dto->validate();
 
         if (!empty($errors)) {
             \Core\Session::flash('error', implode('<br>', $errors));
-            $this->redirect("/v2/vie-scolaire/emplois-du-temps/{$edtId}/creneaux/ajouter");
+            $this->redirect("/v2/vie-scolaire/emplois-du-temps/{$id}/creneaux/ajouter");
             exit;
         }
 
@@ -173,21 +188,22 @@ class TimetableController extends Controller
         } catch (\RuntimeException $e) {
             \Core\Session::flash('error', $e->getMessage());
         }
-        $this->redirect("/v2/vie-scolaire/emplois-du-temps/{$edtId}");
+        $this->redirect("/v2/vie-scolaire/emplois-du-temps/{$id}");
         exit;
     }
 
     // ── Modification de créneau ───────────────────────────────────────────────
 
-    public function modifierCreneau(int $creneauId): void
+    public function modifierCreneau(int $id): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('timetable.update');
         $this->verifyCsrf();
 
         $db      = Database::getInstance()->getConnection();
         $stmt    = $db->prepare("SELECT * FROM vs_edt_creneaux WHERE id = ? AND deleted_at IS NULL");
-        $stmt->execute([$creneauId]);
+        $stmt->execute([$id]);
         $creneau = $stmt->fetch(\PDO::FETCH_ASSOC);
 
         if (!$creneau) {
@@ -217,7 +233,7 @@ class TimetableController extends Controller
         }
 
         try {
-            $this->service->modifierCreneau($creneauId, $dto, $user['id']);
+            $this->service->modifierCreneau($id, $dto, $user['id']);
             \Core\Session::flash('success', 'Créneau modifié.');
         } catch (\RuntimeException $e) {
             \Core\Session::flash('error', $e->getMessage());
@@ -228,21 +244,22 @@ class TimetableController extends Controller
 
     // ── Suppression (soft) de créneau ─────────────────────────────────────────
 
-    public function supprimerCreneau(int $creneauId): void
+    public function supprimerCreneau(int $id): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('timetable.update');
         $this->verifyCsrf();
 
         $db   = Database::getInstance()->getConnection();
         $stmt = $db->prepare("SELECT emploi_du_temps_id FROM vs_edt_creneaux WHERE id = ? AND deleted_at IS NULL");
-        $stmt->execute([$creneauId]);
+        $stmt->execute([$id]);
         $row  = $stmt->fetch(\PDO::FETCH_ASSOC);
 
         $edtId = $row['emploi_du_temps_id'] ?? 0;
 
         try {
-            $this->service->supprimerCreneau($creneauId, $user['id']);
+            $this->service->supprimerCreneau($id, $user['id']);
             \Core\Session::flash('success', 'Créneau supprimé.');
         } catch (\RuntimeException $e) {
             \Core\Session::flash('error', $e->getMessage());
@@ -255,7 +272,8 @@ class TimetableController extends Controller
 
     public function publier(int $id): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('timetable.publish');
         $this->verifyCsrf();
 
@@ -280,7 +298,8 @@ class TimetableController extends Controller
 
     public function enseignant(): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('timetable.view');
 
         $enseignantId = (int)($_GET['enseignant_id'] ?? $user['id']);
@@ -294,7 +313,7 @@ class TimetableController extends Controller
         $stmt->execute([$enseignantId]);
         $enseignant = $stmt->fetch(\PDO::FETCH_ASSOC);
 
-        $enseignants = $db->query("SELECT u.id, u.nom, u.prenom FROM users u JOIN user_roles ur ON ur.user_id = u.id JOIN roles r ON r.id = ur.role_id WHERE r.nom = 'enseignant' ORDER BY u.nom")->fetchAll(\PDO::FETCH_ASSOC);
+        $enseignants = $db->query(\Core\Tenant\TenantScope::sqlEnseignants())->fetchAll(\PDO::FETCH_ASSOC);
 
         $this->render('VieScolaire::emplois_du_temps/enseignant', [
             'user'         => $user,
@@ -312,14 +331,15 @@ class TimetableController extends Controller
 
     public function remplacements(): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('timetable.view');
 
         $date         = $_GET['date'] ?? date('Y-m-d');
         $remplacements = $this->service->remplacementsDuJour($date);
 
         $db   = Database::getInstance()->getConnection();
-        $enseignants = $db->query("SELECT u.id, u.nom, u.prenom FROM users u JOIN user_roles ur ON ur.user_id = u.id JOIN roles r ON r.id = ur.role_id WHERE r.nom = 'enseignant' ORDER BY u.nom")->fetchAll(\PDO::FETCH_ASSOC);
+        $enseignants = $db->query(\Core\Tenant\TenantScope::sqlEnseignants())->fetchAll(\PDO::FETCH_ASSOC);
         $salles = $this->service->salles();
 
         $creneaux = $db->query("SELECT cr.id, cr.jour, p.libelle AS plage, c.nom AS classe, m.nom AS matiere FROM vs_edt_creneaux cr JOIN vs_edt_plages_horaires p ON p.id = cr.plage_id JOIN classes c ON c.id = cr.classe_id JOIN matieres m ON m.id = cr.matiere_id WHERE cr.deleted_at IS NULL ORDER BY c.nom, cr.jour, p.ordre")->fetchAll(\PDO::FETCH_ASSOC);
@@ -336,7 +356,8 @@ class TimetableController extends Controller
 
     public function storeRemplacement(): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('timetable.update');
         $this->verifyCsrf();
 
@@ -363,7 +384,8 @@ class TimetableController extends Controller
 
     public function export(): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('timetable.export');
 
         $classeId = (int)($_GET['classe_id'] ?? 0);
@@ -399,14 +421,15 @@ class TimetableController extends Controller
 
     public function statistiques(): void
     {
-        $user = $this->requireAuth();
+        $this->requireAuth();
+        $user = $this->currentUser();
         $this->requirePermission('timetable.view');
 
         $classeId = (int)($_GET['classe_id'] ?? 0);
         $annee    = $_GET['annee'] ?? date('Y') . '-' . (date('Y') + 1);
 
         $db      = Database::getInstance()->getConnection();
-        $classes = $db->query("SELECT id, nom FROM classes ORDER BY nom")->fetchAll(\PDO::FETCH_ASSOC);
+        $classes = \Core\Tenant\TenantScope::lister($db, 'SELECT id, nom FROM classes', 'classes', 'ORDER BY nom');
         $stats   = $classeId ? $this->service->statistiquesClasse($classeId, $annee) : [];
 
         $this->render('VieScolaire::emplois_du_temps/statistiques', [

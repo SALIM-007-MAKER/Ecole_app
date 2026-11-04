@@ -40,6 +40,7 @@
         <label class="form-label" for="pays">Pays</label>
         <input type="text" id="pays" name="pays" class="form-input" value="DZ" maxlength="2">
     </div>
+    <?php if (!empty($peutChoisirPlan)): ?>
     <div>
         <label class="form-label" for="plan_id">Plan initial</label>
         <select id="plan_id" name="plan_id" class="form-input">
@@ -49,6 +50,7 @@
             <?php endforeach; ?>
         </select>
     </div>
+    <?php endif; ?>
     <div class="sm:col-span-2 flex justify-end">
         <button type="submit" class="btn btn-primary"><i data-lucide="save" class="w-4 h-4"></i>Créer</button>
     </div>

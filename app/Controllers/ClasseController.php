@@ -9,6 +9,7 @@ use App\Models\EleveModel;
 use App\Models\MatiereModel;
 use App\Models\ProfesseurModel;
 use App\Models\EnseignementModel;
+use App\Services\EnseignantPortee;
 
 class ClasseController extends Controller
 {
@@ -37,6 +38,10 @@ class ClasseController extends Controller
         $this->requirePermission('classes.view');
 
         $classes = $this->classeModel->findWithStats();
+        $portee  = EnseignantPortee::classeIds();   // null = pas de restriction (hors enseignant)
+        if ($portee !== null) {
+            $classes = array_values(array_filter($classes, fn($c) => in_array((int)$c->id, $portee, true)));
+        }
 
         $this->render('classes/index', [
             'title'   => 'Gestion des classes',
@@ -61,6 +66,7 @@ class ClasseController extends Controller
         $this->render('classes/create', [
             'title'   => 'Nouvelle classe',
             'niveaux' => ClasseModel::NIVEAUX,
+            'annee'   => \App\Services\AnneeScolaireActive::pour(),   // année active des Paramètres
             'errors'  => Session::getFlash('errors', []),
             'old'     => Session::getFlash('old', []),
         ]);
@@ -95,16 +101,20 @@ class ClasseController extends Controller
         $this->requirePermission('classes.view');
 
         $classe = $this->classeModel->findWithDetails((int)$id);
+        // Un enseignant ne consulte que ses classes ; message identique à « introuvable » (pas de fuite d'existence).
+        if ($classe && !EnseignantPortee::peutVoirClasse((int)$id)) {
+            $classe = null;
+        }
         if (!$classe) {
             Session::flash('error', 'Classe introuvable.');
             $this->redirect(BASE_URL . '/classes');
             return;
         }
 
-        $eleves     = $this->classeModel->getEleves((int)$id);
+        $eleves     =$this->classeModel->getEleves((int)$id);
         $disponibles = $this->classeModel->getElevesDisponibles((int)$id);
         $enseignements = $this->ensModel->findByClasseId((int)$id);
-        $matieres   = $this->matiereModel->findForSelect();
+        $matieres   = $this->matiereModel->findForSelect(true);   // sans la Conduite
         $professeurs = $this->profModel->findForSelect();
         $annee      = date('Y') . '-' . (date('Y') + 1);
 
@@ -157,7 +167,7 @@ class ClasseController extends Controller
         }
 
         $data   = $this->collectFormData();
-        $errors = $this->validateClasse($data);
+        $errors = $this->validateClasse($data, (int)$id);
 
         if (!empty($errors)) {
             Session::flash('errors', $errors);
@@ -215,9 +225,9 @@ class ClasseController extends Controller
 
         if ($classe && $eleve) {
             $maxEleves = (int)$classe->max_eleves;
-            $nbActuels = count($this->classeModel->getEleves($classeId));
+            $places    = $this->classeModel->placesRestantes($classeId, $eleveId);   // élèves actifs seulement, hors l'élève concerné
 
-            if ($maxEleves > 0 && $nbActuels >= $maxEleves) {
+            if ($places !== null && $places <= 0 && !((int)$eleve->classe_id === $classeId)) {
                 Session::flash('error', "Capacité maximale ({$maxEleves} élèves) atteinte pour cette classe.");
             } else {
                 $this->eleveModel->update($eleveId, ['classe_id' => $classeId]);
@@ -259,7 +269,9 @@ class ClasseController extends Controller
         $annee    = trim($this->request->post('annee_scolaire', date('Y') . '-' . (date('Y') + 1)));
 
         if ($profId && $matId && $annee) {
-            if ($this->ensModel->exists($profId, $matId, $classeId, $annee)) {
+            if ($this->matiereModel->estConduite($matId)) {
+                Session::flash('error', "La Conduite n'est pas une matière d'enseignement : aucun enseignant ne peut y être affecté.");
+            } elseif ($this->ensModel->exists($profId, $matId, $classeId, $annee)) {
                 Session::flash('error', 'Cet enseignement est déjà affecté à cette classe pour cette année.');
             } else {
                 $this->ensModel->insert([
@@ -307,7 +319,7 @@ class ClasseController extends Controller
         ];
     }
 
-    private function validateClasse(array $data): array
+    private function validateClasse(array $data, ?int $exceptId = null): array
     {
         $errors = [];
 
@@ -329,6 +341,11 @@ class ClasseController extends Controller
 
         if ($data['max_eleves'] < 1 || $data['max_eleves'] > 100) {
             $errors['max_eleves'][] = 'La capacité doit être entre 1 et 100.';
+        }
+
+        if (empty($errors['nom']) && empty($errors['niveau']) && empty($errors['annee_scolaire'])
+            && $this->classeModel->existeDoublon($data['nom'], $data['niveau'], $data['annee_scolaire'], $exceptId)) {
+            $errors['nom'][] = 'Une classe « ' . $data['niveau'] . ' ' . $data['nom'] . ' » existe déjà pour l\'année ' . $data['annee_scolaire'] . '.';
         }
 
         return $errors;

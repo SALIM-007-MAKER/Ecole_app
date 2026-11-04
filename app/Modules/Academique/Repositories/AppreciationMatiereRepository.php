@@ -39,16 +39,27 @@ class AppreciationMatiereRepository
                     ON a.eleve_id = e.id
                    AND a.matiere_id = :matiere_id
                    AND a.periode_id = :periode_id
-                WHERE e.classe_id = :classe_id
+                WHERE e.classe_id = :classe_id" . (\Core\Tenant\TenantScope::id() === null ? '' : ' AND e.etablissement_id = :tid') . "
                 ORDER BY e.nom, e.prenom";
 
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([
+        $params = [
             ':classe_id'  => $classeId,
             ':matiere_id' => $matiereId,
             ':periode_id' => $periodeId,
-        ]);
+        ];
+        if (\Core\Tenant\TenantScope::id() !== null) { $params[':tid'] = \Core\Tenant\TenantScope::id(); }
+        $stmt->execute($params);
         return $stmt->fetchAll(\PDO::FETCH_OBJ);
+    }
+
+    /** L'élève est-il bien dans cette classe ET dans l'établissement courant ? (Lot 3 — un identifiant d'élève de formulaire n'est jamais cru) */
+    public function eleveDansClasse(int $eleveId, int $classeId): bool
+    {
+        [$ts, $tp] = \Core\Tenant\TenantScope::colonne('eleves', 'etablissement_id');
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM eleves WHERE id = ? AND classe_id = ?' . $ts);
+        $stmt->execute([$eleveId, $classeId, ...$tp]);
+        return (int)$stmt->fetchColumn() > 0;
     }
 
     /** Crée ou met à jour l'appréciation d'un élève. Retourne ['id' => int, 'created' => bool]. */

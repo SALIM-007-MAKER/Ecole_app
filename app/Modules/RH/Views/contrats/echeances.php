@@ -33,8 +33,7 @@ foreach ($contrats as $c) {
         <p class="text-sm text-slate-500 mt-0.5"><?= count($contrats) ?> contrat(s) expirant dans les <?= (int)$jours ?> prochains jours</p>
       </div>
     </div>
-    <a href="<?= BASE_URL ?>/v2/rh/contrats"
-       class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors flex-shrink-0">
+    <a href="<?= BASE_URL ?>/v2/rh/contrats" class="btn btn-outline flex-shrink-0">
       <i data-lucide="arrow-left" class="w-4 h-4"></i>
       Retour aux contrats
     </a>
@@ -139,13 +138,11 @@ foreach ($contrats as $c) {
 
           <!-- Actions -->
           <div class="flex flex-col gap-2 flex-shrink-0 w-36">
-            <a href="<?= BASE_URL ?>/v2/rh/contrats/<?= (int)$c['id'] ?>"
-               class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-violet-600 bg-violet-50 border border-violet-200 rounded-lg hover:bg-violet-100 transition-colors">
+            <a href="<?= BASE_URL ?>/v2/rh/contrats/<?= (int)$c['id'] ?>" class="btn btn-outline btn-sm">
               <i data-lucide="eye" class="w-3.5 h-3.5"></i> Voir le contrat
             </a>
             <?php if ($canRenew): ?>
-              <button onclick="openRenewModal(<?= (int)$c['id'] ?>, '<?= e($c['numero_contrat']) ?>')"
-                      class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700 transition-colors">
+              <button onclick="openRenewModal(<?= (int)$c['id'] ?>, '<?= e($c['numero_contrat']) ?>')" class="btn btn-primary btn-sm">
                 <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Renouveler
               </button>
             <?php endif; ?>
@@ -181,8 +178,8 @@ foreach ($contrats as $c) {
       </div>
       <div class="flex justify-end gap-3 mt-6">
         <button type="button" onclick="document.getElementById('modal-renew').classList.add('hidden')"
-                class="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm hover:bg-slate-200">Annuler</button>
-        <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">
+                class="btn btn-secondary">Annuler</button>
+        <button type="submit" class="btn btn-primary">
           <i data-lucide="check" class="w-4 h-4"></i> Renouveler
         </button>
       </div>

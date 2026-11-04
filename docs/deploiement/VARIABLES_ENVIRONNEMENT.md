@@ -31,6 +31,8 @@ variable était absente. `.env` doit toujours fixer explicitement sa valeur.*
 | Variable | Défaut | Description |
 |---|---|---|
 | `SESSION_LIFETIME` | `7200` | Secondes (2h) |
+| `DB_SQL_MODE` | *(absent)* | Absent = `sql_mode` du serveur. `strict` = `STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION` pour la connexion de l'application. **À n'activer qu'après avoir testé tous les formulaires d'écriture** : le mode strict a déjà révélé un défaut (création d'un plan de la plateforme, corrigé) et d'autres peuvent subsister. |
+| `LOG_RETENTION_DAYS` | `90` | Durée de conservation des journaux (7 jours minimum) |
 | `SESSION_NAME` | `ecole_session` | Nom du cookie |
 
 ## Upload (V1)
@@ -44,7 +46,7 @@ variable était absente. `.env` doit toujours fixer explicitement sa valeur.*
 
 | Variable | Description |
 |---|---|
-| `MAIL_DRIVER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM`, `MAIL_FROM_NAME`, `MAIL_FROM_EMAIL`, `MAIL_REPLY_TO` | Canal email |
+| `MAIL_DRIVER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_ENCRYPTION`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM`, `MAIL_FROM_NAME`, `MAIL_FROM_EMAIL`, `MAIL_REPLY_TO`, `MAIL_TIMEOUT`, `MAIL_EHLO_HOST` | Canal email. `MAIL_DRIVER=smtp` = envoi réel (Gmail : `smtp.gmail.com`, 587, `tls`, mot de passe d'application) ; `mail` (défaut) = fonction `mail()` de PHP, inopérante sous WAMP. Une variable d'environnement réelle est prioritaire sur le `.env`. Voir `EMAIL_GMAIL.md` |
 | `SMS_DRIVER`, `SMS_GATEWAY_URL`, `SMS_API_URL`, `SMS_SENDER`, `SMS_API_KEY`, `SMS_PAYLOAD_TPL`, `SMS_COUNTRY_CODE` | Canal SMS |
 
 ## Multi-Tenant (Phases 14.2-14.11)
@@ -54,6 +56,7 @@ variable était absente. `.env` doit toujours fixer explicitement sa valeur.*
 | `TENANT_MODE_ENABLED` | `false` | **Indicateur documentaire uniquement** — n'active pas `TenantMiddleware` (voir `docs/technique/MULTI_TENANT.md`) |
 | `TENANT_DEFAULT_ID` | `1` | Établissement de repli quand `TenantContext` n'est pas positionné |
 | `TENANT_BASE_DOMAIN` | *(vide)* | Domaine de base pour la résolution par sous-domaine (`{slug}.{base_domain}`) |
+| `PLATFORM_DEFAULT_CURRENCY` | `XOF` | Devise proposée pour un **nouveau** plan SaaS (ISO 4217, 3 lettres). N'affecte pas les plans existants ; aucune conversion (voir `PLANS_SAAS.md`) |
 
 ## API Platform
 

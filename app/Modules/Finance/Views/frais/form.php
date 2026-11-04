@@ -228,12 +228,10 @@ $niveauxDisponibles = array_merge(...array_values(\App\Models\ClasseModel::NIVEA
 
             <!-- Actions -->
             <div class="p-5 flex items-center justify-end gap-3">
-                <a href="<?= BASE_URL ?>/v2/finance/frais<?= $isEdit ? '/' . $frais->id : '' ?>"
-                   class="px-4 py-2 text-sm text-slate-600 hover:text-slate-800">
+                <a href="<?= BASE_URL ?>/v2/finance/frais<?= $isEdit ? '/' . $frais->id : '' ?>" class="btn btn-secondary">
                     Annuler
                 </a>
-                <button type="submit"
-                        class="px-6 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700 transition-colors">
+                <button type="submit" class="btn btn-primary">
                     <?= $isEdit ? 'Enregistrer les modifications' : 'Créer le frais' ?>
                 </button>
             </div>

@@ -36,10 +36,10 @@ function buildQuery(array $base, array $override = []): string {
         <?php endif; ?>
         <?php if (ep($perms,'eleves.view')): ?>
         <a href="<?= BASE_URL ?>/eleves/export/excel<?= buildQuery($filters) ?>" class="btn btn-ghost">
-            <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600"></i>Excel
+            <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600"></i>Excel (CSV)
         </a>
         <a href="<?= BASE_URL ?>/eleves/export/pdf<?= buildQuery($filters) ?>" class="btn btn-ghost" target="_blank">
-            <i data-lucide="file-text" class="w-4 h-4 text-red-500"></i>PDF
+            <i data-lucide="file-text" class="w-4 h-4 text-red-500"></i>Imprimer / PDF
         </a>
         <?php endif; ?>
     </div>
@@ -87,7 +87,7 @@ function buildQuery(array $base, array $override = []): string {
 
 <!-- Filters -->
 <div class="rounded-xl border border-slate-200 bg-white shadow-sm mb-4">
-    <div class="p-5 p-3">
+    <div class="p-5">
         <form method="GET" action="<?= BASE_URL ?>/eleves"
               class="flex flex-wrap items-end gap-2">
             <div class="flex-1 min-w-40">
@@ -181,7 +181,7 @@ function buildQuery(array $base, array $override = []): string {
             <tr>
                 <td>
                     <?php if (!empty($e->photo)): ?>
-                    <img src="<?= BASE_URL ?>/<?= htmlspecialchars($e->photo, ENT_QUOTES) ?>"
+                    <img src="<?= htmlspecialchars(\App\Shared\Http\MediaUrl::photo($e->photo), ENT_QUOTES) ?>"
                          class="w-9 h-9 rounded-full object-cover border border-slate-200 shadow-sm" alt="">
                     <?php else: ?>
                     <div class="w-9 h-9 rounded-full flex items-center justify-center border
@@ -319,7 +319,7 @@ function buildQuery(array $base, array $override = []): string {
 <div id="deleteModal" class="modal-overlay fixed inset-0 z-[9000] hidden items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm [&.active]:flex">
     <div class="w-full max-w-lg rounded-xl border border-slate-200 bg-white shadow-2xl" style="max-width:440px">
         <div class="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
-            <h3 class="text-base font-semibold text-slate-950 flex items-center gap-2 text-red-600">
+            <h3 class="text-base font-semibold flex items-center gap-2 text-red-600">
                 <i data-lucide="alert-triangle" class="w-5 h-5"></i>
                 Confirmer la suppression
             </h3>

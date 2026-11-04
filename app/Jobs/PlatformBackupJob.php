@@ -16,7 +16,8 @@ use Core\Queue\Job;
  * limite déjà documentée en Phase 14.9).
  *
  * Payload : {type: 'global'|'tenant'|'differential', etablissement_id?: int,
- *            operator_user_id: int, since?: string (ISO 8601, pour differential)}
+ *            operator_id: int (platform_operators.id), since?: string (ISO 8601, pour differential)}
+ *            L'ancienne clé `operator_user_id` reste lue (travaux déjà en file) ; depuis T064 la valeur désigne un opérateur.
  */
 final class PlatformBackupJob implements Job
 {
@@ -27,7 +28,7 @@ final class PlatformBackupJob implements Job
     public function handle(array $payload): void
     {
         $service = $this->backups ?? BackupService::make();
-        $operatorUserId = (int)($payload['operator_user_id'] ?? 0);
+        $operatorUserId = (int)($payload['operator_id'] ?? $payload['operator_user_id'] ?? 0);
 
         match ($payload['type'] ?? 'global') {
             'tenant' => $service->createTenant((int)$payload['etablissement_id'], $operatorUserId),

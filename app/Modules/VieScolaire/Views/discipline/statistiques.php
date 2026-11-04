@@ -110,4 +110,4 @@
             </div>
         </div>
     <?php endif; ?>
-<script>lucide.createIcons();</script>
+<script>if (window.lucide) lucide.createIcons();</script>

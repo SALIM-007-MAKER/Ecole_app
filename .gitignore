@@ -1,5 +1,6 @@
 # Secrets et configuration locale — ne jamais versionner
 .env
+.env.production
 
 # Cache, files d'attente, sauvegardes et stockage tenant générés à l'exécution
 storage/cache/*
@@ -7,9 +8,14 @@ storage/cache/*
 storage/tenants/*
 !storage/tenants/.gitkeep
 
+# Dumps SQL locaux (sauvegardes prises avant une migration destructive) —
+# peuvent contenir des données personnelles réelles, jamais versionnés
+database/backups/
+
 # Fichiers uploadés par les utilisateurs
 public/uploads/*
 !public/uploads/.gitkeep
+!public/uploads/.htaccess
 
 # Logs
 *.log
@@ -21,3 +27,19 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Binaire Tailwind autonome (non versionne, voir tools/tailwind/README.md)
+tools/tailwind/tailwindcss.exe
+tools/tailwind/tailwindcss
+
+# Variables d'environnement Docker locales
+.env.docker
+
+# Sauvegardes locales et configurations sensibles
+.claude/settings*.bak*
+.claude/settings.local.json
+*.bak
+
+# Configuration locale Claude
+.claude/
+index2.html

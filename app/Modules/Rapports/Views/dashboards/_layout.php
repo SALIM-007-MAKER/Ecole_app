@@ -26,9 +26,19 @@ $navItems = [
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($titre ?? 'Dashboard') ?> — BI</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Google Fonts — même police que le dashboard principal -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Icônes — mêmes bibliothèques et version que le dashboard principal -->
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/vendor/fontawesome/css/all.min.css">
+    <script src="<?= BASE_URL ?>/assets/vendor/lucide/lucide.min.js"></script>
+    <script src="<?= BASE_URL ?>/assets/vendor/chartjs/chart.umd.js"></script>
+    <style>body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }</style>
+    <!-- Tailwind compilé (tools/tailwind/README.md) : en FIN de <head>, comme le faisait le CDN, pour conserver la même cascade avec app.css -->
+    <link rel="stylesheet" href="<?= BASE_URL ?>/assets/vendor/tailwind/tailwind-preflight.css?v=<?= @filemtime(ROOT_PATH . '/public/assets/vendor/tailwind/tailwind-preflight.css') ?: 1 ?>">
 </head>
 <body class="bg-slate-50 min-h-screen">
 
@@ -38,7 +48,7 @@ $navItems = [
         <div class="flex items-center gap-1 overflow-x-auto py-2 scrollbar-hide">
             <?php foreach ($navItems as $nav): ?>
             <?php $active = str_ends_with($_SERVER['REQUEST_URI'] ?? '', $nav['href']); ?>
-            <a href="<?= $nav['href'] ?>"
+            <a href="<?= BASE_URL . $nav['href'] ?>"
                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm whitespace-nowrap flex-shrink-0
                       <?= $active ? 'bg-violet-100 text-violet-700 font-medium' : 'text-slate-500 hover:bg-slate-100' ?>">
                 <i data-lucide="<?= $nav['icon'] ?>" class="w-3.5 h-3.5"></i>

@@ -89,6 +89,14 @@ final class BulletinData
         // telles qu'elles étaient à cet instant, même si elles changent ensuite.
         public readonly ?string $etablissementTelephone = null,
         public readonly ?string $etablissementEmail = null,
+
+        // ── Conduite : état figé à la génération ─────────────────────────
+        // conduiteComplete : true = Conduite complète pour la classe, false = notes manquantes, null = non concerné
+        // (établissement sans matière Conduite marquée). Simple INDICATION D'AFFICHAGE : la publication recalcule la
+        // complétude et la fraîcheur à partir des données actuelles et n'utilise jamais ce drapeau comme preuve.
+        // snapshotVersion : version du format de l'instantané (0 = ancien format, antérieur à la règle Conduite).
+        public readonly ?bool   $conduiteComplete = null,
+        public readonly int     $snapshotVersion = 0,
     ) {}
 
     // ─────────────────────────────────────────────────────────────────
@@ -146,6 +154,8 @@ final class BulletinData
             effectifClasse       : $this->effectifClasse,
             etablissementTelephone: $this->etablissementTelephone,
             etablissementEmail   : $this->etablissementEmail,
+            conduiteComplete     : $this->conduiteComplete,
+            snapshotVersion      : $this->snapshotVersion,
         );
     }
 
@@ -197,6 +207,8 @@ final class BulletinData
             effectifClasse       : $this->effectifClasse,
             etablissementTelephone: $this->etablissementTelephone,
             etablissementEmail   : $this->etablissementEmail,
+            conduiteComplete     : $this->conduiteComplete,
+            snapshotVersion      : $this->snapshotVersion,
         );
     }
 
@@ -252,6 +264,8 @@ final class BulletinData
             'effectif_classe'        => $this->effectifClasse,
             'etablissement_telephone'=> $this->etablissementTelephone,
             'etablissement_email'    => $this->etablissementEmail,
+            'conduite_complete'      => $this->conduiteComplete,
+            'snapshot_version'       => $this->snapshotVersion,
         ];
     }
 
@@ -303,6 +317,8 @@ final class BulletinData
             effectifClasse       : (int)($d['effectif_classe']  ?? 0),
             etablissementTelephone: $d['etablissement_telephone'] ?? null,
             etablissementEmail   : $d['etablissement_email']      ?? null,
+            conduiteComplete     : array_key_exists('conduite_complete', $d) && $d['conduite_complete'] !== null ? (bool)$d['conduite_complete'] : null,
+            snapshotVersion      : (int)($d['snapshot_version']   ?? 0),
         );
     }
 

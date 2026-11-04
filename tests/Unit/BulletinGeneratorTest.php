@@ -16,6 +16,7 @@ spl_autoload_register(function (string $class) use ($base): void {
     $map = [
         'Core\\'                   => $base . '/core/',
         'App\Modules\Academique\\' => $base . '/app/Modules/Academique/',
+        'App\Modules\VieScolaire\\' => $base . '/app/Modules/VieScolaire/',
         'App\Services\\'           => $base . '/app/Services/',
     ];
     foreach ($map as $prefix => $dir) {
@@ -47,9 +48,17 @@ use App\Modules\Academique\Services\RankingEngine;
 use App\Modules\Academique\Services\BulletinGenerator;
 use App\Modules\Academique\Repositories\BulletinRepository;
 use App\Modules\Academique\Repositories\RankingRepository;
+use App\Modules\Academique\Repositories\PeriodeScolaireRepository;
+use App\Modules\Academique\Repositories\AppreciationMatiereRepository;
+use App\Modules\VieScolaire\Absences\Repositories\AbsenceRepository;
 use App\Modules\Academique\DTO\BulletinData;
 use App\Modules\Academique\DTO\BulletinSummary;
 use App\Modules\Academique\ValueObjects\AverageValue;
+use App\Modules\Academique\Services\BulletinTokenException;
+use App\Modules\Academique\Services\BulletinTokenService;
+
+// Secret JETABLE propre à ce test : le générateur n'a plus aucune clé par défaut.
+$GLOBALS['tokenSvc'] = BulletinTokenService::fromEnvironment(['BULLETIN_TOKEN_SECRET' => hash('sha256', 'bulletin-generator-test-secret')]);
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -121,17 +130,30 @@ class StubBulletinRepository extends BulletinRepository
     }
 
     public function infoEleve(int $eleveId): ?object    { return $this->eleve; }
+    /** Double sans base : aucun contrôle de la Conduite (établissement sans matière de Conduite marquée). */
+    public function etatConduite(int $classeId, int $periodeId, bool $verrouiller = false): array
+    {
+        return ['concerne' => false, 'complete' => true, 'raison' => 'non_concerne', 'message' => '', 'matiere_id' => null, 'evaluations' => [], 'manquants' => []];
+    }
     public function infoPeriode(int $periodeId): ?object { return $this->periode; }
     public function infoEtablissement(): array           { return ['nom' => 'Lycée Test', 'adresse' => '1 rue Test', 'logo' => null]; }
     public function elevesParClasse(int $classeId): array { return $this->eleve ? [$this->eleve->id] : []; }
+    public function effectifClasse(int $classeId): int   { return $this->eleve ? 1 : 0; }
+
+    /** Bulletin déjà enregistré (null = première génération) — sert à tester la préservation de l'appréciation du directeur. */
+    public ?array $bulletinExistant = null;
+    public function findByEleveEtPeriode(int $eleveId, int $periodeId): ?array { return $this->bulletinExistant; }
 
     public function notesEleveParPeriode(int $eleveId, int $classeId, int $periodeId): array
     {
         return $this->noteRows;
     }
 
-    public function saveBulletin(BulletinData $b): int
+    public int $derniereVersionJeton = 0;
+
+    public function saveBulletin(BulletinData $b, int $tokenVersion = 2): int
     {
+        $this->derniereVersionJeton = $tokenVersion;
         $this->saved[] = $b;
         $this->storedBulletin = $b->toArray();
         return 1;
@@ -150,6 +172,11 @@ class StubBulletinRepository extends BulletinRepository
         return true;
     }
 
+    public function transitionStatut(int $bulletinId, string $from, string $to, int $userId, string $at): bool
+    {
+        return true;
+    }
+
     public function getSaved(): array { return $this->saved; }
 }
 
@@ -163,6 +190,33 @@ class StubRankingRepo extends RankingRepository
     public function notesParClasseMultiPeriodes(int $c, array $p): array { return $this->rows; }
 }
 
+// Dépendances que BulletinGenerator instancie lui-même (avec accès DB) quand on ne les injecte pas :
+// stubs sans PDO pour garder la suite autonome (aucune dépendance DB, comme annoncé en en-tête).
+class StubAbsenceRepo extends AbsenceRepository
+{
+    public function __construct() {}
+    public function countByEleveAndDateRange(int $eleveId, string $dateDebut, string $dateFin): array
+    {
+        return ['justifiees' => 0, 'nonJustifiees' => 0];
+    }
+}
+
+class StubAppreciationRepo extends AppreciationMatiereRepository
+{
+    /** @param array<string,string> $saisies clé « eleve:matiere:periode » => texte saisi par le professeur */
+    public function __construct(private array $saisies = []) {}
+    public function find(int $eleveId, int $matiereId, int $periodeId): ?string
+    {
+        return $this->saisies["{$eleveId}:{$matiereId}:{$periodeId}"] ?? null;
+    }
+}
+
+class StubPeriodeRepo extends PeriodeScolaireRepository
+{
+    public function __construct() {}
+    public function findByAnneeEtType(string $annee, string $type): array { return []; }
+}
+
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
 function makeEleve(int $id = 1, string $nom = 'Dupont', string $prenom = 'Jean'): object
@@ -173,6 +227,7 @@ function makeEleve(int $id = 1, string $nom = 'Dupont', string $prenom = 'Jean')
         'prenom'    => $prenom,
         'matricule' => 'MAT00' . $id,
         'photo'     => null,
+        'etablissement_id' => 1,
         'classe_id' => 1,
         'classe_nom'=> '3e A',
         'niveau'    => '3e',
@@ -252,7 +307,11 @@ function makeGenerator(array $noteRows, ?object $eleve = null, ?object $periode 
     $rankRepo = new StubRankingRepo($rankingRows);
     $ranking  = new RankingEngine($calc, $rankRepo);
     $repo     = new StubBulletinRepository($eleveObj, $periode ?? makePeriode(), $noteRows);
-    return new BulletinGenerator($calc, $ranking, $repo, seuilRattrapage: 8.0, appKey: 'test_key');
+    return new BulletinGenerator(
+        $calc, $ranking, $repo, seuilRattrapage: 8.0,
+        periodeRepo: new StubPeriodeRepo(), absenceRepo: new StubAbsenceRepo(), apprRepo: new StubAppreciationRepo(),
+        tokens: $GLOBALS['tokenSvc'],
+    );
 }
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
@@ -277,7 +336,7 @@ assert_eq(1,    $b->eleveId,        'eleveId correct');
 assert_eq(1,    $b->periodeId,      'periodeId correct');
 assert_eq('3e A', $b->classeNom,    'classeNom correct');
 assert_eq('brouillon', $b->statut,  'statut brouillon par défaut');
-assert_true(strlen($b->verificationToken) === 64, 'token = 64 hex chars (SHA-256)');
+assert_eq('', $b->verificationToken, 'aperçu : aucun jeton (réservé aux bulletins enregistrés)');
 assert_true(str_contains($b->qrCodeUrl, $b->verificationToken), 'qrCodeUrl contient le token');
 assert_eq(2, count($b->lignesMatieres), '2 lignes matières');
 assert_true(!empty($b->appreciationPp), 'appréciation PP générée');
@@ -335,19 +394,49 @@ assert_eq('B',  $ligne10['mention_code'],      'Mention maths = B (15 ≥14 <16)
 assert_eq('AB', $ligne11['mention_code'],      'Mention français = AB (12)');
 assert_eq(2, $ligne10['nb_notes'],             'Maths = 2 notes');
 assert_eq(1, $ligne11['nb_notes'],             'Français = 1 note');
-assert_true(!empty($ligne10['appreciation']),  'Appréciation maths non vide');
+// L'appréciation par matière est saisie à la main par le professeur : jamais générée automatiquement.
+assert_eq('', $ligne10['appreciation'],          'Appréciation maths vide tant que le professeur n\'a rien saisi');
+$genAppr = makeGenerator($noteRows);
+$ref = new ReflectionProperty(BulletinGenerator::class, 'apprRepo');
+$ref->setValue($genAppr, new StubAppreciationRepo(['1:10:1' => 'Bon travail, à poursuivre.']));
+$ligneAppr = null;
+foreach ($genAppr->previewBulletin(1, 1)->lignesMatieres as $l) { if ((int)$l['matiere_id'] === 10) $ligneAppr = $l; }
+assert_eq('Bon travail, à poursuivre.', $ligneAppr['appreciation'] ?? null, 'Appréciation maths = texte saisi par le professeur quand il existe');
 
 // ─── Section 5 : Token stable ─────────────────────────────────────────────────
 
 section('5. Token de vérification stable (idempotent)');
 
-$token1 = $gen->generateVerificationToken(1, 1);
-$token2 = $gen->generateVerificationToken(1, 1);
-$token3 = $gen->generateVerificationToken(2, 1);
+$token1 = $gen->issueToken(1, 1, 1);
+$token2 = $gen->issueToken(1, 1, 1);
+$token3 = $gen->issueToken(1, 2, 1);
+$token4 = $gen->issueToken(2, 1, 1);
 
-assert_eq($token1, $token2,    'Même token pour même eleve+periode');
+assert_eq($token1, $token2,    'Même token pour même établissement+élève+période');
 assert_true($token1 !== $token3, 'Token différent pour autre élève');
+assert_true($token1 !== $token4, 'Token différent pour autre établissement');
 assert_eq(64, strlen($token1), 'Token = 64 chars');
+assert_eq($GLOBALS['tokenSvc']->issue(1, 1, 1), $token1, 'Le générateur délègue au BulletinTokenService (HMAC)');
+
+// Aperçu : ni jeton ni QR ; génération : jeton HMAC, pas de QR figé pour un brouillon
+$apercu = makeGenerator([makeNoteRow(10, 'Mathématiques', 3.0, 16.0)])->previewBulletin(1, 1);
+assert_eq('', $apercu->verificationToken, 'Aperçu : aucun jeton (jamais exposé aux parents/élèves)');
+assert_eq('', $apercu->qrCodeUrl,         'Aperçu : aucune URL de QR');
+
+// Sans service de jetons : l'aperçu fonctionne, la génération persistée est refusée explicitement
+$genSansSecret = (function () {
+    $calc = new AcademicCalculationService();
+    $eleve = makeEleve();
+    $rows = [makeNoteRow(10, 'Mathématiques', 3.0, 16.0)];
+    $rk = array_map(fn($r) => array_merge($r, ['eleve_id' => 1, 'nom' => 'Dupont', 'prenom' => 'Jean', 'matricule' => 'MAT001', 'classe_id' => 1, 'classe_nom' => null]), $rows);
+    return new BulletinGenerator($calc, new RankingEngine($calc, new StubRankingRepo($rk)), new StubBulletinRepository($eleve, makePeriode(), $rows),
+        periodeRepo: new StubPeriodeRepo(), absenceRepo: new StubAbsenceRepo(), apprRepo: new StubAppreciationRepo());
+})();
+assert_true($genSansSecret->previewBulletin(1, 1) instanceof BulletinData, 'Sans BULLETIN_TOKEN_SECRET : l\'aperçu reste possible');
+$refus = null; try { $genSansSecret->genererBulletin(1, 1, 1); } catch (BulletinTokenException $e) { $refus = $e; }
+assert_true($refus !== null && $refus->getCode() === BulletinTokenException::MISSING, 'Sans BULLETIN_TOKEN_SECRET : genererBulletin() refuse explicitement (aucun jeton par défaut)');
+$refus2 = null; try { $genSansSecret->issueToken(1, 1, 1); } catch (BulletinTokenException $e) { $refus2 = $e; }
+assert_true($refus2 !== null, 'Sans BULLETIN_TOKEN_SECRET : issueToken() refuse explicitement');
 
 // ─── Section 6 : genererBulletin persiste ─────────────────────────────────────
 
@@ -366,11 +455,26 @@ $rankRows6 = array_map(fn($r) => array_merge($r, [
 $rankRepo = new StubRankingRepo($rankRows6);
 $ranking  = new RankingEngine($calc, $rankRepo);
 $stubRepo = new StubBulletinRepository($eleve6, makePeriode(), $noteRows);
-$gen2     = new BulletinGenerator($calc, $ranking, $stubRepo, 8.0, 'test_key');
+$gen2     = new BulletinGenerator(
+    $calc, $ranking, $stubRepo, seuilRattrapage: 8.0,
+    periodeRepo: new StubPeriodeRepo(), absenceRepo: new StubAbsenceRepo(), apprRepo: new StubAppreciationRepo(),
+    tokens: $GLOBALS['tokenSvc'],
+);
 
 $generated = $gen2->genererBulletin(1, 1, 99);
 
 assert_true($generated instanceof BulletinData, 'genererBulletin retourne BulletinData');
+assert_true($generated->appreciationDirecteur === null, 'Première génération : pas d\'appréciation du directeur');
+
+// Régénération (ex : après correction d'une note) : l'appréciation du directeur déjà saisie est préservée.
+$stubRepoRegen = new StubBulletinRepository($eleve6, makePeriode(), $noteRows);   // dépôt distinct : ne fausse pas le décompte de saveBulletin ci-dessous
+$stubRepoRegen->bulletinExistant = ['appreciation_directeur' => 'Élève sérieux, félicitations.'];
+$genRegen = new BulletinGenerator(
+    $calc, $ranking, $stubRepoRegen, seuilRattrapage: 8.0,
+    periodeRepo: new StubPeriodeRepo(), absenceRepo: new StubAbsenceRepo(), apprRepo: new StubAppreciationRepo(),
+    tokens: $GLOBALS['tokenSvc'],
+);
+assert_eq('Élève sérieux, félicitations.', $genRegen->genererBulletin(1, 1, 99)->appreciationDirecteur, 'Régénération : l\'appréciation du directeur est préservée');
 assert_eq(1, count($stubRepo->getSaved()),      'saveBulletin appelé une fois');
 assert_eq(99, $generated->generatedById,         'generatedById = userId');
 
@@ -427,7 +531,8 @@ assert_contains('Lycée Test', $html,      'Établissement dans HTML');
 assert_contains('Trimestre 1', $html,     'Période dans HTML');
 assert_contains('<table', $html,          'Table matières présente');
 assert_contains('BULLETIN DE NOTES', $html, 'Titre bulletin présent');
-assert_contains($generated->verificationToken, $html, 'Token de vérification dans HTML');
+assert_true(strlen($generated->verificationToken) === 64 && !str_contains($html, $generated->verificationToken), 'Le jeton de vérification n\'est JAMAIS imprimé dans le HTML exporté');
+assert_true(!str_contains($html, 'Vérifier l\'authenticité'), 'Brouillon : aucun lien de vérification dans le HTML exporté');
 assert_contains('DÉCISION', $html,        'Section décision présente');
 assert_contains('signatures', $html,      'Section signatures présente');
 
@@ -439,8 +544,8 @@ $payload = $gen2->toApiPayload($generated);
 
 assert_true(isset($payload['_links']),           'payload a _links');
 assert_true(isset($payload['_links']['self']),   '_links.self présent');
-assert_true(isset($payload['_links']['verify']), '_links.verify présent');
-assert_true(isset($payload['_links']['html']),   '_links.html présent');
+assert_true(array_key_exists('verify', $payload['_links']) && $payload['_links']['verify'] === null, '_links.verify absent (null) pour un brouillon');
+assert_true(!str_contains(json_encode($payload['_links']), $generated->verificationToken), 'Aucun lien ne contient le jeton');
 assert_contains('/v2/academique/bulletins/', $payload['_links']['self'], 'URL correcte');
 
 // ─── Section 12 : BulletinSummary toArray ────────────────────────────────────

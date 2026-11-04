@@ -31,7 +31,7 @@ $tauxPresence = $totalMens > 0 ? round($presentsMens / $totalMens * 100, 1) : 0;
       </div>
       <h1 class="text-2xl font-bold text-slate-900">Statistiques de présence</h1>
     </div>
-    <a href="<?= BASE_URL ?>/v2/rh/presences" class="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">
+    <a href="<?= BASE_URL ?>/v2/rh/presences" class="btn btn-secondary">
       ← Retour à la liste
     </a>
   </div>

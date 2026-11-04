@@ -52,6 +52,16 @@ uasort($eleveInfos, function($a, $b) {
         </div>
     </div>
     <div class="flex items-center gap-2 flex-wrap">
+        <?php
+        $__u   = \Core\Session::getUser() ?? [];
+        $__pol = new \App\Modules\Academique\Policies\BulletinPolicy();
+        if ($classe && $periode && $__u && $__pol->canGenerate($__u) && $__pol->canPublish($__u)): ?>
+        <form method="POST" action="<?= BASE_URL ?>/v2/academique/bulletins/classe/<?= (int)$classe->id ?>/<?= (int)$periode->id ?>/publier-tout"
+              onsubmit="return confirm('Publier TOUS les bulletins de cette classe pour cette période ? Ils deviendront officiels (QR de vérification) et ne pourront plus être modifiés.');">
+            <input type="hidden" name="_csrf_token" value="<?= \Core\Session::getCsrfToken() ?>">
+            <button type="submit" class="btn btn-primary"><i data-lucide="qr-code" class="w-4 h-4"></i>Publier avec QR</button>
+        </form>
+        <?php endif; ?>
         <?php if ($classe && $periode): ?>
         <a href="<?= BASE_URL ?>/bulletins/classement?classe_id=<?= $classe->id ?>&periode_id=<?= $periode->id ?>"
            class="btn btn-warning">
@@ -66,7 +76,7 @@ uasort($eleveInfos, function($a, $b) {
 
 <!-- Filtres -->
 <div class="rounded-xl border border-slate-200 bg-white shadow-sm mb-4">
-    <div class="p-5 p-3">
+    <div class="p-3">
         <form method="GET" action="<?= BASE_URL ?>/bulletins/classe" class="flex flex-wrap items-end gap-3">
             <div class="flex-1 min-w-36">
                 <label class="form-label text-xs">Classe</label>
@@ -139,7 +149,7 @@ uasort($eleveInfos, function($a, $b) {
         </span>
     </div>
     <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white overflow-x-auto">
-        <table class="min-w-full divide-y divide-slate-200 text-sm [&_thead]:bg-slate-50 [&_th]:px-4 [&_th]:py-3 [&_th]:text-left [&_th]:text-[11px] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-wide [&_th]:text-slate-500 [&_td]:px-4 [&_td]:py-3 [&_td]:align-middle [&_td]:text-slate-700 [&_tbody]:divide-y [&_tbody]:divide-slate-100 [&_tbody_tr:hover]:bg-slate-50 border-collapse text-xs" style="min-width:900px;font-size:.82rem">
+        <table class="min-w-full divide-y divide-slate-200 [&_thead]:bg-slate-50 [&_th]:px-4 [&_th]:py-3 [&_th]:text-left [&_th]:text-[11px] [&_th]:font-bold [&_th]:uppercase [&_th]:tracking-wide [&_th]:text-slate-500 [&_td]:px-4 [&_td]:py-3 [&_td]:align-middle [&_td]:text-slate-700 [&_tbody]:divide-y [&_tbody]:divide-slate-100 [&_tbody_tr:hover]:bg-slate-50 border-collapse text-xs" style="min-width:900px;font-size:.82rem">
             <thead>
                 <tr class="bg-slate-800 text-white">
                     <th class="text-center px-3 py-3 w-14">Rang</th>

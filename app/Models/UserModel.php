@@ -36,8 +36,12 @@ class UserModel extends Model
      *   3. Sinon → config/permissions.php (V1 fallback, toujours disponible).
      * Dans tous les cas, les codes V1 et V2 sont retournés simultanément
      * (compat totale avec les contrôleurs existants).
+     *
+     * $strictTenant = true (authentification globale, hors compte historique sans appartenance) : le palier 2 est IGNORÉ. Les tables
+     * RBAC V2 sont globales (aucun établissement) : sans cela, un rôle sans permission dans l'établissement B ferait hériter à l'utilisateur
+     * des permissions globales obtenues ailleurs. Faux par défaut : tous les autres appelants gardent leur comportement.
      */
-    public function getPermissions(string $role, int $userId = 0, ?int $etablissementId = null): array
+    public function getPermissions(string $role, int $userId = 0, ?int $etablissementId = null, bool $strictTenant = false): array
     {
         // ── Tentative RBAC Multi-Tenant (etab_*, Phase 14.4) ─────────────────
         if ($userId > 0 && $etablissementId !== null) {
@@ -56,7 +60,7 @@ class UserModel extends Model
         }
 
         // ── Tentative RBAC V2 legacy (globale, non tenant) ───────────────────
-        if ($userId > 0) {
+        if ($userId > 0 && !$strictTenant) {
             try {
                 $pdo = Database::getInstance()->getConnection();
 
@@ -119,6 +123,9 @@ class UserModel extends Model
             'emploi_du_temps.view_own' => 'emploi_du_temps.view.own',
             'notifications.manage'     => 'notifications.create',
             'bulletins.view'           => 'bulletins.print',   // ancien view inclut print
+            // Noms français du catalogue RBAC en base ↔ noms exigés par BulletinPolicy (écart n°1 des parcours métier)
+            'academique.bulletin.generer' => 'academique.bulletin.generate',
+            'academique.bulletin.publier' => 'academique.bulletin.publish',
         ];
 
         $aliases = [];
@@ -132,6 +139,15 @@ class UserModel extends Model
 
     // ─── Réinitialisation de mot de passe ────────────────────────────────────
 
+    /**
+     * Le jeton transmis à l'utilisateur n'est JAMAIS stocké en clair : la base ne contient que son empreinte SHA-256
+     * (une fuite de la table ne permet pas de réinitialiser un mot de passe).
+     */
+    private function hashResetToken(string $token): string
+    {
+        return hash('sha256', $token);
+    }
+
     public function createResetToken(string $email, string $token): void
     {
         // Invalider les anciens tokens
@@ -143,7 +159,7 @@ class UserModel extends Model
         $this->execute(
             "INSERT INTO `password_resets` (`email`, `token`, `expires_at`)
              VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR))",
-            [$email, $token]
+            [$email, $this->hashResetToken($token)]
         );
     }
 
@@ -153,7 +169,7 @@ class UserModel extends Model
             "SELECT * FROM `password_resets`
              WHERE `token` = ? AND `used` = 0 AND `expires_at` > NOW()
              LIMIT 1",
-            [$token]
+            [$this->hashResetToken($token)]
         );
     }
 
@@ -161,7 +177,7 @@ class UserModel extends Model
     {
         $this->execute(
             "UPDATE `password_resets` SET `used` = 1 WHERE `token` = ?",
-            [$token]
+            [$this->hashResetToken($token)]
         );
     }
 

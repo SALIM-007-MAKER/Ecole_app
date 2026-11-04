@@ -6,7 +6,7 @@ use Core\Event;
 use Core\Listener;
 use App\Services\AuditService;
 use App\Events\EleveCreated;
-use App\Events\AbsenceCreee;
+use App\Events\EleveActifChanged;
 use App\Events\DocumentGenere;
 use App\Events\ImportCsvCompleted;
 
@@ -27,14 +27,22 @@ class AuditHandler implements Listener
                 'eleves',
                 'eleves',
                 $event->eleveId,
-                $event->toArray()
+                // Identifiants seulement : ni nom ni prénom d'élève dans le journal (donnée personnelle non nécessaire à la traçabilité).
+                [
+                    'eleve_id'        => $event->eleveId,
+                    'matricule'       => $event->matricule,
+                    'classe_id'       => $event->classeId,
+                    'from_csv_import' => $event->fromCsvImport,
+                ]
             ),
 
-            $event instanceof AbsenceCreee   => $this->audit->logCreate(
-                $event->saisieParId,
-                'absences',
-                'absences',
-                $event->absenceId ?: null,
+            $event instanceof EleveActifChanged => $this->audit->log(
+                $event->changedById,
+                $event->nouvelActif ? 'reactiver' : 'desactiver',
+                'eleves',
+                'eleves',
+                $event->eleveId,
+                ['actif' => $event->ancienActif ? 1 : 0],
                 $event->toArray()
             ),
 

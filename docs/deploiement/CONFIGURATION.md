@@ -72,3 +72,17 @@ Répertoire local : `storage/tenants/`. Voir `docs/technique/MULTI_TENANT.md` §
 - `CORS_ORIGINS` limité aux domaines réels de vos clients front-end/mobiles.
 - Voir `docs/deploiement/VARIABLES_ENVIRONNEMENT.md` §Sécurité pour la liste
   complète des secrets à protéger.
+
+## Ressources front servies localement (aucun CDN)
+
+Tailwind CSS (compilé), Font Awesome 6.7.2, Lucide 0.400.0 et Chart.js 4.4.4 sont servis depuis `public/assets/vendor/` : l'application fonctionne sans accès à
+Internet (hors police de l'établissement, chargée depuis Google Fonts avec repli sur la police du système). La politique CSP n'autorise plus aucun hôte CDN.
+
+- **Tailwind** : deux feuilles compilées, `tailwind.css` (sans « preflight » : gabarits principal, d'authentification, plateforme, accueil) et `tailwind-preflight.css`
+  (pages autonomes : erreurs, impression, portails, rapports, partages). Elles sont insérées **en fin de `<head>`, après `app.css`** : cet ordre reproduit la cascade
+  qu'avait le CDN ; ne pas le changer.
+- **Recompiler** après avoir ajouté ou retiré des classes Tailwind dans les vues : `tools/tailwind/README.md` (binaire autonome v3.4.17 non versionné, somme de contrôle
+  indiquée). `php tests/Unit/AssetsLocauxTest.php` signale une feuille périmée (couleur utilisée dans une vue mais absente de `tailwind.css`).
+- **Classes contradictoires** : ne jamais mettre deux utilitaires de la même famille sur un élément (`p-5 p-3`) : le gagnant dépend de l'ordre de la feuille. Le test
+  ci-dessus les détecte (le motif `flex hidden` des fenêtres masquées par défaut est le seul toléré).
+- **Mise à jour d'une bibliothèque** : remplacer le fichier de `public/assets/vendor/<lib>/`, vérifier son empreinte auprès de l'éditeur, puis tester les pages qui l'utilisent.

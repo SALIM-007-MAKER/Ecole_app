@@ -3,6 +3,7 @@
 namespace App\Modules\Academique\Repositories;
 
 use Core\Database;
+use Core\Tenant\TenantScope;
 use PDO;
 
 class EvaluationRepository
@@ -42,6 +43,7 @@ class EvaluationRepository
                     te.icone        AS type_icone,
                     te.code         AS type_code,
                     m.nom           AS matiere_nom,
+                    m.est_conduite  AS matiere_est_conduite,
                     m.coefficient   AS matiere_coef,
                     cl.nom          AS classe_nom,
                     cl.niveau       AS classe_niveau,
@@ -81,6 +83,7 @@ class EvaluationRepository
                     te.icone        AS type_icone,
                     te.est_eliminatoire AS type_eliminatoire,
                     m.nom           AS matiere_nom,
+                    m.est_conduite  AS matiere_est_conduite,
                     m.coefficient   AS matiere_coef,
                     cl.nom          AS classe_nom,
                     cl.niveau       AS classe_niveau,
@@ -92,9 +95,9 @@ class EvaluationRepository
              JOIN `matieres` m            ON m.id  = ev.matiere_id
              JOIN `classes` cl            ON cl.id = ev.classe_id
              LEFT JOIN `professeurs` pr   ON pr.id = ev.enseignant_id
-             WHERE ev.id = ?"
+             WHERE ev.id = ?" . (($tid = TenantScope::id()) === null ? '' : ' AND cl.etablissement_id = ?')
         );
-        $stmt->execute([$id]);
+        $stmt->execute($tid === null ? [$id] : [$id, $tid]);
         $row = $stmt->fetch(PDO::FETCH_OBJ);
         if (!$row) return null;
 
@@ -106,7 +109,8 @@ class EvaluationRepository
 
     public function countStats(): array
     {
-        $row = $this->pdo->query(
+        [$ts, $tp] = TenantScope::classe('classe_id', 'WHERE');
+        $stmt = $this->pdo->prepare(
             "SELECT
                 COUNT(*)                           AS total,
                 SUM(statut = 'brouillon')          AS brouillons,
@@ -114,8 +118,10 @@ class EvaluationRepository
                 SUM(statut = 'verrouillee')        AS verrouillees,
                 SUM(statut = 'archivee')           AS archivees,
                 SUM(notes_saisie_ouverte = 1)      AS saisie_ouverte
-             FROM `evaluations`"
-        )->fetch(PDO::FETCH_OBJ);
+             FROM `evaluations`" . $ts
+        );
+        $stmt->execute($tp);
+        $row = $stmt->fetch(PDO::FETCH_OBJ);
 
         return [
             'total'         => (int)($row->total          ?? 0),
@@ -148,56 +154,113 @@ class EvaluationRepository
 
     public function listPeriodesForSelect(): array
     {
-        $stmt = $this->pdo->query(
+        [$ts, $tp] = TenantScope::referentiel('periodes_scolaires', 'etablissement_id');
+        $stmt = $this->pdo->prepare(
             "SELECT id, nom, annee_scolaire, statut, is_active
              FROM `periodes_scolaires`
-             WHERE statut != 'archivee'
+             WHERE statut != 'archivee'" . $ts . "
              ORDER BY annee_scolaire DESC, ordre ASC, numero ASC"
         );
+        $stmt->execute($tp);
         return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 
     public function listTypesForSelect(): array
     {
-        $stmt = $this->pdo->query(
+        (new TypeEvaluationRepository())->amorcer();
+        [$ts, $tp] = TenantScope::referentiel('types_evaluations', 'etablissement_id');
+        $stmt = $this->pdo->prepare(
             "SELECT id, code, nom, coefficient_defaut, note_max_defaut, couleur, icone
              FROM `types_evaluations`
-             WHERE actif = 1 AND est_archive = 0
+             WHERE actif = 1 AND est_archive = 0" . $ts . "
              ORDER BY ordre ASC, nom ASC"
         );
+        $stmt->execute($tp);
         return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 
-    public function listMatieresForSelect(): array
+    /**
+     * @param bool $inclureConduite false pour exclure la matière « Conduite »
+     *             du select (formulaire d'évaluation ouvert à un enseignant —
+     *             circuit réservé au Directeur/Admin, voir EvaluationPolicy).
+     */
+    public function listMatieresForSelect(bool $inclureConduite = true): array
     {
-        $stmt = $this->pdo->query(
-            "SELECT id, nom, coefficient
-             FROM `matieres`
-             ORDER BY nom ASC"
-        );
+        $cond = []; $params = [];
+        if (($tid = TenantScope::id()) !== null) { $cond[] = 'etablissement_id = ?'; $params[] = $tid; }
+        if (!$inclureConduite) { $cond[] = 'est_conduite IS NULL'; }
+        $sql = "SELECT id, nom, coefficient, est_conduite FROM `matieres`" . ($cond ? ' WHERE ' . implode(' AND ', $cond) : '') . " ORDER BY nom ASC";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_OBJ);
+    }
+
+    /** true / false selon le marqueur `est_conduite` de la matière ; null si la matière n'existe pas. */
+    public function matiereEstConduite(int $matiereId): ?bool
+    {
+        [$ts, $tp] = TenantScope::colonne('matieres', 'etablissement_id');
+        $stmt = $this->pdo->prepare("SELECT est_conduite FROM `matieres` WHERE id = ?" . $ts);
+        $stmt->execute([$matiereId, ...$tp]);
+        $v = $stmt->fetch(PDO::FETCH_NUM);
+        return $v === false ? null : ((int)$v[0] === 1);
+    }
+
+    /**
+     * Existe-t-il déjà, pour cette classe et cette période, une évaluation de Conduite non archivée
+     * (brouillon compris) ? $exceptId exclut l'évaluation en cours de modification.
+     */
+    public function conduiteExisteDeja(int $classeId, int $periodeId, ?int $exceptId = null): bool
+    {
+        $sql = "SELECT COUNT(*) FROM `evaluations` ev JOIN `matieres` m ON m.id = ev.matiere_id
+                 WHERE m.est_conduite = 1 AND ev.classe_id = ? AND ev.periode_scolaire_id = ? AND ev.statut <> 'archivee'";
+        $params = [$classeId, $periodeId];
+        if ($exceptId !== null) { $sql .= " AND ev.id <> ?"; $params[] = $exceptId; }
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return (int)$stmt->fetchColumn() > 0;
+    }
+
+    /** La classe appartient-elle à l'établissement courant ? (toujours vrai sans contexte) */
+    public function classeAppartient(int $classeId): bool
+    {
+        [$ts, $tp] = TenantScope::colonne('classes', 'etablissement_id');
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM `classes` WHERE id = ?' . $ts);
+        $stmt->execute([$classeId, ...$tp]);
+        return (int)$stmt->fetchColumn() > 0;
+    }
+
+    public function enseignantAppartient(int $professeurId): bool
+    {
+        [$ts, $tp] = TenantScope::colonne('professeurs', 'etablissement_id');
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM `professeurs` WHERE id = ?' . $ts);
+        $stmt->execute([$professeurId, ...$tp]);
+        return (int)$stmt->fetchColumn() > 0;
     }
 
     public function listClassesForSelect(): array
     {
-        $stmt = $this->pdo->query(
+        [$ts, $tp] = TenantScope::colonne('classes', 'etablissement_id', 'WHERE');
+        $stmt = $this->pdo->prepare(
             "SELECT id, nom, niveau
-             FROM `classes`
+             FROM `classes`" . $ts . "
              ORDER BY " . \App\Models\ClasseModel::ordreNiveauSql() . " ASC, nom ASC"
         );
+        $stmt->execute($tp);
         return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 
     public function listEnseignantsForSelect(): array
     {
-        $stmt = $this->pdo->query(
+        [$ts, $tp] = TenantScope::colonne('professeurs', 'etablissement_id');
+        $stmt = $this->pdo->prepare(
             "SELECT id,
                     CONCAT(prenom, ' ', nom,
                         IF(specialite IS NOT NULL AND specialite != '', CONCAT(' (', specialite, ')'), '')) AS label
              FROM `professeurs`
-             WHERE actif = 1
+             WHERE actif = 1" . $ts . "
              ORDER BY nom ASC, prenom ASC"
         );
+        $stmt->execute($tp);
         return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 
@@ -219,6 +282,10 @@ class EvaluationRepository
         $conditions = [];
         $params     = [];
 
+        if (($tid = TenantScope::id()) !== null) {   // Lot 3 : seules les évaluations des classes de l'établissement courant
+            $conditions[] = 'cl.etablissement_id = ?';
+            $params[]     = $tid;
+        }
         if (!empty($filters['search'])) {
             $conditions[] = '(ev.libelle LIKE ? OR m.nom LIKE ? OR cl.nom LIKE ?)';
             $like         = '%' . $filters['search'] . '%';

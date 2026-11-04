@@ -26,8 +26,17 @@ final class PlatformEtablissementService
 {
     private const STATUTS = ['trial', 'active', 'suspended', 'cancelled', 'archived'];
 
-    public function __construct(private readonly PDO $pdo)
+    /** @var ?callable():\DateTimeImmutable horloge des abonnements (tests) ; null = heure réelle */
+    private $horloge;
+
+    public function __construct(private readonly PDO $pdo, ?callable $horloge = null)
     {
+        $this->horloge = $horloge;
+    }
+
+    private function abonnements(): PlatformSubscriptionService
+    {
+        return new PlatformSubscriptionService($this->pdo, $this->horloge);
     }
 
     public static function make(): self
@@ -58,7 +67,7 @@ final class PlatformEtablissementService
             $params[] = (int)$filters['plan_id'];
         }
 
-        $sql = "SELECT e.*, p.nom AS plan_nom, p.code AS plan_code
+        $sql = "SELECT e.*, p.nom AS plan_nom, p.code AS plan_code, p.actif AS plan_actif
                 FROM etablissements e
                 LEFT JOIN platform_plans p ON p.id = e.plan_id
                 WHERE " . implode(' AND ', $where) . "
@@ -72,7 +81,7 @@ final class PlatformEtablissementService
     public function find(int $id): ?array
     {
         $stmt = $this->pdo->prepare(
-            "SELECT e.*, p.nom AS plan_nom, p.code AS plan_code
+            "SELECT e.*, p.nom AS plan_nom, p.code AS plan_code, p.actif AS plan_actif
              FROM etablissements e LEFT JOIN platform_plans p ON p.id = e.plan_id
              WHERE e.id = ?"
         );
@@ -106,22 +115,57 @@ final class PlatformEtablissementService
         $validTypes = ['ecole_primaire', 'college', 'lycee', 'universite', 'formation_pro', 'groupe_scolaire'];
         $type = in_array($data['type'] ?? '', $validTypes, true) ? $data['type'] : 'lycee';
 
-        $stmt = $this->pdo->prepare(
-            "INSERT INTO etablissements (slug, nom, nom_court, type, pays, statut, plan_id, trial_ends_at)
-             VALUES (?, ?, ?, ?, ?, 'trial', ?, DATE_ADD(NOW(), INTERVAL 30 DAY))"
-        );
-        $stmt->execute([
-            $slug, $nom, $nomCourt, $type,
-            $data['pays'] ?? 'DZ',
-            $data['plan_id'] ?? null,
-        ]);
-        $id = (int)$this->pdo->lastInsertId();
-
         if (!empty($data['plan_id'])) {
-            $this->applyPlanLimits($id, (int)$data['plan_id']);
+            $planOk = $this->pdo->prepare('SELECT COUNT(*) FROM platform_plans WHERE id = ? AND actif = 1');
+            $planOk->execute([(int)$data['plan_id']]);
+            if ((int)$planOk->fetchColumn() === 0) {
+                throw new \InvalidArgumentException('Plan introuvable ou archivé : un plan archivé ne peut plus être assigné.');
+            }
         }
 
-        Logger::security('PLATFORM_TENANT_CREATED', "etablissement_id={$id} slug={$slug} par operator_user_id={$operatorUserId}");
+        // Avec T067 : la période d'essai vient du plan (durée figée dans l'abonnement) et tout est créé dans UNE transaction.
+        // Avant T067 (ou sans plan) : comportement historique (essai de 30 jours, informatif).
+        $parAbonnement = !empty($data['plan_id']) && PlatformSubscriptionService::disponible($this->pdo);
+        $propre = !$this->pdo->inTransaction();
+        if ($propre) {
+            $this->pdo->beginTransaction();
+        }
+        try {
+            $stmt = $this->pdo->prepare(
+                "INSERT INTO etablissements (slug, nom, nom_court, type, pays, statut, plan_id, trial_ends_at)
+                 VALUES (?, ?, ?, ?, ?, 'trial', ?, " . ($parAbonnement ? 'NULL' : 'DATE_ADD(NOW(), INTERVAL 30 DAY)') . ")"
+            );
+            $stmt->execute([
+                $slug, $nom, $nomCourt, $type,
+                $data['pays'] ?? 'DZ',
+                $parAbonnement ? null : ($data['plan_id'] ?? null),
+            ]);
+            $id = (int)$this->pdo->lastInsertId();
+
+            if ($parAbonnement) {
+                ($this->abonnements())->assigner($id, (int)$data['plan_id'], $operatorUserId);
+            } elseif (!empty($data['plan_id'])) {
+                $this->applyPlanLimits($id, (int)$data['plan_id']);
+            }
+            if ($propre) {
+                $this->pdo->commit();
+            }
+        } catch (SubscriptionException $e) {
+            if ($propre && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw new \InvalidArgumentException($e->getMessage(), 0, $e);
+        } catch (\Throwable $e) {
+            if ($propre && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            throw $e;
+        }
+        Logger::security('PLATFORM_TENANT_CREATED', "etablissement_id={$id} slug={$slug} par operator_id={$operatorUserId}");
+        PlatformAuditService::make($this->pdo)->recordPar($operatorUserId, 'tenant.created', [
+            'etablissement_id' => $id, 'entity_type' => 'etablissement', 'entity_id' => $id,
+            'apres' => ['slug' => $slug, 'nom' => $nom, 'type' => $type, 'plan_id' => $data['plan_id'] ?? null, 'statut' => 'trial'],
+        ]);
         return $id;
     }
 
@@ -132,14 +176,22 @@ final class PlatformEtablissementService
 
     public function suspend(int $id, int $operatorUserId, ?string $reason = null): bool
     {
+        $avant = $this->statutActuel($id);
+        $avantDetail = ['statut' => $avant] + ($this->suspensionActuelle($id) ?? []);
+        // Décision d'opérateur : prioritaire sur une suspension automatique (son motif reste dans l'audit « avant »).
+        $origine = PlatformSubscriptionService::disponible($this->pdo) ? ", suspension_origine = 'manual'" : '';
         $stmt = $this->pdo->prepare(
-            "UPDATE etablissements SET statut = 'suspended', suspended_at = NOW(), suspension_reason = ?
+            "UPDATE etablissements SET statut = 'suspended', suspended_at = NOW(), suspension_reason = ?" . $origine . "
              WHERE id = ? AND deleted_at IS NULL"
         );
         $stmt->execute([$reason, $id]);
         $ok = $stmt->rowCount() > 0;
         if ($ok) {
-            Logger::security('PLATFORM_TENANT_SUSPENDED', "etablissement_id={$id} raison=" . ($reason ?? '(non précisée)') . " par operator_user_id={$operatorUserId}");
+            Logger::security('PLATFORM_TENANT_SUSPENDED', "etablissement_id={$id} raison=" . ($reason ?? '(non précisée)') . " par operator_id={$operatorUserId}");
+            PlatformAuditService::make($this->pdo)->recordPar($operatorUserId, 'tenant.suspended', [
+                'etablissement_id' => $id, 'entity_type' => 'etablissement', 'entity_id' => $id,
+                'avant' => $avantDetail, 'apres' => ['statut' => 'suspended', 'raison' => $reason, 'origine' => $origine !== '' ? 'manual' : null],
+            ]);
         }
         return $ok;
     }
@@ -157,13 +209,18 @@ final class PlatformEtablissementService
     /** Suppression LOGIQUE uniquement (deleted_at) — jamais de DROP/DELETE physique. */
     public function softDelete(int $id, int $operatorUserId): bool
     {
+        $avant = $this->statutActuel($id);
         $stmt = $this->pdo->prepare(
             "UPDATE etablissements SET deleted_at = NOW(), statut = 'cancelled' WHERE id = ? AND deleted_at IS NULL"
         );
         $stmt->execute([$id]);
         $ok = $stmt->rowCount() > 0;
         if ($ok) {
-            Logger::security('PLATFORM_TENANT_SOFT_DELETED', "etablissement_id={$id} par operator_user_id={$operatorUserId}");
+            Logger::security('PLATFORM_TENANT_SOFT_DELETED', "etablissement_id={$id} par operator_id={$operatorUserId}");
+            PlatformAuditService::make($this->pdo)->recordPar($operatorUserId, 'tenant.deleted', [
+                'etablissement_id' => $id, 'entity_type' => 'etablissement', 'entity_id' => $id,
+                'avant' => ['statut' => $avant, 'supprime' => false], 'apres' => ['statut' => 'cancelled', 'supprime' => true, 'suppression' => 'logique'],
+            ]);
         }
         return $ok;
     }
@@ -178,17 +235,29 @@ final class PlatformEtablissementService
             return false;
         }
 
-        $stmt = $this->pdo->prepare(
-            "UPDATE etablissements SET plan_id = ? WHERE id = ? AND deleted_at IS NULL"
-        );
-        $stmt->execute([$planId, $etablissementId]);
-        if ($stmt->rowCount() === 0) {
+        $avant = $this->limitesActuelles($etablissementId);
+        if ($avant === null) {
             return false;
         }
-
-        $this->applyPlanLimits($etablissementId, $planId, $planRow);
-
-        Logger::security('PLATFORM_TENANT_PLAN_ASSIGNED', "etablissement_id={$etablissementId} plan={$planRow['code']} par operator_user_id={$operatorUserId}");
+        if (PlatformSubscriptionService::disponible($this->pdo)) {
+            // Abonnement : changement de plan immédiat / démarrage d'essai / abonnement sans échéance ; limites copiées par le service.
+            // Une SubscriptionException (plan en DZD hors essai, abonnement expiré, audit impossible…) remonte à l'appelant.
+            ($this->abonnements())->assigner($etablissementId, $planId, $operatorUserId);
+        } else {
+            $stmt = $this->pdo->prepare(
+                "UPDATE etablissements SET plan_id = ? WHERE id = ? AND deleted_at IS NULL"
+            );
+            $stmt->execute([$planId, $etablissementId]);
+            if ($stmt->rowCount() === 0) {
+                return false;
+            }
+            $this->applyPlanLimits($etablissementId, $planId, $planRow);
+        }
+        Logger::security('PLATFORM_TENANT_PLAN_ASSIGNED', "etablissement_id={$etablissementId} plan={$planRow['code']} par operator_id={$operatorUserId}");
+        PlatformAuditService::make($this->pdo)->recordPar($operatorUserId, 'tenant.plan_assigned', [
+            'etablissement_id' => $etablissementId, 'entity_type' => 'etablissement', 'entity_id' => $etablissementId,
+            'avant' => $avant, 'apres' => ['plan_id' => $planId, 'plan_code' => $planRow['code']] + ($this->limitesActuelles($etablissementId) ?? []),
+        ]);
         return true;
     }
 
@@ -214,16 +283,66 @@ final class PlatformEtablissementService
         ]);
     }
 
+    /** @return ?array{suspension_reason:?string, suspension_origine:?string} */
+    private function suspensionActuelle(int $id): ?array
+    {
+        if (!PlatformSubscriptionService::disponible($this->pdo)) {
+            return null;
+        }
+        $s = $this->pdo->prepare('SELECT suspension_reason, suspension_origine FROM etablissements WHERE id = ?');
+        $s->execute([$id]);
+        $r = $s->fetch(PDO::FETCH_ASSOC);
+        return $r ?: null;
+    }
+
+    /** Statut courant d'un établissement (null s'il n'existe pas) — ancienne valeur du journal d'audit. */
+    private function statutActuel(int $id): ?string
+    {
+        $s = $this->pdo->prepare('SELECT statut FROM etablissements WHERE id = ?');
+        $s->execute([$id]);
+        $v = $s->fetchColumn();
+        return $v === false ? null : (string)$v;
+    }
+
+    /** @return array{plan_id:?int, max_users:int, max_eleves:int, storage_quota_mb:int}|null */
+    private function limitesActuelles(int $id): ?array
+    {
+        $s = $this->pdo->prepare('SELECT plan_id, max_users, max_eleves, storage_quota_mb FROM etablissements WHERE id = ?');
+        $s->execute([$id]);
+        $r = $s->fetch(PDO::FETCH_ASSOC);
+        return $r === false ? null : ['plan_id' => $r['plan_id'] !== null ? (int)$r['plan_id'] : null, 'max_users' => (int)$r['max_users'],
+                                      'max_eleves' => (int)$r['max_eleves'], 'storage_quota_mb' => (int)$r['storage_quota_mb']];
+    }
+
+    private const ACTIONS_AUDIT = [
+        'PLATFORM_TENANT_ACTIVATED' => 'tenant.activated',
+        'PLATFORM_TENANT_ARCHIVED'  => 'tenant.archived',
+        'PLATFORM_TENANT_RESTORED'  => 'tenant.restored',
+    ];
+
     private function setStatut(int $id, string $statut, string $logEvent, int $operatorUserId): bool
     {
-        $activatedClause = $statut === 'active' ? ", activated_at = COALESCE(activated_at, NOW())" : '';
+        $avant = $this->statutActuel($id);
+        if ($statut === 'active' && PlatformSubscriptionService::disponible($this->pdo)) {
+            // Un opérateur ne contourne pas un abonnement sans accès : renouveler / souscrire / prolonger l'essai d'abord.
+            $sub = $this->abonnements();
+            $courant = $sub->courant($id);
+            if ($courant !== null && !$sub->etat($courant)['acces']) {
+                throw new SubscriptionException('Activation refusée : l\'abonnement de cet établissement n\'a plus d\'accès (expiré ou annulé). Renouvelez, souscrivez ou prolongez l\'essai.');
+            }
+        }
+        $activatedClause = $statut === 'active' ? ", activated_at = COALESCE(activated_at, NOW())" . (PlatformSubscriptionService::disponible($this->pdo) ? ', suspension_origine = NULL' : '') : '';
         $stmt = $this->pdo->prepare(
             "UPDATE etablissements SET statut = ?{$activatedClause} WHERE id = ? AND deleted_at IS NULL"
         );
         $stmt->execute([$statut, $id]);
         $ok = $stmt->rowCount() > 0;
         if ($ok) {
-            Logger::security($logEvent, "etablissement_id={$id} par operator_user_id={$operatorUserId}");
+            Logger::security($logEvent, "etablissement_id={$id} par operator_id={$operatorUserId}");
+            PlatformAuditService::make($this->pdo)->recordPar($operatorUserId, self::ACTIONS_AUDIT[$logEvent] ?? 'tenant.status_changed', [
+                'etablissement_id' => $id, 'entity_type' => 'etablissement', 'entity_id' => $id,
+                'avant' => ['statut' => $avant], 'apres' => ['statut' => $statut],
+            ]);
         }
         return $ok;
     }

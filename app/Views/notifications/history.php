@@ -63,7 +63,7 @@ function histCanalBadge(string $c): string {
 
 <!-- Filters -->
 <div class="rounded-xl border border-slate-200 bg-white shadow-sm mb-4">
-    <div class="p-5 p-3">
+    <div class="p-5">
         <form method="GET" class="flex flex-wrap items-center gap-3">
             <select name="type" class="form-input text-sm" onchange="this.form.submit()">
                 <option value="">Tous les types</option>

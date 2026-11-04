@@ -71,7 +71,7 @@ function bNoteColor(?float $n): string {
     <div class="p-5 p-5">
         <div class="flex flex-wrap items-center gap-5">
             <?php if (!empty($eleve->photo)): ?>
-            <img src="<?= BASE_URL ?>/<?= htmlspecialchars($eleve->photo, ENT_QUOTES) ?>"
+            <img src="<?= htmlspecialchars(\App\Shared\Http\MediaUrl::photo($eleve->photo), ENT_QUOTES) ?>"
                  class="w-20 h-20 rounded-full object-cover border-4 border-slate-100 shadow shrink-0" alt="">
             <?php else: ?>
             <div class="w-20 h-20 rounded-full bg-violet-100 flex items-center justify-center border-4 border-slate-100 shadow shrink-0">
@@ -118,7 +118,7 @@ function bNoteColor(?float $n): string {
                 <div class="px-4 flex flex-col items-center justify-center">
                     <p class="text-xs text-slate-400 mb-2">Mention</p>
                     <?php if ($mention): ?>
-                    <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold leading-5 whitespace-nowrap <?= bMentionBadge($mention) ?> text-sm px-3 py-1">
+                    <span class="inline-flex items-center gap-1 rounded-full text-xs font-semibold leading-5 whitespace-nowrap <?= bMentionBadge($mention) ?> px-3 py-1">
                         <?= htmlspecialchars($mention, ENT_QUOTES) ?>
                     </span>
                     <?php else: ?>

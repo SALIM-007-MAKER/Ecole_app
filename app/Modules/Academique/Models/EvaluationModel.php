@@ -3,6 +3,7 @@
 namespace App\Modules\Academique\Models;
 
 use Core\Model;
+use Core\Tenant\TenantScope;
 
 class EvaluationModel extends Model
 {
@@ -31,6 +32,12 @@ class EvaluationModel extends Model
         'archivee'    => 'archive',
     ];
 
+    /** Une évaluation appartient à l'établissement de sa classe (Lot 3). */
+    protected function ownershipRestriction(): ?array
+    {
+        return TenantScope::restrictionClasse('classe_id');
+    }
+
     public function findByClasseEtPeriode(int $classeId, int $periodeScolaireId): array
     {
         return $this->query(
@@ -41,9 +48,10 @@ class EvaluationModel extends Model
              JOIN `types_evaluations` te ON te.id = ev.type_evaluation_id
              JOIN `matieres` m           ON m.id  = ev.matiere_id
              WHERE ev.classe_id = ? AND ev.periode_scolaire_id = ?
-               AND ev.statut != 'archivee'
+               AND ev.statut != 'archivee'" . TenantScope::classe('ev.classe_id')[0] . "
+
              ORDER BY ev.date_evaluation ASC, m.nom ASC, ev.libelle ASC",
-            [$classeId, $periodeScolaireId]
+            [$classeId, $periodeScolaireId, ...TenantScope::classe('ev.classe_id')[1]]
         );
     }
 
@@ -54,9 +62,10 @@ class EvaluationModel extends Model
              FROM `evaluations` ev
              JOIN `types_evaluations` te ON te.id = ev.type_evaluation_id
              WHERE ev.matiere_id = ? AND ev.classe_id = ? AND ev.periode_scolaire_id = ?
-               AND ev.statut IN ('publiee','verrouillee')
+               AND ev.statut IN ('publiee','verrouillee')" . TenantScope::classe('ev.classe_id')[0] . "
+
              ORDER BY ev.date_evaluation ASC, ev.id ASC",
-            [$matiereId, $classeId, $periodeScolaireId]
+            [$matiereId, $classeId, $periodeScolaireId, ...TenantScope::classe('ev.classe_id')[1]]
         );
     }
 }

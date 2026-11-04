@@ -59,6 +59,7 @@ class PlatformDomainController extends PlatformController
         try {
             $result = $this->domains->addDomain($id, $domain, 'custom');
             \Core\Logger::security('DOMAIN_ADDED', "etablissement_id={$id} : domaine {$result['domain']} ajouté par opérateur plateforme");
+            $this->audit('domain.added', ['etablissement_id' => $id, 'entity_type' => 'etablissement_domain', 'apres' => ['domain' => $result['domain']]]);
             Session::flash('success', 'Domaine ajouté. Configurez l\'enregistrement DNS TXT indiqué puis cliquez sur "Vérifier".');
         } catch (\InvalidArgumentException $e) {
             Session::flash('errors', [$e->getMessage()]);
@@ -76,6 +77,7 @@ class PlatformDomainController extends PlatformController
 
         if ($ok) {
             \Core\Logger::security('DOMAIN_VERIFIED', "etablissement_id={$id}, domain_id={$domainId}");
+            $this->audit('domain.verified', ['etablissement_id' => $id, 'entity_type' => 'etablissement_domain', 'entity_id' => $domainId]);
             Session::flash('success', 'Domaine vérifié avec succès.');
         } else {
             Session::flash('errors', ['Vérification échouée : l\'enregistrement DNS TXT attendu est introuvable.']);
@@ -93,6 +95,7 @@ class PlatformDomainController extends PlatformController
 
         if ($this->domains->toggleActive($id, $domainId, $active)) {
             \Core\Logger::security('DOMAIN_TOGGLED', "etablissement_id={$id}, domain_id={$domainId}, active=" . ($active ? '1' : '0'));
+            $this->audit('domain.toggled', ['etablissement_id' => $id, 'entity_type' => 'etablissement_domain', 'entity_id' => $domainId, 'avant' => ['actif' => $active ? 0 : 1], 'apres' => ['actif' => $active ? 1 : 0]]);
             Session::flash('success', $active ? 'Domaine réactivé.' : 'Domaine désactivé.');
         } else {
             Session::flash('errors', ['Domaine introuvable.']);
@@ -108,6 +111,7 @@ class PlatformDomainController extends PlatformController
 
         if ($this->domains->delete($id, $domainId)) {
             \Core\Logger::security('DOMAIN_DELETED', "etablissement_id={$id}, domain_id={$domainId}");
+            $this->audit('domain.deleted', ['etablissement_id' => $id, 'entity_type' => 'etablissement_domain', 'entity_id' => $domainId]);
             Session::flash('success', 'Domaine supprimé.');
         } else {
             Session::flash('errors', ['Domaine introuvable.']);

@@ -3,9 +3,13 @@
 namespace App\Modules\Finance\Models;
 
 use Core\Model;
+use Core\Tenant\ScopedWhenMigrated;
+use Core\Tenant\TenantScope;
 
 class FraisTypeModel extends Model
 {
+    use ScopedWhenMigrated;
+
     protected string $table      = 'finance_frais_types';
     protected string $primaryKey = 'id';
 
@@ -17,7 +21,7 @@ class FraisTypeModel extends Model
             "SELECT fft.*, fcf.nom AS categorie_nom, fcf.couleur AS categorie_couleur
              FROM `finance_frais_types` fft
              LEFT JOIN `finance_categories_frais` fcf ON fcf.id = fft.categorie_id
-             WHERE fft.statut = 'actif'
+             WHERE fft.statut = 'actif' AND " . TenantScope::sqlEtab('finance_frais_types', 'fft.etablissement_id') . "
              ORDER BY fft.nom"
         );
     }
@@ -25,7 +29,7 @@ class FraisTypeModel extends Model
     public function findForSelect(?string $anneeScolaire = null): array
     {
         $params = [];
-        $where  = "fft.statut = 'actif'";
+        $where  = "fft.statut = 'actif' AND " . TenantScope::sqlEtab('finance_frais_types', 'fft.etablissement_id');
 
         if ($anneeScolaire !== null) {
             $where   .= " AND (fft.annee_scolaire IS NULL OR fft.annee_scolaire = ?)";
@@ -46,7 +50,7 @@ class FraisTypeModel extends Model
     public function codeExists(string $code, int $excludeId = 0): bool
     {
         $stmt = $this->db->prepare(
-            "SELECT COUNT(*) FROM `finance_frais_types` WHERE code = ? AND id != ?"
+            "SELECT COUNT(*) FROM `finance_frais_types` WHERE code = ? AND id != ? AND " . TenantScope::sqlEtab('finance_frais_types', 'etablissement_id')
         );
         $stmt->execute([$code, $excludeId]);
         return (int)$stmt->fetchColumn() > 0;

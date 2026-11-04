@@ -30,9 +30,8 @@ $badgeStatut = function(string $s): string {
             <p class="text-sm text-slate-500">Facture <?= htmlspecialchars($facture->numero) ?> — <?= htmlspecialchars($facture->eleve_nom) ?></p>
         </div>
         <?php if ($canCreate): ?>
-        <a href="<?= BASE_URL ?>/v2/finance/paiements/create?facture_id=<?= $facture->id ?>"
-           class="ml-auto px-4 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700">
-            <i data-lucide="plus" class="inline w-4 h-4 mr-1"></i> Payer
+        <a href="<?= BASE_URL ?>/v2/finance/paiements/create?facture_id=<?= $facture->id ?>" class="btn btn-primary ml-auto">
+            <i data-lucide="plus" class="w-4 h-4"></i> Payer
         </a>
         <?php endif; ?>
     </div>

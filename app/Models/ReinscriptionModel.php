@@ -112,6 +112,10 @@ class ReinscriptionModel extends Model
                         [$eleve->id]
                     );
                     $this->logMouvement($eleve->id, $classeSourceId, null, $anneeSource, $anneeDestination, true, $userId);
+                    \Core\EventDispatcher::dispatch(new \App\Events\EleveActifChanged(
+                        eleveId: (int)$eleve->id, ancienActif: true, nouvelActif: false,
+                        changedById: $userId, source: 'reinscription', classeId: $classeSourceId,
+                    ));
                     $sortants++;
                     continue;
                 }

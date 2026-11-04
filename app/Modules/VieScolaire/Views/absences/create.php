@@ -48,7 +48,7 @@ $csrfToken = \Core\Session::getCsrfToken();
                     <option value="">Choisir une classe…</option>
                     <?php foreach ($classes as $c): ?>
                     <option value="<?= $c->id ?>" <?= ($old['classe_id'] ?? '') == $c->id ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($c->nom, ENT_QUOTES) ?>
+                        <?= htmlspecialchars($c->label, ENT_QUOTES) ?>
                     </option>
                     <?php endforeach; ?>
                 </select>

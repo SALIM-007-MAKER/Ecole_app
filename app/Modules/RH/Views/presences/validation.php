@@ -14,7 +14,7 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
       <h1 class="text-2xl font-bold text-slate-900">Pointages en attente de validation</h1>
       <p class="text-sm text-slate-500 mt-1"><?= count($presences) ?> pointage<?= count($presences) > 1 ? 's' : '' ?> en attente</p>
     </div>
-    <a href="<?= BASE_URL ?>/v2/rh/presences" class="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm hover:bg-slate-50">
+    <a href="<?= BASE_URL ?>/v2/rh/presences" class="btn btn-secondary">
       ← Retour à la liste
     </a>
   </div>
@@ -105,19 +105,16 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
                     class="inline">
                 <?= \Core\Csrf::field() ?>
                 <input type="hidden" name="decision" value="valide">
-                <button type="submit"
-                        class="px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-medium hover:bg-emerald-200 transition-colors">
+                <button type="submit" class="btn btn-outline-success btn-sm">
                   Valider
                 </button>
               </form>
               <!-- Rejeter (ouvre mini-form) -->
-              <button onclick="toggleRejet(<?= (int)$p['id'] ?>)"
-                      class="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-xs font-medium hover:bg-red-200 transition-colors">
+              <button onclick="toggleRejet(<?= (int)$p['id'] ?>)" class="btn btn-outline-danger btn-sm">
                 Rejeter
               </button>
               <!-- Détail -->
-              <a href="<?= BASE_URL ?>/v2/rh/presences/<?= (int)$p['id'] ?>"
-                 class="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs hover:bg-slate-200 transition-colors">
+              <a href="<?= BASE_URL ?>/v2/rh/presences/<?= (int)$p['id'] ?>" class="btn btn-secondary btn-sm">
                 Détail
               </a>
             </div>
@@ -128,13 +125,12 @@ function e(string $v): string { return htmlspecialchars($v, ENT_QUOTES, 'UTF-8')
                 <input type="hidden" name="decision" value="rejete">
                 <textarea name="motif_rejet" rows="2" required
                           placeholder="Motif de rejet obligatoire…"
-                          class="w-full border border-red-200 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-red-300 outline-none mb-2"></textarea>
+                          class="form-textarea mb-2"></textarea>
                 <div class="flex gap-2">
-                  <button type="submit" class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700">
+                  <button type="submit" class="btn btn-danger btn-sm">
                     Confirmer le rejet
                   </button>
-                  <button type="button" onclick="toggleRejet(<?= (int)$p['id'] ?>)"
-                          class="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs hover:bg-slate-200">
+                  <button type="button" onclick="toggleRejet(<?= (int)$p['id'] ?>)" class="btn btn-secondary btn-sm">
                     Annuler
                   </button>
                 </div>

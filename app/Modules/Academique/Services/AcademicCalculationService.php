@@ -158,7 +158,11 @@ class AcademicCalculationService
 
             if ($estAbsent) $nbAbsents++;
 
-            $valeur = $this->valeurEffective($rawValeur, $estAbsent);
+            // Conduite (item marqué 'conduite') : une note manquante, vide ou « absente » est EXCLUE du calcul —
+            // jamais comptée zéro, quelle que soit l'option globale non_remis_vaut_zero / absent_vaut_zero.
+            $valeur = !empty($item['conduite'])
+                ? (($estAbsent || $rawValeur === null) ? null : $rawValeur)
+                : $this->valeurEffective($rawValeur, $estAbsent);
             if ($valeur === null) continue; // exclue
 
             $nbNotes++;
