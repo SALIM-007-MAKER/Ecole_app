@@ -31,6 +31,7 @@ final class PlatformSettings
     public const GRACE = 'grace_defaut_jours';
     public const PAIEMENT = 'paiement_instructions';
     public const DEUX_FACTEURS = 'deux_facteurs_obligatoire';
+    public const ALERTES_CONNEXION = 'alertes_connexion';
 
     /** @var array<string,array{libelle:string,aide:string,type:string,env:?string,defaut:string}> */
     public const DEFINITIONS = [
@@ -53,6 +54,10 @@ final class PlatformSettings
         self::DEUX_FACTEURS => [
             'libelle' => 'Double authentification des opérateurs', 'type' => 'bool', 'env' => 'PLATFORM_REQUIRE_2FA', 'defaut' => '0',
             'aide' => 'Si obligatoire, tout opérateur sans 2FA est conduit à l\'activer dès sa prochaine connexion (1 = obligatoire, 0 = facultative). Vous devez avoir activé la vôtre avant de la rendre obligatoire.',
+        ],
+        self::ALERTES_CONNEXION => [
+            'libelle' => 'Alerte e-mail à chaque connexion', 'type' => 'bool', 'env' => 'PLATFORM_NOTIFY_LOGIN', 'defaut' => '1',
+            'aide' => 'Envoie un e-mail (date, adresse IP, navigateur) à l\'opérateur à chaque connexion à son compte (1 = oui, 0 = non). Les alertes de changement de mot de passe et de double authentification sont toujours envoyées. Aucune alerte n\'est envoyée tant que le SMTP n\'est pas configuré.',
         ],
         self::PAIEMENT => [
             'libelle' => 'Coordonnées de paiement', 'type' => 'texte:500', 'env' => null, 'defaut' => '',
@@ -112,7 +117,8 @@ final class PlatformSettings
             return ['valeur' => $base, 'source' => 'base'];
         }
         if ($def['env'] !== null) {
-            $env = trim((string)($_ENV[$def['env']] ?? getenv($def['env']) ?: ''));
+            $brut = $_ENV[$def['env']] ?? getenv($def['env']);   // « 0 » est une valeur valide : ne pas utiliser ?: (qui la prendrait pour vide)
+            $env = trim(is_string($brut) ? $brut : '');
             $env = self::normalisee($cle, $env);
             if ($env !== '' && self::valide($cle, $env) === null) {
                 return ['valeur' => $env, 'source' => 'environnement'];

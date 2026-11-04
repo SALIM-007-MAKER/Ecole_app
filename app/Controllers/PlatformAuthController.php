@@ -88,6 +88,7 @@ class PlatformAuthController extends PlatformController
 
         \Core\Logger::security('PLATFORM_LOGIN_SUCCESS', "operator_id={$operator['id']} niveau={$operator['niveau']}");
         $this->audit('operator.login.success', ['entity_type' => 'platform_operator', 'entity_id' => $operator['id']]);
+        \Core\Platform\PlatformSecurityNotifier::notifier((int)$operator['id'], \Core\Platform\PlatformSecurityNotifier::CONNEXION);
 
         $this->redirect(BASE_URL . ($operator['must_change'] ? '/platform/compte/mot-de-passe' : (!empty($operator['must_2fa']) ? '/platform/compte/2fa' : '/platform/dashboard')));
     }
@@ -148,8 +149,10 @@ class PlatformAuthController extends PlatformController
         PlatformAuth::completeMfa($methode);
         \Core\Logger::security('PLATFORM_LOGIN_SUCCESS', "operator_id={$id} niveau={$operator['niveau']} 2fa={$methode}");
         $this->audit('operator.login.success', ['entity_type' => 'platform_operator', 'entity_id' => $id, 'apres' => ['second_facteur' => $methode]]);
+        \Core\Platform\PlatformSecurityNotifier::notifier($id, \Core\Platform\PlatformSecurityNotifier::CONNEXION, ['methode' => $methode]);
         if ($methode === 'recovery') {
             $this->audit('operator.2fa.recovery_used', ['entity_type' => 'platform_operator', 'entity_id' => $id]);
+            \Core\Platform\PlatformSecurityNotifier::notifier($id, \Core\Platform\PlatformSecurityNotifier::CODE_SECOURS_UTILISE);
             Session::flash('success', 'Un code de secours a été utilisé. Il reste ' . (new PlatformTwoFactorService(\Core\Database::getInstance()->getConnection()))->statut($id)['codes_restants'] . ' code(s) : pensez à en régénérer.');
         }
         $this->redirect(BASE_URL . (!empty($operator['must_change']) ? '/platform/compte/mot-de-passe' : '/platform/dashboard'));

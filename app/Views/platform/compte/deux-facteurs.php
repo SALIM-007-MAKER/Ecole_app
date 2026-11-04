@@ -15,6 +15,10 @@ $base = BASE_URL . '/platform/compte/2fa';
     <div class="alert alert-warning" role="alert"><i data-lucide="alert-triangle" class="w-4 h-4 shrink-0"></i><span>La double authentification est obligatoire : activez-la pour accéder au portail.</span></div>
     <?php endif; ?>
 
+    <?php if (!\Core\Platform\PlatformSecurityNotifier::disponible()): ?>
+    <p class="text-xs text-slate-500">Alertes de sécurité par e-mail inactives : le SMTP n'est pas configuré sur ce serveur (voir docs/deploiement/EMAIL_GMAIL.md). Aucun e-mail n'est envoyé lors d'une connexion ou d'un changement de sécurité.</p>
+    <?php endif; ?>
+
     <?php if ($codes): ?>
     <div class="rounded-xl border border-amber-300 bg-amber-50 p-5">
         <p class="text-sm font-semibold text-amber-900 mb-1">Codes de secours — à conserver maintenant</p>

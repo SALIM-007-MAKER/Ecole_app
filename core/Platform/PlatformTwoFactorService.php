@@ -380,6 +380,14 @@ final class PlatformTwoFactorService
      * @param ?array $acteur
      * @return list<string> les codes de secours éventuels
      */
+    /** Action d'audit => alerte e-mail envoyée à l'opérateur concerné. */
+    private const ALERTES = [
+        'operator.2fa_enabled'              => PlatformSecurityNotifier::DEUX_FACTEURS_ACTIVEE,
+        'operator.2fa_recovery_regenerated' => PlatformSecurityNotifier::CODES_REGENERES,
+        'operator.2fa_disabled'             => PlatformSecurityNotifier::DEUX_FACTEURS_DESACTIVEE,
+        'operator.2fa_reset'                => PlatformSecurityNotifier::DEUX_FACTEURS_REINITIALISEE,
+    ];
+
     private function transaction(int $operatorId, string $action, callable $travail, ?array $acteur = null): array
     {
         $point = null;
@@ -400,6 +408,10 @@ final class PlatformTwoFactorService
                 throw new TwoFactorException('Opération annulée : la trace d\'audit n\'a pas pu être enregistrée. Aucune modification n\'a été appliquée.', 0, $e);
             }
             $point !== null ? $this->pdo->exec("RELEASE SAVEPOINT $point") : $this->pdo->commit();
+            // Alerte par e-mail UNIQUEMENT après un vrai commit (jamais dans une transaction englobante qui pourrait encore être annulée).
+            if ($point === null && isset(self::ALERTES[$action])) {
+                PlatformSecurityNotifier::notifier($operatorId, self::ALERTES[$action], [], $this->pdo);
+            }
             return $r['codes'];
         } catch (\Throwable $e) {
             if ($point !== null) {

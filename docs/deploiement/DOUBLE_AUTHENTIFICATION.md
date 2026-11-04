@@ -64,4 +64,4 @@ Additive et idempotente : `platform_operators` + `totp_secret`, `totp_enabled_at
 
 ## Non couvert
 
-Clés de sécurité matérielles (WebAuthn / passkeys), notification d'une connexion par e-mail, « appareil de confiance » (la 2FA est demandée à chaque connexion), 2FA des comptes d'établissement (hors périmètre : portail plateforme uniquement).
+Clés de sécurité matérielles (WebAuthn / passkeys), « appareil de confiance » (la 2FA est demandée à chaque connexion), 2FA des comptes d'établissement (hors périmètre : portail plateforme uniquement).

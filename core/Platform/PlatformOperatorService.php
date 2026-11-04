@@ -138,6 +138,7 @@ final class PlatformOperatorService
             'UPDATE platform_operators SET password_hash = ?, must_change_password = 0, password_changed_at = NOW() WHERE id = ?'
         )->execute([password_hash($nouveau, PASSWORD_DEFAULT), $id]);
         PlatformAuditService::make($this->pdo)->record('operator.password_changed', ['entity_type' => 'platform_operator', 'entity_id' => $id]);
+        PlatformSecurityNotifier::notifier($id, PlatformSecurityNotifier::MOT_DE_PASSE_MODIFIE, [], $this->pdo);
         return [];
     }
 
@@ -170,6 +171,7 @@ final class PlatformOperatorService
             'actor' => $acteur ?? $this->acteurConnecte(), 'entity_type' => 'platform_operator', 'entity_id' => (int)$op['id'],
             'avant' => ['actif' => (int)$op['actif']], 'apres' => ['actif' => 1, 'changement_obligatoire' => true, 'mot_de_passe_genere' => $genere !== null],
         ]);
+        PlatformSecurityNotifier::notifier((int)$op['id'], PlatformSecurityNotifier::MOT_DE_PASSE_REINITIALISE, [], $this->pdo);
         return ['id' => (int)$op['id'], 'email' => (string)$op['email'], 'password' => $genere];
     }
 

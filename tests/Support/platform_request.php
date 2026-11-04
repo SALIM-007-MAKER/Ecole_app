@@ -44,6 +44,12 @@ spl_autoload_register(function (string $c): void {
 if (($dossier = getenv('PLATFORM_REQ_AUDIT_DIR')) !== false && $dossier !== '') {
     \Core\Platform\PlatformAuditService::definirDossierSecours($dossier);
 }
+// Capteur d'e-mails : les alertes de sécurité sont écrites (une ligne JSON chacune) dans ce fichier au lieu d'être envoyées.
+if (($sink = getenv('PLATFORM_REQ_MAIL_SINK')) !== false && $sink !== '') {
+    \Core\Platform\PlatformSecurityNotifier::definirEnvoyeur(static function (string $to, string $objet, string $html) use ($sink): bool {
+        return file_put_contents($sink, json_encode(['to' => $to, 'objet' => $objet, 'html' => $html], JSON_UNESCAPED_UNICODE) . "\n", FILE_APPEND) !== false;
+    });
+}
 if (getenv('PLATFORM_REQ_BREAK_AUDIT') === '1') {
     // Panne simulée : la table du journal devient inutilisable pour cette requête (l'opération métier doit quand même aboutir).
     \Core\Database::getInstance()->getConnection()->exec('RENAME TABLE platform_audit_logs TO platform_audit_logs_hors_service');
