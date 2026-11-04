@@ -48,6 +48,75 @@ final class PlatformAuth
     public static function logout(): void
     {
         Session::delete(self::SESSION_KEY);
+        Session::delete(self::MFA_KEY);
+    }
+
+    // ── Double authentification : état « mot de passe validé, second facteur attendu » (aucun accès tant qu'il n'est pas levé) ──
+
+    private const MFA_KEY = '_platform_mfa_pending';
+    /** Délai accordé pour saisir le second facteur après le mot de passe. */
+    public const MFA_TTL = 300;
+    /** Essais de second facteur avant d'exiger de nouveau le mot de passe. */
+    public const MFA_MAX_ESSAIS = 5;
+
+    /** @param array<string,mixed> $operator opérateur dont le mot de passe vient d'être validé */
+    public static function beginMfa(array $operator): void
+    {
+        Session::regenerate();
+        Session::set(self::MFA_KEY, ['op' => $operator, 'at' => time(), 'essais' => 0]);
+    }
+
+    /** @return ?array<string,mixed> opérateur en attente de second facteur (null si absent ou expiré) */
+    public static function pendingMfa(): ?array
+    {
+        $p = Session::get(self::MFA_KEY);
+        if (!is_array($p) || !isset($p['op']) || time() - (int)($p['at'] ?? 0) > self::MFA_TTL) {
+            Session::delete(self::MFA_KEY);
+            return null;
+        }
+        return $p['op'];
+    }
+
+    /** Enregistre un échec ; au-delà de MFA_MAX_ESSAIS l'état est supprimé (le mot de passe est à ressaisir). Renvoie les essais restants. */
+    public static function mfaFailure(): int
+    {
+        $p = Session::get(self::MFA_KEY);
+        if (!is_array($p)) {
+            return 0;
+        }
+        $p['essais'] = (int)($p['essais'] ?? 0) + 1;
+        if ($p['essais'] >= self::MFA_MAX_ESSAIS) {
+            Session::delete(self::MFA_KEY);
+            return 0;
+        }
+        Session::set(self::MFA_KEY, $p);
+        return self::MFA_MAX_ESSAIS - $p['essais'];
+    }
+
+    /** Second facteur validé : l'opérateur est connecté (nouvel identifiant de session). */
+    public static function completeMfa(string $methode): void
+    {
+        $op = self::pendingMfa();
+        Session::delete(self::MFA_KEY);
+        if ($op !== null) {
+            self::login($op + ['mfa' => $methode]);
+        }
+    }
+
+    /** Vrai tant que l'opérateur doit activer sa double authentification (obligatoire pour la plateforme et pas encore activée). */
+    public static function mustSetupTwoFactor(): bool
+    {
+        return !empty(self::current()['must_2fa']);
+    }
+
+    public static function twoFactorSetupDone(): void
+    {
+        $op = Session::get(self::SESSION_KEY);
+        if (is_array($op)) {
+            $op['must_2fa'] = false;
+            $op['mfa'] = 'totp';
+            Session::set(self::SESSION_KEY, $op);
+        }
     }
 
     public static function isLogged(): bool

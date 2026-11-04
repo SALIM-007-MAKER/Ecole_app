@@ -79,6 +79,8 @@ $router->post('/parametres/avance', 'SettingsController@updateAvance');
 // ─── Portail Super-Admin SaaS (Phase 14.10) — indépendant des établissements ──
 $router->get('/platform/login',    'PlatformAuthController@showLogin');
 $router->post('/platform/login',   'PlatformAuthController@login');
+$router->get('/platform/login/2fa',  'PlatformAuthController@showTwoFactor');
+$router->post('/platform/login/2fa', 'PlatformAuthController@verifyTwoFactor');
 $router->post('/platform/logout',  'PlatformAuthController@logout');
 
 $router->get('/platform/dashboard',          'PlatformDashboardController@index');
@@ -145,6 +147,10 @@ $router->post('/platform/backups/{id}/restaurer-tenant','PlatformBackupControlle
 // Compte de l'opérateur connecté (changement de mot de passe) et journal d'audit global (lecture seule ; export réservé au super_admin)
 $router->get('/platform/compte/mot-de-passe',  'PlatformAccountController@showPassword');
 $router->post('/platform/compte/mot-de-passe', 'PlatformAccountController@updatePassword');
+$router->get('/platform/compte/2fa',           'PlatformTwoFactorController@show');
+$router->post('/platform/compte/2fa/activer',   'PlatformTwoFactorController@activer');
+$router->post('/platform/compte/2fa/codes',     'PlatformTwoFactorController@regenerer');
+$router->post('/platform/compte/2fa/desactiver','PlatformTwoFactorController@desactiver');
 $router->get('/platform/audit',                'PlatformAuditController@index');
 $router->get('/platform/audit/export',         'PlatformAuditController@export');
 $router->get('/platform/audit/{id}',           'PlatformAuditController@show');

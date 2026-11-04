@@ -22,7 +22,13 @@ $sources = ['base' => ['Surcharge enregistrée', 'badge-success'], 'environnemen
             <label class="form-label" for="p_<?= $h($cle) ?>"><?= $h($r['libelle']) ?></label>
             <span class="badge <?= $clsSource ?> text-xs">Actuellement : <?= $r['effective'] !== '' ? $h(mb_strimwidth($r['effective'], 0, 40, '…')) : '—' ?> · <?= $h($libSource) ?></span>
         </div>
-        <?php if (str_starts_with($r['type'], 'texte:')): ?>
+        <?php if ($r['type'] === 'bool'): ?>
+            <select id="p_<?= $h($cle) ?>" name="<?= $h($cle) ?>" class="form-input" <?= $actif ? '' : 'disabled' ?>>
+                <option value="" <?= $valeur === '' ? 'selected' : '' ?>>Hérité (.env / défaut)</option>
+                <option value="0" <?= $valeur === '0' ? 'selected' : '' ?>>Facultative</option>
+                <option value="1" <?= $valeur === '1' ? 'selected' : '' ?>>Obligatoire</option>
+            </select>
+        <?php elseif (str_starts_with($r['type'], 'texte:')): ?>
             <textarea id="p_<?= $h($cle) ?>" name="<?= $h($cle) ?>" rows="3" maxlength="<?= (int)substr($r['type'], 6) ?>" class="form-input" <?= $actif ? '' : 'disabled' ?>><?= $h($valeur) ?></textarea>
         <?php elseif (str_starts_with($r['type'], 'entier:')): [, $min, $max] = explode(':', $r['type']); ?>
             <input type="number" id="p_<?= $h($cle) ?>" name="<?= $h($cle) ?>" min="<?= (int)$min ?>" max="<?= (int)$max ?>" value="<?= $h($valeur) ?>" placeholder="<?= $h($r['defaut']) ?>" class="form-input" <?= $actif ? '' : 'disabled' ?>>

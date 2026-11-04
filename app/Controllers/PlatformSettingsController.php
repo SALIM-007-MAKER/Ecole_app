@@ -6,6 +6,7 @@ use Core\Platform\PlanAuditException;
 use Core\Platform\PlanValidationException;
 use Core\Platform\PlatformController;
 use Core\Platform\PlatformSettings;
+use Core\Platform\PlatformTwoFactorService;
 use Core\Session;
 use Core\Database;
 
@@ -38,6 +39,15 @@ class PlatformSettingsController extends PlatformController
         foreach (array_keys(PlatformSettings::DEFINITIONS) as $cle) {
             if ($this->request->post($cle) !== null) {
                 $donnees[$cle] = (string)$this->request->post($cle, '');
+            }
+        }
+        // Rendre la 2FA obligatoire exige d'avoir activé la sienne : sinon l'opérateur qui décide se retrouverait lui-même bloqué.
+        if (($donnees[PlatformSettings::DEUX_FACTEURS] ?? '') === '1') {
+            $pdo = Database::getInstance()->getConnection();
+            if (!PlatformTwoFactorService::disponible($pdo) || !(new PlatformTwoFactorService($pdo))->estActive($this->operatorId())) {
+                Session::flash('errors', ['Activez d\'abord votre propre double authentification (menu Sécurité) avant de la rendre obligatoire.']);
+                Session::flash('old', $donnees);
+                $this->redirect(BASE_URL . '/platform/parametres');
             }
         }
         try {

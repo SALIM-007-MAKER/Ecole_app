@@ -30,6 +30,7 @@ final class PlatformSettings
     public const ESSAI = 'essai_defaut_jours';
     public const GRACE = 'grace_defaut_jours';
     public const PAIEMENT = 'paiement_instructions';
+    public const DEUX_FACTEURS = 'deux_facteurs_obligatoire';
 
     /** @var array<string,array{libelle:string,aide:string,type:string,env:?string,defaut:string}> */
     public const DEFINITIONS = [
@@ -48,6 +49,10 @@ final class PlatformSettings
         self::GRACE => [
             'libelle' => 'Jours de grâce par défaut', 'type' => 'entier:0:90', 'env' => null, 'defaut' => '0',
             'aide' => 'Valeur proposée à la création d\'un plan. Les plans existants et les abonnements en cours ne changent pas.',
+        ],
+        self::DEUX_FACTEURS => [
+            'libelle' => 'Double authentification des opérateurs', 'type' => 'bool', 'env' => 'PLATFORM_REQUIRE_2FA', 'defaut' => '0',
+            'aide' => 'Si obligatoire, tout opérateur sans 2FA est conduit à l\'activer dès sa prochaine connexion (1 = obligatoire, 0 = facultative). Vous devez avoir activé la vôtre avant de la rendre obligatoire.',
         ],
         self::PAIEMENT => [
             'libelle' => 'Coordonnées de paiement', 'type' => 'texte:500', 'env' => null, 'defaut' => '',
@@ -108,8 +113,9 @@ final class PlatformSettings
         }
         if ($def['env'] !== null) {
             $env = trim((string)($_ENV[$def['env']] ?? getenv($def['env']) ?: ''));
+            $env = self::normalisee($cle, $env);
             if ($env !== '' && self::valide($cle, $env) === null) {
-                return ['valeur' => self::normalisee($cle, $env), 'source' => 'environnement'];
+                return ['valeur' => $env, 'source' => 'environnement'];
             }
         }
         return ['valeur' => $def['defaut'], 'source' => 'defaut'];
@@ -269,6 +275,7 @@ final class PlatformSettings
         return match (self::DEFINITIONS[$cle]['type'] ?? '') {
             'devise' => strtoupper($v),
             'fuseau' => $v,
+            'bool' => match (strtolower($v)) { '1', 'true', 'yes', 'on', 'oui' => '1', '0', 'false', 'no', 'off', 'non' => '0', default => $v },
             default => $v,
         };
     }
@@ -279,6 +286,9 @@ final class PlatformSettings
         $type = self::DEFINITIONS[$cle]['type'] ?? '';
         if ($type === 'devise') {
             return preg_match('/^[A-Z]{3}$/', $v) ? null : 'trois lettres majuscules attendues (ex. XOF).';
+        }
+        if ($type === 'bool') {
+            return $v === '0' || $v === '1' ? null : 'choisissez 0 (facultative) ou 1 (obligatoire).';
         }
         if ($type === 'fuseau') {
             if (strlen($v) > 64 || !in_array($v, DateTimeZone::listIdentifiers(), true)) {

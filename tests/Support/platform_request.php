@@ -76,13 +76,16 @@ register_shutdown_function(function () use ($uri, $method) {
     echo 'RESULT:' . json_encode([
         'method' => $method, 'uri' => $uri, 'status' => http_response_code() ?: 200, 'location' => $location, 'bytes' => strlen((string)$body),
         'operator' => is_array($op) ? ['id' => $op['id'] ?? null, 'niveau' => $op['niveau'] ?? null, 'must_change' => !empty($op['must_change'])] : null,
-        'flash' => $_SESSION['_flash'] ?? [],
+        'flash' => $_SESSION['_flash'] ?? [], 'mfa_pending' => isset($_SESSION['_platform_mfa_pending']),
+        'mfa_method' => is_array($op) ? ($op['mfa'] ?? null) : null, 'must_2fa' => is_array($op) && !empty($op['must_2fa']),
         'text' => mb_substr(trim(preg_replace('/\s+/', ' ', strip_tags((string)$body))), 0, 60000),
     ], JSON_UNESCAPED_UNICODE) . "\n";
 });
 
 \Core\Session::start();
 $_SESSION['_csrf_token'] = 'test-csrf-token';
+// Session préremplie (tests de parcours en plusieurs requêtes, ex. second facteur en attente) : PLATFORM_REQ_SESSION = JSON clé => valeur.
+if (($graine = getenv('PLATFORM_REQ_SESSION')) !== false && $graine !== '') { $_SESSION = array_merge($_SESSION, json_decode($graine, true) ?: []); }
 if ($operatorArg !== 'guest') {
     $op = json_decode($operatorArg, true);
     if (!is_array($op) || !isset($op['id'], $op['niveau'])) { fwrite(STDERR, "REFUS : opérateur JSON invalide\n"); exit(2); }

@@ -20,6 +20,8 @@ abstract class PlatformController extends Controller
 {
     /** Vrai uniquement pour la page de changement de mot de passe (sinon l'opérateur y est redirigé tant qu'il doit le changer). */
     protected bool $accessibleAvecMotDePasseAChanger = false;
+    /** Vrai pour les pages permettant d'activer la double authentification (accessibles tant qu'elle est obligatoire et pas encore activée). */
+    protected bool $accessibleAvecDeuxFacteursARegler = false;
 
     protected function requirePlatformAuth(): void
     {
@@ -31,6 +33,17 @@ abstract class PlatformController extends Controller
             Session::flash('error', 'Vous devez choisir un nouveau mot de passe avant de continuer.');
             $this->redirect(BASE_URL . '/platform/compte/mot-de-passe');
         }
+        if (PlatformAuth::mustSetupTwoFactor() && !$this->accessibleAvecDeuxFacteursARegler) {
+            Session::flash('error', 'La double authentification est obligatoire : activez-la pour continuer.');
+            $this->redirect(BASE_URL . '/platform/compte/2fa');
+        }
+    }
+
+    /** Limitation des tentatives (dossier surchargeable par PLATFORM_THROTTLE_DIR, réservé aux tests). */
+    protected function throttle(): \App\Shared\Http\LoginThrottle
+    {
+        $dir = getenv('PLATFORM_THROTTLE_DIR');
+        return new \App\Shared\Http\LoginThrottle($dir !== false && $dir !== '' ? $dir : ROOT_PATH . '/storage/cache/throttle');
     }
 
     /** Interrompt si l'opérateur connecté n'a pas l'un des niveaux requis (ex: 'admin','super_admin'). */

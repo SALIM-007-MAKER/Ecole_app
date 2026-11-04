@@ -9,6 +9,7 @@
  * Usage :
  *   Création       : php database/create-operator.php --email=moi@exemple.tld --nom="Prénom Nom" [--niveau=super_admin|admin|support]
  *   Récupération   : php database/create-operator.php --reinitialiser --email=moi@exemple.tld     (nouveau mot de passe, changement obligatoire)
+ *   2FA perdue     : php database/create-operator.php --reinitialiser-2fa --email=...      (téléphone perdu : retire la double authentification)
  *   Révocation     : php database/create-operator.php --desactiver --email=...   |   --activer --email=...
  *   Inventaire     : php database/create-operator.php --lister
  *
@@ -59,12 +60,12 @@ function arreter(string $m, int $code = 1): never { fwrite(STDERR, "ECHEC : $m\n
 
 $opt = [];
 foreach (array_slice($argv, 1) as $a) {
-    if (preg_match('/^--([a-z-]+)(?:=(.*))?$/s', $a, $m)) { $opt[$m[1]] = $m[2] ?? '1'; }
+    if (preg_match('/^--([a-z0-9-]+)(?:=(.*))?$/s', $a, $m)) { $opt[$m[1]] = $m[2] ?? '1'; }
     else { arreter("argument inconnu « $a ». Le mot de passe ne se passe jamais en argument : utilisez OPERATOR_PASSWORD.", 2); }
 }
 if (isset($opt['password']) || isset($opt['mot-de-passe'])) { arreter("le mot de passe ne se passe jamais en argument de ligne de commande : utilisez la variable d'environnement OPERATOR_PASSWORD.", 2); }
 foreach (array_keys($opt) as $cle) {
-    if (!in_array($cle, ['email', 'nom', 'niveau', 'reinitialiser', 'activer', 'desactiver', 'lister'], true)) { arreter("option inconnue --$cle.", 2); }
+    if (!in_array($cle, ['email', 'nom', 'niveau', 'reinitialiser', 'reinitialiser-2fa', 'activer', 'desactiver', 'lister'], true)) { arreter("option inconnue --$cle.", 2); }
 }
 
 try {
@@ -105,6 +106,16 @@ try {
         $r = $service->reinitialiserMotDePasse($email, $mdp, PlatformOperatorService::ACTEUR_CLI);
         echo "Mot de passe de « {$r['email']} » réinitialisé ; le compte est actif ; changement obligatoire à la prochaine connexion.\n";
         if ($r['password'] !== null) { echo "Mot de passe provisoire (affiché une seule fois) : {$r['password']}\n"; }
+    } elseif (isset($opt['reinitialiser-2fa'])) {
+        $op = $service->trouverParEmail($email);
+        if ($op === null) { arreter('aucun opérateur avec cette adresse e-mail.', 3); }
+        try {
+            (new \Core\Platform\PlatformTwoFactorService($pdo))->reinitialiser((int)$op['id'], PlatformOperatorService::ACTEUR_CLI);
+        } catch (\Core\Platform\TwoFactorException $e) {
+            arreter($e->getMessage(), 3);
+        }
+        echo "Double authentification de « {$email} » réinitialisée : l'opérateur se connecte avec son seul mot de passe" . "et pourra la réactiver depuis /platform/compte/2fa.
+";
     } elseif (isset($opt['activer']) || isset($opt['desactiver'])) {
         if (!$service->definirActif($email, isset($opt['activer']), PlatformOperatorService::ACTEUR_CLI)) { arreter('aucun opérateur avec cette adresse e-mail.', 3); }
         echo 'Opérateur « ' . $email . ' » ' . (isset($opt['activer']) ? 'activé' : 'désactivé') . ".\n";

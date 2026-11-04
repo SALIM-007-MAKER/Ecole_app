@@ -18,6 +18,8 @@ use Core\Session;
 class PlatformAccountController extends PlatformController
 {
     protected bool $accessibleAvecMotDePasseAChanger = true;
+    /** Le mot de passe se change AVANT l'activation de la 2FA : cette page reste ouverte tant que la 2FA est à régler. */
+    protected bool $accessibleAvecDeuxFacteursARegler = true;
 
     public function showPassword(): void
     {

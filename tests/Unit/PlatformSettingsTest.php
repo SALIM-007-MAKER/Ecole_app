@@ -219,7 +219,7 @@ check(PlatformSettings::valeur(PlatformSettings::DEVISE) === 'EUR' && Subscripti
 $ex = null;
 try { $reg->enregistrer([PlatformSettings::ESSAI => '5'], $superId); } catch (\Throwable $t) { $ex = $t; }
 check($ex instanceof PlanAuditException && str_contains($ex->getMessage(), 'T071'), 'écriture refusée avec un message clair (migration à appliquer)');
-check(count($reg->tous()) === 5 && $reg->tous()[PlatformSettings::DEVISE]['effective'] === 'EUR', 'l\'écran se construit quand même');
+check(count($reg->tous()) === 6 && $reg->tous()[PlatformSettings::DEVISE]['effective'] === 'EUR', 'l\'écran se construit quand même');
 unset($_ENV['PLATFORM_DEFAULT_CURRENCY']);
 $migration['run']($pdo);
 PlatformSettings::oublier();
