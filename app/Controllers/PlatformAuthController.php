@@ -38,7 +38,8 @@ class PlatformAuthController extends PlatformController
     {
         $this->verifyCsrf();
 
-        $email = mb_strtolower(trim($this->request->sanitize('email')));
+        // Valeur BRUTE : sanitize() échapperait le HTML (o'brien@x.com deviendrait o&#039;brien@x.com) et fausserait recherche, limitation et audit.
+        $email = mb_substr(mb_strtolower(trim((string)$this->request->post('email', ''))), 0, 191);
         $password = (string)$this->request->post('password', '');
 
         // Anti-force-brute (compte opérateur plateforme).

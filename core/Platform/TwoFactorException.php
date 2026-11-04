@@ -10,4 +10,18 @@ namespace Core\Platform;
  */
 final class TwoFactorException extends \RuntimeException
 {
+    private bool $echecIdentifiants = false;
+
+    /** Mot de passe ou code faux : l'essai compte dans la limitation des tentatives (ne dépend jamais du texte du message). */
+    public static function identifiantsIncorrects(string $message): self
+    {
+        $e = new self($message);
+        $e->echecIdentifiants = true;
+        return $e;
+    }
+
+    public function estEchecIdentifiants(): bool
+    {
+        return $this->echecIdentifiants;
+    }
 }

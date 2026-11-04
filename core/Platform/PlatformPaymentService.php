@@ -129,6 +129,17 @@ final class PlatformPaymentService
                 }
             }
 
+            // Double clic / rechargement du formulaire : un paiement strictement identique (même période, montant, mode, date, note) enregistré
+            // il y a moins de 2 minutes est refusé, même sans référence externe (espèces, chèque…). Un second versement volontaire se distingue par sa note.
+            $dup = $this->pdo->prepare(
+                "SELECT reference FROM platform_payments WHERE subscription_id = ? AND montant = ? AND mode = ? AND date_paiement = ? AND COALESCE(note, '') = ?
+                    AND statut = 'recorded' AND created_at >= DATE_SUB(NOW(), INTERVAL 2 MINUTE) LIMIT 1"
+            );
+            $dup->execute([$subscriptionId, $this->decimal($cents), $mode, $date, $note]);
+            if (($recent = $dup->fetchColumn()) !== false) {
+                throw new PaymentException("Un paiement identique vient d'être enregistré ({$recent}) : double saisie évitée. S'il s'agit d'un second versement, ajoutez une précision dans la note.");
+            }
+
             $this->pdo->prepare(
                 'INSERT INTO platform_payments (etablissement_id, subscription_id, montant, devise, mode, reference_externe, date_paiement, note, recorded_by)
                  VALUES (?,?,?,?,?,?,?,?,?)'

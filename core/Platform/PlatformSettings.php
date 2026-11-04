@@ -276,6 +276,12 @@ final class PlatformSettings
     }
 
     /** Forme canonique avant validation / stockage. */
+    /** Valeur telle qu'elle sera ENREGISTRÉE (« oui », « on », « true »… deviennent « 1 »), pour les contrôles faits avant l'écriture. */
+    public static function normaliserValeur(string $cle, string $v): string
+    {
+        return self::normalisee($cle, trim($v));
+    }
+
     private static function normalisee(string $cle, string $v): string
     {
         return match (self::DEFINITIONS[$cle]['type'] ?? '') {

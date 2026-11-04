@@ -40,6 +40,7 @@ $base = BASE_URL . '/platform/compte/2fa';
         <p class="text-sm font-semibold text-slate-900">2. Confirmer avec un code</p>
         <form method="POST" action="<?= $base ?>/activer" class="flex flex-wrap items-end gap-2" autocomplete="off">
             <input type="hidden" name="_csrf_token" value="<?= $token ?>">
+            <input type="password" name="current_password" placeholder="Mot de passe" class="form-input w-44" required autocomplete="current-password">
             <input type="text" name="code" inputmode="numeric" maxlength="8" placeholder="123456" class="form-input font-mono w-40" required autocomplete="one-time-code">
             <button type="submit" class="btn btn-primary">Activer la double authentification</button>
         </form>

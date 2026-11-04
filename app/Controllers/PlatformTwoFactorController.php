@@ -23,6 +23,8 @@ class PlatformTwoFactorController extends PlatformController
     protected bool $accessibleAvecDeuxFacteursARegler = true;
 
     private const CLE_SECRET = '_platform_2fa_setup';
+    /** Durée de validité du secret en cours d'enregistrement (secondes). */
+    private const DUREE_SECRET = 900;
 
     private function service(): PlatformTwoFactorService
     {
@@ -45,7 +47,7 @@ class PlatformTwoFactorController extends PlatformController
             $statut = $this->service()->statut($this->operatorId());
             if (!$statut['active']) {
                 $prep = Session::get(self::CLE_SECRET);
-                if (!is_array($prep) || time() - (int)($prep['at'] ?? 0) > 900) {
+                if (!is_array($prep) || time() - (int)($prep['at'] ?? 0) > self::DUREE_SECRET) {
                     $prep = ['secret' => PlatformTwoFactorService::nouveauSecret(), 'at' => time()];
                     Session::set(self::CLE_SECRET, $prep);
                 }
@@ -100,7 +102,7 @@ class PlatformTwoFactorController extends PlatformController
             }
             Session::flash('success', $succes);
         } catch (TwoFactorException $e) {
-            if (in_array($e->getMessage(), ['Code incorrect.', 'Mot de passe incorrect.'], true) || str_starts_with($e->getMessage(), 'Code incorrect.')) {
+            if ($e->estEchecIdentifiants()) {
                 foreach ($cles as $cle) {
                     $throttle->recordFailure($cle);
                 }
@@ -114,9 +116,12 @@ class PlatformTwoFactorController extends PlatformController
     {
         $this->executer(function (): void {
             $prep = Session::get(self::CLE_SECRET);
-            if (!is_array($prep) || empty($prep['secret'])) {
+            if (!is_array($prep) || empty($prep['secret']) || time() - (int)($prep['at'] ?? 0) > self::DUREE_SECRET) {
+                Session::delete(self::CLE_SECRET);
                 throw new TwoFactorException('La session d\'enregistrement a expiré : rechargez la page pour obtenir un nouveau QR code.');
             }
+            // Ré-authentification : une session ouverte laissée sans surveillance ne suffit pas pour lier la 2FA au téléphone d'un tiers.
+            $this->service()->verifierMotDePasse($this->operatorId(), (string)$this->request->post('current_password', ''));
             $codes = $this->service()->activer($this->operatorId(), (string)$prep['secret'], (string)$this->request->post('code', ''));
             Session::delete(self::CLE_SECRET);
             Session::flash('recovery_codes', $codes);

@@ -43,17 +43,18 @@ final class PlatformTwoFactorService
         return new self(Database::getInstance()->getConnection());
     }
 
-    /** Migration T072 appliquée ? Sinon le portail se comporte exactement comme avant. */
+    /**
+     * Migration T072 appliquée ? Sinon le portail se comporte exactement comme avant.
+     *
+     * N'AVALE PAS les erreurs : « migration absente » (réponse false) et « base momentanément illisible » (exception) sont deux situations
+     * différentes. Si l'on ne peut pas savoir si la 2FA est en place, la connexion doit ÉCHOUER (jamais s'ouvrir avec le seul mot de passe).
+     */
     public static function disponible(PDO $pdo): bool
     {
-        try {
-            return (int)$pdo->query(
-                "SELECT (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'platform_operators' AND COLUMN_NAME = 'totp_enabled_at')
-                      + (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'platform_operator_recovery_codes')"
-            )->fetchColumn() === 2;
-        } catch (\Throwable) {
-            return false;
-        }
+        return (int)$pdo->query(
+            "SELECT (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'platform_operators' AND COLUMN_NAME = 'totp_enabled_at')
+                  + (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'platform_operator_recovery_codes')"
+        )->fetchColumn() === 2;
     }
 
     /** La 2FA est-elle exigée de tous les opérateurs (paramètre « deux_facteurs_obligatoire ») ? */
@@ -279,7 +280,7 @@ final class PlatformTwoFactorService
             throw new TwoFactorException('Le secret d\'enregistrement n\'est plus valide : rechargez la page.');
         }
         if ($pas === null) {
-            throw new TwoFactorException('Code incorrect. Vérifiez l\'heure de votre téléphone et réessayez.');
+            throw TwoFactorException::identifiantsIncorrects('Code incorrect. Vérifiez l\'heure de votre téléphone et réessayez.');
         }
         return $this->transaction($operatorId, 'operator.2fa_enabled', function () use ($operatorId, $secret, $pas): array {
             $u = $this->pdo->prepare('UPDATE platform_operators SET totp_secret = ?, totp_enabled_at = NOW(), totp_last_step = ? WHERE id = ? AND actif = 1 AND totp_enabled_at IS NULL');
@@ -313,12 +314,7 @@ final class PlatformTwoFactorService
         if (self::obligatoire()) {
             throw new TwoFactorException('La double authentification est obligatoire pour tous les opérateurs : elle ne peut pas être désactivée.');
         }
-        $s = $this->pdo->prepare('SELECT password_hash FROM platform_operators WHERE id = ? AND actif = 1');
-        $s->execute([$operatorId]);
-        $hash = $s->fetchColumn();
-        if (!is_string($hash) || $hash === '' || !password_verify($motDePasse, $hash)) {
-            throw new TwoFactorException('Mot de passe incorrect.');
-        }
+        $this->verifierMotDePasse($operatorId, $motDePasse);
         $this->exigerCodeTotp($operatorId, $saisie);
         $this->transaction($operatorId, 'operator.2fa_disabled', function () use ($operatorId): array {
             $this->effacer($operatorId);
@@ -344,6 +340,21 @@ final class PlatformTwoFactorService
         }, $acteur);
     }
 
+    /**
+     * Exige le mot de passe actuel de l'opérateur (ré-authentification avant une opération sensible : activation, désactivation).
+     *
+     * @throws TwoFactorException
+     */
+    public function verifierMotDePasse(int $operatorId, string $motDePasse): void
+    {
+        $s = $this->pdo->prepare('SELECT password_hash FROM platform_operators WHERE id = ? AND actif = 1');
+        $s->execute([$operatorId]);
+        $hash = $s->fetchColumn();
+        if (!is_string($hash) || $hash === '' || !password_verify($motDePasse, $hash)) {
+            throw TwoFactorException::identifiantsIncorrects('Mot de passe incorrect.');
+        }
+    }
+
     private function exigerCodeTotp(int $operatorId, string $saisie): void
     {
         $code = self::codeSaisi($saisie);
@@ -351,7 +362,7 @@ final class PlatformTwoFactorService
         $s->execute([$operatorId]);
         $chiffre = $s->fetchColumn();
         if ($code === null || !is_string($chiffre) || !$this->accepterTotp($operatorId, $chiffre, $code)) {
-            throw new TwoFactorException('Code incorrect.');
+            throw TwoFactorException::identifiantsIncorrects('Code incorrect.');
         }
     }
 

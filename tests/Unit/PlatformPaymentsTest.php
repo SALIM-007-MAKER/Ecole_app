@@ -190,6 +190,19 @@ check($sqlState === '23000', 'la base refuse aussi le doublon (index unique), m�
 $pay->annuler($v1, 'Saisie en double', $superId);
 check(refus(fn() => $pay->enregistrer($e4, $s4, $saisie('1000', 'virement', 'VIR-0001'), $superId)) === null, 'après annulation, la référence peut être ressaisie');
 
+// Double clic / rechargement du formulaire : un paiement sans référence (espèces) strictement identique, saisi à l'instant, est refusé.
+$e4b = $etab(); $s4b = $sub->souscrire($e4b, $planA, 'yearly', $superId);
+$nb = static fn() => (int)$pdo->query("SELECT COUNT(*) FROM platform_payments WHERE subscription_id = $s4b")->fetchColumn();
+$c1 = $pay->enregistrer($e4b, $s4b, $saisie('10', 'especes', '', '2026-03-09', 'caisse A'), $superId);
+$m = refus(fn() => $pay->enregistrer($e4b, $s4b, $saisie('10', 'especes', '', '2026-03-09', 'caisse A'), $superId));
+check($m !== null && str_contains($m, 'identique') && str_contains($m, (string)$ligne($c1)['reference']) && $nb() === 1, 'espèces envoyé deux fois : le second est refusé, le message cite le premier, un seul paiement', (string)$m);
+check(refus(fn() => $pay->enregistrer($e4b, $s4b, $saisie('10', 'especes', '', '2026-03-09', 'caisse B'), $superId)) === null, 'même paiement avec une autre note : accepté (second versement volontaire)');
+check(refus(fn() => $pay->enregistrer($e4b, $s4b, $saisie('11', 'especes', '', '2026-03-09', 'caisse A'), $superId)) === null, 'autre montant : accepté');
+check(refus(fn() => $pay->enregistrer($e4b, $s4b, $saisie('10', 'cheque', '', '2026-03-09', 'caisse A'), $superId)) === null, 'autre mode : accepté');
+check(refus(fn() => $pay->enregistrer($e4b, $s4b, $saisie('10', 'especes', '', '2026-03-08', 'caisse A'), $superId)) === null, 'autre date : acceptée');
+$pay->annuler($c1, 'Saisie erronée', $superId);
+check(refus(fn() => $pay->enregistrer($e4b, $s4b, $saisie('10', 'especes', '', '2026-03-09', 'caisse A'), $superId)) === null, 'le paiement identique a été annulé : peut être ressaisi');
+
 // ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 section('5. Annulation et déclencheurs');
 $e5 = $etab(); $s5 = $sub->souscrire($e5, $planA, 'monthly', $superId);

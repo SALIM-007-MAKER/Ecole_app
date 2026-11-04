@@ -63,7 +63,15 @@ class PlatformAuditController extends PlatformController
 
         $filtres = $this->filtres();
         // L'export est lui-même une opération sensible : il est inscrit au journal (avec les filtres utilisés) avant d'être servi.
-        $this->journal->record('audit.exported', ['entity_type' => 'platform_audit_logs', 'apres' => ['filtres' => $filtres, 'lignes_max' => PlatformAuditService::EXPORT_MAX]]);
+        // Mode strict : sans trace de l'export, rien n'est servi (même règle que l'export du journal d'un établissement).
+        try {
+            $this->journal->record('audit.exported', ['entity_type' => 'platform_audit_logs', 'apres' => ['filtres' => $filtres, 'lignes_max' => PlatformAuditService::EXPORT_MAX], 'strict' => true]);
+        } catch (\Throwable) {
+            \Core\Logger::security('PLATFORM_AUDIT_EXPORT_TRACE_FAILED', 'Export du journal global refusé : trace impossible');
+            http_response_code(503);
+            $this->render('errors/403', ['title' => 'Export impossible : la traçabilité est indisponible'], 'none');
+            exit;
+        }
 
         $nom = 'journal-audit-plateforme-' . date('Ymd-His') . '.csv';
         header('Content-Type: text/csv; charset=UTF-8');

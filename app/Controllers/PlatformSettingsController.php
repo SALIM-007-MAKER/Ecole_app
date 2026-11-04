@@ -42,7 +42,7 @@ class PlatformSettingsController extends PlatformController
             }
         }
         // Rendre la 2FA obligatoire exige d'avoir activé la sienne : sinon l'opérateur qui décide se retrouverait lui-même bloqué.
-        if (($donnees[PlatformSettings::DEUX_FACTEURS] ?? '') === '1') {
+        if (PlatformSettings::normaliserValeur(PlatformSettings::DEUX_FACTEURS, (string)($donnees[PlatformSettings::DEUX_FACTEURS] ?? '')) === '1') {
             $pdo = Database::getInstance()->getConnection();
             if (!PlatformTwoFactorService::disponible($pdo) || !(new PlatformTwoFactorService($pdo))->estActive($this->operatorId())) {
                 Session::flash('errors', ['Activez d\'abord votre propre double authentification (menu Sécurité) avant de la rendre obligatoire.']);
