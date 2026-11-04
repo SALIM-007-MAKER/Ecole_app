@@ -6,6 +6,8 @@ use Core\Platform\PlatformAuth;
 use Core\Platform\PlatformController;
 use Core\Platform\PlatformEtablissementService;
 use Core\Platform\PlatformPlanService;
+use Core\Platform\PlatformSubscriptionService;
+use Core\Platform\SubscriptionException;
 use Core\Session;
 
 class PlatformEtablissementController extends PlatformController
@@ -55,9 +57,23 @@ class PlatformEtablissementController extends PlatformController
             return;
         }
 
+        $abonnement = null;
+        $historique = [];
+        $pdo = \Core\Database::getInstance()->getConnection();
+        if (PlatformSubscriptionService::disponible($pdo)) {
+            $svc = new PlatformSubscriptionService($pdo);
+            $courant = $svc->courant($id);
+            $abonnement = $courant !== null ? ['ligne' => $courant, 'etat' => $svc->etat($courant)] : null;
+            $historique = $svc->historique($id);
+        }
+
         $this->render('platform/etablissements/show', [
             'title'     => $etab['nom'],
             'etab'      => $etab,
+            'abonnement' => $abonnement,
+            'historique' => $historique,
+            'abonnementsActifs' => PlatformSubscriptionService::disponible($pdo),
+            'canSubscribe' => PlatformAuth::hasLevel('super_admin'),
             'plans'     => $this->plans->all(false),
             'canManage' => PlatformAuth::hasLevel('admin', 'super_admin'),
         ], 'platform');
@@ -67,9 +83,11 @@ class PlatformEtablissementController extends PlatformController
     {
         $this->requirePlatformLevel('admin', 'super_admin');
 
+        $peutChoisirPlan = PlatformAuth::hasLevel('super_admin');
         $this->render('platform/etablissements/create', [
             'title' => 'Nouvel établissement',
-            'plans' => $this->plans->all(false),
+            'peutChoisirPlan' => $peutChoisirPlan,
+            'plans' => $peutChoisirPlan ? $this->plans->all(false) : [],
             'errors' => Session::getFlash('errors', []),
         ], 'platform');
     }
@@ -79,6 +97,11 @@ class PlatformEtablissementController extends PlatformController
         $this->requirePlatformLevel('admin', 'super_admin');
         $this->verifyCsrf();
 
+        // Rattacher un plan crée un abonnement (essai) : opération commerciale réservée au super_admin.
+        if ($this->request->post('plan_id') && !PlatformAuth::hasLevel('super_admin')) {
+            Session::flash('errors', ['Seul un super_admin peut rattacher un plan (création d\'un abonnement). Créez l\'établissement sans plan.']);
+            $this->redirect(BASE_URL . '/platform/etablissements/create');
+        }
         try {
             $id = $this->etabs->create([
                 'slug'      => $this->request->post('slug', ''),
@@ -101,8 +124,12 @@ class PlatformEtablissementController extends PlatformController
     {
         $this->requirePlatformLevel('admin', 'super_admin');
         $this->verifyCsrf();
-        $this->etabs->activate($id, $this->operatorUserId());
-        Session::flash('success', 'Établissement activé.');
+        try {
+            $this->etabs->activate($id, $this->operatorUserId());
+            Session::flash('success', 'Établissement activé.');
+        } catch (SubscriptionException $e) {
+            Session::flash('errors', [$e->getMessage()]);
+        }
         $this->redirect(BASE_URL . '/platform/etablissements/' . $id);
     }
 
@@ -129,8 +156,12 @@ class PlatformEtablissementController extends PlatformController
     {
         $this->requirePlatformLevel('admin', 'super_admin');
         $this->verifyCsrf();
-        $this->etabs->restore($id, $this->operatorUserId());
-        Session::flash('success', 'Établissement restauré (actif).');
+        try {
+            $this->etabs->restore($id, $this->operatorUserId());
+            Session::flash('success', 'Établissement restauré (actif).');
+        } catch (SubscriptionException $e) {
+            Session::flash('errors', [$e->getMessage()]);
+        }
         $this->redirect(BASE_URL . '/platform/etablissements/' . $id);
     }
 
@@ -145,14 +176,18 @@ class PlatformEtablissementController extends PlatformController
 
     public function assignPlan(int $id): void
     {
-        $this->requirePlatformLevel('admin', 'super_admin');
+        $this->requirePlatformLevel('super_admin');
         $this->verifyCsrf();
 
         $planId = (int)$this->request->post('plan_id', 0);
-        if ($planId > 0 && $this->etabs->assignPlan($id, $planId, $this->operatorUserId())) {
-            Session::flash('success', 'Plan assigné — quotas mis à jour.');
-        } else {
-            Session::flash('errors', ['Plan invalide ou introuvable.']);
+        try {
+            if ($planId > 0 && $this->etabs->assignPlan($id, $planId, $this->operatorUserId())) {
+                Session::flash('success', 'Plan assigné — quotas mis à jour.');
+            } else {
+                Session::flash('errors', ['Plan invalide ou introuvable.']);
+            }
+        } catch (SubscriptionException $e) {
+            Session::flash('errors', [$e->getMessage()]);
         }
         $this->redirect(BASE_URL . '/platform/etablissements/' . $id);
     }

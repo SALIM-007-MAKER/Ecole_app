@@ -227,7 +227,9 @@ check(contient(erreurs(fn() => $plans->update($starter, ['devise' => 'XOF'], $su
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
 section('5. Plan utilisé : prix / devise avec confirmation explicite');
-$etabId = $etabs->create(['slug' => 'ecole-plan-test', 'nom' => 'École Plan Test', 'nom_court' => 'EPT', 'type' => 'lycee', 'plan_id' => $proId], $superId);
+// Établissement DÉJÀ rattaché à un plan DZD (situation héritée) : posé directement, car une nouvelle souscription DZD est refusée (étape 4).
+$etabId = $etabs->create(['slug' => 'ecole-plan-test', 'nom' => 'École Plan Test', 'nom_court' => 'EPT', 'type' => 'lycee'], $superId);
+$pdo->prepare('UPDATE etablissements SET plan_id = ? WHERE id = ?')->execute([$proId, $etabId]);
 check($plans->usageCount($proId) >= 1, 'le plan est utilisé par un établissement');
 $msg = erreurs(fn() => $plans->update($proId, ['prix_mensuel' => '7000'], $superId));
 check(contient($msg, 'confirmation explicite'), 'changement de prix sans confirmation : refusé');
@@ -572,19 +574,19 @@ $plans->toggleActive($hid, false, $superId);
 $nbAvant = $compte('SELECT COUNT(*) FROM etablissements');
 $r = http($nomCopie, $S, 'POST', "/ecole_app/platform/etablissements/$autre/plan", ['plan_id' => (string)$hid]);
 check((int)$etabs->find($autre)['plan_id'] !== $hid, 'HTTP : plan archivé non assignable à un établissement');
-$r = http($nomCopie, operateur($adminId, 'admin'), 'POST', '/ecole_app/platform/etablissements', ['slug' => 'ecole-http-arch', 'nom' => 'HTTP Arch', 'nom_court' => 'HA', 'type' => 'lycee', 'plan_id' => (string)$hid]);
+$r = http($nomCopie, $S, 'POST', '/ecole_app/platform/etablissements', ['slug' => 'ecole-http-arch', 'nom' => 'HTTP Arch', 'nom_court' => 'HA', 'type' => 'lycee', 'plan_id' => (string)$hid]);
 check($compte('SELECT COUNT(*) FROM etablissements') === $nbAvant, 'HTTP : création d\'établissement avec un plan archivé refusée');
 $r = http($nomCopie, operateur($adminId, 'admin'), 'GET', '/ecole_app/platform/etablissements/create');
 check($r['status'] === 200 && !str_contains((string)$r['text'], 'Plan HTTP v3'), 'formulaire d\'établissement : plans archivés non proposés');
 // Page de détail : le plan actuel archivé reste visible comme plan existant mais n'est pas proposé à l'affectation.
 $etabArch = $etabs->create(['slug' => 'ecole-plan-archive', 'nom' => 'École Plan Archivé', 'nom_court' => 'EPA', 'type' => 'lycee', 'plan_id' => $idem], $superId);
 $plans->toggleActive($idem, false, $superId);
-$r = http($nomCopie, operateur($adminId, 'admin'), 'GET', "/ecole_app/platform/etablissements/$etabArch");
+$r = http($nomCopie, $S, 'GET', "/ecole_app/platform/etablissements/$etabArch");
 $t = (string)$r['text'];
 check($r['status'] === 200 && str_contains($t, 'Plan actuel') && str_contains($t, 'Idempotent') && str_contains($t, 'archivé'), 'détail établissement : plan actuel archivé affiché comme plan existant');
-check(str_contains($t, 'Idempotent (archivé — plan actuel, non assignable)') && substr_count($t, 'Idempotent') === 2, 'détail établissement : plan archivé affiché comme plan actuel, une seule option le concernant');
+check(str_contains($t, 'Idempotent (archivé — plan actuel, non assignable)') && substr_count($t, 'Idempotent') === 3, 'détail établissement : plan archivé affiché comme plan actuel (fiche, historique d\'abonnement), une seule option d\'assignation le concernant');
 $corps = sys_get_temp_dir() . '/pplans_body_' . bin2hex(random_bytes(4)) . '.html';
-lancer([PHP_BINARY, ROOT_PATH . '/tests/Support/platform_request.php', operateur($adminId, 'admin'), 'GET', "/ecole_app/platform/etablissements/$etabArch", '{}'],
+lancer([PHP_BINARY, ROOT_PATH . '/tests/Support/platform_request.php', $S, 'GET', "/ecole_app/platform/etablissements/$etabArch", '{}'],
     ['REQUEST_AS_DB' => $nomCopie, 'PLATFORM_REQ_AUDIT_DIR' => $dossierSecours, 'REQUEST_AS_BODY_OUT' => $corps]);
 $html = (string)@file_get_contents($corps); @unlink($corps);
 check(preg_match('/<option value="" disabled selected>Idempotent \(archivé/u', $html) === 1 && !str_contains($html, '<option value="' . $idem . '"'), 'détail établissement : plan archivé = option désactivée et sélectionnée, jamais une option assignable');

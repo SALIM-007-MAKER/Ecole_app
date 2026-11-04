@@ -451,9 +451,11 @@ check((int)$un("SELECT COUNT(*) FROM audit_logs WHERE module = 'utilisateurs' AN
 
 // ── Mot de passe depuis le profil ─────────────────────────────────────────────────────────────────────────────────────────
 $d = $n0();
-$requete('POST', '/profile/password', ['current_password' => 'Test-1234!', 'password' => 'Nouveau-Mot-De-Passe-Fort-5', 'password_confirmation' => 'Nouveau-Mot-De-Passe-Fort-5']);
+$requete('POST', '/profile/password', ['current_password' => 'Test-1234!', 'password' => 'Soleil-Levant-Niger-2027#', 'password_confirmation' => 'Soleil-Levant-Niger-2027#']);
 $l = $apresId($d, "module = 'auth' AND action = 'password_changed'")[0] ?? null;
-check($l !== null && (int)$l['user_id'] === $admin1 && (int)$l['etablissement_id'] === $ETAB1 && !str_contains((string)$l['apres'], 'Fort'), 'changement de mot de passe : journalisé, sans aucun mot de passe');
+check($l !== null && (int)$l['user_id'] === $admin1 && (int)$l['etablissement_id'] === $ETAB1 && !str_contains((string)$l['apres'], 'Soleil'), 'changement de mot de passe : journalisé, sans aucun mot de passe');
+// Les requêtes suivantes simulent des sessions ouvertes AVANT ce changement : on retire la date de changement pour qu'elles restent valides (l'invalidation est testée dans AuthSessionTest).
+try { $pdo->prepare('UPDATE users SET password_changed_at = NULL WHERE id = ?')->execute([$admin1]); } catch (\Throwable) { /* colonne absente (T069 non appliquée) */ }
 
 // ── Sanctions et récompenses : désormais en base, par établissement ───────────────────────────────────────────────────
 $d = $n0();

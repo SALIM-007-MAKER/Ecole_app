@@ -87,6 +87,11 @@ final class SessionTenantGuard
         if (in_array($etablissement->statut, self::STATUTS_BLOQUES, true)) {
             return $this->resultat(false, self::RAISON_ETAB_INDISPONIBLE, $etabId, null);
         }
+        // Abonnement sans accès (expiré, grâce écoulée, annulation échue) : bloqué même si le script d'échéances n'a pas encore tourné.
+        // Lecture seule ; sans abonnement ou avant T067 : aucun effet (jamais de blocage sur une panne).
+        if (\Core\Platform\PlatformSubscriptionService::accesInterdit($this->pdo, $etabId)) {
+            return $this->resultat(false, self::RAISON_ETAB_INDISPONIBLE, $etabId, null);
+        }
 
         $stmt = $this->pdo->prepare(
             'SELECT COUNT(*) AS total, SUM(etablissement_id = ? AND left_at IS NULL) AS cet_etab

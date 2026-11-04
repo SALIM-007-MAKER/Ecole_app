@@ -1,6 +1,6 @@
 <div style="text-align:center;margin-bottom:1.5rem">
-    <h1 style="color:#f1f5f9;font-size:1.25rem;font-weight:700;margin:0 0 .25rem">Connexion opérateur</h1>
-    <p style="color:#64748b;font-size:.8125rem;margin:0">Portail Super-Admin — accès plateforme uniquement</p>
+    <h1 style="color:var(--txt-1);font-size:1.25rem;font-weight:700;margin:0 0 .25rem">Connexion opérateur</h1>
+    <p style="color:var(--txt-3);font-size:.8125rem;margin:0">Portail Super-Admin — accès plateforme uniquement</p>
 </div>
 
 <form method="POST" action="<?= BASE_URL ?>/platform/login" class="space-y-4">

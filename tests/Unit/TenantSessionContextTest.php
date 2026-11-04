@@ -79,7 +79,11 @@ try {
     $mkUser = function (string $email, string $role, int $etab, int $actif = 1, bool $membre = true) use ($db): int {
         $db->prepare('INSERT INTO users (etablissement_id, nom, prenom, email, password, role, actif) VALUES (?, ?, ?, ?, ?, ?, ?)')->execute([$etab, 'N' . $email, 'P', $email, 'x', $role, $actif]);
         $id = (int)$db->lastInsertId();
-        if ($membre) { $db->prepare('INSERT INTO user_etablissements (user_id, etablissement_id, is_primary) VALUES (?, ?, 1)')->execute([$id, $etab]); }
+        if ($membre) {
+            $db->prepare('INSERT INTO user_etablissements (user_id, etablissement_id, is_primary) VALUES (?, ?, 1)')->execute([$id, $etab]);
+            // Appartenance AVEC rôle propre (Phase 1 : sans ligne user_roles_etab, l'appartenance est refusée, sans repli sur users.role).
+            $db->prepare('INSERT INTO user_roles_etab (user_id, etablissement_id, role_id) SELECT ?, ?, id FROM etab_roles WHERE code = ? AND etablissement_id IS NULL')->execute([$id, $etab, $role]);
+        }
         return $id;
     };
     $ADMIN2 = $mkUser('admin2-lot3@example.test', 'admin', $E2);

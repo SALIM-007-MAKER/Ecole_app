@@ -43,7 +43,9 @@ $statutBadge = [
             <?php endif; ?>
         </div>
 
-        <?php if ($canManage): ?>
+        <?php if (!empty($abonnementsActifs)) { include __DIR__ . '/_abonnement.php'; } ?>
+
+        <?php if (!empty($canSubscribe)): ?>
         <div class="rounded-xl border border-slate-200 bg-white shadow-sm p-5">
             <p class="text-sm font-semibold text-slate-900 mb-3">Assigner un plan</p>
             <form method="POST" action="<?= BASE_URL ?>/platform/etablissements/<?= (int)$etab['id'] ?>/plan" class="flex items-end gap-3">

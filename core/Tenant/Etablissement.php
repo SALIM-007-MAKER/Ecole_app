@@ -72,6 +72,6 @@ final class Etablissement
         if ($this->planExpiresAt === null) {
             return false;
         }
-        return strtotime($this->planExpiresAt) < strtotime('today');
+        return $this->planExpiresAt < \Core\Platform\SubscriptionRules::aujourdhui()->format('Y-m-d');
     }
 }
