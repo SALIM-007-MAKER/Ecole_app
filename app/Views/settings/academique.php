@@ -30,7 +30,8 @@ $canEdit       = $canEdit       ?? false;
     <i data-lucide="info" class="w-4 h-4 inline-block align-text-top mr-1"></i>
     La nomenclature des niveaux (Préscolaire, Primaire, Collège, Lycée) suit le système éducatif
     officiel du Niger. Sélectionnez les cycles réellement proposés par votre établissement —
-    les autres modules (classes, inscriptions, statistiques) n'afficheront que ces cycles.
+    les formulaires (classes, frais, génération de factures) ne proposeront que ces cycles.
+    Les classes et données déjà enregistrées pour un cycle désactivé restent visibles, modifiables et inchangées.
 </div>
 
 <form method="POST" action="<?= BASE_URL ?>/parametres/academique" novalidate class="space-y-5">

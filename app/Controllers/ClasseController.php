@@ -65,7 +65,7 @@ class ClasseController extends Controller
 
         $this->render('classes/create', [
             'title'   => 'Nouvelle classe',
-            'niveaux' => ClasseModel::NIVEAUX,
+            'niveaux' => \App\Services\CyclesActifsService::pour()->niveauxParCycle(),   // cycles activés de l'établissement
             'annee'   => \App\Services\AnneeScolaireActive::pour(),   // année active des Paramètres
             'errors'  => Session::getFlash('errors', []),
             'old'     => Session::getFlash('old', []),
@@ -149,7 +149,8 @@ class ClasseController extends Controller
         $this->render('classes/edit', [
             'title'   => 'Modifier — ' . $classe->niveau . ' ' . $classe->nom,
             'classe'  => $classe,
-            'niveaux' => ClasseModel::NIVEAUX,
+            // Cycles activés + le niveau actuel de la classe, même si son cycle a été désactivé depuis (rien ne devient impossible à modifier).
+            'niveaux' => \App\Services\CyclesActifsService::pour()->niveauxParCycle([(string)$classe->niveau]),
             'errors'  => Session::getFlash('errors', []),
             'old'     => Session::getFlash('old', []),
         ]);
@@ -331,6 +332,14 @@ class ClasseController extends Controller
 
         if (empty($data['niveau'])) {
             $errors['niveau'][] = 'Le niveau est obligatoire.';
+        } else {
+            // Niveau de la nomenclature ET d'un cycle activé ; à la modification, le niveau actuel reste valide (inchangé).
+            $actuel = $exceptId !== null ? ($this->classeModel->findById($exceptId)->niveau ?? null) : null;
+            if (!in_array($data['niveau'], ClasseModel::NIVEAUX_ORDRE, true)) {
+                $errors['niveau'][] = 'Niveau inconnu.';
+            } elseif (!\App\Services\CyclesActifsService::pour()->niveauAutorise($data['niveau'], $actuel)) {
+                $errors['niveau'][] = 'Ce niveau appartient à un cycle non activé pour votre établissement (Paramètres → Organisation académique).';
+            }
         }
 
         if (empty($data['annee_scolaire'])) {

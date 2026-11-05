@@ -18,8 +18,9 @@ $getNiveauxSelectionnes = function() use ($frais, $old): array {
 };
 $niveauxSelectionnes = $getNiveauxSelectionnes();
 
-// Nomenclature officielle du système éducatif nigérien — App\Models\ClasseModel::NIVEAUX
-$niveauxDisponibles = array_merge(...array_values(\App\Models\ClasseModel::NIVEAUX));
+// Nomenclature officielle du système éducatif nigérien (ClasseModel::NIVEAUX), limitée aux cycles activés par l'établissement.
+// Les niveaux déjà ciblés par ce frais restent proposés même si leur cycle a été désactivé depuis (rien n'est perdu à l'édition).
+$niveauxDisponibles = \App\Services\CyclesActifsService::pour()->niveaux($niveauxSelectionnes);
 ?>
 <div class="max-w-2xl mx-auto space-y-6">
 

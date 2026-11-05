@@ -183,7 +183,7 @@ $statutLabel = match($frais->statut) {
                             <label class="form-label text-xs mb-1">Niveau</label>
                             <select name="niveau" class="form-select">
                                 <option value="">Tous niveaux</option>
-                                <?php foreach (array_merge(...array_values(\App\Models\ClasseModel::NIVEAUX)) as $n): ?>
+                                <?php foreach (\App\Services\CyclesActifsService::pour()->niveaux() as $n): ?>
                                 <option value="<?= $n ?>"><?= $n ?></option>
                                 <?php endforeach; ?>
                             </select>
