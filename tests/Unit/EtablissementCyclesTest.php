@@ -209,6 +209,32 @@ $idHh = (int)$pdo->query("SELECT id FROM etablissements WHERE slug = 'http-histo
 check($idHh > 0 && $typeDe($idHh) === 'college' && $lire($idHh) === [], 'POST historique (champ `type` seul) : accepté comme avant, aucun cycles_actifs écrit', json_encode($r));
 
 // ═══════════════════════════════════════════════════════════
+section('5b. Pays : Niger par défaut, liste contrôlée');
+$paysDe = static fn(int $id): string => (string)$pdo->query("SELECT pays FROM etablissements WHERE id = $id")->fetchColumn();
+check(\Core\Platform\Pays::PAR_DEFAUT === 'NE' && \Core\Platform\Pays::normaliser(null) === 'NE' && \Core\Platform\Pays::normaliser('  ') === 'NE', 'pays par défaut : NE (Niger)');
+check(\Core\Platform\Pays::normaliser('dz') === 'DZ' && \Core\Platform\Pays::normaliser(' bf ') === 'BF', 'code normalisé en majuscules');
+check(\Core\Platform\Pays::normaliser('XX') === null && \Core\Platform\Pays::normaliser('ALG') === null && \Core\Platform\Pays::normaliser('1') === null, 'code inconnu ou invalide refusé');
+check(\Core\Platform\Pays::nom('NE') === 'Niger' && \Core\Platform\Pays::nom('ZZ') === 'ZZ', 'nom lisible ; code inconnu renvoyé tel quel (affichage d\'un établissement existant)');
+$idP1 = $etabs->create(['slug' => 'pays-defaut', 'nom' => 'Pays défaut', 'nom_court' => 'PD', 'cycles' => ['Primaire'], 'type_hors_cycle' => ''], $superId);
+check($paysDe($idP1) === 'NE', 'création sans pays : Niger (NE)');
+$idP2 = $etabs->create(['slug' => 'pays-dz', 'nom' => 'Pays DZ', 'nom_court' => 'PZ', 'cycles' => ['Primaire'], 'type_hors_cycle' => '', 'pays' => 'dz'], $superId);
+check($paysDe($idP2) === 'DZ', 'pays « dz » : accepté, normalisé en DZ (compatibilité avec les établissements existants)');
+$idP3 = $etabs->create(['slug' => 'pays-vide', 'nom' => 'Pays vide', 'nom_court' => 'PV', 'type' => 'lycee', 'pays' => ''], $superId);
+check($paysDe($idP3) === 'NE', 'appel historique avec pays vide : Niger');
+$avantP = $nbEtabs();
+check(refus(fn() => $etabs->create(['slug' => 'pays-xx', 'nom' => 'X', 'nom_court' => 'X', 'type' => 'lycee', 'pays' => 'XX'], $superId)) !== null && $nbEtabs() === $avantP, 'pays inconnu : refusé, aucun établissement créé');
+$fichierP = sys_get_temp_dir() . '/ecyc_pays_' . bin2hex(random_bytes(4)) . '.html';
+putenv('REQUEST_AS_BODY_OUT=' . $fichierP);
+http($nomCopie, operateur($superId, 'super_admin'), 'GET', '/platform/etablissements/create');
+putenv('REQUEST_AS_BODY_OUT');
+$htmlP = (string)@file_get_contents($fichierP); @unlink($fichierP);
+check(str_contains($htmlP, '<select id="pays"') && preg_match('/<option value="NE" selected>Niger<\/option>/', $htmlP) === 1 && !str_contains($htmlP, 'value="DZ" maxlength'), 'formulaire : liste de pays, Niger présélectionné, plus de champ libre « DZ »');
+http($nomCopie, operateur($adminId, 'admin'), 'POST', '/platform/etablissements', ['slug' => 'http-pays', 'nom' => 'Pays HTTP', 'cycles' => ['Lycée'], 'type_hors_cycle' => '']);
+$idH = (int)$pdo->query("SELECT id FROM etablissements WHERE slug = 'http-pays'")->fetchColumn();
+check($idH > 0 && $paysDe($idH) === 'NE', 'POST sans pays : Niger');
+http($nomCopie, operateur($adminId, 'admin'), 'POST', '/platform/etablissements', ['slug' => 'http-pays-bad', 'nom' => 'Pays HTTP KO', 'cycles' => ['Lycée'], 'type_hors_cycle' => '', 'pays' => 'ZZ']);
+check((int)$pdo->query("SELECT COUNT(*) FROM etablissements WHERE slug = 'http-pays-bad'")->fetchColumn() === 0, 'POST avec un pays forgé : rien créé');
+// ═══════════════════════════════════════════════════════════
 section('6. Paramètres académiques : « au moins un cycle » selon le type');
 $adminEcole = (int)$pdo->query("SELECT id FROM users WHERE role = 'admin' AND etablissement_id = 1 ORDER BY id LIMIT 1")->fetchColumn();
 $poster = static function (array $post) use ($nomCopie, $adminEcole): void {

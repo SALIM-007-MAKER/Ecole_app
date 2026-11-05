@@ -38,7 +38,7 @@ $statutBadge = [
         <div class="rounded-xl border border-slate-200 bg-white shadow-sm p-5 grid grid-cols-2 gap-4 text-sm">
             <div class="col-span-2"><p class="text-slate-400 text-xs">Plan actuel</p><p class="text-slate-800"><?php if (!empty($etab['plan_id'])): ?><?= htmlspecialchars((string)($etab['plan_nom'] ?? '#' . $etab['plan_id']), ENT_QUOTES) ?><?php if (isset($etab['plan_actif']) && (int)$etab['plan_actif'] === 0): ?> <span class="badge badge-secondary text-xs">archivé — conservé, non assignable à un autre établissement</span><?php endif; ?><?php else: ?>Aucun<?php endif; ?></p></div>
             <div><p class="text-slate-400 text-xs">Type</p><p class="text-slate-800"><?= htmlspecialchars($etab['type'], ENT_QUOTES) ?></p></div>
-            <div><p class="text-slate-400 text-xs">Pays</p><p class="text-slate-800"><?= htmlspecialchars($etab['pays'], ENT_QUOTES) ?></p></div>
+            <div><p class="text-slate-400 text-xs">Pays</p><p class="text-slate-800"><?= htmlspecialchars(\Core\Platform\Pays::nom((string)$etab['pays']), ENT_QUOTES) ?> <span class="text-slate-400">(<?= htmlspecialchars((string)$etab['pays'], ENT_QUOTES) ?>)</span></p></div>
             <div><p class="text-slate-400 text-xs">Quota stockage</p><p class="text-slate-800"><?= (int)$etab['storage_quota_mb'] ?> Mo</p></div>
             <div><p class="text-slate-400 text-xs">Max utilisateurs</p><p class="text-slate-800"><?= $etab['max_users'] ?? '—' ?></p></div>
             <div><p class="text-slate-400 text-xs">Max élèves</p><p class="text-slate-800"><?= $etab['max_eleves'] ?? '—' ?></p></div>

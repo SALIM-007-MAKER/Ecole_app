@@ -51,7 +51,11 @@
     </div>
     <div>
         <label class="form-label" for="pays">Pays</label>
-        <input type="text" id="pays" name="pays" class="form-input" value="DZ" maxlength="2">
+        <select id="pays" name="pays" class="form-input">
+            <?php foreach (\Core\Platform\Pays::LISTE as $code => $nomPays): ?>
+            <option value="<?= $code ?>" <?= $code === \Core\Platform\Pays::PAR_DEFAUT ? 'selected' : '' ?>><?= htmlspecialchars($nomPays, ENT_QUOTES) ?></option>
+            <?php endforeach; ?>
+        </select>
     </div>
     <?php if (!empty($peutChoisirPlan)): ?>
     <div>

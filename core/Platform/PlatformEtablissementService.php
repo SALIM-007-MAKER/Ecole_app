@@ -112,6 +112,12 @@ final class PlatformEtablissementService
             throw new \InvalidArgumentException('Le nom est obligatoire.');
         }
 
+        // Pays : code ISO de la liste (défaut : Niger). Un code inconnu est refusé, jamais enregistré tel quel.
+        $pays = Pays::normaliser($data['pays'] ?? '');
+        if ($pays === null) {
+            throw new \InvalidArgumentException('Pays inconnu : choisissez un pays de la liste.');
+        }
+
         // Nouveau mode (formulaire) : cycles cochés ou type hors cycle → type déduit, cycles_actifs alimenté.
         // Mode historique (clé `type` seule, anciens appelants) : inchangé, aucun réglage de cycles écrit.
         $cyclesActifs = null;
@@ -146,7 +152,7 @@ final class PlatformEtablissementService
             );
             $stmt->execute([
                 $slug, $nom, $nomCourt, $type,
-                $data['pays'] ?? 'DZ',
+                $pays,
                 $parAbonnement ? null : ($data['plan_id'] ?? null),
             ]);
             $id = (int)$this->pdo->lastInsertId();

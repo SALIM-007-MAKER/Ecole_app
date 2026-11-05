@@ -115,7 +115,7 @@ class PlatformEtablissementController extends PlatformController
                 'slug'      => $this->request->post('slug', ''),
                 'nom'       => $this->request->post('nom', ''),
                 'nom_court' => $this->request->post('nom_court', ''),
-                'pays'      => $this->request->post('pays', 'DZ'),
+                'pays'      => $this->request->post('pays', ''),   // vide = Niger (défaut du service)
                 'plan_id'   => $this->request->post('plan_id') ?: null,
             ];
             // Formulaire actuel : cycles cochés ou type hors cycle (type déduit côté serveur, tout champ `type` ignoré).
