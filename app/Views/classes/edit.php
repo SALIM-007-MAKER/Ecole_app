@@ -122,6 +122,8 @@ function editC(array $old, string $key, $obj): string {
                             <?php endif; ?>
                         </div>
 
+                        <?php include __DIR__ . '/_serie.php'; ?>
+
                         <div class="sm:col-span-3">
                             <label class="form-label" for="description">
                                 Description <span class="text-slate-400 font-normal">(optionnel)</span>

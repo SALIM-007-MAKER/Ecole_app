@@ -109,6 +109,8 @@ $annee   = $annee ?? (date('Y') . '-' . (date('Y') + 1));
                             </div>
                         </div>
 
+                        <?php include __DIR__ . '/_serie.php'; ?>
+
                         <div class="sm:col-span-3">
                             <label class="form-label" for="description">
                                 Description <span class="text-slate-400 font-normal">(optionnel)</span>

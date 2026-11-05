@@ -10,6 +10,7 @@ use App\Models\MatiereModel;
 use App\Models\ProfesseurModel;
 use App\Models\EnseignementModel;
 use App\Services\EnseignantPortee;
+use App\Services\SeriesLyceeService;
 
 class ClasseController extends Controller
 {
@@ -43,6 +44,21 @@ class ClasseController extends Controller
             $classes = array_values(array_filter($classes, fn($c) => in_array((int)$c->id, $portee, true)));
         }
 
+        // Filtre par série (lycée) : un code de série, ou « __aucune » pour les classes sans série. Sans effet avant T074.
+        $serieDispo = SeriesLyceeService::disponible();
+        $seriesPresentes = [];
+        $filtreSerie = '';
+        if ($serieDispo) {
+            $seriesPresentes = array_values(array_unique(array_filter(array_map(fn($c) => $c->serie ?? null, $classes))));
+            sort($seriesPresentes);
+            $filtreSerie = trim((string)$this->request->get('serie', ''));
+            if ($filtreSerie === '__aucune') {
+                $classes = array_values(array_filter($classes, fn($c) => ($c->serie ?? null) === null));
+            } elseif ($filtreSerie !== '') {
+                $classes = array_values(array_filter($classes, fn($c) => ($c->serie ?? null) === $filtreSerie));
+            }
+        }
+
         $this->render('classes/index', [
             'title'   => 'Gestion des classes',
             'classes' => $classes,
@@ -52,6 +68,9 @@ class ClasseController extends Controller
                 'total_ens'      => array_sum(array_column($classes, 'nb_enseignements')),
                 'niveaux'        => count(array_unique(array_column($classes, 'niveau'))),
             ],
+            'serieDispo'      => $serieDispo,
+            'seriesPresentes' => $seriesPresentes,
+            'filtreSerie'     => $filtreSerie,
         ]);
     }
 
@@ -66,6 +85,9 @@ class ClasseController extends Controller
         $this->render('classes/create', [
             'title'   => 'Nouvelle classe',
             'niveaux' => \App\Services\CyclesActifsService::pour()->niveauxParCycle(),   // cycles activés de l'établissement
+            'serieDispo'     => SeriesLyceeService::disponible(),
+            'seriesParNiveau' => SeriesLyceeService::disponible() ? SeriesLyceeService::pour()->seriesParNiveau() : [],
+            'serieActuelle'  => null,
             'annee'   => \App\Services\AnneeScolaireActive::pour(),   // année active des Paramètres
             'errors'  => Session::getFlash('errors', []),
             'old'     => Session::getFlash('old', []),
@@ -87,6 +109,9 @@ class ClasseController extends Controller
             return;
         }
 
+        if (array_key_exists('serie', $data)) {
+            $data['serie'] = SeriesLyceeService::normaliser($data['serie']);   // valide : contrôlée par validateClasse
+        }
         $id = $this->classeModel->insert($data);
         Session::flash('success', 'Classe créée avec succès.');
         $this->redirect(BASE_URL . '/classes/' . $id);
@@ -151,6 +176,9 @@ class ClasseController extends Controller
             'classe'  => $classe,
             // Cycles activés + le niveau actuel de la classe, même si son cycle a été désactivé depuis (rien ne devient impossible à modifier).
             'niveaux' => \App\Services\CyclesActifsService::pour()->niveauxParCycle([(string)$classe->niveau]),
+            'serieDispo'      => SeriesLyceeService::disponible(),
+            'seriesParNiveau' => SeriesLyceeService::disponible() ? SeriesLyceeService::pour()->seriesParNiveau() : [],
+            'serieActuelle'   => $classe->serie ?? null,   // proposée même si elle a été désactivée depuis
             'errors'  => Session::getFlash('errors', []),
             'old'     => Session::getFlash('old', []),
         ]);
@@ -177,6 +205,15 @@ class ClasseController extends Controller
             return;
         }
 
+        if (SeriesLyceeService::disponible()) {
+            if (array_key_exists('serie', $data)) {
+                $data['serie'] = SeriesLyceeService::normaliser($data['serie']);
+            }
+            // Passage à un niveau hors lycée : la série n'a plus de sens, elle est retirée. Série non postée : inchangée.
+            if (!SeriesLyceeService::estNiveauLycee($data['niveau'])) {
+                $data['serie'] = null;
+            }
+        }
         $this->classeModel->update((int)$id, $data);
         Session::flash('success', 'Classe modifiée avec succès.');
         $this->redirect(BASE_URL . '/classes/' . $id);
@@ -311,13 +348,19 @@ class ClasseController extends Controller
 
     private function collectFormData(): array
     {
-        return [
+        $data = [
             'nom'            => strtoupper(trim($this->request->post('nom', ''))),
             'niveau'         => trim($this->request->post('niveau', '')),
             'annee_scolaire' => trim($this->request->post('annee_scolaire', '')),
             'max_eleves'     => (int)$this->request->post('max_eleves', 40),
             'description'    => trim($this->request->post('description', '')) ?: null,
         ];
+        // La série n'est lue que si la colonne existe (T074) et seulement si le champ est posté : absent = inchangée.
+        $serie = $this->request->post('serie');
+        if (SeriesLyceeService::disponible() && $serie !== null) {
+            $data['serie'] = is_string($serie) ? trim($serie) : '?';
+        }
+        return $data;
     }
 
     private function validateClasse(array $data, ?int $exceptId = null): array
@@ -339,6 +382,19 @@ class ClasseController extends Controller
                 $errors['niveau'][] = 'Niveau inconnu.';
             } elseif (!\App\Services\CyclesActifsService::pour()->niveauAutorise($data['niveau'], $actuel)) {
                 $errors['niveau'][] = 'Ce niveau appartient à un cycle non activé pour votre établissement (Paramètres → Organisation académique).';
+            }
+        }
+
+        if (array_key_exists('serie', $data)) {
+            $norm = SeriesLyceeService::normaliser($data['serie']);
+            if ($norm === false) {
+                $errors['serie'][] = 'Série invalide : 1 à 10 caractères (lettres, chiffres, tiret).';
+            } elseif (empty($errors['niveau']) && !empty($data['niveau'])) {
+                $cur = $exceptId !== null ? $this->classeModel->findById($exceptId) : false;
+                $msg = SeriesLyceeService::pour()->erreurSerie($data['niveau'], $norm, $cur ? (string)$cur->niveau : null, $cur ? ($cur->serie ?? null) : null);
+                if ($msg !== null) {
+                    $errors['serie'][] = $msg;
+                }
             }
         }
 

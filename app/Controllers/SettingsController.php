@@ -266,6 +266,8 @@ class SettingsController extends Controller
             'title'        => 'Organisation académique',
             'cyclesTous'   => \App\Models\ClasseModel::NIVEAUX,
             'cyclesActifs' => $cyclesActifs,
+            'serieDispo'      => \App\Services\SeriesLyceeService::disponible(),
+            'seriesParNiveau' => \App\Services\SeriesLyceeService::disponible() ? \App\Services\SeriesLyceeService::pour($etabId)->seriesParNiveau() : [],
             'canEdit'      => $this->can('settings.academique.update'),
             'errors'       => Session::getFlash('errors', []),
         ]);
@@ -293,7 +295,25 @@ class SettingsController extends Controller
             $this->redirect(BASE_URL . '/parametres/academique');
         }
 
+        // Séries du lycée par niveau (si le formulaire les contient et que la colonne classes.serie existe) : validées AVANT toute écriture.
+        $series = null;
+        if (\App\Services\SeriesLyceeService::disponible() && $this->request->post('series_present') === '1') {
+            $saisie = \App\Services\SeriesLyceeService::depuisSaisie(
+                (array)$this->request->post('series', []),
+                (array)$this->request->post('series_perso', [])
+            );
+            if ($saisie['erreurs'] !== []) {
+                Session::flash('errors', ['series' => implode(' ', $saisie['erreurs'])]);
+                $this->redirect(BASE_URL . '/parametres/academique');
+            }
+            $series = $saisie['series'];
+        }
+
         $this->settings->set($etabId, 'academique', 'cycles_actifs', $cyclesValides, 'json', $userId);
+        if ($series !== null) {
+            // Désactiver une série ne modifie aucune classe : celles qui l'utilisent la conservent (modifiables, série inchangée).
+            $this->settings->set($etabId, 'academique', 'series_par_niveau', $series, 'json', $userId);
+        }
 
         \Core\Logger::security('SETTINGS_ACADEMIQUE_UPDATED', "Organisation académique modifiée pour etablissement_id={$etabId} par user_id={$userId}");
 

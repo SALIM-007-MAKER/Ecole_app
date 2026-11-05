@@ -62,6 +62,20 @@ function cperm(array $p, string $k): bool { return in_array($k, $p, true); }
     </div>
 </div>
 
+<?php if (!empty($serieDispo) && (!empty($seriesPresentes) || ($filtreSerie ?? '') !== '')): ?>
+<form method="GET" action="<?= BASE_URL ?>/classes" class="flex items-center gap-2 mb-5">
+    <label for="filtre-serie" class="text-sm text-slate-600">Série</label>
+    <select id="filtre-serie" name="serie" class="form-input" style="width:auto" onchange="this.form.submit()">
+        <option value="">Toutes</option>
+        <?php foreach ($seriesPresentes as $sp): ?>
+        <option value="<?= htmlspecialchars($sp, ENT_QUOTES) ?>" <?= $filtreSerie === $sp ? 'selected' : '' ?>>Série <?= htmlspecialchars($sp, ENT_QUOTES) ?></option>
+        <?php endforeach; ?>
+        <option value="__aucune" <?= $filtreSerie === '__aucune' ? 'selected' : '' ?>>Sans série</option>
+    </select>
+    <noscript><button type="submit" class="btn btn-secondary">Filtrer</button></noscript>
+</form>
+<?php endif; ?>
+
 <?php if (empty($classes)): ?>
 <div class="flex flex-col items-center justify-center gap-3 text-center text-slate-500 rounded-xl border border-slate-200 bg-white shadow-sm py-16">
     <div class="w-16 h-16 rounded-2xl bg-violet-50 flex items-center justify-center mx-auto mb-4">
@@ -116,6 +130,7 @@ ksort($grouped);
                             </h3>
                             <p class="text-xs text-slate-400">
                                 <?= htmlspecialchars($classe->annee_scolaire, ENT_QUOTES) ?>
+                                <?php if (!empty($classe->serie)): ?> · Série <?= htmlspecialchars($classe->serie, ENT_QUOTES) ?><?php endif; ?>
                             </p>
                         </div>
                     </div>
