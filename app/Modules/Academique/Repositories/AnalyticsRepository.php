@@ -113,11 +113,15 @@ class AnalyticsRepository
     public function moyennesParMatiere(int $periodeId, ?int $classeId = null): array
     {
         $classeFilter = $classeId !== null ? 'AND ev.classe_id = :classe_id' : '';
+        $prog      = $classeId !== null && \App\Services\ProgrammeSql::actif();
+        $coefSql   = $prog ? 'COALESCE(pg.coefficient, m.coefficient)' : 'm.coefficient';
+        $progJoin  = $prog ? ' LEFT JOIN classe_matieres pg ON pg.classe_id = :classe_prog AND pg.matiere_id = m.id ' : ' ';
+        $progGroup = $prog ? ', pg.coefficient' : '';
         $sql = "
             SELECT
                 m.id       AS matiere_id,
-                m.nom      AS matiere_nom,
-                m.coefficient,
+                " . \App\Services\ProgrammeSql::nom('m') . " AS matiere_nom,
+                {$coefSql} AS coefficient,
                 COUNT(DISTINCT e.id)   AS nb_eleves,
                 COUNT(n.id)            AS nb_notes,
                 AVG(" . self::N20 . ") AS moyenne,
@@ -133,13 +137,15 @@ class AnalyticsRepository
                 AND " . self::STATUT_OK . "
             JOIN eleves e ON e.classe_id = ev.classe_id
             LEFT JOIN matieres cm ON cm.id = ev.matiere_id
+            {$progJoin}
             LEFT JOIN notes_v2 n ON n.eleve_id = e.id AND n.evaluation_id = ev.id
             WHERE 1=1 $classeFilter
-            GROUP BY m.id, m.nom, m.coefficient
+            GROUP BY m.id, m.nom, m.coefficient{$progGroup}
             ORDER BY m.nom
         ";
         $params = [':periode_id' => $periodeId];
         if ($classeId !== null) $params[':classe_id'] = $classeId;
+        if ($prog) $params[':classe_prog'] = $classeId;
         return $this->safe($sql, $params, fn($s) => $s->fetchAll(\PDO::FETCH_ASSOC));
     }
 
@@ -346,7 +352,7 @@ class AnalyticsRepository
     {
         $sql = "
             SELECT
-                m.id AS matiere_id, m.nom AS matiere_nom,
+                m.id AS matiere_id, " . \App\Services\ProgrammeSql::nom('m') . " AS matiere_nom,
                 pm.classe_id, c.nom AS classe_nom,
                 COUNT(DISTINCT e.id)   AS nb_eleves,
                 AVG(" . self::N20 . ") AS moyenne,

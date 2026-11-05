@@ -49,8 +49,8 @@ class BulletinRepository
         $sql = "
             SELECT
                 m.id           AS matiere_id,
-                m.nom          AS matiere_nom,
-                m.coefficient  AS coeff_matiere,
+                " . \App\Services\ProgrammeSql::nom('m') . " AS matiere_nom,
+                " . \App\Services\ProgrammeSql::coefficient('m') . " AS coeff_matiere,
                 m.categorie    AS matiere_categorie,
                 m.est_conduite AS matiere_est_conduite,
                 ev.id          AS evaluation_id,
@@ -62,7 +62,7 @@ class BulletinRepository
                 te.seuil_eliminatoire,
                 te.code                          AS type_evaluation_code
             FROM evaluations ev
-            JOIN matieres m ON m.id = ev.matiere_id
+            JOIN matieres m ON m.id = ev.matiere_id" . \App\Services\ProgrammeSql::jointure('ev.classe_id', 'm') . "
             LEFT JOIN notes_v2 n
                 ON  n.eleve_id      = :eleve_id
                 AND n.evaluation_id = ev.id

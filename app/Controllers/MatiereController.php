@@ -196,7 +196,15 @@ class MatiereController extends Controller
             return;
         }
 
-        $this->matiereModel->update((int)$id, $this->toDbData($data));
+        // Traçabilité : nom, nom d'affichage, coefficient et volume par défaut (avant → après)
+        $suivi  = ['nom', 'nom_affichage', 'coefficient', 'volume_horaire'];
+        $avant  = [];
+        foreach ($suivi as $c) { $avant[$c] = (string)($matiere->$c ?? ''); }
+        $nouveau = $this->toDbData($data);
+        $this->matiereModel->update((int)$id, $nouveau);
+        $apres = [];
+        foreach ($suivi as $c) { $apres[$c] = (string)($nouveau[$c] ?? $avant[$c]); }
+        (new \App\Services\AuditService())->logUpdate((int)($this->currentUser()['id'] ?? 0), 'matieres', 'matiere', (int)$id, $avant, $apres);
         Session::flash('success', 'Matière modifiée avec succès.');
         $this->redirect(BASE_URL . '/matieres/' . $id);
     }
@@ -222,16 +230,72 @@ class MatiereController extends Controller
             return;
         }
 
-        $enseignements = $this->ensModel->findByMatiereId((int)$id);
-        if (!empty($enseignements)) {
-            Session::flash('error', 'Impossible de supprimer : cette matière est utilisée dans ' . count($enseignements) . ' enseignement(s).');
+        // Une matière déjà utilisée (enseignements, évaluations, notes/moyennes, programmes de classe) ne se supprime JAMAIS physiquement :
+        // on la désactive. Les clés étrangères en cascade effaceraient sinon des notes et des moyennes.
+        $usages = $this->matiereModel->usages((int)$id);
+        if (!empty($usages)) {
+            Session::flash('error', 'Impossible de supprimer : cette matière est déjà utilisée (' . implode(', ', $usages) . '). Désactivez-la à la place : ses données sont conservées.');
             $this->redirect(BASE_URL . '/matieres/' . $id);
             return;
+        }
+
+        // Une matière au programme d'une classe ne se supprime pas en silence (clé étrangère RESTRICT) : message explicite.
+        if (\App\Services\ProgrammeClasseService::disponible()) {
+            $stmtProg = \Core\Database::getInstance()->getConnection()->prepare('SELECT COUNT(*) FROM classe_matieres WHERE matiere_id = ?');
+            $stmtProg->execute([(int)$id]);
+            $nbProg = (int)$stmtProg->fetchColumn();
+            if ($nbProg > 0) {
+                Session::flash('error', 'Impossible de supprimer : cette matière figure au programme de ' . $nbProg . ' classe(s). Retirez-la d\'abord de ces programmes.');
+                $this->redirect(BASE_URL . '/matieres/' . $id);
+                return;
+            }
         }
 
         $this->matiereModel->delete((int)$id);
         Session::flash('success', 'Matière supprimée.');
         $this->redirect(BASE_URL . '/matieres');
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // DÉSACTIVER / RÉACTIVER
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    public function desactiver(string $id): void
+    {
+        $this->changerEtat((int)$id, 0);
+    }
+
+    public function reactiver(string $id): void
+    {
+        $this->changerEtat((int)$id, 1);
+    }
+
+    /**
+     * Désactive ou réactive une matière. Désactivée : plus proposée pour de NOUVELLES affectations (enseignements, programmes, évaluations) ;
+     * affectations, notes, évaluations et bulletins existants restent intacts. Réversible. La Conduite n'est pas concernée.
+     */
+    private function changerEtat(int $id, int $actif): void
+    {
+        $this->requirePermission('matieres.edit');
+        $this->verifyCsrf();
+
+        $matiere = $this->matiereModel->findById($id);
+        if (!$matiere) {
+            $this->redirect(BASE_URL . '/matieres');
+            return;
+        }
+        if (!\App\Services\ProgrammeSql::colonneMatiere('actif')) {
+            Session::flash('error', 'La désactivation des matières n\'est pas encore activée sur cette installation (migration T076).');
+        } elseif ((int)($matiere->est_conduite ?? 0) === 1) {
+            Session::flash('error', 'La matière de Conduite ne peut pas être désactivée.');
+        } elseif ((int)($matiere->actif ?? 1) === $actif) {
+            Session::flash('success', $actif ? 'Cette matière est déjà active.' : 'Cette matière est déjà désactivée.');
+        } else {
+            $this->matiereModel->update($id, ['actif' => $actif]);
+            (new \App\Services\AuditService())->log((int)($this->currentUser()['id'] ?? 0), $actif ? 'matiere_reactivee' : 'matiere_desactivee', 'matieres', 'matiere', $id, ['actif' => (int)($matiere->actif ?? 1)], ['actif' => $actif]);
+            Session::flash('success', $actif ? 'Matière réactivée.' : 'Matière désactivée : ses données sont conservées, elle n\'est plus proposée pour de nouvelles affectations.');
+        }
+        $this->redirect(BASE_URL . '/matieres/' . $id);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -242,6 +306,7 @@ class MatiereController extends Controller
     {
         return [
             'nom'            => trim($this->request->post('nom', '')),
+            'nom_affichage'  => trim((string)$this->request->post('nom_affichage', '')) ?: null,
             'coefficient'    => $this->request->post('coefficient', '2'),
             'volume_horaire' => (int)$this->request->post('volume_horaire', 2),
             'responsable_id' => $this->request->post('responsable_id', '') ?: null,
@@ -253,7 +318,7 @@ class MatiereController extends Controller
 
     private function toDbData(array $data): array
     {
-        return [
+        $db = [
             'nom'            => $data['nom'],
             'coefficient'    => (float)str_replace(',', '.', $data['coefficient']),
             'volume_horaire' => $data['volume_horaire'],
@@ -261,6 +326,11 @@ class MatiereController extends Controller
             'categorie'      => $data['categorie'],
             'description'    => $data['description'],
         ];
+        // Nom d'affichage propre à l'établissement (migration T076) : écrit seulement si la colonne existe
+        if (\App\Services\ProgrammeSql::colonneMatiere('nom_affichage')) {
+            $db['nom_affichage'] = $data['nom_affichage'] ?? null;
+        }
+        return $db;
     }
 
     private function validateMatiere(array $data, bool $conduite = false): array
@@ -271,6 +341,10 @@ class MatiereController extends Controller
             $errors['nom'][] = 'Le nom de la matière est obligatoire.';
         } elseif (strlen($data['nom']) > 100) {
             $errors['nom'][] = 'Le nom ne doit pas dépasser 100 caractères.';
+        }
+
+        if (!empty($data['nom_affichage']) && mb_strlen($data['nom_affichage']) > 100) {
+            $errors['nom_affichage'][] = 'Le nom d\'affichage ne doit pas dépasser 100 caractères.';
         }
 
         $coef = (float)str_replace(',', '.', $data['coefficient']);

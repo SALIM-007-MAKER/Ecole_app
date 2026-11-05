@@ -55,12 +55,57 @@ class MatiereModel extends Model
     public function findForSelect(bool $sansConduite = false): array
     {
         return $this->query(
-            "SELECT id, CONCAT(nom, ' (coef. ', coefficient, ')') AS label
+            "SELECT id, CONCAT(" . \App\Services\ProgrammeSql::nom('matieres') . ", ' (coef. ', coefficient, ')') AS label
              FROM `matieres`
-             WHERE etablissement_id = ?" . ($sansConduite ? " AND est_conduite IS NULL" : "") . "
+             WHERE etablissement_id = ?" . ($sansConduite ? " AND est_conduite IS NULL" : "") . $this->filtreActive() . "
              ORDER BY nom",
             [$this->tenantId()]
         );
+    }
+
+    /** Filtre SQL « matière active » : vide tant que la migration T076 n'est pas appliquée. */
+    private function filtreActive(): string
+    {
+        return \App\Services\ProgrammeSql::colonneMatiere('actif') ? ' AND actif = 1' : '';
+    }
+
+    /** La matière est-elle active ? (toujours vrai tant que la migration T076 n'est pas appliquée) */
+    public function estActive(int $id): bool
+    {
+        if (!\App\Services\ProgrammeSql::colonneMatiere('actif')) {
+            return true;
+        }
+        $row = $this->queryOne("SELECT actif FROM `matieres` WHERE id = ? AND etablissement_id = ?", [$id, $this->tenantId()]);
+        return $row !== false && $row !== null && (int)$row->actif === 1;
+    }
+
+    /**
+     * Raisons pour lesquelles la matière ne peut PAS être supprimée physiquement (elle est déjà utilisée), sous forme de libellés ;
+     * liste vide = jamais utilisée. Les tables absentes sont ignorées.
+     *
+     * @return list<string>
+     */
+    public function usages(int $id): array
+    {
+        $sources = [
+            'enseignement(s)'          => "SELECT COUNT(*) AS n FROM `enseignements` WHERE matiere_id = ?",
+            'évaluation(s)'            => "SELECT COUNT(*) AS n FROM `evaluations` WHERE matiere_id = ?",
+            'contrôle(s)'              => "SELECT COUNT(*) AS n FROM `controles` WHERE matiere_id = ?",
+            'moyenne(s) enregistrée(s)' => "SELECT COUNT(*) AS n FROM `moyennes_matieres` WHERE matiere_id = ?",
+            'programme(s) de classe'   => "SELECT COUNT(*) AS n FROM `classe_matieres` WHERE matiere_id = ?",
+        ];
+        $raisons = [];
+        foreach ($sources as $libelle => $sql) {
+            try {
+                $row = $this->queryOne($sql, [$id]);
+            } catch (\Throwable) {
+                continue;   // table absente de cette installation
+            }
+            if ($row && (int)$row->n > 0) {
+                $raisons[] = (int)$row->n . ' ' . $libelle;
+            }
+        }
+        return $raisons;
     }
 
     /** La matière est-elle la matière de Conduite (marqueur est_conduite) ? */

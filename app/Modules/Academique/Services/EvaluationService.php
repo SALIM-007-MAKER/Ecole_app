@@ -76,6 +76,10 @@ class EvaluationService
         if ($estConduite === null) {
             throw new \RuntimeException("Matière introuvable.");
         }
+        // Une matière désactivée n'accueille plus de NOUVELLE évaluation (les évaluations existantes restent intactes)
+        if ($this->repo->matiereEstActive($dto->matiereId) === false) {
+            throw new \RuntimeException("Cette matière est désactivée : réactivez-la avant d'y créer une évaluation.");
+        }
         if ($estConduite) {
             $dto = $this->conduiteImposee($dto);
             $this->refuserSecondeConduite($dto->classeId, $dto->periodeScolaireId, null);

@@ -24,7 +24,7 @@ class NoteRepository
                        ev.statut AS eval_statut, ev.notes_saisie_ouverte,
                        ev.classe_id, ev.matiere_id, ev.periode_scolaire_id,
                        te.nom AS type_nom, te.couleur AS type_couleur, te.icone AS type_icone,
-                       m.nom AS matiere_nom, m.est_conduite AS matiere_est_conduite,
+                       " . \App\Services\ProgrammeSql::nom('m') . " AS matiere_nom, m.est_conduite AS matiere_est_conduite,
                        c.nom AS classe_nom
                 FROM notes_v2 n
                 JOIN eleves e     ON e.id = n.eleve_id
@@ -99,7 +99,7 @@ class NoteRepository
                           e.nom AS eleve_nom, e.prenom AS eleve_prenom, e.matricule,
                           ev.libelle AS eval_libelle, ev.note_max, ev.coefficient,
                           ev.date_evaluation, ev.matiere_id, ev.classe_id,
-                          m.nom  AS matiere_nom, m.est_conduite AS matiere_est_conduite,
+                          " . \App\Services\ProgrammeSql::nom('m') . " AS matiere_nom, m.est_conduite AS matiere_est_conduite,
                           c.nom  AS classe_nom,
                           te.nom AS type_nom, te.couleur AS type_couleur
                    FROM notes_v2 n

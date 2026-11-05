@@ -88,6 +88,7 @@ class ClasseController extends Controller
             'serieDispo'     => SeriesLyceeService::disponible(),
             'seriesParNiveau' => SeriesLyceeService::disponible() ? SeriesLyceeService::pour()->seriesParNiveau() : [],
             'serieActuelle'  => null,
+            'sourcesReprise' => (\App\Services\ProgrammeClasseService::disponible() && $this->can('classes.edit')) ? \App\Services\ProgrammeClasseService::pour()->sourcesReprise() : [],
             'annee'   => \App\Services\AnneeScolaireActive::pour(),   // année active des Paramètres
             'errors'  => Session::getFlash('errors', []),
             'old'     => Session::getFlash('old', []),
@@ -112,8 +113,44 @@ class ClasseController extends Controller
         if (array_key_exists('serie', $data)) {
             $data['serie'] = SeriesLyceeService::normaliser($data['serie']);   // valide : contrôlée par validateClasse
         }
+
+        // Reprise (facultative) du programme d'une classe existante : TOUT est vérifié AVANT de créer la classe (niveau, série, confirmation,
+        // droit de modifier un programme) ; en cas de refus, rien n'est créé.
+        $sourceId = (int)$this->request->post('reprendre_depuis', 0);
+        $svcProg  = null;
+        if ($sourceId > 0) {
+            try {
+                if (!\App\Services\ProgrammeClasseService::disponible()) {
+                    throw new \App\Services\ProgrammeException('Le programme par classe n\'est pas activé sur cette installation.');
+                }
+                if (!$this->can('classes.edit')) {
+                    throw new \App\Services\ProgrammeException('Reprendre un programme exige le droit de modifier les classes.');
+                }
+                if ($this->request->post('confirmer_reprise') !== '1') {
+                    throw new \App\Services\ProgrammeException('Confirmez explicitement la reprise du programme pour continuer.');
+                }
+                $svcProg = \App\Services\ProgrammeClasseService::pour((int)($this->currentUser()['id'] ?? 0));
+                $svcProg->verifierSourceReprise((string)$data['niveau'], ($data['serie'] ?? null) ?: null, $sourceId);
+            } catch (\App\Services\ProgrammeException $e) {
+                Session::flash('errors', ['reprendre_depuis' => [$e->getMessage()]]);
+                Session::flash('old', $data);
+                $this->redirect(BASE_URL . '/classes/create');
+                return;
+            }
+        }
+
         $id = $this->classeModel->insert($data);
-        Session::flash('success', 'Classe créée avec succès.');
+        if ($svcProg !== null) {
+            try {
+                $n = $svcProg->reprendreDepuis($sourceId, (int)$id);
+                Session::flash('success', "Classe créée avec succès. Programme repris : {$n} matière(s).");
+            } catch (\App\Services\ProgrammeException $e) {
+                Session::flash('success', 'Classe créée avec succès.');
+                Session::flash('error', 'Le programme n\'a pas pu être repris : ' . $e->getMessage());
+            }
+        } else {
+            Session::flash('success', 'Classe créée avec succès.');
+        }
         $this->redirect(BASE_URL . '/classes/' . $id);
     }
 
@@ -143,7 +180,19 @@ class ClasseController extends Controller
         $professeurs = $this->profModel->findForSelect();
         $annee      = date('Y') . '-' . (date('Y') + 1);
 
+        // Programme pédagogique de la classe (onglet « Programme ») : inerte tant que la table classe_matieres n'existe pas (T075).
+        $programme = ['dispo' => \App\Services\ProgrammeClasseService::disponible(), 'lignes' => [], 'ajoutables' => [], 'verrou' => null, 'paralleles' => [], 'notes' => false];
+        if ($programme['dispo']) {
+            $svcProg = \App\Services\ProgrammeClasseService::pour();
+            $programme['lignes']     = $svcProg->programme((int)$id);
+            $programme['ajoutables'] = $svcProg->ajoutables((int)$id);
+            $programme['verrou']     = $svcProg->verrou((int)$id);
+            $programme['paralleles'] = $svcProg->paralleles((int)$id);
+            $programme['notes']      = $svcProg->notesExistent((int)$id);
+        }
+
         $this->render('classes/show', [
+            'programme'    => $programme,
             'title'        => $classe->niveau . ' ' . $classe->nom,
             'classe'       => $classe,
             'eleves'       => $eleves,
@@ -309,6 +358,8 @@ class ClasseController extends Controller
         if ($profId && $matId && $annee) {
             if ($this->matiereModel->estConduite($matId)) {
                 Session::flash('error', "La Conduite n'est pas une matière d'enseignement : aucun enseignant ne peut y être affecté.");
+            } elseif (!$this->matiereModel->estActive($matId)) {
+                Session::flash('error', 'Cette matière est désactivée : réactivez-la avant de l\'affecter à un enseignant.');
             } elseif ($this->ensModel->exists($profId, $matId, $classeId, $annee)) {
                 Session::flash('error', 'Cet enseignement est déjà affecté à cette classe pour cette année.');
             } else {

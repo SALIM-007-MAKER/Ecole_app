@@ -109,7 +109,13 @@ $matieres    = $matieres    ?? [];
                         <span class="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0">
                             <i data-lucide="book" class="w-3.5 h-3.5 text-emerald-500"></i>
                         </span>
-                        <?= htmlspecialchars($m->nom, ENT_QUOTES) ?>
+                        <?= htmlspecialchars(!empty($m->nom_affichage) ? $m->nom_affichage : $m->nom, ENT_QUOTES) ?>
+                        <?php if (!empty($m->nom_affichage) && $m->nom_affichage !== $m->nom): ?>
+                        <span class="text-xs font-normal text-slate-400">(réf. : <?= htmlspecialchars($m->nom, ENT_QUOTES) ?>)</span>
+                        <?php endif; ?>
+                        <?php if (isset($m->actif) && (int)$m->actif !== 1): ?>
+                        <span class="text-xs font-semibold text-amber-700 bg-amber-100 rounded px-1.5 py-0.5">désactivée</span>
+                        <?php endif; ?>
                     </a>
                     <?php if (!empty($m->description)): ?>
                     <p class="text-xs text-slate-400 mt-0.5 ml-9">

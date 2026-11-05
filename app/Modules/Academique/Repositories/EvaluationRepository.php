@@ -42,16 +42,16 @@ class EvaluationRepository
                     te.couleur      AS type_couleur,
                     te.icone        AS type_icone,
                     te.code         AS type_code,
-                    m.nom           AS matiere_nom,
+                    " . \App\Services\ProgrammeSql::nom('m') . " AS matiere_nom,
                     m.est_conduite  AS matiere_est_conduite,
-                    m.coefficient   AS matiere_coef,
+                    " . \App\Services\ProgrammeSql::coefficient('m') . " AS matiere_coef,
                     cl.nom          AS classe_nom,
                     cl.niveau       AS classe_niveau,
                     CONCAT(pr.prenom, ' ', pr.nom) AS enseignant_nom
              FROM `evaluations` ev
              JOIN `periodes_scolaires` ps ON ps.id = ev.periode_scolaire_id
              JOIN `types_evaluations` te  ON te.id = ev.type_evaluation_id
-             JOIN `matieres` m            ON m.id  = ev.matiere_id
+             JOIN `matieres` m            ON m.id  = ev.matiere_id" . \App\Services\ProgrammeSql::jointure('ev.classe_id', 'm') . "
              JOIN `classes` cl            ON cl.id = ev.classe_id
              LEFT JOIN `professeurs` pr   ON pr.id = ev.enseignant_id
              {$where}
@@ -82,9 +82,9 @@ class EvaluationRepository
                     te.couleur      AS type_couleur,
                     te.icone        AS type_icone,
                     te.est_eliminatoire AS type_eliminatoire,
-                    m.nom           AS matiere_nom,
+                    " . \App\Services\ProgrammeSql::nom('m') . " AS matiere_nom,
                     m.est_conduite  AS matiere_est_conduite,
-                    m.coefficient   AS matiere_coef,
+                    " . \App\Services\ProgrammeSql::coefficient('m') . " AS matiere_coef,
                     cl.nom          AS classe_nom,
                     cl.niveau       AS classe_niveau,
                     CONCAT(pr.prenom, ' ', pr.nom) AS enseignant_nom,
@@ -92,7 +92,7 @@ class EvaluationRepository
              FROM `evaluations` ev
              JOIN `periodes_scolaires` ps ON ps.id = ev.periode_scolaire_id
              JOIN `types_evaluations` te  ON te.id = ev.type_evaluation_id
-             JOIN `matieres` m            ON m.id  = ev.matiere_id
+             JOIN `matieres` m            ON m.id  = ev.matiere_id" . \App\Services\ProgrammeSql::jointure('ev.classe_id', 'm') . "
              JOIN `classes` cl            ON cl.id = ev.classe_id
              LEFT JOIN `professeurs` pr   ON pr.id = ev.enseignant_id
              WHERE ev.id = ?" . (($tid = TenantScope::id()) === null ? '' : ' AND cl.etablissement_id = ?')
@@ -196,6 +196,17 @@ class EvaluationRepository
     }
 
     /** true / false selon le marqueur `est_conduite` de la matière ; null si la matière n'existe pas. */
+    /** La matière est-elle active ? (toujours vrai tant que la migration T076 n'est pas appliquée ; null si introuvable) */
+    public function matiereEstActive(int $matiereId): ?bool
+    {
+        [$ts, $tp] = TenantScope::colonne('matieres', 'etablissement_id');
+        $actif = \App\Services\ProgrammeSql::colonneMatiere('actif') ? 'actif' : '1';
+        $stmt = $this->pdo->prepare("SELECT {$actif} FROM `matieres` WHERE id = ?" . $ts);
+        $stmt->execute([$matiereId, ...$tp]);
+        $v = $stmt->fetch(PDO::FETCH_NUM);
+        return $v === false ? null : ((int)$v[0] === 1);
+    }
+
     public function matiereEstConduite(int $matiereId): ?bool
     {
         [$ts, $tp] = TenantScope::colonne('matieres', 'etablissement_id');

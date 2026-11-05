@@ -43,7 +43,7 @@ class EvaluationModel extends Model
         return $this->query(
             "SELECT ev.*,
                     te.nom AS type_nom, te.couleur AS type_couleur, te.icone AS type_icone,
-                    m.nom AS matiere_nom
+                    " . \App\Services\ProgrammeSql::nom('m') . " AS matiere_nom
              FROM `evaluations` ev
              JOIN `types_evaluations` te ON te.id = ev.type_evaluation_id
              JOIN `matieres` m           ON m.id  = ev.matiere_id

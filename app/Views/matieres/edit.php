@@ -72,6 +72,17 @@ function editM(array $old, string $key, $obj): string {
                         <p class="form-error"><?= htmlspecialchars($errors['nom'][0], ENT_QUOTES) ?></p>
                         <?php endif; ?>
                     </div>
+                    <?php if (\App\Services\ProgrammeSql::colonneMatiere('nom_affichage')): ?>
+                    <div class="sm:col-span-3">
+                        <label class="form-label" for="nom_affichage">Nom d'affichage <span class="text-xs font-normal text-slate-400">(facultatif)</span></label>
+                        <input type="text" id="nom_affichage" name="nom_affichage" class="form-input"
+                               value="<?= editM($old, 'nom_affichage', $matiere) ?>" maxlength="100"
+                               placeholder="Libellé montré aux utilisateurs et sur les bulletins (le nom ci-dessus reste la référence)">
+                        <?php if (isset($errors['nom_affichage'])): ?>
+                        <p class="form-error"><?= htmlspecialchars($errors['nom_affichage'][0], ENT_QUOTES) ?></p>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
 
                     <div>
                         <label class="form-label" for="coefficient">

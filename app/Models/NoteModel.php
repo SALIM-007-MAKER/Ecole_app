@@ -69,7 +69,7 @@ class NoteModel extends Model
     {
         return $this->query(
             'SELECT e.id AS eleve_id, e.nom, e.prenom,
-                    m.id AS matiere_id, m.nom AS matiere_nom, m.coefficient,
+                    m.id AS matiere_id, ' . \App\Services\ProgrammeSql::nom('m') . ' AS matiere_nom, m.coefficient,
                     mm.moyenne,
                     mg.moyenne_generale, mg.rang, mg.mention
              FROM eleves e

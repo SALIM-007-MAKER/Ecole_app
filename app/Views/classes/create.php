@@ -111,6 +111,28 @@ $annee   = $annee ?? (date('Y') . '-' . (date('Y') + 1));
 
                         <?php include __DIR__ . '/_serie.php'; ?>
 
+                        <?php if (!empty($sourcesReprise)): ?>
+                        <div class="sm:col-span-3 rounded-xl border border-violet-200 bg-violet-50/50 p-4">
+                            <label class="form-label" for="reprendre_depuis">Reprendre le programme d'une classe existante <span class="text-slate-400 font-normal">(optionnel)</span></label>
+                            <select id="reprendre_depuis" name="reprendre_depuis" class="form-input <?= isset($errors['reprendre_depuis']) ? 'border-red-400' : '' ?>">
+                                <option value="">— Ne pas reprendre de programme —</option>
+                                <?php foreach ($sourcesReprise as $src): ?>
+                                <option value="<?= (int)$src['id'] ?>" data-niveau="<?= htmlspecialchars((string)$src['niveau'], ENT_QUOTES) ?>" data-serie="<?= htmlspecialchars((string)($src['serie'] ?? ''), ENT_QUOTES) ?>">
+                                    <?= htmlspecialchars($src['niveau'] . ($src['serie'] ? ' série ' . $src['serie'] : '') . ' · ' . $src['nom'] . ' (' . $src['annee_scolaire'] . ', ' . (int)$src['nb_lignes'] . ' matière(s))', ENT_QUOTES) ?>
+                                </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <?php if (isset($errors['reprendre_depuis'])): ?>
+                            <p class="form-error"><?= htmlspecialchars($errors['reprendre_depuis'][0], ENT_QUOTES) ?></p>
+                            <?php endif; ?>
+                            <p class="text-xs text-slate-500 mt-1">Seules les classes du même niveau et de la même série sont proposées. Coefficients, heures et caractère obligatoire sont copiés ; les matières désactivées sont ignorées.</p>
+                            <label class="mt-2 flex items-start gap-2 text-sm text-amber-800">
+                                <input type="checkbox" name="confirmer_reprise" value="1" class="accent-violet-600 mt-1">
+                                <span>Je confirme la reprise de ce programme dans la nouvelle classe.</span>
+                            </label>
+                        </div>
+                        <?php endif; ?>
+
                         <div class="sm:col-span-3">
                             <label class="form-label" for="description">
                                 Description <span class="text-slate-400 font-normal">(optionnel)</span>
@@ -173,4 +195,23 @@ function updatePreview() {
     document.getElementById('prevMax').textContent    = document.getElementById('max_eleves').value || '40';
 }
 updatePreview();
+
+// Reprise de programme : ne propose que les classes du niveau et de la série choisis (le serveur revérifie de toute façon)
+(function () {
+    var src = document.getElementById('reprendre_depuis');
+    if (!src) { return; }
+    function filtrer() {
+        var niveau = document.getElementById('niveau').value;
+        var serieEl = document.getElementById('serie');
+        var serie = serieEl && !serieEl.disabled ? serieEl.value : '';
+        Array.prototype.forEach.call(src.options, function (o) {
+            if (!o.value) { return; }
+            var ok = o.getAttribute('data-niveau') === niveau && (o.getAttribute('data-serie') || '') === serie;
+            o.hidden = !ok; o.disabled = !ok;
+            if (!ok && o.selected) { src.value = ''; }
+        });
+    }
+    ['niveau', 'serie'].forEach(function (id) { var el = document.getElementById(id); if (el) { el.addEventListener('change', filtrer); } });
+    filtrer();
+})();
 </script>

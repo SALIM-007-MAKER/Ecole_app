@@ -36,8 +36,8 @@ class RankingRepository
                 e.classe_id,
                 NULL           AS classe_nom,
                 m.id           AS matiere_id,
-                m.nom          AS matiere_nom,
-                m.coefficient  AS coeff_matiere,
+                " . \App\Services\ProgrammeSql::nom('m') . " AS matiere_nom,
+                " . \App\Services\ProgrammeSql::coefficient('m') . " AS coeff_matiere,
                 m.est_conduite AS matiere_est_conduite,
                 ev.id          AS evaluation_id,
                 ev.note_max,
@@ -52,7 +52,7 @@ class RankingRepository
                 AND ev.periode_scolaire_id = ?
                 AND ev.statut IN ('publiee', 'verrouillee')
             JOIN matieres m
-                ON  m.id = ev.matiere_id
+                ON  m.id = ev.matiere_id" . \App\Services\ProgrammeSql::jointure('ev.classe_id', 'm') . "
             LEFT JOIN notes_v2 n
                 ON  n.eleve_id      = e.id
                 AND n.evaluation_id = ev.id
@@ -85,8 +85,8 @@ class RankingRepository
                 e.classe_id,
                 c.nom          AS classe_nom,
                 m.id           AS matiere_id,
-                m.nom          AS matiere_nom,
-                m.coefficient  AS coeff_matiere,
+                " . \App\Services\ProgrammeSql::nom('m') . " AS matiere_nom,
+                " . \App\Services\ProgrammeSql::coefficient('m') . " AS coeff_matiere,
                 m.est_conduite AS matiere_est_conduite,
                 ev.id          AS evaluation_id,
                 ev.note_max,
@@ -104,7 +104,7 @@ class RankingRepository
                 AND ev.periode_scolaire_id = :periode_id
                 AND ev.statut IN ('publiee', 'verrouillee')
             JOIN matieres m
-                ON  m.id = ev.matiere_id
+                ON  m.id = ev.matiere_id" . \App\Services\ProgrammeSql::jointure('ev.classe_id', 'm') . "
             LEFT JOIN notes_v2 n
                 ON  n.eleve_id      = e.id
                 AND n.evaluation_id = ev.id
@@ -139,8 +139,8 @@ class RankingRepository
                 e.classe_id,
                 c.nom          AS classe_nom,
                 m.id           AS matiere_id,
-                m.nom          AS matiere_nom,
-                m.coefficient  AS coeff_matiere,
+                " . \App\Services\ProgrammeSql::nom('m') . " AS matiere_nom,
+                " . \App\Services\ProgrammeSql::coefficient('m') . " AS coeff_matiere,
                 m.est_conduite AS matiere_est_conduite,
                 ev.id          AS evaluation_id,
                 ev.note_max,
@@ -156,7 +156,7 @@ class RankingRepository
                 AND ev.classe_id           = e.classe_id
                 AND ev.periode_scolaire_id = :periode_id
                 AND ev.statut IN ('publiee', 'verrouillee')
-            JOIN matieres m ON m.id = ev.matiere_id
+            JOIN matieres m ON m.id = ev.matiere_id" . \App\Services\ProgrammeSql::jointure('ev.classe_id', 'm') . "
             LEFT JOIN notes_v2 n
                 ON  n.eleve_id      = e.id
                 AND n.evaluation_id = ev.id
@@ -194,8 +194,8 @@ class RankingRepository
                 e.classe_id,
                 NULL           AS classe_nom,
                 m.id           AS matiere_id,
-                m.nom          AS matiere_nom,
-                m.coefficient  AS coeff_matiere,
+                " . \App\Services\ProgrammeSql::nom('m') . " AS matiere_nom,
+                " . \App\Services\ProgrammeSql::coefficient('m') . " AS coeff_matiere,
                 m.est_conduite AS matiere_est_conduite,
                 ev.id          AS evaluation_id,
                 ev.periode_scolaire_id AS periode_id,
@@ -210,7 +210,7 @@ class RankingRepository
                 ON  ev.classe_id           = e.classe_id
                 AND ev.periode_scolaire_id IN ($placeholders)
                 AND ev.statut IN ('publiee', 'verrouillee')
-            JOIN matieres m ON m.id = ev.matiere_id
+            JOIN matieres m ON m.id = ev.matiere_id" . \App\Services\ProgrammeSql::jointure('ev.classe_id', 'm') . "
             LEFT JOIN notes_v2 n
                 ON  n.eleve_id      = e.id
                 AND n.evaluation_id = ev.id

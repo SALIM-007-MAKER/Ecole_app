@@ -18,6 +18,15 @@ $enseignements = $enseignements ?? [];
             <i data-lucide="pencil" class="w-4 h-4"></i>Modifier
         </a>
         <?php endif; ?>
+        <?php if (showmp($perms, 'matieres.edit') && isset($matiere->actif) && (int)($matiere->est_conduite ?? 0) !== 1): $actifM = (int)$matiere->actif === 1; ?>
+        <form method="POST" action="<?= BASE_URL ?>/matieres/<?= $matiere->id ?>/<?= $actifM ? 'desactiver' : 'reactiver' ?>" class="inline"
+              <?php if ($actifM): ?>onsubmit="return confirm('Désactiver cette matière ? Ses affectations, notes et bulletins sont conservés ; elle ne sera plus proposée pour de nouvelles affectations.')"<?php endif; ?>>
+            <input type="hidden" name="_csrf_token" value="<?= \Core\Session::getCsrfToken() ?>">
+            <button class="btn btn-outline">
+                <i data-lucide="<?= $actifM ? 'eye-off' : 'eye' ?>" class="w-4 h-4"></i><?= $actifM ? 'Désactiver' : 'Réactiver' ?>
+            </button>
+        </form>
+        <?php endif; ?>
         <a href="<?= BASE_URL ?>/matieres" class="btn btn-secondary">
             <i data-lucide="arrow-left" class="w-4 h-4"></i>Liste
         </a>

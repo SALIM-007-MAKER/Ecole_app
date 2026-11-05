@@ -88,7 +88,7 @@ $annee    = date('Y') . '-' . (date('Y') + 1);
 <div class="flex items-center gap-1 mb-5 border-b border-slate-100">
     <button id="tab-btn-eleves"
             class="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors
-                   <?= $activeTab !== 'enseignants' ? 'border-violet-600 text-violet-700' : 'border-transparent text-slate-500 hover:text-slate-700' ?>"
+                   <?= !in_array($activeTab, ['enseignants', 'programme'], true) ? 'border-violet-600 text-violet-700' : 'border-transparent text-slate-500 hover:text-slate-700' ?>"
             onclick="switchTab('eleves')">
         <i data-lucide="users" class="w-4 h-4 inline-block mr-1.5"></i>
         Élèves <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold leading-5 whitespace-nowrap bg-violet-100 text-violet-700 ml-1"><?= count($eleves) ?></span>
@@ -100,10 +100,19 @@ $annee    = date('Y') . '-' . (date('Y') + 1);
         <i data-lucide="book-open" class="w-4 h-4 inline-block mr-1.5"></i>
         Enseignements <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold leading-5 whitespace-nowrap bg-sky-100 text-sky-700 ml-1"><?= count($enseignements) ?></span>
     </button>
+    <?php if (!empty($programme['dispo'])): ?>
+    <button id="tab-btn-programme"
+            class="px-4 py-2.5 text-sm font-medium border-b-2 transition-colors
+                   <?= $activeTab === 'programme' ? 'border-violet-600 text-violet-700' : 'border-transparent text-slate-500 hover:text-slate-700' ?>"
+            onclick="switchTab('programme')">
+        <i data-lucide="list-checks" class="w-4 h-4 inline-block mr-1.5"></i>
+        Programme <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold leading-5 whitespace-nowrap bg-slate-100 text-slate-600 ml-1"><?= count($programme['lignes'] ?? []) ?></span>
+    </button>
+    <?php endif; ?>
 </div>
 
 <!-- Tab: Élèves -->
-<div id="tab-eleves" class="<?= $activeTab === 'enseignants' ? 'hidden' : '' ?>">
+<div id="tab-eleves" class="<?= in_array($activeTab, ['enseignants', 'programme'], true) ? 'hidden' : '' ?>">
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
         <div class="lg:col-span-2 rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -367,11 +376,20 @@ $annee    = date('Y') . '-' . (date('Y') + 1);
 </div>
 <?php endif; ?>
 
+<?php if (!empty($programme['dispo'])): ?>
+<!-- Tab: Programme -->
+<div id="tab-programme" class="<?= $activeTab !== 'programme' ? 'hidden' : '' ?>">
+    <?php include __DIR__ . '/_programme.php'; ?>
+</div>
+<?php endif; ?>
+
 <script>
 function switchTab(tab) {
-    ['eleves','enseignants'].forEach(t => {
-        document.getElementById('tab-' + t).classList.toggle('hidden', t !== tab);
+    ['eleves','enseignants','programme'].forEach(t => {
+        const panneau = document.getElementById('tab-' + t);
         const btn = document.getElementById('tab-btn-' + t);
+        if (!panneau || !btn) { return; }   // onglet absent (ex. programme indisponible)
+        panneau.classList.toggle('hidden', t !== tab);
         btn.classList.toggle('border-violet-600', t === tab);
         btn.classList.toggle('text-violet-700',   t === tab);
         btn.classList.toggle('border-transparent', t !== tab);

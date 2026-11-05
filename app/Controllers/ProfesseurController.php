@@ -250,6 +250,8 @@ class ProfesseurController extends Controller
         if ($profId && $matId && $classeId && $annee) {
             if ($this->matiereModel->estConduite($matId)) {
                 Session::flash('error', "La Conduite n'est pas une matière d'enseignement : aucun enseignant ne peut y être affecté.");
+            } elseif (!$this->matiereModel->estActive($matId)) {
+                Session::flash('error', 'Cette matière est désactivée : réactivez-la avant de l\'affecter à un enseignant.');
             } elseif ($this->ensModel->exists($profId, $matId, $classeId, $annee)) {
                 Session::flash('error', 'Cet enseignement existe déjà pour cette classe et cette année.');
             } else {

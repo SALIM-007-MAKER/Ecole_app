@@ -205,6 +205,12 @@ $router->post('/classes/{id}/affecter-eleve',       'ClasseController@affecterEl
 $router->post('/classes/{id}/retirer-eleve',        'ClasseController@retirerEleve');
 $router->post('/classes/{id}/affecter-enseignant',  'ClasseController@affecterEnseignant');
 $router->post('/classes/{id}/retirer-enseignant',   'ClasseController@retirerEnseignant');
+// Programme pédagogique d'une classe (coefficient et volume horaire propres à la classe)
+$router->post('/classes/{id}/programme/ajouter',     'ClasseProgrammeController@ajouter');
+$router->post('/classes/{id}/programme/enregistrer', 'ClasseProgrammeController@enregistrer');
+$router->post('/classes/{id}/programme/retirer',     'ClasseProgrammeController@retirer');
+$router->post('/classes/{id}/programme/initialiser', 'ClasseProgrammeController@initialiser');
+$router->post('/classes/{id}/programme/reproduire',  'ClasseProgrammeController@reproduire');
 
 // ─── Réinscription (passage de classe) ────────────────────────────────────────
 $router->get('/reinscription',          'ReinscriptionController@index');
@@ -221,6 +227,8 @@ $router->get('/matieres/{id}',         'MatiereController@show');
 $router->get('/matieres/{id}/edit',    'MatiereController@edit');
 $router->post('/matieres/{id}',        'MatiereController@update');
 $router->post('/matieres/{id}/delete', 'MatiereController@delete');
+$router->post('/matieres/{id}/desactiver', 'MatiereController@desactiver');
+$router->post('/matieres/{id}/reactiver',  'MatiereController@reactiver');
 
 // ─── Notes & Évaluations V1 — SUPPRIMÉES (nettoyage final post-migration) ─────
 // App\Controllers\NoteController (V1) et ses vues (app/Views/notes/*) ont été

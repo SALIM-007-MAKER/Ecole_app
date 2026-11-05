@@ -15,12 +15,12 @@ class EnseignementModel extends Model
             "SELECT e.*,
                     CONCAT(p.prenom, ' ', p.nom) AS prof_nom,
                     p.specialite                 AS prof_specialite,
-                    m.nom                        AS matiere_nom,
-                    m.coefficient,
-                    m.volume_horaire
+                    " . \App\Services\ProgrammeSql::nom('m') . " AS matiere_nom,
+                    " . \App\Services\ProgrammeSql::coefficientDeclare('m') . " AS coefficient,
+                    " . \App\Services\ProgrammeSql::volume('m') . " AS volume_horaire
              FROM `enseignements` e
              INNER JOIN `professeurs` p ON p.id = e.professeur_id
-             INNER JOIN `matieres`    m ON m.id = e.matiere_id
+             INNER JOIN `matieres`    m ON m.id = e.matiere_id" . \App\Services\ProgrammeSql::jointure('e.classe_id', 'm') . "
              WHERE e.classe_id = ? AND e.etablissement_id = ?
              ORDER BY m.nom, p.nom",
             [$classeId, $this->tenantId()]
@@ -61,15 +61,15 @@ class EnseignementModel extends Model
 
         return $this->query(
             "SELECT e.*,
-                    m.nom            AS matiere_nom,
-                    m.coefficient,
-                    m.volume_horaire,
+                    " . \App\Services\ProgrammeSql::nom('m') . " AS matiere_nom,
+                    " . \App\Services\ProgrammeSql::coefficientDeclare('m') . " AS coefficient,
+                    " . \App\Services\ProgrammeSql::volume('m') . " AS volume_horaire,
                     c.nom            AS classe_nom,
                     c.niveau         AS classe_niveau,
                     COUNT(DISTINCT el.id) AS nb_eleves
              FROM `enseignements` e
              INNER JOIN `matieres` m  ON m.id  = e.matiere_id
-             INNER JOIN `classes`  c  ON c.id  = e.classe_id
+             INNER JOIN `classes`  c  ON c.id  = e.classe_id" . \App\Services\ProgrammeSql::jointure('e.classe_id', 'm') . "
              LEFT JOIN  `eleves`   el ON el.classe_id = c.id
              WHERE e.professeur_id = ? $where AND e.etablissement_id = ?
              GROUP BY e.id
