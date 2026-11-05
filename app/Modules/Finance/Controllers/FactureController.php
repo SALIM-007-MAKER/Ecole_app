@@ -486,7 +486,9 @@ class FactureController extends Controller
             'title'       => 'Génération en masse',
             'classes'     => $classes,
             'fraisTypes'  => $fraisTypes,
-            'niveaux'     => array_keys(ClasseModel::NIVEAUX),
+            // Vrais niveaux (valeur de classes.niveau) des cycles activés ; les niveaux de classes existantes restent
+            // proposés même si leur cycle a été désactivé (ces élèves doivent pouvoir être facturés).
+            'niveaux'     => \App\Services\CyclesActifsService::pour()->niveaux(array_values(array_unique(array_map(fn($c) => (string)$c->niveau, $classes)))),
             'errors'      => [],
         ]);
     }
@@ -511,6 +513,38 @@ class FactureController extends Controller
             \Core\Session::flash('error', 'Année scolaire et types de frais sont requis.');
             $this->redirect('/v2/finance/factures/generer');
             return;
+        }
+
+        // Le mode choisi (« Générer pour ») fait foi : les champs des autres modes, cachés mais postés, sont ignorés.
+        // Sans `scope` (ancien client) : déduction historique (classe, sinon niveau, sinon tous les élèves).
+        $scope = trim((string)($_POST['scope'] ?? ''));
+        if (!in_array($scope, ['classe', 'niveau', 'tous'], true)) {
+            $scope = $classeId ? 'classe' : ($niveau ? 'niveau' : 'tous');
+        }
+        if ($scope === 'classe') {
+            $niveau = null;
+            if (!$classeId) {
+                \Core\Session::flash('error', 'Sélectionnez la classe à facturer.');
+                $this->redirect('/v2/finance/factures/generer');
+                return;
+            }
+        } elseif ($scope === 'niveau') {
+            $classeId = null;
+            if (!$niveau) {
+                \Core\Session::flash('error', 'Sélectionnez le niveau à facturer.');
+                $this->redirect('/v2/finance/factures/generer');
+                return;
+            }
+            // Niveau réel de la nomenclature (celui stocké dans classes.niveau), pas un nom de cycle : un nom de cycle ne
+            // correspond à aucune classe et ne générerait aucune facture.
+            if (!in_array($niveau, ClasseModel::NIVEAUX_ORDRE, true)) {
+                \Core\Session::flash('error', 'Niveau invalide : choisissez un niveau de la liste (ex. 6e, Seconde).');
+                $this->redirect('/v2/finance/factures/generer');
+                return;
+            }
+        } else {
+            $classeId = null;
+            $niveau   = null;
         }
 
         try {
