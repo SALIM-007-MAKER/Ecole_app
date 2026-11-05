@@ -47,7 +47,7 @@ php database/create-operator.php --reinitialiser --email=vous@exemple.tld     # 
 
 Le compte est réactivé, le mot de passe actuel cesse de fonctionner, le changement est obligatoire à la prochaine connexion. L'opération est
 inscrite au journal d'audit (acteur `cli`). Si aucun opérateur ne subsiste : `--lister`, puis créer un nouvel opérateur comme au §2.
-Un blocage temporaire après des échecs (5 par e-mail et IP, 15 par e-mail, 20 par IP) expire seul au bout de quelques minutes.
+Un blocage temporaire après des échecs (5 par e-mail et IP, 60 par e-mail toutes IP confondues, 20 par IP) expire seul au bout de quelques minutes.
 
 Révoquer un opérateur sans perdre son historique : `--desactiver --email=…` (ou `--activer`). Rien n'est jamais supprimé.
 

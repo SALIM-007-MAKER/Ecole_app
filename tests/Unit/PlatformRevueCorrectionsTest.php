@@ -173,6 +173,23 @@ for ($i = 0; $i < 6; $i++) {
 http($nomCopie, $C, 'POST', "$P/compte/mot-de-passe", ['current_password' => $nouveau, 'new_password' => $mdp, 'new_password_confirmation' => $mdp], ['PLATFORM_REQ_IP' => ip()]);
 $hash = (string)$pdo->query("SELECT password_hash FROM platform_operators WHERE id = $cpt")->fetchColumn();
 check(password_verify($nouveau, $hash) && !password_verify($mdp, $hash), 'mots de passe actuels erronés répétés : la page est bien verrouillée');
+section('Point 7 : un tiers ne peut pas bloquer un opérateur connu depuis d\'autres adresses IP');
+$cible = $ops->creer('cible@exemple.test', 'Cible Test', 'support', $mdp, PlatformOperatorService::ACTEUR_CLI)['id'];
+for ($k = 0; $k < 4; $k++) {
+    $ipAttaque = ip();
+    for ($i = 0; $i < 5; $i++) {
+        http($nomCopie, 'guest', 'POST', "$P/login", ['email' => 'cible@exemple.test', 'password' => 'faux'], ['PLATFORM_REQ_IP' => $ipAttaque]);
+    }
+}   // 20 échecs répartis sur 4 IP : au-dessus de l'ancien plafond par e-mail (15)
+$r = http($nomCopie, 'guest', 'POST', "$P/login", ['email' => 'cible@exemple.test', 'password' => $mdp], ['PLATFORM_REQ_IP' => ip()]);
+check($r['operator'] !== null && (int)$r['operator']['id'] === $cible, 'l\'opérateur se connecte depuis son IP malgré 20 échecs répartis sur d\'autres IP', json_encode($r));
+$ipMeme = ip();
+for ($i = 0; $i < 5; $i++) {
+    http($nomCopie, 'guest', 'POST', "$P/login", ['email' => 'cible@exemple.test', 'password' => 'faux'], ['PLATFORM_REQ_IP' => $ipMeme]);
+}
+$r = http($nomCopie, 'guest', 'POST', "$P/login", ['email' => 'cible@exemple.test', 'password' => $mdp], ['PLATFORM_REQ_IP' => $ipMeme]);
+check($r['operator'] === null, 'depuis une même IP, 5 échecs verrouillent bien le couple e-mail+IP');
+check(\App\Controllers\PlatformAuthController::LIMITE_PAR_EMAIL > 15, 'plafond par e-mail seul relevé au-dessus de l\'ancienne valeur');
 $ctrlSrc = (string)file_get_contents(ROOT_PATH . '/app/Controllers/PlatformAccountController.php') . (string)file_get_contents(ROOT_PATH . '/app/Controllers/PlatformAuthController.php');
 check(strpos($ctrlSrc, 'new LoginThrottle') === false, 'point 10 : contrôleurs de connexion et de compte passent par throttle()');
 

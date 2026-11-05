@@ -22,6 +22,9 @@ use Core\Session;
  */
 class PlatformAuthController extends PlatformController
 {
+    /** Échecs tolérés par adresse e-mail, toutes IP confondues (frein à une attaque répartie, pas verrou principal). */
+    public const LIMITE_PAR_EMAIL = 60;
+
     public function showLogin(): void
     {
         if (PlatformAuth::isLogged()) {
@@ -45,7 +48,9 @@ class PlatformAuthController extends PlatformController
         // Anti-force-brute (compte opérateur plateforme).
         $throttle = $this->throttle();
         $ip       = $this->request->ip();
-        $cles     = ['pec:' . $email . '|' . $ip => 5, 'pip:' . $ip => 20, 'pe:' . $email => 15];
+        // Le verrou principal est le couple e-mail+IP : un tiers qui connaît l'adresse d'un opérateur ne peut pas le bloquer depuis une autre IP.
+        // Le plafond par e-mail seul (toutes IP) ne sert qu'à freiner une attaque répartie ; il est volontairement haut.
+        $cles     = ['pec:' . $email . '|' . $ip => 5, 'pip:' . $ip => 20, 'pe:' . $email => self::LIMITE_PAR_EMAIL];
         $attente  = 0;
         foreach ($cles as $cle => $limite) {
             $attente = max($attente, $throttle->retryAfter($cle, $limite));
