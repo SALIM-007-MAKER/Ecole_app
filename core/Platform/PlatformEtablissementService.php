@@ -112,8 +112,17 @@ final class PlatformEtablissementService
             throw new \InvalidArgumentException('Le nom est obligatoire.');
         }
 
-        $validTypes = ['ecole_primaire', 'college', 'lycee', 'universite', 'formation_pro', 'groupe_scolaire'];
-        $type = in_array($data['type'] ?? '', $validTypes, true) ? $data['type'] : 'lycee';
+        // Nouveau mode (formulaire) : cycles cochés ou type hors cycle → type déduit, cycles_actifs alimenté.
+        // Mode historique (clé `type` seule, anciens appelants) : inchangé, aucun réglage de cycles écrit.
+        $cyclesActifs = null;
+        if (array_key_exists('cycles', $data) || array_key_exists('type_hors_cycle', $data)) {
+            $saisie = EtablissementCycles::depuisSaisie($data['cycles'] ?? [], $data['type_hors_cycle'] ?? '');
+            $type = $saisie['type'];
+            $cyclesActifs = $saisie['cycles'];
+        } else {
+            $validTypes = ['ecole_primaire', 'college', 'lycee', 'universite', 'formation_pro', 'groupe_scolaire'];
+            $type = in_array($data['type'] ?? '', $validTypes, true) ? $data['type'] : 'lycee';
+        }
 
         if (!empty($data['plan_id'])) {
             $planOk = $this->pdo->prepare('SELECT COUNT(*) FROM platform_plans WHERE id = ? AND actif = 1');
@@ -142,6 +151,15 @@ final class PlatformEtablissementService
             ]);
             $id = (int)$this->pdo->lastInsertId();
 
+            if ($cyclesActifs !== null) {
+                // Écriture directe dans la même transaction : pas de journal d'école (acteur = opérateur plateforme,
+                // consigné dans tenant.created) et pas de updated_by (clé étrangère vers users, pas vers les opérateurs).
+                $this->pdo->prepare(
+                    "INSERT INTO etab_settings (etablissement_id, section, cle, valeur, type, updated_by)
+                     VALUES (?, 'academique', 'cycles_actifs', ?, 'json', NULL)"
+                )->execute([$id, json_encode($cyclesActifs, JSON_UNESCAPED_UNICODE)]);
+            }
+
             if ($parAbonnement) {
                 ($this->abonnements())->assigner($id, (int)$data['plan_id'], $operatorUserId);
             } elseif (!empty($data['plan_id'])) {
@@ -164,7 +182,7 @@ final class PlatformEtablissementService
         Logger::security('PLATFORM_TENANT_CREATED', "etablissement_id={$id} slug={$slug} par operator_id={$operatorUserId}");
         PlatformAuditService::make($this->pdo)->recordPar($operatorUserId, 'tenant.created', [
             'etablissement_id' => $id, 'entity_type' => 'etablissement', 'entity_id' => $id,
-            'apres' => ['slug' => $slug, 'nom' => $nom, 'type' => $type, 'plan_id' => $data['plan_id'] ?? null, 'statut' => 'trial'],
+            'apres' => ['slug' => $slug, 'nom' => $nom, 'type' => $type, 'cycles' => $cyclesActifs, 'plan_id' => $data['plan_id'] ?? null, 'statut' => 'trial'],
         ]);
         return $id;
     }

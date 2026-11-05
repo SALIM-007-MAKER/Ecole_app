@@ -111,14 +111,24 @@ class PlatformEtablissementController extends PlatformController
             $this->redirect(BASE_URL . '/platform/etablissements/create');
         }
         try {
-            $id = $this->etabs->create([
+            $donnees = [
                 'slug'      => $this->request->post('slug', ''),
                 'nom'       => $this->request->post('nom', ''),
                 'nom_court' => $this->request->post('nom_court', ''),
-                'type'      => $this->request->post('type', ''),
                 'pays'      => $this->request->post('pays', 'DZ'),
                 'plan_id'   => $this->request->post('plan_id') ?: null,
-            ], $this->operatorUserId());
+            ];
+            // Formulaire actuel : cycles cochés ou type hors cycle (type déduit côté serveur, tout champ `type` ignoré).
+            // Client historique qui n'envoie que `type` : ancien comportement conservé.
+            $cycles = $this->request->post('cycles');
+            $horsCycle = $this->request->post('type_hors_cycle');
+            if ($cycles === null && $horsCycle === null) {
+                $donnees['type'] = $this->request->post('type', '');
+            } else {
+                $donnees['cycles'] = $cycles ?? [];
+                $donnees['type_hors_cycle'] = $horsCycle ?? '';
+            }
+            $id = $this->etabs->create($donnees, $this->operatorUserId());
 
             Session::flash('success', 'Établissement créé.');
             $this->redirect(BASE_URL . '/platform/etablissements/' . $id);

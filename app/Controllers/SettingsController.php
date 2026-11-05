@@ -282,7 +282,13 @@ class SettingsController extends Controller
         $cyclesPostes = (array)$this->request->post('cycles', []);
         $cyclesValides = array_values(array_intersect($cyclesPostes, array_keys(\App\Models\ClasseModel::NIVEAUX)));
 
-        if (empty($cyclesValides)) {
+        // « Au moins un cycle » concerne les établissements scolaires ; une université ou une formation
+        // professionnelle (type hors cycle) n'a pas de cycles scolaires et peut n'en cocher aucun.
+        $stmtType = \Core\Database::getInstance()->getConnection()->prepare('SELECT type FROM etablissements WHERE id = ?');
+        $stmtType->execute([$etabId]);
+        $horsCycle = \Core\Platform\EtablissementCycles::estHorsCycle((string)$stmtType->fetchColumn());
+
+        if (empty($cyclesValides) && !$horsCycle) {
             Session::flash('errors', ['cycles' => 'Sélectionnez au moins un cycle.']);
             $this->redirect(BASE_URL . '/parametres/academique');
         }
