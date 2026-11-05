@@ -47,7 +47,7 @@ variable était absente. `.env` doit toujours fixer explicitement sa valeur.*
 | Variable | Description |
 |---|---|
 | `MAIL_DRIVER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_ENCRYPTION`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM`, `MAIL_FROM_NAME`, `MAIL_FROM_EMAIL`, `MAIL_REPLY_TO`, `MAIL_TIMEOUT`, `MAIL_EHLO_HOST` | Canal email. `MAIL_DRIVER=smtp` = envoi réel (Gmail : `smtp.gmail.com`, 587, `tls`, mot de passe d'application) ; `mail` (défaut) = fonction `mail()` de PHP, inopérante sous WAMP. Une variable d'environnement réelle est prioritaire sur le `.env`. Voir `EMAIL_GMAIL.md` |
-| `SMS_DRIVER`, `SMS_GATEWAY_URL`, `SMS_API_URL`, `SMS_SENDER`, `SMS_API_KEY`, `SMS_PAYLOAD_TPL`, `SMS_COUNTRY_CODE` | Canal SMS |
+| `SMS_DRIVER`, `SMS_GATEWAY_URL`, `SMS_API_URL`, `SMS_SENDER`, `SMS_API_KEY`, `SMS_PAYLOAD_TPL`, `SMS_COUNTRY_CODE` (défaut 227, Niger), `SMS_LOCAL_LENGTH` (défaut 8, longueur d'un numéro local) | Canal SMS |
 
 ## Multi-Tenant (Phases 14.2-14.11)
 

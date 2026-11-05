@@ -88,22 +88,40 @@ class SmsService
         }
     }
 
+    /**
+     * Numéro prêt pour la passerelle, ou '' s'il est inutilisable.
+     *
+     * - « +… » : numéro international explicite, jamais modifié (seuls les séparateurs sont retirés) ;
+     * - « 00… » : préfixe international, jamais modifié et jamais préfixé une seconde fois ;
+     * - numéro déjà complet (indicatif + numéro local, sans « + ») : conservé tel quel, pas de double indicatif ;
+     * - sinon numéro local : l'indicatif du pays (config country_code) est ajouté, les zéros de tête (préfixe d'appel local) sont retirés.
+     *
+     * Un numéro est « déjà complet » quand il commence par l'indicatif ET fait exactement indicatif + local_length chiffres
+     * (local_length : longueur d'un numéro local, 8 au Niger). Les longueurs diffèrent, donc un numéro local ne peut pas être pris pour un numéro complet.
+     */
     private function normalizePhone(string $phone): string
     {
-        // Garder uniquement les chiffres et le +
-        $phone = preg_replace('/[^\d+]/', '', $phone);
-        $phone = ltrim($phone, '0');
+        $phone  = trim($phone);
+        $plus   = str_starts_with($phone, '+');
+        $digits = preg_replace('/\D/', '', $phone) ?? '';
 
-        if (strlen($phone) < 7) {
+        if ($plus) {
+            return strlen($digits) >= 7 ? '+' . $digits : '';
+        }
+        if (str_starts_with($digits, '00')) {
+            return strlen(ltrim($digits, '0')) >= 7 ? $digits : '';
+        }
+
+        $local = ltrim($digits, '0');
+        if (strlen($local) < 7) {
             return '';
         }
 
-        // Ajouter le code pays si numéro local
-        if (!str_starts_with($phone, '+') && !str_starts_with($phone, '00')) {
-            $cc    = $this->config['country_code'] ?? '221';
-            $phone = $cc . $phone;
+        $cc  = (string)($this->config['country_code'] ?? '227');   // Niger
+        $len = (int)($this->config['local_length'] ?? 8);
+        if ($cc !== '' && str_starts_with($local, $cc) && strlen($local) === strlen($cc) + $len) {
+            return $local;
         }
-
-        return $phone;
+        return $cc . $local;
     }
 }
