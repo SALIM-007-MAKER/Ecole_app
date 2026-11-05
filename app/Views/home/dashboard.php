@@ -574,9 +574,6 @@ $nbInactifs  = max(0, (int)($stats['eleves'] ?? 0) - $nbActifs);
                 <div class="font-bold text-slate-900 text-base leading-tight">
                     <?= htmlspecialchars($prof->prenom . ' ' . $prof->nom, ENT_QUOTES) ?>
                 </div>
-                <?php if (!empty($prof->grade)): ?>
-                <div class="text-xs text-slate-500 mt-0.5"><?= htmlspecialchars($prof->grade, ENT_QUOTES) ?></div>
-                <?php endif; ?>
                 <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold leading-5 whitespace-nowrap bg-amber-100 text-amber-800 mt-1.5">
                     <?= htmlspecialchars($prof->specialite ?? '', ENT_QUOTES) ?>
                 </span>

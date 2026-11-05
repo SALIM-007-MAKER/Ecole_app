@@ -9,16 +9,6 @@ class ProfesseurModel extends Model
     protected string $table = 'professeurs';
     protected bool $tenantScoped = true;
 
-    public const GRADES = [
-        'Professeur certifié (PES)',
-        "Professeur de l'enseignement moyen (PEM)",
-        "Professeur de l'enseignement primaire (PEP)",
-        'Maître formateur',
-        'Maître assistant',
-        'Professeur contractuel',
-        'Vacataire',
-    ];
-
     // ─── Requêtes de sélection ───────────────────────────────────────────────────
 
     public function findForSelect(): array
@@ -114,10 +104,6 @@ class ProfesseurModel extends Model
             array_push($params, $q, $q, $q, $q);
         }
 
-        if (!empty($filters['grade'])) {
-            $conditions[] = 'p.grade = ?';
-            $params[]     = $filters['grade'];
-        }
 
         if (isset($filters['actif']) && $filters['actif'] !== '') {
             $conditions[] = 'p.actif = ?';

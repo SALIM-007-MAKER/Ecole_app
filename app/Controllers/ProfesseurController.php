@@ -47,12 +47,10 @@ class ProfesseurController extends Controller
             'title'      => 'Gestion des enseignants',
             'pagination' => $pagination,
             'filters'    => $filters,
-            'grades'     => ProfesseurModel::GRADES,
             'stats'      => [
                 'total'      => count($all),
                 'actifs'     => count(array_filter($all, fn($p) => $p->actif)),
                 'nb_classes' => count(array_unique(array_filter(array_column($all, 'nb_classes')))),
-                'certifies'  => count(array_filter($all, fn($p) => str_contains($p->grade ?? '', 'certifié'))),
             ],
         ]);
     }
@@ -67,7 +65,6 @@ class ProfesseurController extends Controller
 
         $this->render('professeurs/create', [
             'title'  => 'Nouvel enseignant',
-            'grades' => ProfesseurModel::GRADES,
             'errors' => Session::getFlash('errors', []),
             'old'    => Session::getFlash('old', []),
         ]);
@@ -167,7 +164,6 @@ class ProfesseurController extends Controller
         $this->render('professeurs/edit', [
             'title'  => 'Modifier — ' . $prof->prenom . ' ' . $prof->nom,
             'prof'   => $prof,
-            'grades' => ProfesseurModel::GRADES,
             'errors' => Session::getFlash('errors', []),
             'old'    => Session::getFlash('old', []),
         ]);
@@ -295,7 +291,6 @@ class ProfesseurController extends Controller
     {
         return [
             'q'     => trim($this->request->get('q', '')),
-            'grade' => $this->request->get('grade', ''),
             'actif' => $this->request->get('actif', ''),
         ];
     }
@@ -306,7 +301,6 @@ class ProfesseurController extends Controller
             'nom'             => strtoupper(trim($this->request->post('nom', ''))),
             'prenom'          => ucwords(mb_strtolower(trim($this->request->post('prenom', '')))),
             'specialite'      => trim($this->request->post('specialite', '')),
-            'grade'           => trim($this->request->post('grade', '')) ?: null,
             'telephone'       => trim($this->request->post('telephone', '')) ?: null,
             'email'           => strtolower(trim($this->request->post('email', ''))) ?: null,
             'adresse'         => trim($this->request->post('adresse', '')) ?: null,
@@ -322,7 +316,6 @@ class ProfesseurController extends Controller
             'nom'             => $data['nom'],
             'prenom'          => $data['prenom'],
             'specialite'      => $data['specialite'],
-            'grade'           => $data['grade'],
             'telephone'       => $data['telephone'],
             'email'           => $data['email'],
             'adresse'         => $data['adresse'],

@@ -58,11 +58,6 @@ $anciennete = $prof->date_recrutement
                 <h3 class="text-xl font-bold text-slate-900">
                     <?= htmlspecialchars($prof->prenom . ' ' . $prof->nom, ENT_QUOTES) ?>
                 </h3>
-                <?php if (!empty($prof->grade)): ?>
-                <p class="text-sm font-semibold text-slate-500 mt-0.5">
-                    <?= htmlspecialchars($prof->grade, ENT_QUOTES) ?>
-                </p>
-                <?php endif; ?>
                 <div class="flex flex-wrap items-center gap-2 mt-2">
                     <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold leading-5 whitespace-nowrap bg-amber-100 text-amber-800">
                         <i data-lucide="graduation-cap" class="w-3 h-3 mr-1"></i>
@@ -151,7 +146,6 @@ $anciennete = $prof->date_recrutement
                         ['Nom',              $prof->nom],
                         ['Prénom',           $prof->prenom],
                         ['Spécialité',       $prof->specialite],
-                        ['Grade',            $prof->grade ?? '—'],
                         ['Date de recrutement', $prof->date_recrutement ? date('d/m/Y', strtotime($prof->date_recrutement)) : '—'],
                         ['Ancienneté',       $anciennete !== null ? $anciennete . ' an(s)' : '—'],
                     ];

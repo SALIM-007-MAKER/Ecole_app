@@ -1,7 +1,6 @@
 <?php
 $errors = $errors ?? [];
 $old    = $old    ?? [];
-$grades = $grades ?? [];
 
 function editP(array $old, string $key, $obj): string {
     $v = $old[$key] ?? ($obj->{$key} ?? '');
@@ -151,18 +150,6 @@ function editP(array $old, string $key, $obj): string {
                             <?php if (isset($errors['specialite'])): ?>
                             <p class="form-error"><?= htmlspecialchars($errors['specialite'][0], ENT_QUOTES) ?></p>
                             <?php endif; ?>
-                        </div>
-                        <div>
-                            <label class="form-label" for="grade">Grade</label>
-                            <select id="grade" name="grade" class="form-input">
-                                <option value="">— Sélectionner —</option>
-                                <?php foreach ($grades as $g): ?>
-                                <option value="<?= htmlspecialchars($g, ENT_QUOTES) ?>"
-                                    <?= (editP($old, 'grade', $prof) === $g) ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($g, ENT_QUOTES) ?>
-                                </option>
-                                <?php endforeach; ?>
-                            </select>
                         </div>
                     </div>
                 </div>

@@ -5,7 +5,6 @@ function pperm(array $p, string $k): bool { return in_array($k, $p, true); }
 
 $pagination = $pagination ?? ['data'=>[],'total'=>0,'page'=>1,'totalPages'=>1,'perPage'=>15];
 $filters    = $filters ?? [];
-$grades     = $grades  ?? [];
 $stats      = $stats   ?? ['total'=>0,'actifs'=>0,'certifies'=>0,'nb_classes'=>0];
 
 function buildQ(array $filters, array $extra = []): string {
@@ -50,15 +49,6 @@ function buildQ(array $filters, array $extra = []): string {
         </div>
     </div>
     <div class="stat-card-v">
-        <div class="stat-icon" style="background:#e0f2fe;color:#0284c7">
-            <i data-lucide="award" class="w-5 h-5"></i>
-        </div>
-        <div>
-            <div class="stat-value"><?= $stats['certifies'] ?></div>
-            <div class="stat-label">Certifiés</div>
-        </div>
-    </div>
-    <div class="stat-card-v">
         <div class="stat-icon" style="background:#ede9fe;color:#7c3aed">
             <i data-lucide="building-2" class="w-5 h-5"></i>
         </div>
@@ -80,15 +70,6 @@ function buildQ(array $filters, array $extra = []): string {
                        placeholder="Nom, prénom, spécialité, email…"
                        value="<?= htmlspecialchars($filters['q'] ?? '', ENT_QUOTES) ?>">
             </div>
-            <select name="grade" class="form-input w-auto min-w-40">
-                <option value="">— Tous les grades —</option>
-                <?php foreach ($grades as $g): ?>
-                <option value="<?= htmlspecialchars($g, ENT_QUOTES) ?>"
-                    <?= (($filters['grade'] ?? '') === $g) ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($g, ENT_QUOTES) ?>
-                </option>
-                <?php endforeach; ?>
-            </select>
             <select name="actif" class="form-input w-auto">
                 <option value="">Statut</option>
                 <option value="1" <?= (($filters['actif'] ?? '') === '1') ? 'selected' : '' ?>>Actif</option>
@@ -127,7 +108,7 @@ function buildQ(array $filters, array $extra = []): string {
             <thead><tr>
                 <th class="w-12"></th>
                 <th>Enseignant</th>
-                <th>Grade / Spécialité</th>
+                <th>Spécialité</th>
                 <th>Contact</th>
                 <th class="text-center">Classes</th>
                 <th class="text-center">Matières</th>
@@ -160,9 +141,6 @@ function buildQ(array $filters, array $extra = []): string {
                     <?php endif; ?>
                 </td>
                 <td>
-                    <?php if (!empty($p->grade)): ?>
-                    <p class="text-sm font-semibold text-slate-700"><?= htmlspecialchars($p->grade, ENT_QUOTES) ?></p>
-                    <?php endif; ?>
                     <p class="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
                         <i data-lucide="graduation-cap" class="w-3 h-3"></i>
                         <?= htmlspecialchars($p->specialite, ENT_QUOTES) ?>
