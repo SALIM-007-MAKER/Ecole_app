@@ -58,14 +58,22 @@ $branding = \Core\Tenant\BrandingService::make()->get((int)((require ROOT_PATH .
     <!-- Tailwind compilé (tools/tailwind/README.md) : en FIN de <head>, comme le faisait le CDN, pour conserver la même cascade avec app.css -->
     <link rel="stylesheet" href="<?= BASE_URL ?>/assets/vendor/tailwind/tailwind.css?v=<?= @filemtime(ROOT_PATH . '/public/assets/vendor/tailwind/tailwind.css') ?: 1 ?>">
     <style>:root{--font-sans:'<?= addslashes($branding->fontFamily) ?>'}</style>
+    <style>
+    /* Tient dans l'écran sans défilement : tout se compacte avec la hauteur disponible. */
+    .auth-bg{min-height:100vh;min-height:100dvh;box-sizing:border-box;padding:1rem !important;justify-content:center}
+    @media (max-height:700px){.pf-brand{margin-bottom:.5rem !important}.auth-card{padding:1.25rem !important}.pf-foot{margin-top:.5rem !important}}
+    @media (max-height:560px){.pf-foot{display:none}}
+    </style>
 </head>
 <body>
 
 <div class="auth-bg">
 
-    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:1.25rem;color:var(--txt-1)">
-        <i class="fa-solid fa-server" style="color:var(--violet)"></i>
-        <span style="font-weight:700;font-size:1.1rem">EduNova <span style="color:var(--violet)">Platform</span></span>
+    <div class="pf-brand" style="display:flex;flex-direction:column;align-items:center;gap:.25rem;margin-bottom:1rem;color:var(--txt-1)">
+        <div class="pf-logo" style="width:clamp(84px,19vh,150px);height:clamp(84px,19vh,150px);box-sizing:border-box;border-radius:50%;background:#fcfcfc;border:2px solid rgba(124,58,237,.25);box-shadow:0 4px 14px rgba(15,23,42,.12);display:flex;align-items:center;justify-content:center">
+            <img src="<?= BASE_URL ?>/assets/img/edunova-logo.png" alt="EduNova — Organiser l'école, inspirer l'avenir" width="116" height="116" style="width:68%;height:68%;object-fit:contain;display:block">
+        </div>
+        <span style="font-weight:600;font-size:.95rem;letter-spacing:.04em;color:var(--violet)">Portail Plateforme</span>
     </div>
 
     <!-- Messages flash -->
@@ -109,7 +117,7 @@ $branding = \Core\Tenant\BrandingService::make()->get((int)((require ROOT_PATH .
     </div>
 
     <!-- Pied de page -->
-    <p style="margin-top:2rem;font-size:0.75rem;color:var(--txt-3);text-align:center">
+    <p class="pf-foot" style="margin-top:1rem;font-size:0.75rem;color:var(--txt-3);text-align:center">
         Accès réservé aux opérateurs de la plateforme EduNova.
     </p>
 </div>
