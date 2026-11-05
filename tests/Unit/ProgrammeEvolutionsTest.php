@@ -10,7 +10,6 @@
  *  5. Séries A, C, D : programmes indépendants, aucune contamination, reproduction limitée à la même série
  *  6. Création d'une classe parallèle : reprise vérifiée (niveau, série), confirmée, sans écrasement
  *  7. Permissions par rôle
- *  8. Audit strict (dans la transaction) et historique des coefficients
  *
  * Travaille uniquement sur une copie jetable ecole_app_copy_* : la base vivante n'est jamais touchée.
  *
@@ -444,5 +443,40 @@ try {
 $svc->enregistrer($TC, [$MATHS => ['coefficient' => '5']], true);
 check((float)array_column($lignes($TC), null, 'matiere_id')[$MATHS]['coefficient'] === 5.0, 'journal rétabli : les opérations fonctionnent de nouveau');
 
+// ═══════════════════════════════════════════════════════════
+section('9. Coefficient par défaut d\'une matière et bulletins publiés');
+$ev132 = array_map('intval', $pdo->query('SELECT DISTINCT matiere_id FROM evaluations WHERE classe_id = 132 ORDER BY matiere_id')->fetchAll(PDO::FETCH_COLUMN));
+check(count($ev132) >= 1 && (int)$pdo->query('SELECT COUNT(*) FROM bulletins_v2 WHERE classe_id = 132')->fetchColumn() >= 1, 'jeu de démonstration : la classe 132 a des évaluations et des bulletins');
+$M1 = $ev132[0]; $M2 = $ev132[1] ?? null;
+$mm = new MatiereModel();
+check($mm->classesFigeesDependantDuDefaut($M1) === [], 'bulletins en brouillon seulement : aucune classe figée ne dépend du coefficient par défaut');
+if ($M2 !== null) { $svc->ajouter(132, $M2, '3', '2'); }   // M2 : coefficient fixé par un programme AVANT la publication
+$pdo->exec("UPDATE bulletins_v2 SET statut = 'publie', published_at = NOW() WHERE classe_id = 132");
+$dep = array_column($mm->classesFigeesDependantDuDefaut($M1), 'id');
+check($dep === [132], 'bulletins publiés + pas de ligne de programme : la classe 132 dépend du coefficient par défaut', json_encode($dep));
+if ($M2 !== null) {
+    check(!in_array(132, array_column($mm->classesFigeesDependantDuDefaut($M2), 'id'), true), 'matière fixée par un programme : le coefficient par défaut n\'a plus d\'effet sur cette classe');
+}
+$row = $pdo->query("SELECT nom, coefficient, volume_horaire, categorie FROM matieres WHERE id = $M1")->fetch(PDO::FETCH_ASSOC);
+$c0 = (float)$row['coefficient']; $c1 = $c0 + 1.0;
+$post = fn(string $coef, array $plus = []) => ['nom' => $row['nom'], 'coefficient' => $coef, 'volume_horaire' => (string)$row['volume_horaire'], 'categorie' => $row['categorie']] + $plus;
+$bullAvant = $checksum(['bulletins_v2', 'notes_v2', 'evaluations', 'moyennes_generales', 'moyennes_matieres']);
+http($nomCopie, 'admin', $admin, 'POST', "/matieres/$M1", $post((string)$c1), true);
+check((float)$pdo->query("SELECT coefficient FROM matieres WHERE id = $M1")->fetchColumn() === $c0, 'changement du coefficient par défaut SANS confirmation : refusé, valeur inchangée');
+$r = http($nomCopie, 'admin', $admin, 'GET', "/matieres/$M1/edit");
+check($r['status'] === 200, 'page de modification toujours accessible');
+http($nomCopie, 'admin', $admin, 'POST', "/matieres/$M1", $post((string)$c1, ['nom_affichage' => 'Libellé seul']), true);
+check((float)$pdo->query("SELECT coefficient FROM matieres WHERE id = $M1")->fetchColumn() === $c0, 'nom d\'affichage modifié en même temps que le coefficient, sans confirmation : refusé en bloc');
+http($nomCopie, 'admin', $admin, 'POST', "/matieres/$M1", $post((string)$c0, ['nom_affichage' => 'Libellé seul']), true);
+check($pdo->query("SELECT nom_affichage FROM matieres WHERE id = $M1")->fetchColumn() === 'Libellé seul', 'modification SANS changer le coefficient : aucune confirmation requise');
+http($nomCopie, 'admin', $admin, 'POST', "/matieres/$M1", $post((string)$c1, ['confirmer_defaut' => '1']), true);
+check((float)$pdo->query("SELECT coefficient FROM matieres WHERE id = $M1")->fetchColumn() === $c1, 'AVEC confirmation explicite : coefficient par défaut modifié');
+$a = $pdo->query("SELECT avant, apres FROM audit_logs WHERE entite = 'matiere' AND entite_id = $M1 AND action = 'update' ORDER BY id DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+check($a && str_contains($a['apres'], 'defaut_confirme_classes_figees') && str_contains($a['apres'], 'TB-01') && str_contains($a['avant'], (string)$c0), 'audit : ancien coefficient, nouveau, et classes figées concernées');
+check($checksum(['bulletins_v2', 'notes_v2', 'evaluations', 'moyennes_generales', 'moyennes_matieres']) === $bullAvant, 'aucun bulletin, note ni moyenne enregistrée n\'a été modifié par ce changement');
+$pdo->exec("INSERT INTO matieres (etablissement_id, nom, coefficient, categorie, volume_horaire) VALUES (1, 'Matière libre', 2.0, 'autre', 1)");
+$libre = (int)$pdo->lastInsertId();
+http($nomCopie, 'admin', $admin, 'POST', "/matieres/$libre", ['nom' => 'Matière libre', 'coefficient' => '3', 'volume_horaire' => '1', 'categorie' => 'autre'], true);
+check((float)$pdo->query("SELECT coefficient FROM matieres WHERE id = $libre")->fetchColumn() === 3.0, 'matière dont aucun bulletin figé ne dépend : modification libre');
 echo "\n" . ($failed === 0 ? "\033[32m" : "\033[31m") . "$passed OK, $failed KO\033[0m\n";
 exit($failed === 0 ? 0 : 1);

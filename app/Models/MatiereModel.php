@@ -108,6 +108,34 @@ class MatiereModel extends Model
         return $raisons;
     }
 
+    /**
+     * Classes de l'établissement qui (1) ont au moins un bulletin PUBLIÉ ou ARCHIVÉ, (2) ont des évaluations dans cette matière et
+     * (3) n'ont PAS de ligne de programme pour elle : leur calcul en direct lit donc le coefficient PAR DÉFAUT de la matière. Changer ce
+     * coefficient ferait diverger classements et analyses en direct des bulletins figés.
+     *
+     * @return list<array{id:int, nom:string, niveau:string}>
+     */
+    public function classesFigeesDependantDuDefaut(int $id): array
+    {
+        $horsProgramme = \App\Services\ProgrammeClasseService::disponible()
+            ? ' AND NOT EXISTS (SELECT 1 FROM classe_matieres cm WHERE cm.classe_id = c.id AND cm.matiere_id = ?)' : '';
+        $params = [$this->tenantId(), $id];
+        if ($horsProgramme !== '') { $params[] = $id; }
+        try {
+            $rows = $this->query(
+                "SELECT c.id, c.nom, c.niveau FROM classes c
+                 WHERE c.etablissement_id = ?
+                   AND EXISTS (SELECT 1 FROM evaluations ev WHERE ev.classe_id = c.id AND ev.matiere_id = ?)
+                   AND EXISTS (SELECT 1 FROM bulletins_v2 b WHERE b.classe_id = c.id AND b.statut IN ('publie', 'archive'))" . $horsProgramme . "
+                 ORDER BY c.niveau, c.nom",
+                $params
+            );
+        } catch (\Throwable) {
+            return [];   // tables d'évaluations/bulletins absentes de cette installation
+        }
+        return array_map(fn($r) => ['id' => (int)$r->id, 'nom' => (string)$r->nom, 'niveau' => (string)$r->niveau], $rows);
+    }
+
     /** La matière est-elle la matière de Conduite (marqueur est_conduite) ? */
     public function estConduite(int $id): bool
     {

@@ -98,6 +98,15 @@ function editM(array $old, string $key, $obj): string {
                         <?php if (isset($errors['coefficient'])): ?>
                         <p class="form-error"><?= htmlspecialchars($errors['coefficient'][0], ENT_QUOTES) ?></p>
                         <?php endif; ?>
+                        <?php if (isset($errors['confirmer_defaut'])): ?>
+                        <div class="mt-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                            <p><?= htmlspecialchars($errors['confirmer_defaut'][0], ENT_QUOTES) ?></p>
+                            <label class="mt-2 flex items-start gap-2">
+                                <input type="checkbox" name="confirmer_defaut" value="1" class="accent-violet-600 mt-1">
+                                <span>Je confirme le changement du coefficient par défaut.</span>
+                            </label>
+                        </div>
+                        <?php endif; ?>
                     </div>
 
                     <div>

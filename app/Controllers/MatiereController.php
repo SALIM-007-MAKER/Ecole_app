@@ -189,6 +189,17 @@ class MatiereController extends Controller
             $errors['nom'][] = 'Une autre matière avec ce nom existe déjà.';
         }
 
+        // Coefficient par défaut : s'il change alors que des classes à bulletins publiés/archivés en dépendent (pas de ligne de programme),
+        // leurs classements en direct divergeraient des bulletins figés → confirmation explicite exigée (aucun bulletin n'est jamais recalculé).
+        $coefChange = !$conduite && empty($errors['coefficient'])
+            && abs((float)str_replace(',', '.', (string)$data['coefficient']) - (float)$matiere->coefficient) >= 0.0001;
+        $figees = $coefChange ? $this->matiereModel->classesFigeesDependantDuDefaut((int)$id) : [];
+        if ($figees !== [] && $this->request->post('confirmer_defaut') !== '1') {
+            $liste = implode(', ', array_map(fn($c) => $c['niveau'] . ' ' . $c['nom'], $figees));
+            $errors['confirmer_defaut'][] = 'Ce coefficient par défaut est utilisé en direct par des classes dont les bulletins sont publiés ou archivés (' . $liste . '). '
+                . 'Les bulletins déjà publiés ne seront pas modifiés, mais les classements et analyses en direct de ces classes changeront. Cochez la case de confirmation pour continuer.';
+        }
+
         if (!empty($errors)) {
             Session::flash('errors', $errors);
             Session::flash('old', $data);
@@ -203,6 +214,9 @@ class MatiereController extends Controller
         $nouveau = $this->toDbData($data);
         $apres = [];
         foreach ($suivi as $c) { $apres[$c] = (string)($nouveau[$c] ?? $avant[$c]); }
+        if ($figees !== []) {
+            $apres['defaut_confirme_classes_figees'] = implode(', ', array_map(fn($c) => $c['niveau'] . ' ' . $c['nom'], $figees));
+        }
         $pdo = \Core\Database::getInstance()->getConnection();
         try {
             $pdo->beginTransaction();
