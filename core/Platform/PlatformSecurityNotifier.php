@@ -37,6 +37,8 @@ final class PlatformSecurityNotifier
     public const DEUX_FACTEURS_DESACTIVEE = '2fa_desactivee';
     public const DEUX_FACTEURS_REINITIALISEE = '2fa_reinitialisee';
     public const CODES_REGENERES = 'codes_regeneres';
+    public const PASSKEY_AJOUTEE = 'passkey_ajoutee';
+    public const PASSKEY_SUPPRIMEE = 'passkey_supprimee';
 
     /** @var array<string,array{objet:string,titre:string,texte:string}> */
     private const MESSAGES = [
@@ -79,6 +81,16 @@ final class PlatformSecurityNotifier
             'objet' => 'Vos codes de secours ont été régénérés',
             'titre' => 'Codes de secours régénérés',
             'texte' => 'De nouveaux codes de secours viennent d\'être émis pour votre compte opérateur. Les anciens ne fonctionnent plus.',
+        ],
+        self::PASSKEY_AJOUTEE => [
+            'objet' => 'Une passkey a été ajoutée à votre compte opérateur',
+            'titre' => 'Passkey ajoutée',
+            'texte' => 'Une passkey vient d\'être enregistrée sur votre compte opérateur : elle peut désormais servir de second facteur à la connexion.',
+        ],
+        self::PASSKEY_SUPPRIMEE => [
+            'objet' => 'Une passkey a été retirée de votre compte opérateur',
+            'titre' => 'Passkey retirée',
+            'texte' => 'Une passkey vient d\'être retirée de votre compte opérateur.',
         ],
     ];
 
@@ -164,7 +176,14 @@ final class PlatformSecurityNotifier
             $lignes[] = 'Navigateur : ' . $contexte['agent'];
         }
         if (($contexte['methode'] ?? '') !== '') {
-            $lignes[] = 'Second facteur : ' . ($contexte['methode'] === 'recovery' ? 'code de secours' : 'application d\'authentification');
+            $lignes[] = 'Second facteur : ' . match ($contexte['methode']) {
+                'recovery' => 'code de secours',
+                'passkey'  => 'passkey',
+                default    => 'application d\'authentification',
+            };
+        }
+        if (($contexte['nom'] ?? '') !== '') {
+            $lignes[] = 'Passkey : ' . mb_substr(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', (string)$contexte['nom']) ?? '', 0, 80);
         }
         $message = $texte . "\n\n" . implode("\n", $lignes)
             . "\n\nSi vous n'êtes pas à l'origine de cette action, changez immédiatement votre mot de passe et prévenez un autre super administrateur."

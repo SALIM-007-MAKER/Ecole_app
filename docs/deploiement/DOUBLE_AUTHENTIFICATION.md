@@ -64,4 +64,8 @@ Additive et idempotente : `platform_operators` + `totp_secret`, `totp_enabled_at
 
 ## Non couvert
 
-Clés de sécurité matérielles (WebAuthn / passkeys), « appareil de confiance » (la 2FA est demandée à chaque connexion), 2FA des comptes d'établissement (hors périmètre : portail plateforme uniquement).
+« Appareil de confiance » (la 2FA est demandée à chaque connexion), 2FA des comptes d'établissement (hors périmètre : portail plateforme uniquement).
+
+## Passkeys
+
+Les passkeys (WebAuthn : clés de sécurité, Windows Hello, téléphone) s'ajoutent à la 2FA par application comme second facteur possible : voir `PASSKEYS.md` (migration T073).

@@ -7,6 +7,7 @@ use Core\Platform\PlatformAuditService;
 use Core\Platform\PlatformAuth;
 use Core\Platform\PlatformController;
 use Core\Platform\PlatformOperatorService;
+use Core\Platform\PlatformPasskeyService;
 use Core\Platform\PlatformTwoFactorService;
 use Core\Session;
 
@@ -109,7 +110,12 @@ class PlatformAuthController extends PlatformController
             Session::flash('errors', ['Veuillez d\'abord saisir votre mot de passe.']);
             $this->redirect(BASE_URL . '/platform/login');
         }
-        $this->render('platform/login-2fa', ['title' => 'Vérification en deux étapes', 'errors' => Session::getFlash('errors', [])], 'platform-auth');
+        $pdo = \Core\Database::getInstance()->getConnection();
+        $this->render('platform/login-2fa', [
+            'title'    => 'Vérification en deux étapes',
+            'errors'   => Session::getFlash('errors', []),
+            'passkeys' => PlatformPasskeyService::disponible($pdo) && (new PlatformPasskeyService($pdo))->nombre((int)PlatformAuth::pendingMfa()['id']) > 0,
+        ], 'platform-auth');
     }
 
     public function verifyTwoFactor(): void
@@ -151,6 +157,13 @@ class PlatformAuthController extends PlatformController
             $this->redirect(BASE_URL . '/platform/login/2fa');
         }
 
+        $this->redirect(BASE_URL . $this->secondFacteurReussi($operator, $methode, $throttle, $ip));
+    }
+
+    /** Fin commune de toute vérification de second facteur réussie (code, code de secours ou passkey). Renvoie la page où envoyer l'opérateur. */
+    private function secondFacteurReussi(array $operator, string $methode, LoginThrottle $throttle, string $ip): string
+    {
+        $id = (int)$operator['id'];
         $throttle->clear('mfc:' . $id . '|' . $ip);
         PlatformAuth::completeMfa($methode);
         \Core\Logger::security('PLATFORM_LOGIN_SUCCESS', "operator_id={$id} niveau={$operator['niveau']} 2fa={$methode}");
@@ -161,7 +174,72 @@ class PlatformAuthController extends PlatformController
             \Core\Platform\PlatformSecurityNotifier::notifier($id, \Core\Platform\PlatformSecurityNotifier::CODE_SECOURS_UTILISE);
             Session::flash('success', 'Un code de secours a été utilisé. Il reste ' . (new PlatformTwoFactorService(\Core\Database::getInstance()->getConnection()))->statut($id)['codes_restants'] . ' code(s) : pensez à en régénérer.');
         }
-        $this->redirect(BASE_URL . (!empty($operator['must_change']) ? '/platform/compte/mot-de-passe' : '/platform/dashboard'));
+        return !empty($operator['must_change']) ? '/platform/compte/mot-de-passe' : '/platform/dashboard';
+    }
+
+    /** Opérateur en attente de second facteur, ou réponse JSON d'expiration (pour les appels de la page de vérification). */
+    private function operateurEnAttenteJson(): array
+    {
+        $operator = PlatformAuth::pendingMfa();
+        if ($operator === null) {
+            $this->json(['ok' => false, 'message' => 'La vérification a expiré. Veuillez vous reconnecter.', 'redirect' => BASE_URL . '/platform/login'], 401);
+        }
+        return $operator;
+    }
+
+    /** Passkey, étape 1 : options du défi pour navigator.credentials.get(). */
+    public function passkeyOptions(): void
+    {
+        $this->verifyCsrf();
+        $operator = $this->operateurEnAttenteJson();
+        $pdo = \Core\Database::getInstance()->getConnection();
+        $options = PlatformPasskeyService::disponible($pdo) ? (new PlatformPasskeyService($pdo))->optionsConnexion((int)$operator['id']) : null;
+        if ($options === null) {
+            $this->json(['ok' => false, 'message' => 'Aucune passkey enregistrée pour ce compte.'], 404);
+        }
+        $this->json(['ok' => true, 'options' => $options]);
+    }
+
+    /** Passkey, étape 2 : vérification de la réponse de l'appareil. Mêmes limites d'essais que le code à 6 chiffres. */
+    public function passkeyVerify(): void
+    {
+        $this->verifyCsrf();
+        $operator = $this->operateurEnAttenteJson();
+        $id = (int)$operator['id'];
+        $ip = $this->request->ip();
+        $throttle = $this->throttle();
+        $cles = ['mfc:' . $id . '|' . $ip => 5, 'mfi:' . $ip => 20, 'mfa:' . $id => 15];
+        $attente = 0;
+        foreach ($cles as $cle => $limite) {
+            $attente = max($attente, $throttle->retryAfter($cle, $limite));
+        }
+        if ($attente > 0) {
+            \Core\Logger::security('PLATFORM_2FA_THROTTLED', "operator_id={$id} depuis {$ip} (passkey)");
+            $this->auditerConnexion($throttle, $ip, 'operator.2fa.throttled', 'denied', (string)$operator['email']);
+            $this->json(['ok' => false, 'message' => 'Trop de tentatives. Réessayez dans ' . (int)ceil($attente / 60) . ' minute(s).'], 429);
+        }
+
+        $pdo = \Core\Database::getInstance()->getConnection();
+        $ok = PlatformPasskeyService::disponible($pdo) && (new PlatformPasskeyService($pdo))->verifierConnexion(
+            $id,
+            (string)$this->request->post('credential_id', ''),
+            (string)$this->request->post('client_data', ''),
+            (string)$this->request->post('authenticator_data', ''),
+            (string)$this->request->post('signature', '')
+        );
+        if (!$ok) {
+            foreach (array_keys($cles) as $cle) {
+                $throttle->recordFailure($cle);
+            }
+            \Core\Logger::security('PLATFORM_2FA_FAILED', "operator_id={$id} (passkey)");
+            $this->auditerConnexion($throttle, $ip, 'operator.2fa.failed', 'failure', (string)$operator['email']);
+            if (PlatformAuth::mfaFailure() === 0) {
+                Session::flash('errors', ['Trop d\'essais : veuillez ressaisir votre mot de passe.']);
+                $this->json(['ok' => false, 'message' => 'Trop d\'essais : veuillez ressaisir votre mot de passe.', 'redirect' => BASE_URL . '/platform/login'], 401);
+            }
+            $this->json(['ok' => false, 'message' => 'Passkey non reconnue. Réessayez ou utilisez un code.'], 401);
+        }
+        $this->json(['ok' => true, 'redirect' => BASE_URL . $this->secondFacteurReussi($operator, 'passkey', $throttle, $ip)]);
     }
 
     public function logout(): void

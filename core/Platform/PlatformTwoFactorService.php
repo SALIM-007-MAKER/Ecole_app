@@ -370,6 +370,8 @@ final class PlatformTwoFactorService
     {
         $this->pdo->prepare('UPDATE platform_operators SET totp_secret = NULL, totp_enabled_at = NULL, totp_last_step = NULL WHERE id = ?')->execute([$operatorId]);
         $this->pdo->prepare('DELETE FROM platform_operator_recovery_codes WHERE operator_id = ?')->execute([$operatorId]);
+        // Les passkeys s'ajoutent à la 2FA : sans 2FA, elles n'ont plus lieu d'être (et ne doivent pas rester comme accès oublié).
+        PlatformPasskeyService::toutesRetirer($this->pdo, $operatorId);
     }
 
     /** @return list<string> */

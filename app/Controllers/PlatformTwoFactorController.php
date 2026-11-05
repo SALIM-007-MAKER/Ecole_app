@@ -6,6 +6,7 @@ use Core\Database;
 use Core\Platform\PlatformAuth;
 use Core\Platform\PlatformController;
 use Core\Platform\PlatformOperatorService;
+use Core\Platform\PlatformPasskeyService;
 use Core\Platform\PlatformTwoFactorService;
 use Core\Platform\TwoFactorException;
 use Core\QrCode\QrEncoder;
@@ -56,8 +57,13 @@ class PlatformTwoFactorController extends PlatformController
                 $qr = (new QrEncoder())->generateSvg(PlatformTwoFactorService::uri($email, $secret), 5);
             }
         }
+        $pdo = Database::getInstance()->getConnection();
+        $passkeysDispo = $actif && PlatformPasskeyService::disponible($pdo);
         $this->render('platform/compte/deux-facteurs', [
             'title'       => 'Double authentification',
+            'passkeysDispo' => $passkeysDispo,
+            'passkeys'    => $passkeysDispo ? (new PlatformPasskeyService($pdo))->liste($this->operatorId()) : [],
+            'passkeysMax' => PlatformPasskeyService::MAX_PAR_OPERATEUR,
             'actif'       => $actif,
             'statut'      => $statut,
             'secret'      => $secret,

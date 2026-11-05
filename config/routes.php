@@ -81,6 +81,8 @@ $router->get('/platform/login',    'PlatformAuthController@showLogin');
 $router->post('/platform/login',   'PlatformAuthController@login');
 $router->get('/platform/login/2fa',  'PlatformAuthController@showTwoFactor');
 $router->post('/platform/login/2fa', 'PlatformAuthController@verifyTwoFactor');
+$router->post('/platform/login/2fa/passkey/options', 'PlatformAuthController@passkeyOptions');
+$router->post('/platform/login/2fa/passkey',         'PlatformAuthController@passkeyVerify');
 $router->post('/platform/logout',  'PlatformAuthController@logout');
 
 $router->get('/platform/dashboard',          'PlatformDashboardController@index');
@@ -156,6 +158,10 @@ $router->get('/platform/compte/2fa',           'PlatformTwoFactorController@show
 $router->post('/platform/compte/2fa/activer',   'PlatformTwoFactorController@activer');
 $router->post('/platform/compte/2fa/codes',     'PlatformTwoFactorController@regenerer');
 $router->post('/platform/compte/2fa/desactiver','PlatformTwoFactorController@desactiver');
+$router->post('/platform/compte/2fa/passkeys/options',                'PlatformPasskeyController@options');
+$router->post('/platform/compte/2fa/passkeys',                        'PlatformPasskeyController@enregistrer');
+$router->post('/platform/compte/2fa/passkeys/{id}/renommer',          'PlatformPasskeyController@renommer');
+$router->post('/platform/compte/2fa/passkeys/{id}/supprimer',         'PlatformPasskeyController@supprimer');
 $router->get('/platform/audit',                'PlatformAuditController@index');
 $router->get('/platform/audit/export',         'PlatformAuditController@export');
 $router->get('/platform/audit/{id}',           'PlatformAuditController@show');
