@@ -9,9 +9,9 @@ $branding = \Core\Tenant\BrandingService::make()->get((int)((require ROOT_PATH .
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
     <?php $pageTitle = htmlspecialchars($title ?? 'Portail plateforme', ENT_QUOTES, 'UTF-8'); ?>
-    <title><?= $pageTitle ?> — EduNova Platform</title>appName, ENT_QUOTES) ?> — Gestion scolaire complète.">
+    <title><?= $pageTitle ?> — EduNova Platform</title>
     <meta name="robots" content="noindex, nofollow">
-    <meta name="theme-color" content="<?= htmlspecialchars($branding->primaryColor, ENT_QUOTES) ?>">/manifest.json">
+    <meta name="theme-color" content="<?= htmlspecialchars($branding->primaryColor, ENT_QUOTES) ?>">
     <?php $__brandWeb = $branding->faviconUrl ?? $branding->logoUrl; ?>
     <?php if ($__brandWeb && file_exists(ROOT_PATH . '/public' . $__brandWeb)): ?>
     <link rel="icon" href="<?= BASE_URL ?><?= $__brandWeb ?>">
