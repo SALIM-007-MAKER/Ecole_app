@@ -189,6 +189,8 @@ class ClasseController extends Controller
             $programme['verrou']     = $svcProg->verrou((int)$id);
             $programme['paralleles'] = $svcProg->paralleles((int)$id);
             $programme['notes']      = $svcProg->notesExistent((int)$id);
+            // Historique des coefficients (journal d'audit) : réservé à ceux qui peuvent modifier les classes
+            $programme['historique'] = $this->can('classes.edit') ? $svcProg->historique((int)$id) : [];
         }
 
         $this->render('classes/show', [

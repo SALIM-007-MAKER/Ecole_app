@@ -196,15 +196,27 @@ class MatiereController extends Controller
             return;
         }
 
-        // Traçabilité : nom, nom d'affichage, coefficient et volume par défaut (avant → après)
+        // Traçabilité : nom, nom d'affichage, coefficient et volume par défaut (avant → après), écrite DANS la transaction de la modification
         $suivi  = ['nom', 'nom_affichage', 'coefficient', 'volume_horaire'];
         $avant  = [];
         foreach ($suivi as $c) { $avant[$c] = (string)($matiere->$c ?? ''); }
         $nouveau = $this->toDbData($data);
-        $this->matiereModel->update((int)$id, $nouveau);
         $apres = [];
         foreach ($suivi as $c) { $apres[$c] = (string)($nouveau[$c] ?? $avant[$c]); }
-        (new \App\Services\AuditService())->logUpdate((int)($this->currentUser()['id'] ?? 0), 'matieres', 'matiere', (int)$id, $avant, $apres);
+        $pdo = \Core\Database::getInstance()->getConnection();
+        try {
+            $pdo->beginTransaction();
+            $this->matiereModel->update((int)$id, $nouveau);
+            (new \App\Services\AuditService())->logUpdateStrict($pdo, (int)($this->currentUser()['id'] ?? 0), 'matieres', 'matiere', (int)$id, $avant, $apres);
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) { $pdo->rollBack(); }
+            Session::flash('error', $e instanceof \App\Services\AuditIndisponibleException
+                ? 'Le journal d\'audit est indisponible : la modification a été annulée, rien n\'a été écrit.'
+                : 'La modification a échoué.');
+            $this->redirect(BASE_URL . '/matieres/' . $id . '/edit');
+            return;
+        }
         Session::flash('success', 'Matière modifiée avec succès.');
         $this->redirect(BASE_URL . '/matieres/' . $id);
     }
@@ -291,9 +303,17 @@ class MatiereController extends Controller
         } elseif ((int)($matiere->actif ?? 1) === $actif) {
             Session::flash('success', $actif ? 'Cette matière est déjà active.' : 'Cette matière est déjà désactivée.');
         } else {
-            $this->matiereModel->update($id, ['actif' => $actif]);
-            (new \App\Services\AuditService())->log((int)($this->currentUser()['id'] ?? 0), $actif ? 'matiere_reactivee' : 'matiere_desactivee', 'matieres', 'matiere', $id, ['actif' => (int)($matiere->actif ?? 1)], ['actif' => $actif]);
-            Session::flash('success', $actif ? 'Matière réactivée.' : 'Matière désactivée : ses données sont conservées, elle n\'est plus proposée pour de nouvelles affectations.');
+            $pdo = \Core\Database::getInstance()->getConnection();
+            try {
+                $pdo->beginTransaction();
+                $this->matiereModel->update($id, ['actif' => $actif]);
+                (new \App\Services\AuditService())->logStrict($pdo, (int)($this->currentUser()['id'] ?? 0), $actif ? 'matiere_reactivee' : 'matiere_desactivee', 'matieres', 'matiere', $id, ['actif' => (int)($matiere->actif ?? 1)], ['actif' => $actif]);
+                $pdo->commit();
+                Session::flash('success', $actif ? 'Matière réactivée.' : 'Matière désactivée : ses données sont conservées, elle n\'est plus proposée pour de nouvelles affectations.');
+            } catch (\Throwable $e) {
+                if ($pdo->inTransaction()) { $pdo->rollBack(); }
+                Session::flash('error', 'Le journal d\'audit est indisponible ou l\'opération a échoué : rien n\'a été modifié.');
+            }
         }
         $this->redirect(BASE_URL . '/matieres/' . $id);
     }

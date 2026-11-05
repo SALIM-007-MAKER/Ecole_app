@@ -10,6 +10,7 @@
  *  5. Séries A, C, D : programmes indépendants, aucune contamination, reproduction limitée à la même série
  *  6. Création d'une classe parallèle : reprise vérifiée (niveau, série), confirmée, sans écrasement
  *  7. Permissions par rôle
+ *  8. Audit strict (dans la transaction) et historique des coefficients
  *
  * Travaille uniquement sur une copie jetable ecole_app_copy_* : la base vivante n'est jamais touchée.
  *
@@ -409,6 +410,39 @@ $nomT = 'PSEC';
 $pdo->exec("UPDATE matieres SET nom_affichage = 'Nom piraté' WHERE id = $EPS AND 1 = 0");
 http($nomCopie, 'enseignant', $uid['enseignant'], 'POST', "/matieres/$EPS", ['nom' => 'EPS', 'nom_affichage' => 'Piraté', 'coefficient' => '1', 'volume_horaire' => '2', 'categorie' => 'autre'], true);
 check($pdo->query("SELECT COALESCE(nom_affichage, '') FROM matieres WHERE id = $EPS")->fetchColumn() !== 'Piraté', 'rôle enseignant : ne peut pas définir un nom d\'affichage');
+
+// ═══════════════════════════════════════════════════════════
+section('8. Audit strict (dans la transaction) et historique des coefficients');
+$svc->enregistrer($TC, [$MATHS => ['coefficient' => '6']], true);
+$hist = $svc->historique($TC);
+check($hist !== [] && $hist[0]['action'] === 'update' && (float)$hist[0]['avant']['coefficient'] === 5.0 && (float)$hist[0]['apres']['coefficient'] === 6.0 && $hist[0]['matiere'] === $nomRef,
+    'historique : dernière ligne = modification 5 → 6 de la matière', json_encode($hist[0] ?? null, JSON_UNESCAPED_UNICODE));
+check($hist[0]['acteur'] !== '' && $hist[0]['acteur'] !== 'Système' && $hist[0]['date'] !== '', 'historique : utilisateur et date présents', $hist[0]['acteur'] ?? '');
+$horsClasse = array_filter($hist, fn($h) => (int)($h['apres']['classe_id'] ?? $h['avant']['classe_id'] ?? 0) !== $TC);
+check($horsClasse === [] && count($hist) >= 3, 'historique : uniquement les modifications de CETTE classe (ajouts, reprise, modification)', (string)count($hist));
+check(array_filter($svc->historique($TA), fn($h) => (float)($h['apres']['coefficient'] ?? 0) === 6.0) === [], 'historique de la série A : la modification de la série C n\'y figure pas');
+$r = http($nomCopie, 'admin', $admin, 'GET', "/classes/$TC?tab=programme");
+check($r['status'] === 200 && str_contains($r['body'], 'Historique du programme') && str_contains($r['body'], '5 → 6'), 'fiche de classe : bloc « Historique du programme » avec ancienne → nouvelle valeur');
+$r = http($nomCopie, 'eleve', $uid['eleve'], 'GET', "/classes/$TC?tab=programme");
+check(!str_contains($r['body'], 'Historique du programme'), 'sans classes.edit : historique non affiché');
+
+// Atomicité : journal indisponible ⇒ l'opération est ANNULÉE (aucune modification sans trace)
+$pdo->exec('RENAME TABLE audit_logs TO audit_logs_off');
+try {
+    $avantL = $lignes($TC);
+    check(leve(fn() => $svc->enregistrer($TC, [$MATHS => ['coefficient' => '9']], true)) === ProgrammeException::class && $lignes($TC) === $avantL, 'journal indisponible : modification du coefficient annulée');
+    check(leve(fn() => $svc->ajouter($TC, $ANGLAIS, '2', '2')) === ProgrammeException::class && $lignes($TC) === $avantL, 'journal indisponible : ajout annulé');
+    check(leve(fn() => $svc->retirer($TC, $FRANCAIS, true)) === ProgrammeException::class && $lignes($TC) === $avantL, 'journal indisponible : retrait annulé');
+    $avantN = $pdo->query("SELECT COALESCE(nom_affichage, '') FROM matieres WHERE id = $MATHS")->fetchColumn();
+    http($nomCopie, 'admin', $admin, 'POST', "/matieres/$MATHS", ['nom' => $nomRef, 'nom_affichage' => 'Zzz journal', 'coefficient' => (string)$mathsRow['coefficient'], 'volume_horaire' => (string)$mathsRow['volume_horaire'], 'categorie' => $mathsRow['categorie']], true);
+    check($pdo->query("SELECT COALESCE(nom_affichage, '') FROM matieres WHERE id = $MATHS")->fetchColumn() === $avantN, 'journal indisponible : modification d\'une matière annulée');
+    http($nomCopie, 'admin', $admin, 'POST', "/matieres/$ARABE/desactiver", [], true);
+    check((int)$pdo->query("SELECT actif FROM matieres WHERE id = $ARABE")->fetchColumn() === 1, 'journal indisponible : désactivation annulée');
+} finally {
+    $pdo->exec('RENAME TABLE audit_logs_off TO audit_logs');
+}
+$svc->enregistrer($TC, [$MATHS => ['coefficient' => '5']], true);
+check((float)array_column($lignes($TC), null, 'matiere_id')[$MATHS]['coefficient'] === 5.0, 'journal rétabli : les opérations fonctionnent de nouveau');
 
 echo "\n" . ($failed === 0 ? "\033[32m" : "\033[31m") . "$passed OK, $failed KO\033[0m\n";
 exit($failed === 0 ? 0 : 1);

@@ -211,5 +211,45 @@ $e         = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES);
     </div>
     <?php endif; ?>
 
+    <?php if (!empty($prog['historique'])): ?>
+    <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div class="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-5 py-4 text-sm font-semibold text-slate-900">
+            <i data-lucide="history" class="w-4 h-4 text-violet-600"></i><span>Historique du programme</span>
+            <span class="text-xs font-normal text-slate-400" style="margin-left:auto">tiré du journal d'audit</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 text-sm">
+                <thead>
+                    <tr style="background:#f8fafc;text-align:left;font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:#64748b">
+                        <th style="padding:.6rem 1rem">Date</th><th style="padding:.6rem 1rem">Utilisateur</th>
+                        <th style="padding:.6rem 1rem">Action</th><th style="padding:.6rem 1rem">Matière</th>
+                        <th style="padding:.6rem 1rem">Coefficient</th><th style="padding:.6rem 1rem">Heures</th><th style="padding:.6rem 1rem">Facultative</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php
+                $lib = ['create' => 'Ajout', 'update' => 'Modification', 'delete' => 'Retrait'];
+                $fmt = fn($v) => $v === null ? '—' : rtrim(rtrim(number_format((float)$v, 1, '.', ''), '0'), '.');
+                $fac = fn($v) => $v === null ? '—' : ((int)$v === 0 ? 'oui' : 'non');
+                foreach ($prog['historique'] as $h):
+                    $a = $h['avant']; $n = $h['apres'];
+                    $chg = fn($k, $f) => (isset($a[$k]) && isset($n[$k]) && $a[$k] != $n[$k]) ? $f($a[$k]) . ' → ' . $f($n[$k]) : $f($n[$k] ?? $a[$k] ?? null);
+                ?>
+                    <tr>
+                        <td style="padding:.5rem 1rem;white-space:nowrap;color:#64748b"><?= $e($h['date']) ?></td>
+                        <td style="padding:.5rem 1rem"><?= $e($h['acteur']) ?></td>
+                        <td style="padding:.5rem 1rem"><?= $e($lib[$h['action']] ?? $h['action']) ?><?= isset($n['reproduction_depuis_classe']) ? ' (reproduction)' : (isset($n['repris_depuis_classe']) ? ' (reprise)' : '') ?></td>
+                        <td style="padding:.5rem 1rem;font-weight:600"><?= $e($h['matiere'] !== '' ? $h['matiere'] : '—') ?></td>
+                        <td style="padding:.5rem 1rem"><?= $e($chg('coefficient', $fmt)) ?></td>
+                        <td style="padding:.5rem 1rem"><?= $e($chg('volume_horaire', fn($v) => $v === null ? '—' : (int)$v)) ?></td>
+                        <td style="padding:.5rem 1rem"><?= $e($chg('obligatoire', $fac)) ?></td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <?php endif; ?>
+
 <?php endif; ?>
 </div>

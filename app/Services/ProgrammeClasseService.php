@@ -192,10 +192,13 @@ final class ProgrammeClasseService
         $vol  = self::volumeValide($vol);
         $ordre = max(0, min(65535, $ordre));
 
-        $this->pdo->prepare(
-            'INSERT INTO classe_matieres (etablissement_id, classe_id, matiere_id, coefficient, volume_horaire, obligatoire, ordre) VALUES (?, ?, ?, ?, ?, ?, ?)'
-        )->execute([$this->etablissementId, $classeId, $matiereId, $coef, $vol, $obligatoire ? 1 : 0, $ordre]);
-        $this->journaliser('create', (int)$this->pdo->lastInsertId(), null, ['classe_id' => $classeId, 'matiere' => $m['nom'], 'coefficient' => $coef, 'volume_horaire' => $vol, 'obligatoire' => $obligatoire ? 1 : 0, 'ordre' => $ordre]);
+        $this->transaction(function () use ($classeId, $matiereId, $coef, $vol, $obligatoire, $ordre, $m): void {
+            $this->pdo->prepare(
+                'INSERT INTO classe_matieres (etablissement_id, classe_id, matiere_id, coefficient, volume_horaire, obligatoire, ordre) VALUES (?, ?, ?, ?, ?, ?, ?)'
+            )->execute([$this->etablissementId, $classeId, $matiereId, $coef, $vol, $obligatoire ? 1 : 0, $ordre]);
+            $this->journaliser('create', (int)$this->pdo->lastInsertId(), null, ['classe_id' => $classeId, 'matiere' => $m['nom'], 'coefficient' => $coef, 'volume_horaire' => $vol, 'obligatoire' => $obligatoire ? 1 : 0, 'ordre' => $ordre]);
+        });
+
     }
 
     /**
@@ -246,8 +249,8 @@ final class ProgrammeClasseService
                 $this->pdo->prepare('UPDATE classe_matieres SET coefficient = ?, volume_horaire = ?, obligatoire = ?, ordre = ? WHERE id = ? AND etablissement_id = ?')
                     ->execute([$coef, $vol, $oblig, $ordre, $courante['id'], $this->etablissementId]);
                 $this->journaliser('update', (int)$courante['id'],
-                    ['matiere' => $this->nomMatiere($matiereId), 'coefficient' => (float)$courante['coefficient'], 'volume_horaire' => (int)$courante['volume_horaire'], 'obligatoire' => (int)$courante['obligatoire'], 'ordre' => (int)$courante['ordre']],
-                    ['matiere' => $this->nomMatiere($matiereId), 'coefficient' => $coef, 'volume_horaire' => $vol, 'obligatoire' => $oblig, 'ordre' => $ordre, 'notes_confirmees' => $confirmer]);
+                    ['classe_id' => $classeId, 'matiere' => $this->nomMatiere($matiereId), 'coefficient' => (float)$courante['coefficient'], 'volume_horaire' => (int)$courante['volume_horaire'], 'obligatoire' => (int)$courante['obligatoire'], 'ordre' => (int)$courante['ordre']],
+                    ['classe_id' => $classeId, 'matiere' => $this->nomMatiere($matiereId), 'coefficient' => $coef, 'volume_horaire' => $vol, 'obligatoire' => $oblig, 'ordre' => $ordre, 'notes_confirmees' => $confirmer]);
             }
             if ($propre) { $this->pdo->commit(); }
         } catch (\Throwable $e) {
@@ -268,9 +271,12 @@ final class ProgrammeClasseService
         if (!$confirmer && $this->notesExistent($classeId, $matiereId)) {
             throw new ProgrammeConfirmationException('Des notes existent déjà pour ' . $this->nomMatiere($matiereId) . ' dans cette classe. La retirer du programme rend aux calculs les valeurs par défaut de la matière ; confirmez explicitement pour continuer.');
         }
-        $this->pdo->prepare('DELETE FROM classe_matieres WHERE id = ? AND etablissement_id = ?')->execute([$courante['id'], $this->etablissementId]);
-        $this->journaliser('delete', (int)$courante['id'],
-            ['matiere' => $this->nomMatiere($matiereId), 'coefficient' => (float)$courante['coefficient'], 'volume_horaire' => (int)$courante['volume_horaire'], 'obligatoire' => (int)$courante['obligatoire']], null);
+        $this->transaction(function () use ($courante, $classeId, $matiereId): void {
+            $this->pdo->prepare('DELETE FROM classe_matieres WHERE id = ? AND etablissement_id = ?')->execute([$courante['id'], $this->etablissementId]);
+            $this->journaliser('delete', (int)$courante['id'],
+                ['classe_id' => $classeId, 'matiere' => $this->nomMatiere($matiereId), 'coefficient' => (float)$courante['coefficient'], 'volume_horaire' => (int)$courante['volume_horaire'], 'obligatoire' => (int)$courante['obligatoire']], null);
+        });
+
     }
 
     /**
@@ -399,7 +405,7 @@ final class ProgrammeClasseService
                     $r['mises_a_jour']++;
                 }
                 if ($r['ajoutees'] + $r['mises_a_jour'] > 0) {
-                    $this->journaliser('update', null, null, ['reproduction_depuis_classe' => $sourceId, 'classe_cible' => $cibleId, 'mode' => $mode, 'ajoutees' => $r['ajoutees'], 'mises_a_jour' => $r['mises_a_jour']]);
+                    $this->journaliser('update', null, null, ['classe_id' => $cibleId, 'reproduction_depuis_classe' => $sourceId, 'classe_cible' => $cibleId, 'mode' => $mode, 'ajoutees' => $r['ajoutees'], 'mises_a_jour' => $r['mises_a_jour']]);
                 }
                 if ($propre) { $this->pdo->commit(); }
             } catch (\Throwable $e) {
@@ -591,8 +597,66 @@ final class ProgrammeClasseService
         return $s->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
+    /**
+     * Écrit la ligne d'audit DANS la transaction de l'opération, sans repli : si le journal est indisponible, l'opération entière est annulée
+     * (jamais de modification de coefficient sans trace).
+     */
     private function journaliser(string $action, ?int $id, ?array $avant, ?array $apres): void
     {
-        (new AuditService())->log($this->userId, $action, 'classes', 'programme_classe', $id, $avant, $apres);
+        try {
+            (new AuditService())->logStrict($this->pdo, $this->userId, $action, 'classes', 'programme_classe', $id, $avant, $apres);
+        } catch (AuditIndisponibleException $e) {
+            throw new ProgrammeException('Le journal d\'audit est indisponible : la modification a été annulée, rien n\'a été écrit.', 0, $e);
+        }
+    }
+
+    /** Exécute $f dans une transaction (ou dans celle déjà ouverte) : l'écriture et son audit réussissent ou échouent ensemble. */
+    private function transaction(callable $f): mixed
+    {
+        $propre = !$this->pdo->inTransaction();
+        if ($propre) { $this->pdo->beginTransaction(); }
+        try {
+            $r = $f();
+            if ($propre) { $this->pdo->commit(); }
+            return $r;
+        } catch (\Throwable $e) {
+            if ($propre && $this->pdo->inTransaction()) { $this->pdo->rollBack(); }
+            throw $e;
+        }
+    }
+
+    /**
+     * Historique des modifications du programme d'une classe (le plus récent d'abord), lu dans le journal d'audit existant :
+     * date, utilisateur, action, matière, ancienne et nouvelle valeur. L'isolation entre établissements tient à la classe (vérifiée plus haut
+     * comme appartenant à l'établissement courant, identifiants uniques) : le filtre porte sur l'identifiant de classe consigné dans chaque ligne,
+     * pas sur audit_logs.etablissement_id (NULL pour une écriture hors contexte d'établissement).
+     *
+     * @return list<array{date:string, acteur:string, action:string, matiere:string, avant:array<string,mixed>, apres:array<string,mixed>}>
+     */
+    public function historique(int $classeId, int $limite = 100): array
+    {
+        $this->classeOuErreur($classeId);
+        $s = $this->pdo->prepare(
+            "SELECT al.created_at, al.actor_nom, al.actor_role, al.action, al.avant, al.apres
+             FROM audit_logs al
+             WHERE al.module = 'classes' AND al.entite = 'programme_classe'
+               AND (JSON_UNQUOTE(JSON_EXTRACT(al.avant, '$.classe_id')) = ? OR JSON_UNQUOTE(JSON_EXTRACT(al.apres, '$.classe_id')) = ?)
+             ORDER BY al.id DESC LIMIT " . max(1, min(500, $limite))
+        );
+        $s->execute([(string)$classeId, (string)$classeId]);
+        $out = [];
+        foreach ($s->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $avant = json_decode((string)($r['avant'] ?? ''), true) ?: [];
+            $apres = json_decode((string)($r['apres'] ?? ''), true) ?: [];
+            $out[] = [
+                'date'    => (string)$r['created_at'],
+                'acteur'  => trim((string)($r['actor_nom'] ?? '') . ($r['actor_role'] ? ' (' . $r['actor_role'] . ')' : '')) ?: 'Système',
+                'action'  => (string)$r['action'],
+                'matiere' => (string)($apres['matiere'] ?? $avant['matiere'] ?? ''),
+                'avant'   => $avant,
+                'apres'   => $apres,
+            ];
+        }
+        return $out;
     }
 }
