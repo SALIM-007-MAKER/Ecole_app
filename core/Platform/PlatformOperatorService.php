@@ -21,6 +21,9 @@ final class PlatformOperatorService
 {
     public const NIVEAUX = ['support', 'admin', 'super_admin'];
 
+    /** Seule erreur de changement de mot de passe qui compte comme un échec d'authentification (limitation de débit). */
+    public const ERREUR_MDP_ACTUEL = 'Le mot de passe actuel est incorrect.';
+
     /** Hachage bcrypt valide d'une valeur aléatoire jetée : sert uniquement à égaliser le temps de réponse d'un compte inconnu. */
     private const HACHAGE_FACTICE = '$2y$10$MTju1JDKeaI8kuXPdddKTeVVMYi9Krii00eeVcnN8xEZUbAUfh3c.';
 
@@ -122,7 +125,7 @@ final class PlatformOperatorService
             PlatformAuditService::make($this->pdo)->record('operator.password_change_failed', [
                 'entity_type' => 'platform_operator', 'entity_id' => $id, 'resultat' => 'failure',
             ]);
-            return ['Le mot de passe actuel est incorrect.'];
+            return [self::ERREUR_MDP_ACTUEL];
         }
         $erreurs = PlatformPasswordPolicy::valider($nouveau, (string)$op['email'], (string)($op['nom'] ?? ''));
         if ($nouveau !== $confirmation) {

@@ -46,6 +46,22 @@ abstract class PlatformController extends Controller
         return new \App\Shared\Http\LoginThrottle($dir !== false && $dir !== '' ? $dir : ROOT_PATH . '/storage/cache/throttle');
     }
 
+    /**
+     * Filtres de recherche lus dans la requête (GET) : chaque clé donne une chaîne rognée, vide si absente ou non textuelle.
+     *
+     * @param  list<string> $cles
+     * @return array<string,string>
+     */
+    protected function filtresGet(array $cles): array
+    {
+        $f = [];
+        foreach ($cles as $cle) {
+            $v = $this->request->get($cle, '');
+            $f[$cle] = is_string($v) ? trim($v) : '';
+        }
+        return $f;
+    }
+
     /** Interrompt si l'opérateur connecté n'a pas l'un des niveaux requis (ex: 'admin','super_admin'). */
     protected function requirePlatformLevel(string ...$levels): void
     {

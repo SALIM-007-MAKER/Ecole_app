@@ -39,7 +39,7 @@ class PlatformAccountController extends PlatformController
         $this->verifyCsrf();
 
         $id = $this->operatorId();
-        $throttle = new LoginThrottle(ROOT_PATH . '/storage/cache/throttle');
+        $throttle = $this->throttle();
         $cle = 'pwc:' . $id;
         if ($throttle->retryAfter($cle, 5) > 0) {
             Session::flash('errors', ['Trop de tentatives. Réessayez dans quelques minutes.']);
@@ -53,7 +53,11 @@ class PlatformAccountController extends PlatformController
             (string)$this->request->post('new_password_confirmation', '')
         );
         if ($erreurs !== []) {
-            $throttle->recordFailure($cle);
+            // Seul un mot de passe actuel erroné est un échec d'authentification : une confirmation mal tapée ou un mot de passe
+            // trop faible ne doivent pas verrouiller la page.
+            if (in_array(PlatformOperatorService::ERREUR_MDP_ACTUEL, $erreurs, true)) {
+                $throttle->recordFailure($cle);
+            }
             Session::flash('errors', $erreurs);
             $this->redirect(BASE_URL . '/platform/compte/mot-de-passe');
         }

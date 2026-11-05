@@ -157,6 +157,25 @@ $typed = null;
 try { $tf->desactiver($sansTf, $mdp, '123456'); } catch (TwoFactorException $e) { $typed = $e; }
 check($typed !== null && $typed->estEchecIdentifiants() && $typed->getMessage() === 'Code incorrect.', 'compte sans 2FA : code refusé comme « incorrect » et compté comme un essai (aucune indication sur la cause)');
 
+section('Point 6 : changement de mot de passe, seule une erreur d\'authentification compte pour le verrouillage');
+$cpt = $ops->creer('cpt@exemple.test', 'Compte Test', 'support', $mdp, PlatformOperatorService::ACTEUR_CLI)['id'];
+$C = operateur($cpt, 'support');
+$nouveau = 'Hn4$kWp8!zRq5#Ly';
+for ($i = 0; $i < 6; $i++) {
+    http($nomCopie, $C, 'POST', "$P/compte/mot-de-passe", ['current_password' => $mdp, 'new_password' => $nouveau, 'new_password_confirmation' => 'autre'], ['PLATFORM_REQ_IP' => ip()]);
+}
+http($nomCopie, $C, 'POST', "$P/compte/mot-de-passe", ['current_password' => $mdp, 'new_password' => $nouveau, 'new_password_confirmation' => $nouveau], ['PLATFORM_REQ_IP' => ip()]);
+$hash = (string)$pdo->query("SELECT password_hash FROM platform_operators WHERE id = $cpt")->fetchColumn();
+check(password_verify($nouveau, $hash), '6 confirmations mal tapées ne verrouillent pas : le changement correct réussit ensuite');
+for ($i = 0; $i < 6; $i++) {
+    http($nomCopie, $C, 'POST', "$P/compte/mot-de-passe", ['current_password' => 'faux', 'new_password' => $mdp, 'new_password_confirmation' => $mdp], ['PLATFORM_REQ_IP' => ip()]);
+}
+http($nomCopie, $C, 'POST', "$P/compte/mot-de-passe", ['current_password' => $nouveau, 'new_password' => $mdp, 'new_password_confirmation' => $mdp], ['PLATFORM_REQ_IP' => ip()]);
+$hash = (string)$pdo->query("SELECT password_hash FROM platform_operators WHERE id = $cpt")->fetchColumn();
+check(password_verify($nouveau, $hash) && !password_verify($mdp, $hash), 'mots de passe actuels erronés répétés : la page est bien verrouillée');
+$ctrlSrc = (string)file_get_contents(ROOT_PATH . '/app/Controllers/PlatformAccountController.php') . (string)file_get_contents(ROOT_PATH . '/app/Controllers/PlatformAuthController.php');
+check(strpos($ctrlSrc, 'new LoginThrottle') === false, 'point 10 : contrôleurs de connexion et de compte passent par throttle()');
+
 echo "\n";
 echo $failed === 0 ? "\033[32m$passed OK, 0 KO\033[0m\n" : "\033[31m$passed OK, $failed KO\033[0m\n";
 exit($failed === 0 ? 0 : 1);

@@ -104,11 +104,6 @@ class PlatformAuditController extends PlatformController
     /** @return array<string,string> */
     private function filtres(): array
     {
-        $f = [];
-        foreach (self::FILTRES as $cle) {
-            $v = $this->request->get($cle, '');
-            $f[$cle] = is_string($v) ? trim($v) : '';
-        }
-        return $f;
+        return $this->filtresGet(self::FILTRES);
     }
 }

@@ -43,7 +43,7 @@ class PlatformAuthController extends PlatformController
         $password = (string)$this->request->post('password', '');
 
         // Anti-force-brute (compte opérateur plateforme).
-        $throttle = new LoginThrottle(ROOT_PATH . '/storage/cache/throttle');
+        $throttle = $this->throttle();
         $ip       = $this->request->ip();
         $cles     = ['pec:' . $email . '|' . $ip => 5, 'pip:' . $ip => 20, 'pe:' . $email => 15];
         $attente  = 0;
