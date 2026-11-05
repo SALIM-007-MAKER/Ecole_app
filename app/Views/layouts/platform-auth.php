@@ -119,6 +119,7 @@ $branding = \Core\Tenant\BrandingService::make()->get((int)((require ROOT_PATH .
 
 <script src="<?= BASE_URL ?>/assets/vendor/lucide/lucide.min.js"></script>
 <script>if(window.lucide)lucide.createIcons();</script>
+<script>window.APP_BASE_URL = '<?= BASE_URL ?>';</script>
 <script src="<?= BASE_URL ?>/assets/js/app.js"></script>
 </body>
 </html>
