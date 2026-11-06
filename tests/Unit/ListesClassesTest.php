@@ -90,7 +90,7 @@ try {
     }
 
     section('3. Aucun avertissement PHP « Undefined property » sur ces pages');
-    $journal = ROOT_PATH . '/storage/logs/app-' . date('Y-m-d') . '.log';
+    $journal = ROOT_PATH . '/storage/logs/app-' . (new DateTimeImmutable('now', new DateTimeZone((require ROOT_PATH . '/config/app.php')['timezone'])))->format('Y-m-d') . '.log';
     $avant = is_file($journal) ? filesize($journal) : 0;
     foreach ($pages as $p) { ConduiteCopy::http(ROOT_PATH, $nom, 'admin', $admin, 'GET', '/ecole_app' . $p); }
     clearstatcache();

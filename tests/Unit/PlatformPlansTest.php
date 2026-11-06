@@ -503,7 +503,7 @@ try {
     $planSql = $plans->find($idKo);
     $nMajSql = count($audits('plan.updated')); $nTogSql = count($audits('plan.toggled')); $nCreeSql = count($audits('plan.created'));
     $secoursSql = glob($dossierSecours . '/platform_audit_fallback-*.jsonl') ?: [];
-    $journalApp = ROOT_PATH . '/storage/logs/app-' . date('Y-m-d') . '.log';
+    $journalApp = ROOT_PATH . '/storage/logs/app-' . (new DateTimeImmutable('now', new DateTimeZone((require ROOT_PATH . '/config/app.php')['timezone'])))->format('Y-m-d') . '.log';
     $tailleLog = is_file($journalApp) ? filesize($journalApp) : 0;
     $nouveauLog = static function () use ($journalApp, &$tailleLog): string {
         clearstatcache(true, $journalApp);
