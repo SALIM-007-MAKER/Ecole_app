@@ -130,7 +130,15 @@ class SalleController extends Controller
     /** Génère un code court unique à partir du nom (colonne `code`, UNIQUE, NOT NULL). */
     private function genererCode(string $nom): string
     {
-        $base = strtoupper(preg_replace('/[^A-Za-z0-9]+/', '', $nom));
+        // Les lettres accentuées sont translittérées (é → e), et non supprimées : « Amphithéâtre » donne AMPHITHEATRE, pas AMPHITHTRE.
+        $sansAccent = strtr($nom, [
+            'à' => 'a', 'â' => 'a', 'ä' => 'a', 'á' => 'a', 'ã' => 'a', 'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e',
+            'î' => 'i', 'ï' => 'i', 'í' => 'i', 'ô' => 'o', 'ö' => 'o', 'ó' => 'o', 'õ' => 'o', 'ù' => 'u', 'û' => 'u',
+            'ü' => 'u', 'ú' => 'u', 'ç' => 'c', 'ñ' => 'n', 'œ' => 'oe', 'æ' => 'ae',
+            'À' => 'A', 'Â' => 'A', 'Ä' => 'A', 'Á' => 'A', 'É' => 'E', 'È' => 'E', 'Ê' => 'E', 'Ë' => 'E',
+            'Î' => 'I', 'Ï' => 'I', 'Ô' => 'O', 'Ö' => 'O', 'Ù' => 'U', 'Û' => 'U', 'Ü' => 'U', 'Ç' => 'C', 'Œ' => 'OE',
+        ]);
+        $base = strtoupper(preg_replace('/[^A-Za-z0-9]+/', '', $sansAccent));
         $base = $base !== '' ? substr($base, 0, 15) : 'SALLE';
 
         $code = $base;
