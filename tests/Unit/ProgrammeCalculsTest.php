@@ -62,6 +62,11 @@ function empreinte(mixed $v): string { return md5(json_encode($v, JSON_UNESCAPED
 $_SESSION = [];
 $copie = \Tests\Support\DbCopy::redirigerVersCopie(ROOT_PATH) ?? exit("ECHEC : copie jetable impossible (mysql/mysqldump ou droit CREATE DATABASE)\n");
 $pdo = Database::getInstance()->getConnection();
+// Le jeu de référence porte désormais T075 et T076 (appliquées à la base réelle) : on simule l'état d'AVANT ces migrations en les retirant de la copie,
+// pour que ce test vérifie bien leur application, leur idempotence et le comportement inerte avant elles. Copie jetable uniquement.
+foreach (['T075_classe_matieres', 'T076_matieres_actif_nom_affichage'] as $migrationAvant) {
+    (require ROOT_PATH . "/database/migrations/{$migrationAvant}.php")['rollback']($pdo);
+}
 $admin = (int)$pdo->query("SELECT id FROM users WHERE role = 'admin' AND etablissement_id = 1 ORDER BY id LIMIT 1")->fetchColumn();
 
 $calc = new AcademicCalculationService();
