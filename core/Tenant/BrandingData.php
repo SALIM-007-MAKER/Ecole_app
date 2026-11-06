@@ -51,6 +51,15 @@ final class BrandingData
         return $this->aUnLogoPropre() ? $this->logoUrl : null;
     }
 
+    /**
+     * Identité visuelle de la PLATEFORME EduNova (logo, favicon, couleurs, police) : celle du portail Super-Admin et de sa connexion.
+     * Jamais celle d'un établissement, pas même de l'établissement par défaut.
+     */
+    public static function plateforme(): self
+    {
+        return self::defaults(0);
+    }
+
     /** Valeurs de repli — identiques à ce qui était codé en dur avant Phase 14.5 (zéro régression visuelle). */
     public static function defaults(int $etablissementId): self
     {

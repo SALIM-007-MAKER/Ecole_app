@@ -228,5 +228,32 @@ $pf = (string)file_get_contents(ROOT_PATH . '/app/Views/layouts/platform-auth.ph
 check(str_contains($pf, '/assets/img/edunova-logo.png'), 'écran de connexion de la plateforme : logo EduNova inchangé');
 check(is_file(ROOT_PATH . '/public/assets/img/edunova-logo.png'), 'fichier du logo EduNova présent');
 
+section('7. Portail Super-Admin : identité de la plateforme, jamais celle d\'un établissement');
+$pl = BrandingData::plateforme();
+check($pl->logoUrl === '/assets/img/edunova-logo.png' && $pl->faviconUrl === '/assets/img/edunova-logo.png' && $pl->appName === 'EduNova' && $pl->aUnLogoPropre() === false, 'identité de la plateforme : logo, favicon et nom EduNova');
+foreach (['app/Views/layouts/platform.php', 'app/Views/layouts/platform-auth.php'] as $f) {
+    $c = (string)file_get_contents(ROOT_PATH . '/' . $f);
+    check(str_contains($c, 'BrandingData::plateforme()') && !str_contains($c, 'BrandingService'), "$f : n'utilise plus le branding d'un établissement");
+}
+// La section 5 a retiré le logo de l'établissement par défaut : on le rétablit (copie jetable) pour que ce contrôle détecte une fuite de son logo
+$pdo->exec("UPDATE etablissement_branding SET logo_url = '/assets/img/logo.jpeg' WHERE etablissement_id = 1");
+(new FileCache(ROOT_PATH . '/storage/cache'))->flushPrefix('tenant:1:branding:');
+$logoEtab1 = (string)$pdo->query('SELECT logo_url FROM etablissement_branding WHERE etablissement_id = 1')->fetchColumn();
+$operateur = json_encode(['id' => 1, 'email' => 'op@exemple.test', 'nom' => 'Op', 'niveau' => 'super_admin', 'must_change' => false]);
+$platHttp = function (string $op, string $uri) use ($nomCopie): array {
+    $corps = sys_get_temp_dir() . '/plat_' . bin2hex(random_bytes(4)) . '.html';
+    $p = proc_open([PHP_BINARY, ROOT_PATH . '/tests/Support/platform_request.php', $op, 'GET', '/ecole_app' . $uri, '{}'], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, ROOT_PATH,
+        array_merge(getenv(), ['REQUEST_AS_DB' => $nomCopie, 'REQUEST_AS_BODY_OUT' => $corps]));
+    $sortie = stream_get_contents($pipes[1]) . stream_get_contents($pipes[2]); fclose($pipes[1]); fclose($pipes[2]); proc_close($p);
+    $r = preg_match('/^RESULT:(.*)$/m', $sortie, $m) ? (json_decode($m[1], true) ?: []) : [];
+    $body = (string)@file_get_contents($corps); @unlink($corps);
+    return ['status' => (int)($r['status'] ?? 0), 'body' => $body];
+};
+check($logoEtab1 !== '' && !str_contains($logoEtab1, 'edunova'), 'prérequis : l\'établissement par défaut a son propre logo (' . $logoEtab1 . ')');
+$r = $platHttp($operateur, '/platform/dashboard');
+check($r['status'] === 200 && str_contains($r['body'], 'edunova-logo.png') && !str_contains($r['body'], $logoEtab1), 'tableau de bord Super-Admin : logo EduNova, aucune trace du logo de l\'établissement', (string)$r['status']);
+$r = $platHttp('guest', '/platform/login');
+check($r['status'] === 200 && str_contains($r['body'], 'edunova-logo.png') && !str_contains($r['body'], $logoEtab1), 'connexion Super-Admin : logo et favicon EduNova, aucune trace du logo de l\'établissement', (string)$r['status']);
+
 echo "\n" . ($failed === 0 ? "\033[32m" : "\033[31m") . "$passed OK, $failed KO\033[0m\n";
 exit($failed === 0 ? 0 : 1);

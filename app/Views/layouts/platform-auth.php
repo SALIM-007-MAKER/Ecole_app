@@ -1,6 +1,6 @@
 <?php
 /* Portail plateforme : même gabarit que layouts/auth.php (connexion des établissements), identité « EduNova Platform ». */
-$branding = \Core\Tenant\BrandingService::make()->get((int)((require ROOT_PATH . '/config/tenant.php')['default_id'] ?? 1));
+$branding = \Core\Tenant\BrandingData::plateforme();   // identité de la plateforme (favicon, couleurs, police), jamais celle d'un établissement
 ?>
 <!DOCTYPE html>
 <html lang="fr">

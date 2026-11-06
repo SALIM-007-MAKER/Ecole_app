@@ -1,15 +1,13 @@
 <?php
-use Core\Tenant\BrandingService;
-
 /*
  * Portail plateforme (Super-Admin SaaS) — MÊME coquille visuelle que l'espace des établissements (layouts/main.php) :
- * barre latérale violette, en-tête avec titre de page et menu utilisateur, mêmes classes du design system (app.css), même police et
- * même charte (couleurs de l'établissement par défaut). Seuls le menu et l'identité (opérateur, sans établissement) diffèrent.
+ * barre latérale violette, en-tête avec titre de page et menu utilisateur, mêmes classes du design system (app.css).
+ * L'identité visuelle (logo, favicon, couleurs, police) est celle de la PLATEFORME EduNova, jamais celle d'un établissement.
+ * Seuls le menu et l'identité (opérateur, sans établissement) diffèrent.
  */
 $operator = \Core\Platform\PlatformAuth::current();
 
-$__etabIdForBranding = (int)((require ROOT_PATH . '/config/tenant.php')['default_id'] ?? 1);
-$branding = BrandingService::make()->get($__etabIdForBranding);
+$branding = \Core\Tenant\BrandingData::plateforme();
 $__logoFsPath = ROOT_PATH . '/public' . $branding->logoUrl;
 $__brandWeb = file_exists($__logoFsPath) ? $branding->logoUrl : null;
 
