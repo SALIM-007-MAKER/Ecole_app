@@ -83,7 +83,7 @@ class NotificationController extends Controller
         $this->verifyCsrf();
         $user = $this->currentUser();
 
-        $submitted = $this->request->post('prefs', []);
+        $submitted = $this->request->post('pref', []);
         $triggers  = NotificationPreferenceModel::TRIGGERS;
 
         $prefs = [];

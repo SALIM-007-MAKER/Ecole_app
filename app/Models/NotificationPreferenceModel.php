@@ -8,7 +8,7 @@ class NotificationPreferenceModel extends Model
 {
     protected string $table = 'notification_preferences';
 
-    public const TRIGGERS = ['note', 'absence', 'paiement', 'annonce'];
+    public const TRIGGERS = ['note', 'absence', 'paiement', 'annonce', 'retard', 'discipline', 'recompense'];
 
     private const DEFAULTS = ['interne' => true, 'email' => false, 'sms' => false];
 
