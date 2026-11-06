@@ -31,8 +31,45 @@ namespace Core\Tenant;
 final class TenantStorageService
 {
     private const BASE_DIR = 'public/uploads/branding';
-    private const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/x-icon', 'image/vnd.microsoft.icon', 'image/svg+xml'];
+    /** Types acceptés et extension de stockage : l'extension est déduite du CONTENU détecté, jamais du nom fourni par le client. */
+    private const EXT_PAR_MIME = [
+        'image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp',
+        'image/x-icon' => 'ico', 'image/vnd.microsoft.icon' => 'ico', 'image/svg+xml' => 'svg',
+    ];
     private const MAX_SIZE = 2 * 1024 * 1024; // 2 Mo, conforme §10.3
+    private const MAX_DIMENSION = 4096;        // px, côté le plus long d'une image matricielle
+
+    /**
+     * Valide une image envoyée (logo, favicon, image de connexion) et retourne son type MIME réel.
+     * Refuse : fichier trop lourd, type non autorisé, image illisible ou démesurée, SVG contenant du code actif ou des références externes.
+     *
+     * @throws \RuntimeException message affichable à l'utilisateur
+     */
+    public static function validerImage(string $chemin, int $taille): string
+    {
+        if ($taille > self::MAX_SIZE) {
+            throw new \RuntimeException('Le fichier dépasse la taille maximale de 2 Mo.');
+        }
+        $mime = (string)@mime_content_type($chemin);
+        if (!isset(self::EXT_PAR_MIME[$mime])) {
+            throw new \RuntimeException('Type de fichier non autorisé (image PNG, JPEG, WEBP, SVG ou ICO uniquement).');
+        }
+        if ($mime === 'image/svg+xml') {
+            $svg = (string)file_get_contents($chemin);
+            if (preg_match('/<\s*(script|foreignObject|iframe|object|embed)\b|\son[a-z]+\s*=|javascript:|<!ENTITY|<!DOCTYPE[^>]*\[|(?:xlink:)?href\s*=\s*["\']\s*(?!#|data:image\/(?:png|jpeg|webp);)/i', $svg)) {
+                throw new \RuntimeException('Ce fichier SVG contient du code actif ou des références externes : il est refusé.');
+            }
+        } elseif (!str_contains($mime, 'icon')) {
+            $dim = @getimagesize($chemin);
+            if ($dim === false) {
+                throw new \RuntimeException('Image illisible ou corrompue.');
+            }
+            if ($dim[0] > self::MAX_DIMENSION || $dim[1] > self::MAX_DIMENSION) {
+                throw new \RuntimeException('Image trop grande (' . self::MAX_DIMENSION . ' px maximum de côté).');
+            }
+        }
+        return $mime;
+    }
 
     private readonly TenantQuotaService $quota;
 
@@ -54,14 +91,7 @@ final class TenantStorageService
         if (empty($uploadedFile['tmp_name']) || $uploadedFile['error'] !== UPLOAD_ERR_OK) {
             throw new \RuntimeException('Fichier invalide.');
         }
-        if ($uploadedFile['size'] > self::MAX_SIZE) {
-            throw new \RuntimeException('Le fichier dépasse la taille maximale de 2 Mo.');
-        }
-
-        $mimeType = mime_content_type($uploadedFile['tmp_name']);
-        if (!in_array($mimeType, self::ALLOWED_MIME, true)) {
-            throw new \RuntimeException('Type de fichier non autorisé (image PNG, JPEG, WEBP, SVG ou ICO uniquement).');
-        }
+        $mimeType = self::validerImage($uploadedFile['tmp_name'], (int)$uploadedFile['size']);
 
         $this->quota->checkUploadAllowed($etablissementId, (int)$uploadedFile['size']);
 
@@ -70,7 +100,7 @@ final class TenantStorageService
             throw new \RuntimeException('Impossible de créer le répertoire de stockage.');
         }
 
-        $ext = strtolower(pathinfo($uploadedFile['name'], PATHINFO_EXTENSION));
+        $ext = self::EXT_PAR_MIME[$mimeType];   // jamais l'extension fournie par le client
         $filename = preg_replace('/[^a-z0-9]/', '', $context) . '_' . uniqid() . '.' . $ext;
         $dest = $dir . '/' . $filename;
 

@@ -78,12 +78,19 @@ $val    = fn(string $key, mixed $default) => htmlspecialchars((string)($old[$key
         </div>
         <div class="p-6 grid grid-cols-1 sm:grid-cols-3 gap-6">
             <div>
-                <label class="form-label">Logo actuel</label>
-                <?php if ($branding->logoUrl): ?>
+                <label class="form-label">Logo de l'établissement</label>
+                <?php if ($branding->aUnLogoPropre()): ?>
                 <img src="<?= BASE_URL . htmlspecialchars($branding->logoUrl, ENT_QUOTES) ?>" alt="Logo" class="h-16 w-16 object-contain rounded-lg border border-slate-200 p-1 mb-2">
+                <?php else: ?>
+                <p class="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2 mb-2">Aucun logo propre : vos documents n'afficheront pas de logo. Importez le vôtre.</p>
                 <?php endif; ?>
                 <input type="file" name="logo" accept="image/png,image/jpeg,image/webp,image/svg+xml" class="form-input text-xs">
-                <p class="text-xs text-slate-400 mt-1">PNG/JPEG/WEBP/SVG, 2 Mo max</p>
+                <p class="text-xs text-slate-400 mt-1">PNG/JPEG/WEBP/SVG, 2 Mo max, 4096 px max. Il apparaît sur vos bulletins, reçus, factures, relevés et documents administratifs. Le logo EduNova reste celui de la plateforme.</p>
+                <?php if ($branding->aUnLogoPropre()): ?>
+                <label class="mt-2 flex items-center gap-2 text-xs text-slate-600">
+                    <input type="checkbox" name="remove_logo" value="1" class="accent-violet-600"> Retirer mon logo
+                </label>
+                <?php endif; ?>
             </div>
             <div>
                 <label class="form-label">Favicon actuel</label>

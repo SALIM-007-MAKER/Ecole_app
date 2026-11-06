@@ -175,7 +175,7 @@ final class BrandingService
         );
         $stmt->execute([
             $etablissementId,
-            $fields['logo_url'] ?? $current->logoUrl,
+            array_key_exists('logo_url', $fields) ? $fields['logo_url'] : $current->logoUrl,   // NULL explicite = retirer le logo propre
             $fields['logo_dark_url'] ?? $current->logoDarkUrl,
             $fields['favicon_url'] ?? $current->faviconUrl,
             $this->validColor($fields['primary_color'] ?? null) ?? $current->primaryColor,

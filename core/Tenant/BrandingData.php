@@ -30,6 +30,27 @@ final class BrandingData
     ) {
     }
 
+    /** Préfixe des visuels de la plateforme EduNova (dossier public/assets/img/edunova*). */
+    private const PREFIXE_PLATEFORME = 'edunova';
+
+    /** L'établissement a-t-il son PROPRE logo (et non le visuel de repli de la plateforme) ? */
+    public function aUnLogoPropre(): bool
+    {
+        if ($this->logoUrl === null || trim($this->logoUrl) === '') {
+            return false;
+        }
+        return !str_starts_with(strtolower(basename($this->logoUrl)), self::PREFIXE_PLATEFORME);
+    }
+
+    /**
+     * Logo à imprimer sur les documents de l'établissement (bulletins, reçus, factures, relevés, rapports…) : son logo propre, sinon NULL.
+     * Le logo EduNova n'apparaît JAMAIS sur un document d'établissement : il reste celui de la plateforme.
+     */
+    public function logoPourDocuments(): ?string
+    {
+        return $this->aUnLogoPropre() ? $this->logoUrl : null;
+    }
+
     /** Valeurs de repli — identiques à ce qui était codé en dur avant Phase 14.5 (zéro régression visuelle). */
     public static function defaults(int $etablissementId): self
     {

@@ -130,12 +130,18 @@ class SettingsController extends Controller
             if ($file && $file['error'] === UPLOAD_ERR_OK) {
                 try {
                     $url = $this->storage->put($etabId, $inputName, $file);
-                    $this->storage->delete($etabId, $meta['old']);
+                    // L'ancien fichier est CONSERVÉ : les bulletins déjà émis figent le chemin du logo de l'époque et doivent continuer à l'afficher.
                     $fields[$meta['field']] = $url;
                 } catch (\RuntimeException $e) {
                     $errors[$inputName] = $e->getMessage();
                 }
             }
+        }
+
+        // Retirer le logo : l'établissement n'a plus de logo propre (aucun logo ne sera imprimé ; le logo EduNova ne le remplace jamais sur les documents).
+        // Le fichier n'est pas supprimé (documents déjà émis).
+        if ($this->request->post('remove_logo') === '1' && !isset($fields['logo_url'])) {
+            $fields['logo_url'] = null;
         }
 
         // Les formulaires "Établissement" et "Apparence" postent tous deux ici
