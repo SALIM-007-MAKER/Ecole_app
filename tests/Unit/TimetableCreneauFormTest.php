@@ -73,7 +73,7 @@ try {
 
     section('Colonnes réelles de matieres (le schéma ne change pas)');
     $cols = $pdo->query("SHOW COLUMNS FROM matieres")->fetchAll(PDO::FETCH_COLUMN);
-    check('matieres n\'a pas de colonne actif', !in_array('actif', $cols, true));
+    // (T076 a ajouté matieres.actif : son absence n'est plus un fait du schéma. Le formulaire de créneau n'en dépend pas : il ne lit que id, nom et volume_horaire.)
     check('matieres n\'a pas de colonne couleur', !in_array('couleur', $cols, true));
 
     section('Création de l\'emploi du temps (classe 131, période 90)');
