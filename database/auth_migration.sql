@@ -136,13 +136,3 @@ INSERT INTO `role_permissions` (`role`, `permission_id`)
 SELECT 'eleve', `id` FROM `permissions`
 WHERE `code` IN ('notes.view_own','absences.view_own');
 
--- ─── 6. Utilisateurs de test (mot de passe : "password") ─────────────────────
--- IMPORTANT : Changer ces mots de passe avant toute mise en production !
-
-INSERT INTO `users` (`nom`, `prenom`, `email`, `password`, `role`, `actif`) VALUES
-('Benali',    'Karim',   'directeur@ecole.dz',  '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'directeur',  1),
-('Meziane',   'Fatima',  'secretaire@ecole.dz', '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'secretaire', 1),
-('Hadj',      'Omar',    'comptable@ecole.dz',  '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'comptable',  1),
-('Boudjemaa', 'Amina',   'enseignant@ecole.dz', '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'enseignant', 1),
-('Slimani',   'Nadia',   'parent@ecole.dz',     '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'parent',     1),
-('Amar',      'Yassine', 'eleve@ecole.dz',      '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'eleve',      1);
