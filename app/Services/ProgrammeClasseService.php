@@ -636,16 +636,10 @@ final class ProgrammeClasseService
     public function historique(int $classeId, int $limite = 100): array
     {
         $this->classeOuErreur($classeId);
-        $s = $this->pdo->prepare(
-            "SELECT al.created_at, al.actor_nom, al.actor_role, al.action, al.avant, al.apres
-             FROM audit_logs al
-             WHERE al.module = 'classes' AND al.entite = 'programme_classe'
-               AND (JSON_UNQUOTE(JSON_EXTRACT(al.avant, '$.classe_id')) = ? OR JSON_UNQUOTE(JSON_EXTRACT(al.apres, '$.classe_id')) = ?)
-             ORDER BY al.id DESC LIMIT " . max(1, min(500, $limite))
-        );
-        $s->execute([(string)$classeId, (string)$classeId]);
+        // Lecture du journal par AuditService (seul lecteur de audit_logs, établissement explicite) ; la classe a été vérifiée ci-dessus.
+        $lignes = (new AuditService())->historiqueParCle($this->etablissementId, 'classes', 'programme_classe', 'classe_id', $classeId, $limite);
         $out = [];
-        foreach ($s->fetchAll(PDO::FETCH_ASSOC) as $r) {
+        foreach ($lignes as $r) {
             $avant = json_decode((string)($r['avant'] ?? ''), true) ?: [];
             $apres = json_decode((string)($r['apres'] ?? ''), true) ?: [];
             $out[] = [

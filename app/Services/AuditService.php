@@ -220,6 +220,33 @@ class AuditService
     }
 
     /** @return list<array<string,mixed>> */
+    /**
+     * Lignes d'un module et d'une entité dont une clé du JSON avant/après porte la valeur donnée (ex. `classe_id` d'un programme de classe),
+     * la plus récente d'abord. Établissement EXPLICITE exigé, comme toute lecture du journal.
+     *
+     * Les lignes écrites hors contexte d'établissement (etablissement_id NULL : ligne de commande, tâche planifiée) restent lisibles : la clé
+     * recherchée identifie une entité de l'appelant (identifiants uniques, appartenance à l'établissement vérifiée AVANT par l'appelant),
+     * donc aucune ligne d'un autre établissement ne peut correspondre.
+     *
+     * @return list<array<string,mixed>>
+     */
+    public function historiqueParCle(int $etablissementId, string $module, string $entite, string $cle, int $valeur, int $limit = 100): array
+    {
+        if (preg_match('/^[a-z_]{1,40}$/', $cle) !== 1) {
+            throw new \InvalidArgumentException('Clé d\'historique invalide.');
+        }
+        $chemin = '$.' . $cle;
+        $s = Database::getInstance()->getConnection()->prepare(
+            'SELECT al.created_at, al.actor_nom, al.actor_role, al.action, al.avant, al.apres
+             FROM audit_logs al
+             WHERE (al.etablissement_id = ? OR al.etablissement_id IS NULL) AND al.module = ? AND al.entite = ?
+               AND (JSON_UNQUOTE(JSON_EXTRACT(al.avant, ?)) = ? OR JSON_UNQUOTE(JSON_EXTRACT(al.apres, ?)) = ?)
+             ORDER BY al.id DESC LIMIT ' . max(1, min(500, $limit))
+        );
+        $s->execute([$etablissementId, $module, $entite, $chemin, (string)$valeur, $chemin, (string)$valeur]);
+        return $s->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function getUserHistory(int $etablissementId, int $userId, int $limit = 100): array
     {
         $this->exigerEtablissement($etablissementId);
