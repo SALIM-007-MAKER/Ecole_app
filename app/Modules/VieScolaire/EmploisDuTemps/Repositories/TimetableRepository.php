@@ -404,12 +404,10 @@ class TimetableRepository
                 cr.matiere_id,
                 m.nom AS matiere_nom,
                 COUNT(*) AS nb_creneaux,
-                COUNT(*) * (
-                    SELECT TIME_TO_SEC(TIMEDIFF(p2.heure_fin, p2.heure_debut)) / 3600.0
-                    FROM vs_edt_plages_horaires p2
-                    WHERE p2.id = cr.plage_id LIMIT 1
-                ) AS heures_estimees
+                -- somme de la durée RÉELLE de chaque créneau (et non nombre de créneaux × durée d'une plage quelconque) ; compatible ONLY_FULL_GROUP_BY
+                COALESCE(SUM(TIME_TO_SEC(TIMEDIFF(p.heure_fin, p.heure_debut)) / 3600.0), 0) AS heures_estimees
             FROM vs_edt_creneaux cr
+            JOIN vs_edt_plages_horaires p ON p.id = cr.plage_id
             JOIN matieres m ON m.id = cr.matiere_id
             JOIN vs_emplois_du_temps e ON e.id = cr.emploi_du_temps_id
             WHERE cr.enseignant_id = :eid AND cr.annee_scolaire = :annee

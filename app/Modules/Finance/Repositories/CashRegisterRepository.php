@@ -234,10 +234,11 @@ class CashRegisterRepository
     public function getCaissiers(): array
     {
         $stmt = $this->pdo->query(
-            "SELECT DISTINCT u.id, CONCAT(u.prenom,' ',u.nom) AS nom
+            "SELECT u.id, CONCAT(u.prenom,' ',u.nom) AS nom
              FROM `users` u
              JOIN `finance_sessions_caisse` s ON s.caissier_id = u.id AND s.deleted_at IS NULL
              WHERE " . TenantScope::sqlUtilisateur('u.id') . "
+             GROUP BY u.id   -- un caissier par ligne ; u.nom/u.prenom en dépendent (DISTINCT + ORDER BY u.nom est refusé par MySQL 8)
              ORDER BY u.nom"
         );
         return $stmt->fetchAll(\PDO::FETCH_OBJ);

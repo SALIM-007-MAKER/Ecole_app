@@ -83,7 +83,7 @@ class FinancialReportRepository
                 COUNT(p.id)                             AS nb_paiements
              FROM finance_paiements p
              WHERE p.statut = 'complete' AND YEAR(p.date_paiement) = ? AND " . TenantScope::sqlFacture('p.facture_id') . "
-             GROUP BY DATE_FORMAT(p.date_paiement, '%Y-%m')
+             GROUP BY DATE_FORMAT(p.date_paiement, '%Y-%m'), DATE_FORMAT(p.date_paiement, '%m/%Y')   -- les deux colonnes affichées : exigé par ONLY_FULL_GROUP_BY
              ORDER BY mois_key ASC"
         );
         $stmt->execute([$annee]);
