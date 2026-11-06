@@ -56,6 +56,7 @@ $periodeLabel = $mois ? $moisLabels[$mois] . ' ' . $anneeNum : 'Année ' . $anne
     Imprimer / Enregistrer PDF
 </button>
 
+<?php include ROOT_PATH . '/app/Views/partials/entete-document.php'; ?>
 <h1>Rapport financier — <?= $periodeLabel ?></h1>
 <div class="subtitle">
     Généré le <?= date('d/m/Y à H:i') ?> — <?= $type === 'mensuel' ? 'Rapport mensuel' : 'Rapport annuel' ?>

@@ -156,7 +156,7 @@ class BulletinRepository
         return [
             'nom'       => $branding->appName,
             'adresse'   => $branding->contactAddress,
-            'logo'      => $branding->logoUrl,
+            'logo'      => $branding->logoPourDocuments(),   // logo propre de l'établissement ; jamais le logo EduNova
             'telephone' => $branding->contactPhone,
             'email'     => $branding->contactEmail,
         ];

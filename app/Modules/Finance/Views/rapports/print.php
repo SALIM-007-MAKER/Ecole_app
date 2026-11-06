@@ -54,9 +54,10 @@ $title = $titles[$type] ?? 'Rapport financier';
     <button onclick="window.close()" style="margin-left:8px;background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:12px;">Fermer</button>
 </div>
 
+<?php include ROOT_PATH . '/app/Views/partials/entete-document.php'; ?>
 <header>
     <div>
-        <div class="school">École — Finance V2</div>
+        <div class="school">Finance</div>
         <h1><?= htmlspecialchars($title) ?></h1>
     </div>
     <div class="meta">
@@ -247,7 +248,7 @@ $title = $titles[$type] ?? 'Rapport financier';
 <?php endif; ?>
 
 <footer>
-    Finance V2 — Rapport généré automatiquement le <?= date('d/m/Y à H:i:s') ?>
+    Rapport généré automatiquement le <?= date('d/m/Y à H:i:s') ?>
 </footer>
 </body>
 </html>

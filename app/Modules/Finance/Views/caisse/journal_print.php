@@ -59,6 +59,7 @@ $soldeTheorique = (float)($session->solde_theorique ?? round($soldeInitial + $to
 </div>
 
 <div style="padding: 0;">
+<?php include ROOT_PATH . '/app/Views/partials/entete-document.php'; ?>
 <div class="header">
     <div class="header-row">
         <div>

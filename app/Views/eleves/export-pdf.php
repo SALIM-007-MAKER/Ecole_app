@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Liste des élèves — Ecole App</title>
+    <title>Liste des élèves — <?= htmlspecialchars(\Core\Tenant\IdentiteDocument::courante()['nom'], ENT_QUOTES) ?></title>
     <style>
         body { font-size: 13px; }
 
@@ -36,12 +36,10 @@
 </div>
 
 <div class="p-4">
+    <?php include ROOT_PATH . '/app/Views/partials/entete-document.php'; ?>
     <!-- En-tête du document -->
     <div class="mb-4 flex items-end justify-between border-b-4 border-violet-600 pb-3">
         <div>
-            <h4 class="mb-1 text-lg font-bold text-violet-700">
-                Ecole App
-            </h4>
             <h5 class="m-0 text-base font-semibold">Liste des élèves</h5>
             <?php if (!empty($filters['classe_id'])): ?>
                 <small class="text-slate-500">Filtrée par classe</small>
@@ -144,7 +142,7 @@
     </div>
 
     <div class="no-print mt-4 text-center text-xs text-slate-500">
-        Document généré par Ecole App &mdash; <?= date('d/m/Y à H:i:s') ?>
+        Document généré le <?= date('d/m/Y à H:i:s') ?>
     </div>
 </div>
 

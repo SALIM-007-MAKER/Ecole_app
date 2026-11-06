@@ -6,7 +6,7 @@ if ($logoUrl !== '' && !preg_match('#^(https?:)?//#i', $logoUrl)) {
 }
 $logoHtml = $logoUrl !== ''
     ? '<img src="' . e($logoUrl) . '" alt="logo">'
-    : '<span class="logo-placeholder">Logo</span>';
+    : '';   // pas de logo : cellule vide (jamais de logo EduNova ni de pastille « Logo » sur un bulletin)
 ?>
 <table class="entete">
     <tr>

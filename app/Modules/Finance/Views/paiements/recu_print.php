@@ -75,8 +75,8 @@ $fmtMontant = fn(float $v): string => number_format($v, 0, ',', ' ') . ' ' . $de
 
     <div class="receipt-body">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-            <?php if ($branding->logoUrl): ?>
-            <img src="<?= htmlspecialchars($branding->logoUrl, ENT_QUOTES) ?>" alt="" style="height:28px">
+            <?php $__logo = \Core\Tenant\IdentiteDocument::pourBranding($branding)['logo_src']; if ($__logo): ?>
+            <img src="<?= htmlspecialchars($__logo, ENT_QUOTES) ?>" alt="" style="height:28px">
             <?php endif; ?>
             <div>
                 <div style="font-weight:bold;font-size:11pt;color:#1e293b;"><?= htmlspecialchars($branding->appName, ENT_QUOTES) ?></div>

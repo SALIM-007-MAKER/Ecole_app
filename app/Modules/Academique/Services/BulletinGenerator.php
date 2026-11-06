@@ -389,9 +389,13 @@ class BulletinGenerator implements BulletinGeneratorInterface
             );
         }
 
-        $logoHtml = $b->etablissementLogo
-            ? '<img src="' . $esc($b->etablissementLogo) . '" alt="logo" class="logo">'
-            : '<div class="logo-placeholder">📚</div>';
+        $logoSrc = $b->etablissementLogo;
+        if ($logoSrc && !preg_match('#^(https?:)?//#i', $logoSrc) && defined('BASE_URL')) {
+            $logoSrc = BASE_URL . $logoSrc;   // chemin racine-relatif (/uploads/branding/…) : préfixer le dossier de l'application
+        }
+        $logoHtml = $logoSrc
+            ? '<img src="' . $esc($logoSrc) . '" alt="logo" class="logo">'
+            : '';
 
         return <<<HTML
 <!DOCTYPE html>

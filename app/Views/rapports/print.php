@@ -15,6 +15,7 @@ $f  = fn($n) => number_format((float)$n, 0, ',', ' ');
 $fc = fn($n) => $f($n) . ' F';
 $n2 = fn($n) => number_format((float)$n, 2, ',', '');
 ?>
+<?php include ROOT_PATH . '/app/Views/partials/entete-document.php'; ?>
 
 <style>
     body { font-size: 11pt; color: #212529; }

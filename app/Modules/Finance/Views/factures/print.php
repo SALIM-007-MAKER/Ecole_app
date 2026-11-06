@@ -82,8 +82,8 @@ $fmt = fn(float $v): string => number_format($v, 0, ',', ' ');
     <!-- En-tête -->
     <div class="header">
         <div>
-            <?php if ($branding->logoUrl): ?>
-            <img src="<?= htmlspecialchars($branding->logoUrl, ENT_QUOTES) ?>" alt="" style="height:36px;margin-bottom:4px">
+            <?php $__logo = \Core\Tenant\IdentiteDocument::pourBranding($branding)['logo_src']; if ($__logo): ?>
+            <img src="<?= htmlspecialchars($__logo, ENT_QUOTES) ?>" alt="" style="height:36px;margin-bottom:4px">
             <?php endif; ?>
             <div class="school-name"><?= htmlspecialchars($branding->appName, ENT_QUOTES) ?></div>
             <div class="school-info">
