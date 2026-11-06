@@ -62,6 +62,11 @@ use App\Modules\Academique\Services\BulletinEngineFactory;
 use Core\Database;
 use Core\EventDispatcher;
 
+// Jeu de référence figé dans une base jetable : ni lecture ni écriture de la base vivante. La redirection doit précéder TOUT code
+// susceptible d'ouvrir la connexion applicative (l'enregistrement des listeners ci-dessous en ouvre une) : sinon le test écrit dans la base vivante.
+require_once ROOT_PATH . '/tests/Support/DbCopy.php';
+(\Tests\Support\DbCopy::redirigerVersCopie(ROOT_PATH) !== null) or exit("ECHEC : copie jetable impossible (mysql/mysqldump ou droit CREATE DATABASE)\n");
+
 // Même enregistrement des listeners que Core\Application::run() — sans cette
 // étape, EventDispatcher::dispatch() ne trouve aucun listener et le test ne
 // vérifierait rien de réel sur la notification.
@@ -129,10 +134,11 @@ assert_true(str_contains($eventsSrc, 'NoteNotificationHandler'), 'NoteNotificati
 
 section('Cycle de vie — création -> saisie -> publication -> verrouillage');
 
-// Jeu de référence figé dans une base jetable : ni lecture ni écriture de la base vivante.
-require_once ROOT_PATH . '/tests/Support/DbCopy.php';
-(\Tests\Support\DbCopy::redirigerVersCopie(ROOT_PATH) !== null) or exit("ECHEC : copie jetable impossible (mysql/mysqldump ou droit CREATE DATABASE)\n");
 $pdo = Database::getInstance()->getConnection();
+// Garde-fou : ce test écrit (dans une transaction annulée) ; il ne doit JAMAIS le faire hors d'une copie jetable.
+if (!preg_match('/^ecole_app_copy_[a-f0-9]+$/', (string)$pdo->query('SELECT DATABASE()')->fetchColumn())) {
+    exit("ECHEC : la connexion ne vise pas la copie jetable — aucune écriture dans la base vivante\n");
+}
 $ADMIN_USER_ID = 1;
 $CLASSE_ID     = 131;
 $PERIODE_ID    = 90;

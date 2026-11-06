@@ -61,6 +61,10 @@ try {
     $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
     $db->exec('SET NAMES utf8mb4');
+    // Références « avant migration » prises DANS la copie (jeu de référence figé), jamais dans la base réelle : celle-ci ne porte plus
+    // de données de démonstration, et une comparaison avec elle ne mesure pas la préservation par T048-T050.
+    $ensConduiteAvant = (int)$db->query("SELECT COUNT(*) FROM enseignements e JOIN matieres m ON m.id = e.matiere_id WHERE LOWER(m.nom) = 'conduite' AND m.etablissement_id = 1")->fetchColumn();
+    $heuresHorsConduiteAvant = (int)$db->query("SELECT COALESCE(SUM(volume_horaire), 0) - COALESCE(SUM(CASE WHEN LOWER(nom) = 'conduite' THEN volume_horaire ELSE 0 END), 0) FROM matieres WHERE etablissement_id = 1")->fetchColumn();
     ConduiteCopy::migrer($db, ROOT_PATH);
     ConduiteCopy::accorderDroitsBulletin($db);
     $nom = $copy->name;
@@ -295,9 +299,9 @@ check(!$ep->canDeverrouiller($ens, $evCv) && $ep->canDeverrouiller($sansAdmin($a
     check((int)$one('SELECT COUNT(*) FROM enseignements') === $nbEns, 'affectation d\'un enseignant à la Conduite (POST direct, classe) : refusée');
     $http('admin', $ADMIN, 'POST', '/professeurs/1/affecter-enseignement', ['matiere_id' => $conduite, 'classe_id' => 131, 'annee_scolaire' => '2099-2100']);
     check((int)$one('SELECT COUNT(*) FROM enseignements') === $nbEns, 'affectation d\'un enseignement de Conduite (POST direct, professeur) : refusée');
-    check((int)$one('SELECT COUNT(*) FROM enseignements WHERE matiere_id = ?', [$conduite]) === (int)$source->query('SELECT COUNT(*) FROM enseignements WHERE matiere_id = ' . $conduite)->fetchColumn(), 'affectations historiques de la Conduite conservées');
+    check((int)$one('SELECT COUNT(*) FROM enseignements WHERE matiere_id = ?', [$conduite]) === $ensConduiteAvant, 'affectations historiques de la Conduite conservées');
     $totalHeures = (int)$one('SELECT SUM(volume_horaire) FROM matieres WHERE etablissement_id = 1');
-    check($totalHeures === (int)$source->query("SELECT SUM(volume_horaire) - SUM(CASE WHEN LOWER(nom) = 'conduite' THEN volume_horaire ELSE 0 END) FROM matieres WHERE etablissement_id = 1")->fetchColumn() && (int)$one('SELECT volume_horaire FROM matieres WHERE id = ?', [$conduite]) === 0, 'totaux d\'heures : la Conduite ne compte plus aucune heure (valable que la source soit migrée ou non)');
+    check($totalHeures === $heuresHorsConduiteAvant && (int)$one('SELECT volume_horaire FROM matieres WHERE id = ?', [$conduite]) === 0, 'totaux d\'heures : la Conduite ne compte plus aucune heure (valable que la source soit migrée ou non)');
 
     // ═════════════════════════════════════════════════════════════════════
     section('5. Emplois du temps — la Conduite n\'y figure jamais (liste et garde serveur)');
