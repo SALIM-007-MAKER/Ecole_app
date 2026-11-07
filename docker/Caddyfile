@@ -1,0 +1,6 @@
+# Reverse proxy HTTPS : certificat Let's Encrypt obtenu et renouvelé automatiquement.
+# {$DOMAIN} vient du fichier d'environnement de production.
+{$DOMAIN} {
+	encode gzip
+	reverse_proxy app:80
+}

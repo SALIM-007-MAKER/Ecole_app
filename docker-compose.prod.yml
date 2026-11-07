@@ -1,0 +1,89 @@
+# Production (VPS) : HTTPS automatique (Caddy) + application + MySQL privé + tâches planifiées.
+#
+# Lancer :  docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build
+# Guide  :  docs/deploiement/DOCKER_VPS.md
+#
+# Le fichier .env.production est créé sur le serveur à partir de .env.production.example (jamais versionné).
+services:
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      DOMAIN: "${DOMAIN:?DOMAIN obligatoire}"
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [app]
+    networks: [web, internal]
+
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env.production
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      DB_HOST: db
+      DB_PORT: "3306"
+      # Seul Caddy (réseau interne) peut fournir X-Forwarded-For / X-Forwarded-Proto.
+      TRUSTED_PROXIES: 172.30.0.0/24
+    volumes:
+      - storage_data:/var/www/html/storage
+      - uploads_data:/var/www/html/public/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [internal]
+
+  # File d'attente + abonnements : une passe par minute.
+  worker:
+    build: .
+    restart: unless-stopped
+    env_file: .env.production
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      DB_HOST: db
+      DB_PORT: "3306"
+    command: ["sh", "-c", "while true; do php database/queue-worker.php; php database/subscriptions-tick.php; sleep 60; done"]
+    volumes:
+      - storage_data:/var/www/html/storage
+      - uploads_data:/var/www/html/public/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [internal]
+
+  # Pas de port publié : MySQL n'est joignable que depuis le réseau Docker interne.
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:?DB_DATABASE obligatoire}
+      MYSQL_USER: ${DB_USERNAME:?DB_USERNAME obligatoire}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD obligatoire}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD obligatoire}
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [internal]
+
+networks:
+  web:
+  internal:
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+
+volumes:
+  db_data:
+  storage_data:
+  uploads_data:
+  caddy_data:
+  caddy_config:
